@@ -15,11 +15,13 @@ def plot_2dmap(data2d, mesh=None, savefilename=None, cmap=cm.coolwarm,  vmin=Non
         x = list(range(data2d.shape[1]))
         y = list(range(data2d.shape[0]))
         mesh = np.meshgrid(x, y)
+    
+    name = data2d.name if hasattr(data2d, 'name') else None
 
     plt.pcolor(mesh[0], mesh[1], data2d,
                cmap=cmap, vmin=vmin, vmax=vmax,
                shading='auto',
-               label=data2d.name)
+               label=name)
     plt.colorbar()
     plt.legend()
 
@@ -93,10 +95,12 @@ def plot_line(data1d, x=None, savefilename=None, vmin=None, vmax=None, figsize=N
     if savefilename is not None:
         fig = plt.figure(figsize=figsize)
 
+    name = data2d.name if hasattr(data2d, 'name') else None
+
     if x is None:
-        plt.plot(data1d, label=data1d.name)
+        plt.plot(data1d, label=name)
     else:
-        plt.plot(x, data1d, label=data1d.name)
+        plt.plot(x, data1d, label=name)
 
     if xlabel is not None:
         plt.xlabel(xlabel)
