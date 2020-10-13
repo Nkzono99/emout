@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.cm as cm
+from emout.data import GridData3d
 
 
 def plot_2dmap(data2d, mesh=None, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None, xlabel=None, ylabel=None):
@@ -32,8 +33,12 @@ def plot_2dmap(data2d, mesh=None, savefilename=None, cmap=cm.coolwarm,  vmin=Non
 
 
 def plot_xy(data, z, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
-    x = list(range(data.shape[2]))
-    y = list(range(data.shape[1]))
+    if isinstance(data, GridData3d):
+        x = list(range(data.xslice.start, data.xslice.stop, data.xslice.step))
+        y = list(range(data.yslice.start, data.yslice.stop, data.yslice.step))
+    else:
+        x = list(range(data.shape[2]))
+        y = list(range(data.shape[1]))
     mesh = np.meshgrid(x, y)
     plot_2dmap(data[z, :, :],
                mesh=mesh,
@@ -45,8 +50,12 @@ def plot_xy(data, z, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None,
 
 
 def plot_yz(data, x, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
-    y = list(range(data.shape[1]))
-    z = list(range(data.shape[0]))
+    if isinstance(data, GridData3d):
+        y = list(range(data.yslice.start, data.yslice.stop, data.yslice.step))
+        z = list(range(data.zslice.start, data.zslice.stop, data.zslice.step))
+    else:
+        y = list(range(data.shape[1]))
+        z = list(range(data.shape[0]))
     mesh = np.meshgrid(y, z)
     plot_2dmap(data[:, :, x],
                mesh=mesh,
@@ -58,8 +67,12 @@ def plot_yz(data, x, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None,
 
 
 def plot_xz(data, y, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
-    x = list(range(data.shape[2]))
-    z = list(range(data.shape[0]))
+    if isinstance(data, GridData3d):
+        x = list(range(data.xslice.start, data.xslice.stop, data.xslice.step))
+        z = list(range(data.zslice.start, data.zslice.stop, data.zslice.step))
+    else:
+        x = list(range(data.shape[2]))
+        z = list(range(data.shape[0]))
     mesh = np.meshgrid(x, z)
     plot_2dmap(data[:, y, :],
                mesh=mesh,
@@ -70,11 +83,53 @@ def plot_xz(data, y, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None,
                figsize=figsize)
 
 
-def plot_line(data1d, savefilename=None, vmin=None, vmax=None, figsize=None):
+def plot_line(data1d, x=None, savefilename=None, vmin=None, vmax=None, figsize=None):
     if savefilename is not None:
         fig = plt.figure(figsize=figsize)
 
-    plt.plot(data1d)
+    if x is None:
+        plt.plot(data1d)
+    else:
+        plt.plot(x, data1d)
 
     if savefilename is not None:
         fig.savefig(savefilename)
+
+
+def plot_xline(data, y, z, savefilename=None, vmin=None, vmax=None, figsize=None):
+    if isinstance(data, GridData3d):
+        x = list(range(data.xslice.start, data.xslice.stop, data.xslice.step))
+    else:
+        x = list(range(data.shape[2]))
+    plot_line(data[z, y, :],
+              x=x,
+              savefilename=savefilename,
+              vmin=vmin,
+              vmax=vmax,
+              figsize=figsize)
+
+
+def plot_yline(data, x, z, savefilename=None, vmin=None, vmax=None, figsize=None):
+    if isinstance(data, GridData3d):
+        y = list(range(data.yslice.start, data.yslice.stop, data.yslice.step))
+    else:
+        y = list(range(data.shape[1]))
+    plot_line(data[z, :, x],
+              x=y,
+              savefilename=savefilename,
+              vmin=vmin,
+              vmax=vmax,
+              figsize=figsize)
+
+
+def plot_zline(data, x, y, savefilename=None, vmin=None, vmax=None, figsize=None):
+    if isinstance(data, GridData3d):
+        z = list(range(data.zslice.start, data.zslice.stop, data.zslice.step))
+    else:
+        z = list(range(data.shape[0]))
+    plot_line(data[:, y, x],
+              x=z,
+              savefilename=savefilename,
+              vmin=vmin,
+              vmax=vmax,
+              figsize=figsize)
