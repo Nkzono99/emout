@@ -17,7 +17,7 @@ class Emout:
 
 class GridData3dSeries:
     def __init__(self, filename, name):
-        self.h5 = h5py.File(filename, 'r')
+        self.h5 = h5py.File(str(filename), 'r')
         self.group = self.h5[list(self.h5.keys())[0]]
         self.index2key = {int(key): key for key in self.group.keys()}
 
