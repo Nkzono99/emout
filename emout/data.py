@@ -25,6 +25,14 @@ class GridData3dSeries:
     
     def close(self):
         self.h5.close()
+    
+    def time_series(self, x, y, z):
+        series = []
+        indexes = sorted(self.index2key.keys())
+        for index in indexes:
+            key = self.index2key[index]
+            series.append(self.group[key].value[z, y, x])
+        return np.array(series)
 
     def __getitem__(self, index):
         if not isinstance(index, int):
