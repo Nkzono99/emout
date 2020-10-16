@@ -1,8 +1,8 @@
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.cm as cm
+
 from emout.data import GridData3d
-from scipy.interpolate import griddata
 
 
 def plot_2dmap(data2d,
