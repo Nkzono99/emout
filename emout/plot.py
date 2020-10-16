@@ -46,6 +46,7 @@ def plot_2dmap(data2d,
 
     if savefilename is not None:
         fig.savefig(savefilename)
+        fig.close()
 
 
 def plot_xy(data3d, z, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
@@ -129,6 +130,7 @@ def plot_line(data1d, x=None, savefilename=None, vmin=None, vmax=None, figsize=N
 
     if savefilename is not None:
         fig.savefig(savefilename)
+        fig.close()
 
 
 def plot_xline(data3d, y, z, savefilename=None, vmin=None, vmax=None, figsize=None):
