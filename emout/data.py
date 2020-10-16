@@ -53,7 +53,7 @@ class GridData3dSeries:
         indexes = sorted(self.index2key.keys())
         for index in indexes:
             key = self.index2key[index]
-            series.append(self.group[key].value[z, y, x])
+            series.append(self.group[key][z, y, x])
         return np.array(series)
 
     def __getitem__(self, index):
