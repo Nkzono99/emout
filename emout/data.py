@@ -7,18 +7,18 @@ from emout.utils import Units, Plasmainp, UnitConversionKey
 
 
 class Emout:
-    def __init__(self, emses_dir, inpfilename='plasma.inp'):
-        if not isinstance(emses_dir, Path):
-            emses_dir = Path(emses_dir)
-        self.emses_dir = emses_dir
+    def __init__(self, directory, inpfilename='plasma.inp'):
+        if not isinstance(directory, Path):
+            directory = Path(directory)
+        self.directory = directory
 
-        for h5file_path in self.emses_dir.glob('*.h5'):
+        for h5file_path in self.directory.glob('*.h5'):
             name = str(h5file_path.name).replace('00_0000.h5', '')
             setattr(self, name, GridData3dSeries(h5file_path, name))
 
         if inpfilename is not None:
-            self._inp = Plasmainp(emses_dir / inpfilename)
-            convkey = UnitConversionKey.load(emses_dir / inpfilename)
+            self._inp = Plasmainp(directory / inpfilename)
+            convkey = UnitConversionKey.load(directory / inpfilename)
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
     
