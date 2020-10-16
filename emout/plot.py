@@ -27,12 +27,15 @@ def plot_2dmap(data2d,
         y = list(range(data2d.shape[0]))
         mesh = np.meshgrid(x, y)
 
+    extent = [mesh[0][0, 0], mesh[0][-1, -1],
+              mesh[1][0, 0], mesh[1][-1, -1]]
     plt.imshow(data2d,
                interpolation='bilinear',
                cmap=cmap,
                origin='lower',
                vmin=vmin,
-               vmax=vmax)
+               vmax=vmax,
+               extent=extent)
 
     if hasattr(data2d, 'name'):
         plt.title(data2d.name)
