@@ -20,7 +20,7 @@ class Emout:
             setattr(self, name, GridDataSeries(h5file_path, name))
 
         if inpfilename is not None:
-            self._inp = Plasmainp(directory / inpfilename)
+            self._inp = InpFile(directory / inpfilename)
             convkey = UnitConversionKey.load(directory / inpfilename)
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)

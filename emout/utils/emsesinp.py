@@ -28,7 +28,7 @@ class UnitConversionKey:
         return 'dx=[{}],to_c=[{}]'.format(self.dx, self.to_c)
 
 
-class Plasmainp:
+class InpFile:
     def __init__(self, filename):
         self.nml = f90nml.read(filename)
 
