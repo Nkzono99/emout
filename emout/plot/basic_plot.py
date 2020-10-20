@@ -3,6 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def figsize_with_2d(data2d, dpi=10):
+    px = 1/plt.rcParams['figure.dpi'] * dpi
+    figsize = (data2d.shape[1]*px, data2d.shape[0]*px)
+    return figsize
+
+
 def plot_2dmap(data2d,
                mesh=None,
                savefilename=None,
@@ -46,8 +52,7 @@ def plot_2dmap(data2d,
     """
     if savefilename is not None:
         if figsize is None:
-            px = 1/plt.rcParams['figure.dpi'] * dpi
-            figsize = (data2d.shape[1]*px, data2d.shape[0]*px)
+            figsize = figsize_with_2d(data2d)
         fig = plt.figure(figsize=figsize)
 
     if mesh is None:
