@@ -2,7 +2,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from emout.data import GridData3d
+from emout.data import GridData
 
 
 def plot_2dmap(data2d,
@@ -53,7 +53,7 @@ def plot_2dmap(data2d,
 
 
 def plot_xy(data3d, z, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
-    if isinstance(data3d, GridData3d):
+    if isinstance(data3d, GridData):
         x = list(range(data3d.xslice.start,
                        data3d.xslice.stop, data3d.xslice.step))
         y = list(range(data3d.yslice.start,
@@ -74,7 +74,7 @@ def plot_xy(data3d, z, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=Non
 
 
 def plot_yz(data3d, x, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
-    if isinstance(data3d, GridData3d):
+    if isinstance(data3d, GridData):
         y = list(range(data3d.yslice.start,
                        data3d.yslice.stop, data3d.yslice.step))
         z = list(range(data3d.zslice.start,
@@ -95,7 +95,7 @@ def plot_yz(data3d, x, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=Non
 
 
 def plot_xz(data3d, y, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
-    if isinstance(data3d, GridData3d):
+    if isinstance(data3d, GridData):
         x = list(range(data3d.xslice.start,
                        data3d.xslice.stop, data3d.xslice.step))
         z = list(range(data3d.zslice.start,
@@ -137,7 +137,7 @@ def plot_line(data1d, x=None, savefilename=None, vmin=None, vmax=None, figsize=N
 
 
 def plot_xline(data3d, y, z, savefilename=None, vmin=None, vmax=None, figsize=None):
-    if isinstance(data3d, GridData3d):
+    if isinstance(data3d, GridData):
         x = list(range(data3d.xslice.start,
                        data3d.xslice.stop, data3d.xslice.step))
     else:
@@ -153,7 +153,7 @@ def plot_xline(data3d, y, z, savefilename=None, vmin=None, vmax=None, figsize=No
 
 
 def plot_yline(data3d, x, z, savefilename=None, vmin=None, vmax=None, figsize=None):
-    if isinstance(data3d, GridData3d):
+    if isinstance(data3d, GridData):
         y = list(range(data3d.yslice.start,
                        data3d.yslice.stop, data3d.yslice.step))
     else:
@@ -169,7 +169,7 @@ def plot_yline(data3d, x, z, savefilename=None, vmin=None, vmax=None, figsize=No
 
 
 def plot_zline(data3d, x, y, savefilename=None, vmin=None, vmax=None, figsize=None):
-    if isinstance(data3d, GridData3d):
+    if isinstance(data3d, GridData):
         z = list(range(data3d.zslice.start,
                        data3d.zslice.stop, data3d.zslice.step))
     else:

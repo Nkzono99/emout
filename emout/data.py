@@ -14,7 +14,7 @@ class Emout:
 
         for h5file_path in self.directory.glob('*.h5'):
             name = str(h5file_path.name).replace('00_0000.h5', '')
-            setattr(self, name, GridData3dSeries(h5file_path, name))
+            setattr(self, name, GridDataSeries(h5file_path, name))
 
         if inpfilename is not None:
             self._inp = Plasmainp(directory / inpfilename)
@@ -37,7 +37,7 @@ class Emout:
             return None
 
 
-class GridData3dSeries:
+class GridDataSeries:
     def __init__(self, filename, name):
         self.h5 = h5py.File(str(filename), 'r')
         self.group = self.h5[list(self.h5.keys())[0]]
@@ -63,7 +63,7 @@ class GridData3dSeries:
             raise IndexError()
         key = self.index2key[index]
         name = "{} {}".format(self.name, index)
-        return GridData3d(np.array(self.group[key]), name=name)
+        return GridData(np.array(self.group[key]), name=name)
 
     def __iter__(self):
         indexes = sorted(self.index2key.keys())
@@ -74,7 +74,7 @@ class GridData3dSeries:
         return len(self.index2key)
 
 
-class GridData3d(np.ndarray):
+class GridData(np.ndarray):
     def __new__(cls, input_array, name=None, xslice=None, yslice=None, zslice=None, slice_axes=None):
         obj = np.asarray(input_array).view(cls)
         obj.name = name
@@ -98,7 +98,7 @@ class GridData3d(np.ndarray):
 
         new_obj = super().__getitem__(item)
 
-        if isinstance(new_obj, GridData3d):
+        if isinstance(new_obj, GridData):
             self.__add_slices(new_obj, item)
 
         return new_obj
