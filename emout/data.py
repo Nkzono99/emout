@@ -343,7 +343,7 @@ class SlicedData(Data):
     """3次元データの2次元面を管理する.
     """
 
-    def plot(self, axes='auto', **kwargs):
+    def plot(self, axes='auto', show=False, **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -389,12 +389,15 @@ class SlicedData(Data):
         else:
             emplt.plot_2dmap(self.T, mesh=mesh, **kwargs)
 
+        if show:
+            plt.show()
+
 
 class LineData(Data):
     """3次元データの1次元直線を管理する.
     """
 
-    def plot(self, **kwargs):
+    def plot(self, show=False, **kwargs):
         """1次元データをプロットする.
 
         Raises
@@ -413,3 +416,5 @@ class LineData(Data):
         kwargs['ylabel'] = kwargs.get('ylabel', None) or self.name
 
         emplt.plot_line(self, x=horizon_data, **kwargs)
+        if show:
+            plt.show()
