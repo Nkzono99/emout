@@ -4,6 +4,20 @@ import numpy as np
 
 
 def figsize_with_2d(data2d, dpi=10):
+    """2次元データから図のサイズを計算する.
+
+    Parameters
+    ----------
+    data2d : numpy.ndarray
+        2次元データ
+    dpi : int, optional
+        1データを何pixelで表すか, by default 10
+
+    Returns
+    -------
+    (float, float)
+        図のサイズ
+    """
     px = 1/plt.rcParams['figure.dpi'] * dpi
     figsize = (data2d.shape[1]*px, data2d.shape[0]*px)
     return figsize

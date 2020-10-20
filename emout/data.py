@@ -1,16 +1,35 @@
+import re
 from pathlib import Path
 
 import h5py
 import numpy as np
 
-from emout.utils import Units, Plasmainp, UnitConversionKey
 import emout.plot as emplt
 import emout.utils as utils
-import re
+from emout.utils import InpFile, UnitConversionKey, Units
 
 
 class Emout:
-    def __init__(self, directory, inpfilename='plasma.inp'):
+    """EMSES出力・inpファイルを管理する.
+
+    Attributes
+    ----------
+    directory : Path
+        管理するディレクトリ
+    dataname : GridData
+        3次元データ(datanameは"phisp"などのhdf5ファイルの先頭の名前)
+    """
+
+    def __init__(self, directory='./', inpfilename='plasma.inp'):
+        """[summary]
+
+        Parameters
+        ----------
+        directory : str or Path
+            管理するディレクトリ, by default './'
+        inpfilename : str, optional
+            パラメータファイルの名前, by default 'plasma.inp'
+        """
         if not isinstance(directory, Path):
             directory = Path(directory)
         self.directory = directory
@@ -27,6 +46,13 @@ class Emout:
 
     @property
     def inp(self):
+        """パラメータの辞書(Namelist)を返す.
+
+        Returns
+        -------
+        InpFile or None
+            パラメータの辞書(Namelist)
+        """
         try:
             return self._inp
         except AttributeError:
@@ -34,6 +60,13 @@ class Emout:
 
     @property
     def unit(self):
+        """単位変換オブジェクトを返す.
+
+        Returns
+        -------
+        Units or None
+            単位変換オブジェクト
+        """
         try:
             return self._unit
         except:
@@ -41,43 +74,88 @@ class Emout:
 
 
 class GridDataSeries:
+    """3次元時系列データを管理する.
+
+    Attributes
+    ----------
+    h5 : h5py.File
+        hdf5ファイルオブジェクト
+    group : h5py.Datasets
+        データセット
+    name : str
+        データセット名
+    """
+
     def __init__(self, filename, name):
         self.h5 = h5py.File(str(filename), 'r')
         self.group = self.h5[list(self.h5.keys())[0]]
-        self.index2key = {int(key): key for key in self.group.keys()}
+        self._index2key = {int(key): key for key in self.group.keys()}
 
         self.name = name
 
     def close(self):
+        """hdf5ファイルを閉じる.
+        """
         self.h5.close()
 
     def time_series(self, x, y, z):
+        """指定した範囲の時系列データを取得する.
+
+        Parameters
+        ----------
+        x : int or slice
+            x座標
+        y : int or slice
+            y座標
+        z : int or slice
+            z座標
+
+        Returns
+        -------
+        numpy.ndarray
+            指定した範囲の時系列データ
+        """
         series = []
-        indexes = sorted(self.index2key.keys())
+        indexes = sorted(self._index2key.keys())
         for index in indexes:
-            key = self.index2key[index]
+            key = self._index2key[index]
             series.append(self.group[key][z, y, x])
         return np.array(series)
 
     def __getitem__(self, index):
         if not isinstance(index, int):
             raise TypeError()
-        if index not in self.index2key:
+        if index not in self._index2key:
             raise IndexError()
-        key = self.index2key[index]
+        key = self._index2key[index]
         name = "{} {}".format(self.name, index)
         return GridData(np.array(self.group[key]), name=name)
 
     def __iter__(self):
-        indexes = sorted(self.index2key.keys())
+        indexes = sorted(self._index2key.keys())
         for index in indexes:
             yield self[index]
 
     def __len__(self):
-        return len(self.index2key)
+        return len(self._index2key)
 
 
 class Data(np.ndarray):
+    """3次元データを管理する.
+
+    Attributes
+    ----------
+    name : str
+        データ名
+    xslice : slice
+        管理するデータのx方向の範囲
+    yslice : slice
+        管理するデータのy方向の範囲
+    zslice : slice
+        管理するデータのz方向の範囲
+    slice_axes : list(int)
+        データ軸がxyzのどの方向に対応しているか表すリスト(0: z, 1: y, 2: x)
+    """
     def __new__(cls, input_array, name=None, xslice=None, yslice=None, zslice=None, slice_axes=None):
         obj = np.asarray(input_array).view(cls)
         obj.name = name
@@ -138,6 +216,15 @@ class Data(np.ndarray):
             return new_obj
 
     def __add_slices(self, new_obj, item):
+        """管理するデータの範囲を新しいオブジェクトに追加する.
+
+        Parameters
+        ----------
+        new_obj : Data
+            新しく生成されたデータオブジェクト
+        item : int or slice or tuple(int or slice)
+            スライス
+        """
         slices = [*self.slices]
         axes = [*self.slice_axes]
         for i, axis in enumerate(axes):
@@ -187,55 +274,113 @@ class Data(np.ndarray):
 
     @ property
     def xslice(self):
+        """管理するx方向の範囲を返す.
+
+        Returns
+        -------
+        slice
+            管理するx方向の範囲
+        """
         return self.slices[2]
 
     @ property
     def yslice(self):
+        """管理するy方向の範囲を返す.
+
+        Returns
+        -------
+        slice
+            管理するy方向の範囲
+        """
         return self.slices[1]
 
     @ property
     def zslice(self):
+        """管理するz方向の範囲を返す.
+
+        Returns
+        -------
+        slice
+            管理するz方向の範囲
+        """
         return self.slices[0]
 
     @ property
     def use_axes(self):
+        """データ軸がxyzのどの方向に対応しているか表すリストを返す.
+
+        Returns
+        -------
+        list(str)
+            データ軸がxyzのどの方向に対応しているか表すリスト(['x'], ['x', 'z'], etc)
+        """
         to_axis = {2: 'x', 1: 'y', 0: 'z'}
         return list(map(lambda a: to_axis[a], self.slice_axes))
 
     def plot(self, **kwargs):
+        """データをプロットする.
+        """
         raise NotImplementedError()
 
 
 class GridData(Data):
-    def plot(mode='auto', x=None, y=None, z=None, **kwargs):
+    """3次元データを管理する.
+    """
+    def plot(mode='auto', **kwargs):
+        """3次元データをプロットする.(未実装)
+
+        Parameters
+        ----------
+        mode : str, optional
+            [description], by default 'auto'
+        """
         if mode == 'auto':
             mode = ''.join(sorted(self.use_axes))
         pass
 
 
 class SlicedData(Data):
-    def plot(self, mode='auto', **kwargs):
-        if mode == 'auto':
-            mode = ''.join(sorted(self.use_axes))
+    """3次元データの2次元面を管理する.
+    """
 
-        if not re.match(r'x[yz]|y[xz]|z[xy]', mode):
+    def plot(self, axes='auto', **kwargs):
+        """2次元データをプロットする.
+
+        Parameters
+        ----------
+        axes : str, optional
+            プロットする軸('xy', 'zx', etc), by default 'auto'
+
+        Raises
+        ------
+        Exception
+            プロットする軸のパラメータが間違っている場合の例外
+        Exception
+            プロットする軸がデータにない場合の例外
+        Exception
+            データの次元が2でない場合の例外
+        """
+        if axes == 'auto':
+            axes = ''.join(sorted(self.use_axes))
+
+        if not re.match(r'x[yz]|y[xz]|z[xy]', axes):
             raise Exception(
-                'Error: mode "{mode}" cannot be used with SlicedData'.format(mode=mode))
-        if mode[0] not in self.use_axes or mode[1] not in self.use_axes:
+                'Error: axes "{axes}" cannot be used with SlicedData'.format(axes=axes))
+        if axes[0] not in self.use_axes or axes[1] not in self.use_axes:
             raise Exception(
-                'Error: mode "{mode}" cannot be used because {mode}-axis does not exist in this data.'.format(mode=mode))
+                'Error: axes "{axes}" cannot be used because {axes}-axis does not exist in this data.'.format(axes=axes))
         if len(self.shape) != 2:
             raise Exception(
-                'Error: mode "{mode}" cannot be used because data is not 2dim shape.'.format(mode=mode))
+                'Error: axes "{axes}" cannot be used because data is not 2dim shape.'.format(axes=axes))
 
         # x: 2, y: 1, z:0
-        axis1 = self.slice_axes[self.use_axes.index(mode[0])]
-        axis2 = self.slice_axes[self.use_axes.index(mode[1])]
+        axis1 = self.slice_axes[self.use_axes.index(axes[0])]
+        axis2 = self.slice_axes[self.use_axes.index(axes[1])]
         x = np.arange(*utils.slice2tuple(self.slices[axis1]))
         y = np.arange(*utils.slice2tuple(self.slices[axis2]))
 
-        kwargs['xlabel'] = kwargs.get('xlabel', None) or mode[0]
-        kwargs['ylabel'] = kwargs.get('ylabel', None) or mode[1]
+        kwargs['xlabel'] = kwargs.get('xlabel', None) or axes[0]
+        kwargs['ylabel'] = kwargs.get('ylabel', None) or axes[1]
         kwargs['title'] = kwargs.get('title', None) or self.name
 
         mesh = np.meshgrid(x, y)
@@ -246,24 +391,25 @@ class SlicedData(Data):
 
 
 class LineData(Data):
-    def plot(self, mode='auto', **kwargs):
-        if mode == 'auto':
-            mode = ''.join(sorted(self.use_axes))
+    """3次元データの1次元直線を管理する.
+    """
 
-        if not re.match(r'[xyz]', mode):
-            raise Exception(
-                'Error: mode "{mode}" cannot be used with LineData'.format(mode=mode))
-        if mode not in self.use_axes:
-            raise Exception(
-                'Error: mode "{mode}" cannot be used because {mode}-axis does not exist in this data.'.format(mode=mode))
+    def plot(self, **kwargs):
+        """1次元データをプロットする.
+
+        Raises
+        ------
+        Exception
+            データの次元が1でない場合の例外
+        """
         if len(self.shape) != 1:
             raise Exception(
-                'Error: mode "{mode}" cannot be used because data is not 1dim shape.'.format(mode=mode))
+                'Error: cannot plot because data is not 1dim shape.')
 
         axis = self.slice_axes[0]
         horizon_data = np.arange(*utils.slice2tuple(self.slices[axis]))
 
-        kwargs['xlabel'] = kwargs.get('xlabel', None) or mode
+        kwargs['xlabel'] = kwargs.get('xlabel', None) or self.use_axes[0]
         kwargs['ylabel'] = kwargs.get('ylabel', None) or self.name
 
         emplt.plot_line(self, x=horizon_data, **kwargs)
