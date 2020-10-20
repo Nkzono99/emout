@@ -1,1 +1,1 @@
-from emout.data import Emout
+from emout.data import Emout, GridDataSeries, GridData
