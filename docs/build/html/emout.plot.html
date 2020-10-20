@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>emout.plot package &#8212; emout 0.4.1 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="emout.utils package" href="emout.utils.html" />
+    <link rel="prev" title="emout package" href="emout.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="emout.utils.html" title="emout.utils package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="emout.html" title="emout package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">emout 0.4.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >emout</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="emout.html" accesskey="U">emout package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">emout.plot package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="emout-plot-package">
+<h1>emout.plot package<a class="headerlink" href="#emout-plot-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-emout.plot.basic_plot">
+<span id="emout-plot-basic-plot-module"></span><h2>emout.plot.basic_plot module<a class="headerlink" href="#module-emout.plot.basic_plot" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="emout.plot.basic_plot.figsize_with_2d">
+<code class="sig-prename descclassname">emout.plot.basic_plot.</code><code class="sig-name descname">figsize_with_2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data2d</span></em>, <em class="sig-param"><span class="n">dpi</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/plot/basic_plot.html#figsize_with_2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.plot.basic_plot.figsize_with_2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>2次元データから図のサイズを計算する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 1データを何pixelで表すか, by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>図のサイズ</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="emout.plot.basic_plot.plot_2dmap">
+<code class="sig-prename descclassname">emout.plot.basic_plot.</code><code class="sig-name descname">plot_2dmap</code><span class="sig-paren">(</span><em class="sig-param">data2d</em>, <em class="sig-param">mesh=None</em>, <em class="sig-param">savefilename=None</em>, <em class="sig-param">cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;</em>, <em class="sig-param">mask_color='gray'</em>, <em class="sig-param">vmin=None</em>, <em class="sig-param">vmax=None</em>, <em class="sig-param">figsize=None</em>, <em class="sig-param">xlabel=None</em>, <em class="sig-param">ylabel=None</em>, <em class="sig-param">title=None</em>, <em class="sig-param">interpolation='bilinear'</em>, <em class="sig-param">dpi=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/plot/basic_plot.html#plot_2dmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2dmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>2次元カラーマップをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>mask_color</strong> (<em>str</em>) – マスクされた位置の色, by default ‘gray’</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="emout.plot.basic_plot.plot_line">
+<code class="sig-prename descclassname">emout.plot.basic_plot.</code><code class="sig-name descname">plot_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data1d</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">savefilename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">vmin</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">vmax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xlabel</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ylabel</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/plot/basic_plot.html#plot_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>1次元データをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data1d</strong> (<em>array-like</em><em> or </em><em>scalar</em>) – プロットする1次元データ</p></li>
+<li><p><strong>x</strong> (<em>array-like</em><em> or </em><em>scalar</em>) – 横軸となる1次元データ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名, by default None</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – 横軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – 縦軸のラベル, by default None</p></li>
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – ラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-emout.plot">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.plot" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">emout.plot package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-emout.plot.basic_plot">emout.plot.basic_plot module</a></li>
+<li><a class="reference internal" href="#module-emout.plot">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="emout.html"
+                        title="previous chapter">emout package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="emout.utils.html"
+                        title="next chapter">emout.utils package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/emout.plot.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="emout.utils.html" title="emout.utils package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="emout.html" title="emout package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">emout 0.4.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >emout</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="emout.html" >emout package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">emout.plot package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Nkzono99.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>
