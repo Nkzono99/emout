@@ -26,11 +26,12 @@ EMSESの出力ファイルを取り扱うパッケージ
     ...
     └── bz00_0000.h5
 ```
+
+### データをロードする
 ```
 >>> import emout
 >>> data = emout.Emout('output_dir')
 >>>
->>> # getting data
 >>> data.phisp  # data of "phisp00_0000.h5"
 >>> len(data.phisp)
 11
@@ -38,11 +39,28 @@ EMSESの出力ファイルを取り扱うパッケージ
 (513, 65, 65)
 >>> data.j1x  # data of "j1x00_0000.h5"
 >>> data.bz  # data of "bz00_0000.h5"
->>>
->>> # getting inp file
+```
+
+### データをプロットする
+```
+>>> x, y, z = 32, 32, 100
+>>> data.phisp[1][z, :, :].plot()  # plot xy-plane at z=100
+>>> data.phisp[1][:, y, x].plot()  # plot center line along z-axis
+```
+
+### パラメータファイル(plasma.inp)を取得する
+```
 >>> data.inp  # namelist of 'plasma.inp'
 >>> data.inp['tmgrid']['nx']  # inp[group_name][parameter_name]
 64
 >>> data.inp['nx']  # can omit group name
 64
+```
+
+### 単位変換を行う
+```
+>>> data.unit.v.trans(1)  # velocity: Physical unit to EMSES unit
+3.3356409519815205e-05
+>>> data.unit.v.reverse(1)  # velocity: EMSES unit to Physical unit
+29979.2458
 ```
