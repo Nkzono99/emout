@@ -318,6 +318,26 @@ class Data(np.ndarray):
         to_axis = {2: 'x', 1: 'y', 0: 'z'}
         return list(map(lambda a: to_axis[a], self.slice_axes))
 
+    def masked(self, mask):
+        """マスクされたデータを返す.
+
+        Parameters
+        ----------
+        mask : numpy.ndarray or predicate
+            マスク行列またはマスクを返す関数
+
+        Returns
+        -------
+        SlicedData
+            マスクされたデータ
+        """
+        masked = self.copy()
+        if isinstance(mask, np.ndarray):
+            masked[mask] = np.nan
+        else:
+            masked[mask(masked)] = np.nan
+        return masked
+
     def plot(self, **kwargs):
         """データをプロットする.
         """
