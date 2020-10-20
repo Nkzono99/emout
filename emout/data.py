@@ -148,12 +148,8 @@ class Data(np.ndarray):
     ----------
     name : str
         データ名
-    xslice : slice
-        管理するデータのx方向の範囲
-    yslice : slice
-        管理するデータのy方向の範囲
-    zslice : slice
-        管理するデータのz方向の範囲
+    slices : list(slice)
+        管理するデータのxyz方向それぞれの範囲
     slice_axes : list(int)
         データ軸がxyzのどの方向に対応しているか表すリスト(0: z, 1: y, 2: x)
     """

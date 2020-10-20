@@ -1,0 +1,483 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>emout package &#8212; emout 0.4.1 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="emout.plot package" href="emout.plot.html" />
+    <link rel="prev" title="emout" href="modules.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="emout.plot.html" title="emout.plot package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="emout"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">emout 0.4.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" accesskey="U">emout</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">emout package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="emout-package">
+<h1>emout package<a class="headerlink" href="#emout-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="emout.plot.html">emout.plot package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="emout.plot.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.plot.html#module-emout.plot.basic_plot">emout.plot.basic_plot module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.plot.html#module-emout.plot">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="emout.utils.html">emout.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="emout.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.utils.html#module-emout.utils.emsesinp">emout.utils.emsesinp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.utils.html#module-emout.utils.units">emout.utils.units module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.utils.html#module-emout.utils.util">emout.utils.util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.utils.html#module-emout.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-emout.data">
+<span id="emout-data-module"></span><h2>emout.data module<a class="headerlink" href="#module-emout.data" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="emout.data.Data">
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></p>
+<p>3次元データを管理する.</p>
+<dl class="py attribute">
+<dt id="emout.data.Data.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#emout.data.Data.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>データ名</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.Data.slices">
+<code class="sig-name descname">slices</code><a class="headerlink" href="#emout.data.Data.slices" title="Permalink to this definition">¶</a></dt>
+<dd><p>管理するデータのxyz方向それぞれの範囲</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list(slice)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.Data.slice_axes">
+<code class="sig-name descname">slice_axes</code><a class="headerlink" href="#emout.data.Data.slice_axes" title="Permalink to this definition">¶</a></dt>
+<dd><p>データ軸がxyzのどの方向に対応しているか表すリスト(0: z, 1: y, 2: x)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list(int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Data.masked">
+<code class="sig-name descname">masked</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mask</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data.masked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data.masked" title="Permalink to this definition">¶</a></dt>
+<dd><p>マスクされたデータを返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask</strong> (<em>numpy.ndarray</em><em> or </em><em>predicate</em>) – マスク行列またはマスクを返す関数</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>マスクされたデータ</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#emout.data.SlicedData" title="emout.data.SlicedData">SlicedData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Data.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>データをプロットする.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Data.use_axes">
+<em class="property">property </em><code class="sig-name descname">use_axes</code><a class="headerlink" href="#emout.data.Data.use_axes" title="Permalink to this definition">¶</a></dt>
+<dd><p>データ軸がxyzのどの方向に対応しているか表すリストを返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>データ軸がxyzのどの方向に対応しているか表すリスト([‘x’], [‘x’, ‘z’], etc)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list(str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Data.xslice">
+<em class="property">property </em><code class="sig-name descname">xslice</code><a class="headerlink" href="#emout.data.Data.xslice" title="Permalink to this definition">¶</a></dt>
+<dd><p>管理するx方向の範囲を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>管理するx方向の範囲</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>slice</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Data.yslice">
+<em class="property">property </em><code class="sig-name descname">yslice</code><a class="headerlink" href="#emout.data.Data.yslice" title="Permalink to this definition">¶</a></dt>
+<dd><p>管理するy方向の範囲を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>管理するy方向の範囲</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>slice</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Data.zslice">
+<em class="property">property </em><code class="sig-name descname">zslice</code><a class="headerlink" href="#emout.data.Data.zslice" title="Permalink to this definition">¶</a></dt>
+<dd><p>管理するz方向の範囲を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>管理するz方向の範囲</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>slice</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emout.data.Emout">
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Emout</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">'./'</span></em>, <em class="sig-param"><span class="n">inpfilename</span><span class="o">=</span><span class="default_value">'plasma.inp'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Emout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Emout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>EMSES出力・inpファイルを管理する.</p>
+<dl class="py attribute">
+<dt id="emout.data.Emout.directory">
+<code class="sig-name descname">directory</code><a class="headerlink" href="#emout.data.Emout.directory" title="Permalink to this definition">¶</a></dt>
+<dd><p>管理するディレクトリ</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.Emout.dataname">
+<code class="sig-name descname">dataname</code><a class="headerlink" href="#emout.data.Emout.dataname" title="Permalink to this definition">¶</a></dt>
+<dd><p>3次元データ(datanameは”phisp”などのhdf5ファイルの先頭の名前)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#emout.data.GridData" title="emout.data.GridData">GridData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Emout.inp">
+<em class="property">property </em><code class="sig-name descname">inp</code><a class="headerlink" href="#emout.data.Emout.inp" title="Permalink to this definition">¶</a></dt>
+<dd><p>パラメータの辞書(Namelist)を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>パラメータの辞書(Namelist)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="emout.utils.html#emout.utils.emsesinp.InpFile" title="emout.utils.emsesinp.InpFile">InpFile</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.Emout.unit">
+<em class="property">property </em><code class="sig-name descname">unit</code><a class="headerlink" href="#emout.data.Emout.unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>単位変換オブジェクトを返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>単位変換オブジェクト</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.Units" title="emout.utils.units.Units">Units</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emout.data.GridData">
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">GridData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
+<p>3次元データを管理する.</p>
+<dl class="py method">
+<dt id="emout.data.GridData.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridData.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridData.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>3次元データをプロットする.(未実装)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], by default ‘auto’</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emout.data.GridDataSeries">
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">GridDataSeries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridDataSeries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridDataSeries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>3次元時系列データを管理する.</p>
+<dl class="py attribute">
+<dt id="emout.data.GridDataSeries.h5">
+<code class="sig-name descname">h5</code><a class="headerlink" href="#emout.data.GridDataSeries.h5" title="Permalink to this definition">¶</a></dt>
+<dd><p>hdf5ファイルオブジェクト</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>h5py.File</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.GridDataSeries.group">
+<code class="sig-name descname">group</code><a class="headerlink" href="#emout.data.GridDataSeries.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>データセット</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>h5py.Datasets</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.GridDataSeries.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#emout.data.GridDataSeries.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>データセット名</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.GridDataSeries.close">
+<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridDataSeries.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridDataSeries.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>hdf5ファイルを閉じる.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.GridDataSeries.time_series">
+<code class="sig-name descname">time_series</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">z</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridDataSeries.time_series"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridDataSeries.time_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>指定した範囲の時系列データを取得する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em><em> or </em><em>slice</em>) – x座標</p></li>
+<li><p><strong>y</strong> (<em>int</em><em> or </em><em>slice</em>) – y座標</p></li>
+<li><p><strong>z</strong> (<em>int</em><em> or </em><em>slice</em>) – z座標</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>指定した範囲の時系列データ</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emout.data.LineData">
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">LineData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#LineData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.LineData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
+<p>3次元データの1次元直線を管理する.</p>
+<dl class="py method">
+<dt id="emout.data.LineData.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#LineData.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.LineData.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>1次元データをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>show</strong> (<em>bool</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名, by default None</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – 横軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – 縦軸のラベル, by default None</p></li>
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – ラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – データの次元が1でない場合の例外</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="emout.data.SlicedData">
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">SlicedData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#SlicedData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.SlicedData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
+<p>3次元データの2次元面を管理する.</p>
+<dl class="py method">
+<dt id="emout.data.SlicedData.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axes</span><span class="o">=</span><span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#SlicedData.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.SlicedData.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>2次元データをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axes</strong> (<em>str</em><em>, </em><em>optional</em>) – プロットする軸(‘xy’, ‘zx’, etc), by default ‘auto’</p></li>
+<li><p><strong>show</strong> (<em>bool</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</p></li>
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – プロットする軸のパラメータが間違っている場合の例外</p></li>
+<li><p><strong>Exception</strong> – プロットする軸がデータにない場合の例外</p></li>
+<li><p><strong>Exception</strong> – データの次元が2でない場合の例外</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-emout">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">emout package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-emout.data">emout.data module</a></li>
+<li><a class="reference internal" href="#module-emout">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="modules.html"
+                        title="previous chapter">emout</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="emout.plot.html"
+                        title="next chapter">emout.plot package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/emout.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="emout.plot.html" title="emout.plot package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="emout"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">emout 0.4.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >emout</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">emout package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Nkzono99.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>
