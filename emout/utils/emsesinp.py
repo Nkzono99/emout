@@ -4,18 +4,53 @@ import f90nml
 
 
 class UnitConversionKey:
+    """単位変換キー.
+
+    Attributes
+    ----------
+    dx : float 
+        グリッド幅[m]
+    to_c : float
+        EMSES単位系での光速の値
+    """
+
     def __init__(self, dx, to_c):
+        """単位変換キーを生成する.
+
+        Parameters
+        ----------
+        dx : float 
+            グリッド幅[m]
+        to_c : float
+            EMSES単位系での光速の値
+        """
         self.dx = dx
         self.to_c = to_c
 
     @classmethod
     def load(cls, filename):
+        """ファイルから単位変換キーをロードする.
+
+        ファイルの一行目に以下のような文字列が書かれている場合dx, to_cを読み取る.
+        !!key dx=[1.0],to_c=[10000.0]
+
+        Parameters
+        ----------
+        filename : str or Path
+            単位変換キーを含むファイル.
+
+        Returns
+        -------
+        UnitConversionKey or None
+            単位変換キー
+        """
         with open(filename, 'r', encoding='utf-8') as f:
             line = f.readline()
 
-        if not line.startswith('!!'):
+        if not line.startswith('!!key'):
             return None
 
+        # !!key dx=[1.0],to_c=[10000.0]
         text = line[6:].strip()
         pattern = r'dx=\[([+-]?\d+(?:\.\d+)?)\],to_c=\[([+-]?\d+(?:\.\d+)?)\]'
         m = re.match(pattern, text)
@@ -25,10 +60,23 @@ class UnitConversionKey:
 
     @property
     def keytext(self):
+        """単位変換キーの文字列を返す.
+
+        Returns
+        -------
+        str
+            単位変換キーの文字列
+        """
         return 'dx=[{}],to_c=[{}]'.format(self.dx, self.to_c)
 
 
-class Plasmainp:
+class InpFile:
+    """パラメータファイルを管理する.
+
+    nml : f90nml.Namelist
+        Namelistオブジェクト
+    """
+
     def __init__(self, filename):
         self.nml = f90nml.read(filename)
 
@@ -42,6 +90,15 @@ class Plasmainp:
         raise KeyError()
 
     def remove(self, key, index=None):
+        """パラメータを削除する.
+
+        Parameters
+        ----------
+        key : str
+            グループ名(&groupname)またはパラメータ名(parameter)
+        index : int, optional
+            特定のインデックスのみ削除する場合指定する, by default None
+        """
         if key in self.nml.keys():
             del self.nml[key]
         else:
@@ -67,6 +124,19 @@ class Plasmainp:
                     return
 
     def setlist(self, group, name, value, start_index=1):
+        """リスト型のパラメータを設定する.
+
+        Parameters
+        ----------
+        group : str
+            グループ名(&groupname)
+        name : str
+            パラメータ名(parameter)
+        value : type or list(type)
+            設定する値
+        start_index : int, optional
+            設定するインデックス, by default 1
+        """
         if not isinstance(value, list):
             value = [value]
 
@@ -92,7 +162,22 @@ class Plasmainp:
             self.nml[group][name] = value
 
     def save(self, filename, convkey=None):
+        """パラメータをファイルに保存する.
+
+        Parameters
+        ----------
+        filename : str or Path
+            保存するファイル名
+        convkey : UnitConversionKey, optional
+            単位変換キー, by default None
+        """
         with open(filename, 'wt', encoding='utf-8') as f:
             if convkey is not None:
                 f.write('!!key {}\n'.format(convkey.keytext))
             f90nml.write(self.nml, f, force=True)
+
+    def __str__(self):
+        return str(self.nml)
+
+    def __repr__(self):
+        return str(self)

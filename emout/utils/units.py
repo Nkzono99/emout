@@ -2,23 +2,86 @@ import inspect
 
 
 class UnitTranslator:
+    """単位変換器.
+
+    Attributes
+    ----------
+    from_unit : float
+        変換前の値
+    to_unit : float
+        変換後の値
+    ratio : float
+        変換係数 (変換後 = 変換係数 * 変換前)
+    name : str
+        単位の名前
+    """
+
     def __init__(self, from_unit, to_unit, name="None"):
+        """単位変換器を生成する.
+
+        Parameters
+        ----------
+        from_unit : float
+            変換前の値
+        to_unit : float
+            変換後の値
+        name : str
+            単位の名前, by default "None"
+        """
         self.from_unit = from_unit
         self.to_unit = to_unit
         self.ratio = to_unit / from_unit
         self.name = name
 
     def set_name(self, name):
+        """名前を設定する.
+
+        Parameters
+        ----------
+        name : str
+            名前
+
+        Returns
+        -------
+        UnitTranslator
+            self
+        """
         self.name = name
         return self
 
     def trans(self, value, reverse=False):
+        """単位変換を行う.
+
+        Parameters
+        ----------
+        value : float
+            変換前の値(reverse=Trueの場合変換後の値)
+        reverse : bool, optional
+            逆変換を行う場合True, by default False
+
+        Returns
+        -------
+        float
+            変換後の値(reverse=Trueの場合変換前の値)
+        """
         if reverse:
             return value / self.ratio
         else:
             return value * self.ratio
 
     def reverse(self, value):
+        """単位逆変換を行う.
+
+        Parameters
+        ----------
+        value : float
+            変換後の値
+
+        Returns
+        -------
+        float
+            変換前の値
+        """
         return self.trans(value, reverse=True)
 
     def __mul__(self, other):
@@ -52,9 +115,100 @@ class UnitTranslator:
 
 
 class Units:
-    def __init__(self,
-                 dx=0.001,
-                 to_c=10000):
+    """EMSES用の単位変換器を管理する.
+
+    SI単位系からEMSES単位系への変換を行う.
+
+    Attributes
+    ----------
+    dx : float
+        Grid length [m]
+    to_c : float
+        Light Speed in EMSES
+    pi : UnitTranslator
+        Circular constant
+    e : UnitTranslator
+        Napiers constant
+    c : UnitTranslator
+        Light Speed
+    e0 : UnitTranslator
+        Velocity
+    m0 : UnitTranslator
+        FS-Permeablity
+    qe : UnitTranslator
+        Elementary charge
+    me : UnitTranslator
+        Electron mass
+    mi : UnitTranslator
+        Proton mass
+    qe_me : UnitTranslator
+        Electron charge-to-mass ratio
+    kB : UnitTranslator
+        Boltzmann constant
+    length : UnitTranslator
+        Sim-to-Real length ratio
+    m : UnitTranslator
+        Mass
+    t : UnitTranslator
+        Time
+    f : UnitTranslator
+        Frequency
+    v : UnitTranslator
+        Velocity
+    n : UnitTranslator
+        Number density
+    N : UnitTranslator
+        Flux
+    F : UnitTranslator
+        Force
+    P : UnitTranslator
+        Power
+    W : UnitTranslator
+        Energy
+    w : UnitTranslator]
+        Energy density
+    eps : UnitTranslator
+        Permittivity
+    q : UnitTranslator
+        Charge
+    rho : UnitTranslator
+        Charge density
+    q_m : UnitTranslator
+        Charge-to-mass ratio
+    i : UnitTranslator
+        Current
+    J : UnitTranslator
+        Current density
+    phi : UnitTranslator
+        Potential
+    E : UnitTranslator
+        Electric field
+    C : UnitTranslator
+        Capacitance
+    R : UnitTranslator
+        Resistance
+    G : UnitTranslator
+        Conductance
+    mu : UnitTranslator
+        Permiability
+    B : UnitTranslator
+        Magnetic flux density
+    L : UnitTranslator
+        Inductance
+    T : UnitTranslator
+        Temperature
+    """
+
+    def __init__(self, dx, to_c):
+        """EMSES用の単位変換器を生成する.
+
+        Parameters
+        ----------
+        dx : float, optional 
+            Grid length [m]
+        to_c : float
+            Light Speed in EMSES
+        """
         self.dx = dx
         self.to_c = to_c
         from_c = 299792458
@@ -151,8 +305,16 @@ class Units:
         self.B = B
         self.L = L
         self.T = T
-    
+
     @property
     def translators(self):
-        translators = inspect.getmembers(self, lambda x: isinstance(x, UnitTranslator))
+        """変換器のリストを返す.
+
+        Returns
+        -------
+        list(UnitTranslator)
+            変換器のリスト
+        """
+        translators = inspect.getmembers(
+            self, lambda x: isinstance(x, UnitTranslator))
         return list(map(lambda x: x[1], translators))
