@@ -2,54 +2,8 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from emout.data import GridData
-
-
-def plot_2dmap(data2d,
-               mesh=None,
-               savefilename=None,
-               cmap=cm.coolwarm,
-               vmin=None,
-               vmax=None,
-               figsize=None,
-               xlabel=None,
-               ylabel=None,
-               interpolation='bilinear',
-               dpi=10):
-    if savefilename is not None:
-        if figsize is None:
-            px = 1/plt.rcParams['figure.dpi'] * dpi
-            figsize = (data2d.shape[1]*px, data2d.shape[0]*px)
-        fig = plt.figure(figsize=figsize)
-
-    if mesh is None:
-        x = list(range(data2d.shape[1]))
-        y = list(range(data2d.shape[0]))
-        mesh = np.meshgrid(x, y)
-
-    extent = [mesh[0][0, 0], mesh[0][-1, -1],
-              mesh[1][0, 0], mesh[1][-1, -1]]
-    plt.imshow(data2d,
-               interpolation=interpolation,
-               cmap=cmap,
-               origin='lower',
-               vmin=vmin,
-               vmax=vmax,
-               extent=extent)
-
-    if hasattr(data2d, 'name'):
-        plt.title(data2d.name)
-
-    plt.colorbar()
-
-    if xlabel is not None:
-        plt.xlabel(xlabel)
-    if ylabel is not None:
-        plt.ylabel(ylabel)
-
-    if savefilename is not None:
-        fig.savefig(savefilename)
-        plt.close(fig)
+from emout import GridData
+from emout.plot import plot_2dmap, plot_line
 
 
 def plot_xy(data3d, z, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=None, figsize=None):
@@ -113,27 +67,6 @@ def plot_xz(data3d, y, savefilename=None, cmap=cm.coolwarm,  vmin=None, vmax=Non
                figsize=figsize,
                xlabel='x',
                ylabel='z')
-
-
-def plot_line(data1d, x=None, savefilename=None, vmin=None, vmax=None, figsize=None, xlabel=None, ylabel=None):
-    if savefilename is not None:
-        fig = plt.figure(figsize=figsize)
-
-    name = data2d.name if hasattr(data2d, 'name') else None
-
-    if x is None:
-        plt.plot(data1d, label=name)
-    else:
-        plt.plot(x, data1d, label=name)
-
-    if xlabel is not None:
-        plt.xlabel(xlabel)
-    if ylabel is not None:
-        plt.ylabel(ylabel)
-
-    if savefilename is not None:
-        fig.savefig(savefilename)
-        plt.close(fig)
 
 
 def plot_xline(data3d, y, z, savefilename=None, vmin=None, vmax=None, figsize=None):
