@@ -1,5 +1,8 @@
+import copy
+
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+from matplotlib.colors import Colormap
 import numpy as np
 
 
@@ -27,6 +30,7 @@ def plot_2dmap(data2d,
                mesh=None,
                savefilename=None,
                cmap=cm.coolwarm,
+               mask_color='gray',
                vmin=None,
                vmax=None,
                figsize=None,
@@ -47,6 +51,8 @@ def plot_2dmap(data2d,
         保存するファイル名(Noneの場合保存しない), by default None
     cmap : matplotlib.Colormap or str or None, optional
         カラーマップ, by default cm.coolwarm
+    mask_color : str
+        マスクされた位置の色, by default 'gray'
     vmin : float, optional
         最小値, by default None
     vmax : float, optional
@@ -73,6 +79,13 @@ def plot_2dmap(data2d,
         x = list(range(data2d.shape[1]))
         y = list(range(data2d.shape[0]))
         mesh = np.meshgrid(x, y)
+    
+    if cmap is not None:
+        if isinstance(cmap, str):
+            cmap = copy.copy(cm.get_cmap(str(cmap)))
+        else:
+            cmap = copy.copy(cmap)
+        cmap.set_bad(color=mask_color)
 
     extent = [mesh[0][0, 0], mesh[0][-1, -1],
               mesh[1][0, 0], mesh[1][-1, -1]]
