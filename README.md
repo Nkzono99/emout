@@ -1,6 +1,8 @@
 # emout
 EMSESの出力ファイルを取り扱うパッケージ
 
+* Documentation: https://nkzono99.github.io/emout/
+
 ## Requirement
 * numpy
 * h5py
