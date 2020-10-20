@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 
 import emout.plot as emplt
@@ -350,6 +351,32 @@ class SlicedData(Data):
         ----------
         axes : str, optional
             プロットする軸('xy', 'zx', etc), by default 'auto'
+        show : bool
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+        data2d : numpy.ndarray
+            2次元データ
+        mesh : (numpy.ndarray, numpy.ndarray), optional
+            メッシュ, by default None
+        savefilename : str, optional
+            保存するファイル名(Noneの場合保存しない), by default None
+        cmap : matplotlib.Colormap or str or None, optional
+            カラーマップ, by default cm.coolwarm
+        vmin : float, optional
+            最小値, by default None
+        vmax : float, optional
+            最大値, by default None
+        figsize : (float, float), optional
+            図のサイズ, by default None
+        xlabel : str, optional
+            x軸のラベル, by default None
+        ylabel : str, optional
+            y軸のラベル, by default None
+        title : str, optional
+            タイトル, by default None
+        interpolation : str, optional
+            用いる補間方法, by default 'bilinear'
+        dpi : int, optional
+            解像度(figsizeが指定された場合は無視される), by default 10
 
         Raises
         ------
@@ -399,6 +426,27 @@ class LineData(Data):
 
     def plot(self, show=False, **kwargs):
         """1次元データをプロットする.
+
+        Parameters
+        ----------
+        show : bool
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+        savefilename : str, optional
+            保存するファイル名, by default None
+        vmin : float, optional
+            最小値, by default None
+        vmax : float, optional
+            最大値, by default None
+        figsize : (float, float), optional
+            図のサイズ, by default None
+        xlabel : str, optional
+            横軸のラベル, by default None
+        ylabel : str, optional
+            縦軸のラベル, by default None
+        label : str, optional
+            ラベル, by default None
+        title : str, optional
+            タイトル, by default None
 
         Raises
         ------
