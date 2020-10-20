@@ -14,7 +14,7 @@ def plot_2dmap(data2d,
                figsize=None,
                xlabel=None,
                ylabel=None,
-               nintrp=5,
+               interpolation='bilinear',
                dpi=10):
     if savefilename is not None:
         if figsize is None:
@@ -30,7 +30,7 @@ def plot_2dmap(data2d,
     extent = [mesh[0][0, 0], mesh[0][-1, -1],
               mesh[1][0, 0], mesh[1][-1, -1]]
     plt.imshow(data2d,
-               interpolation='bilinear',
+               interpolation=interpolation,
                cmap=cmap,
                origin='lower',
                vmin=vmin,
