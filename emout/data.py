@@ -4,6 +4,9 @@ import h5py
 import numpy as np
 
 from emout.utils import Units, Plasmainp, UnitConversionKey
+import emout.plot as emplt
+import emout.utils as utils
+import re
 
 
 class Emout:
@@ -21,14 +24,14 @@ class Emout:
             convkey = UnitConversionKey.load(directory / inpfilename)
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
-    
+
     @property
     def inp(self):
         try:
             return self._inp
         except AttributeError:
             return None
-    
+
     @property
     def unit(self):
         try:
@@ -74,7 +77,7 @@ class GridDataSeries:
         return len(self.index2key)
 
 
-class GridData(np.ndarray):
+class Data(np.ndarray):
     def __new__(cls, input_array, name=None, xslice=None, yslice=None, zslice=None, slice_axes=None):
         obj = np.asarray(input_array).view(cls)
         obj.name = name
@@ -85,9 +88,10 @@ class GridData(np.ndarray):
             yslice = slice(0, obj.shape[1], 1)
         if zslice is None:
             zslice = slice(0, obj.shape[0], 1)
-        obj.slices = [zslice, yslice, xslice]
         if slice_axes is None:
             slice_axes = [0, 1, 2]
+
+        obj.slices = [zslice, yslice, xslice]
         obj.slice_axes = slice_axes
 
         return obj
@@ -98,10 +102,40 @@ class GridData(np.ndarray):
 
         new_obj = super().__getitem__(item)
 
-        if isinstance(new_obj, GridData):
-            self.__add_slices(new_obj, item)
+        if not isinstance(new_obj, Data):
+            return new_obj
 
-        return new_obj
+        self.__add_slices(new_obj, item)
+
+        if len(new_obj.shape) == 1:
+            if isinstance(new_obj, LineData):
+                return new_obj
+            return LineData(new_obj,
+                            name=new_obj.name,
+                            xslice=new_obj.xslice,
+                            yslice=new_obj.yslice,
+                            zslice=new_obj.zslice,
+                            slice_axes=new_obj.slice_axes)
+        elif len(new_obj.shape) == 2:
+            if isinstance(new_obj, SlicedData):
+                return new_obj
+            return SlicedData(new_obj,
+                              name=new_obj.name,
+                              xslice=new_obj.xslice,
+                              yslice=new_obj.yslice,
+                              zslice=new_obj.zslice,
+                              slice_axes=new_obj.slice_axes)
+        elif len(new_obj.shape) == 3:
+            if isinstance(new_obj, GridData):
+                return new_obj
+            return GridData(new_obj,
+                            name=new_obj.name,
+                            xslice=new_obj.xslice,
+                            yslice=new_obj.yslice,
+                            zslice=new_obj.zslice,
+                            slice_axes=new_obj.slice_axes)
+        else:
+            return new_obj
 
     def __add_slices(self, new_obj, item):
         slices = [*self.slices]
@@ -151,14 +185,85 @@ class GridData(np.ndarray):
         self.slices = getattr(obj, 'slices', None)
         self.slice_axes = getattr(obj, 'slice_axes', None)
 
-    @property
+    @ property
     def xslice(self):
         return self.slices[2]
 
-    @property
+    @ property
     def yslice(self):
         return self.slices[1]
 
-    @property
+    @ property
     def zslice(self):
         return self.slices[0]
+
+    @ property
+    def use_axes(self):
+        to_axis = {2: 'x', 1: 'y', 0: 'z'}
+        return list(map(lambda a: to_axis[a], self.slice_axes))
+
+    def plot(self, **kwargs):
+        raise NotImplementedError()
+
+
+class GridData(Data):
+    def plot(mode='auto', x=None, y=None, z=None, **kwargs):
+        if mode == 'auto':
+            mode = ''.join(sorted(self.use_axes))
+        pass
+
+
+class SlicedData(Data):
+    def plot(self, mode='auto', **kwargs):
+        if mode == 'auto':
+            mode = ''.join(sorted(self.use_axes))
+
+        if not re.match(r'x[yz]|y[xz]|z[xy]', mode):
+            raise Exception(
+                'Error: mode "{mode}" cannot be used with SlicedData'.format(mode=mode))
+        if mode[0] not in self.use_axes or mode[1] not in self.use_axes:
+            raise Exception(
+                'Error: mode "{mode}" cannot be used because {mode}-axis does not exist in this data.'.format(mode=mode))
+        if len(self.shape) != 2:
+            raise Exception(
+                'Error: mode "{mode}" cannot be used because data is not 2dim shape.'.format(mode=mode))
+
+        # x: 2, y: 1, z:0
+        axis1 = self.slice_axes[self.use_axes.index(mode[0])]
+        axis2 = self.slice_axes[self.use_axes.index(mode[1])]
+        x = np.arange(*utils.slice2tuple(self.slices[axis1]))
+        y = np.arange(*utils.slice2tuple(self.slices[axis2]))
+
+        kwargs['xlabel'] = kwargs.get('xlabel', None) or mode[0]
+        kwargs['ylabel'] = kwargs.get('ylabel', None) or mode[1]
+        kwargs['title'] = kwargs.get('title', None) or self.name
+
+        mesh = np.meshgrid(x, y)
+        if axis1 > axis2:
+            emplt.plot_2dmap(self, mesh=mesh, **kwargs)
+        else:
+            emplt.plot_2dmap(self.T, mesh=mesh, **kwargs)
+
+
+class LineData(Data):
+    def plot(self, mode='auto', **kwargs):
+        if mode == 'auto':
+            mode = ''.join(sorted(self.use_axes))
+
+        if not re.match(r'[xyz]', mode):
+            raise Exception(
+                'Error: mode "{mode}" cannot be used with LineData'.format(mode=mode))
+        if mode not in self.use_axes:
+            raise Exception(
+                'Error: mode "{mode}" cannot be used because {mode}-axis does not exist in this data.'.format(mode=mode))
+        if len(self.shape) != 1:
+            raise Exception(
+                'Error: mode "{mode}" cannot be used because data is not 1dim shape.'.format(mode=mode))
+
+        axis = self.slice_axes[0]
+        horizon_data = np.arange(*utils.slice2tuple(self.slices[axis]))
+
+        kwargs['xlabel'] = kwargs.get('xlabel', None) or mode
+        kwargs['ylabel'] = kwargs.get('ylabel', None) or self.name
+
+        emplt.plot_line(self, x=horizon_data, **kwargs)
