@@ -1,1 +1,1 @@
-from emout.plot.basic_plot import *
+from .basic_plot import *
