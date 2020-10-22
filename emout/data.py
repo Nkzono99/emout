@@ -22,7 +22,7 @@ class Emout:
     """
 
     def __init__(self, directory='./', inpfilename='plasma.inp'):
-        """[summary]
+        """EMSES出力・inpファイルを管理するオブジェクトを生成する.
 
         Parameters
         ----------
@@ -74,11 +74,66 @@ class Emout:
             return None
 
 
+class DataFileInfo:
+    """データファイル情報を管理するクラス.
+    """
+
+    def __init__(self, filename):
+        """データファイル情報を管理するオブジェクトを生成する.
+
+        Parameters
+        ----------
+        filename : str or Path
+            ファイル名
+        """
+        if not isinstance(filename, Path):
+            filename = Path(filename)
+        self._filename = filename
+
+    @property
+    def filename(self):
+        """ファイル名を返す.
+
+        Returns
+        -------
+        Path
+            ファイル名
+        """
+        return self._filename
+
+    @property
+    def directory(self):
+        """ディレクトリの絶対パスを返す.
+
+        Returns
+        -------
+        Path
+            ディレクトリの絶対パス
+        """
+        return (self._filename / '../').resolve()
+
+    @property
+    def abspath(self):
+        """ファイルの絶対パスを返す.
+
+        Returns
+        -------
+        Path
+            ファイルの絶対パス
+        """
+        return self._filename.resolve()
+
+    def __str__(self):
+        return str(self._filename)
+
+
 class GridDataSeries:
     """3次元時系列データを管理する.
 
     Attributes
     ----------
+    datafile : DataFileInfo
+        データファイル情報
     h5 : h5py.File
         hdf5ファイルオブジェクト
     group : h5py.Datasets
@@ -88,6 +143,16 @@ class GridDataSeries:
     """
 
     def __init__(self, filename, name):
+        """3次元時系列データを生成する.
+
+        Parameters
+        ----------
+        filename : str or Path
+            ファイル名
+        name : str
+            データの名前
+        """
+        self.datafile = DataFileInfo(filename)
         self.h5 = h5py.File(str(filename), 'r')
         self.group = self.h5[list(self.h5.keys())[0]]
         self._index2key = {int(key): key for key in self.group.keys()}
@@ -123,14 +188,37 @@ class GridDataSeries:
             series.append(self.group[key][z, y, x])
         return np.array(series)
 
+    @property
+    def filename(self):
+        """ファイル名を返す.
+
+        Returns
+        -------
+        Path
+            ファイル名
+        """
+        return self.datafile._filename
+
+    @property
+    def directory(self):
+        """ディレクトリ名を返す.
+
+        Returns
+        -------
+        Path
+            ディレクトリ名
+        """
+        return self.datafile.directory
+
     def __getitem__(self, index):
         if not isinstance(index, int):
             raise TypeError()
         if index not in self._index2key:
             raise IndexError()
+
         key = self._index2key[index]
         name = "{} {}".format(self.name, index)
-        return GridData(np.array(self.group[key]), name=name)
+        return GridData(np.array(self.group[key]), filename=self.filename, name=name)
 
     def __iter__(self):
         indexes = sorted(self._index2key.keys())
@@ -146,6 +234,8 @@ class Data(np.ndarray):
 
     Attributes
     ----------
+    datafile : DataFileInfo
+        データファイル情報
     name : str
         データ名
     slices : list(slice)
@@ -153,8 +243,9 @@ class Data(np.ndarray):
     slice_axes : list(int)
         データ軸がxyzのどの方向に対応しているか表すリスト(0: z, 1: y, 2: x)
     """
-    def __new__(cls, input_array, name=None, xslice=None, yslice=None, zslice=None, slice_axes=None):
+    def __new__(cls, input_array, filename=None, name=None, xslice=None, yslice=None, zslice=None, slice_axes=None):
         obj = np.asarray(input_array).view(cls)
+        obj.datafile = DataFileInfo(filename)
         obj.name = name
 
         if xslice is None:
@@ -182,33 +273,27 @@ class Data(np.ndarray):
 
         self.__add_slices(new_obj, item)
 
+        params = {
+            'datafile': new_obj.datafile,
+            'name': new_obj.name,
+            'xslice': new_obj.xslice,
+            'yslice': new_obj.yslice,
+            'zslice': new_obj.zslice,
+            'slice_axes': new_obj.slice_axes
+        }
+
         if len(new_obj.shape) == 1:
             if isinstance(new_obj, LineData):
                 return new_obj
-            return LineData(new_obj,
-                            name=new_obj.name,
-                            xslice=new_obj.xslice,
-                            yslice=new_obj.yslice,
-                            zslice=new_obj.zslice,
-                            slice_axes=new_obj.slice_axes)
+            return LineData(new_obj, **params)
         elif len(new_obj.shape) == 2:
             if isinstance(new_obj, SlicedData):
                 return new_obj
-            return SlicedData(new_obj,
-                              name=new_obj.name,
-                              xslice=new_obj.xslice,
-                              yslice=new_obj.yslice,
-                              zslice=new_obj.zslice,
-                              slice_axes=new_obj.slice_axes)
+            return SlicedData(new_obj, **params)
         elif len(new_obj.shape) == 3:
             if isinstance(new_obj, GridData):
                 return new_obj
-            return GridData(new_obj,
-                            name=new_obj.name,
-                            xslice=new_obj.xslice,
-                            yslice=new_obj.yslice,
-                            zslice=new_obj.zslice,
-                            slice_axes=new_obj.slice_axes)
+            return GridData(new_obj, **params)
         else:
             return new_obj
 
@@ -265,9 +350,32 @@ class Data(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
+        self.datafile = getattr(obj, 'datafile', None)
         self.name = getattr(obj, 'name', None)
         self.slices = getattr(obj, 'slices', None)
         self.slice_axes = getattr(obj, 'slice_axes', None)
+
+    @property
+    def filename(self):
+        """ファイル名を返す.
+
+        Returns
+        -------
+        Path
+            ファイル名.
+        """
+        return self.datafile.filename
+
+    @property
+    def directory(self):
+        """ディレクトリ名を返す
+
+        Returns
+        -------
+        Path
+            ディレクトリ名
+        """
+        return self.datafile.directory
 
     @ property
     def xslice(self):
