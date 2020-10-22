@@ -11,6 +11,10 @@ EMSESの出力ファイルを取り扱うパッケージ
 
 ## Installation
 ```
+> pip install emout
+
+or
+
 > pip install git+https://github.com/Nkzono99/emout.git
 ```
 
