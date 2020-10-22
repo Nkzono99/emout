@@ -12,6 +12,14 @@ emout.utils.emsesinp module
    :undoc-members:
    :show-inheritance:
 
+emout.utils.group module
+------------------------
+
+.. automodule:: emout.utils.group
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 emout.utils.units module
 ------------------------
 
