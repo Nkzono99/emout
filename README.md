@@ -66,3 +66,28 @@ EMSESの出力ファイルを取り扱うパッケージ
 >>> data.unit.v.reverse(1)  # velocity: EMSES unit to Physical unit
 29979.2458
 ```
+
+### データマスクを適用する
+```
+>>> # mask below average values
+>>> data.phisp[1].masked(lambda phi: phi < phi.mean())
+>>>
+>>> # above code does the same as this code
+>>> phi = data.phisp[1].copy()
+>>> phi[phi < phi.mean()] = np.nan
+```
+
+### グループ化する
+```
+>>> from emout.utils import Group
+>>> data1 = emout.Emout('output_dir1')
+>>> data2 = emout.Emout('output_dir2')
+>>>
+>>> # grouping
+>>> group = Group([data1, data2])
+>>> group.phisp[10][100, :, :].plot(show=True)
+>>>
+>>> # above code does the same as this code
+>>> data1.phisp[10][100, :, :].plot(show=True)
+>>> data2.phisp[10][100, :, :].plot(show=True)
+```
