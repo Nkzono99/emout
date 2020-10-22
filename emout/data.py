@@ -274,7 +274,7 @@ class Data(np.ndarray):
         self.__add_slices(new_obj, item)
 
         params = {
-            'datafile': new_obj.datafile,
+            'filename': new_obj.filename,
             'name': new_obj.name,
             'xslice': new_obj.xslice,
             'yslice': new_obj.yslice,
@@ -461,7 +461,6 @@ class GridData(Data):
         """
         if mode == 'auto':
             mode = ''.join(sorted(self.use_axes))
-        pass
 
 
 class SlicedData(Data):
