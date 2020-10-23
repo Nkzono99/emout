@@ -79,7 +79,7 @@ def plot_2dmap(data2d,
         x = list(range(data2d.shape[1]))
         y = list(range(data2d.shape[0]))
         mesh = np.meshgrid(x, y)
-    
+
     if cmap is not None:
         if isinstance(cmap, str):
             cmap = copy.copy(cm.get_cmap(str(cmap)))
@@ -152,12 +152,14 @@ def plot_line(data1d,
         plt.plot(data1d, label=label)
     else:
         plt.plot(x, data1d, label=label)
+    plt.ylim([vmin, vmax])
 
+    if title is not None:
+        plt.title(title)
     if xlabel is not None:
         plt.xlabel(xlabel)
     if ylabel is not None:
         plt.ylabel(ylabel)
-    plt.ylim([vmin, vmax])
 
     if savefilename is not None:
         fig.savefig(savefilename)
