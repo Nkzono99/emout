@@ -132,3 +132,4 @@ dmypy.json
 .vscode/
 main.py
 !docs/build
+docs/.doctrees
