@@ -8,7 +8,7 @@ class Group:
     ----------
     objs : list[Any]
         オブジェクトのリスト
-    
+
     Notes
     -----
     以下の関数以外の組み込み関数は管理するオブジェクトに対して実行する.
@@ -22,7 +22,7 @@ class Group:
     Examples
     --------
     以下のように複数のオブジェクトをまとめて処理することができる.
-    
+
     >>> group = Group([[1, 2], [3, 4]])
     >>> print(group)
     Group([[1, 2], [3, 4]])
@@ -43,6 +43,61 @@ class Group:
         """
         self.__dict__ = dict()
         self.objs = objs
+
+    def __binary_operator(self, callable, other):
+        """グループに対して二項演算を行う.
+
+        Parameters
+        ----------
+        callable : Callable[[Any, Any], Any]
+            二項演算
+        other : Any or Group
+            対象(Groupの場合は管理するオブジェクトそれぞれに対して演算を適用する)
+
+        Returns
+        -------
+        Group
+            二項演算結果のグループ
+        """
+        if isinstance(other, Group):
+            others = other
+            new_objs = [callable(obj, other)
+                        for obj, other in zip(self.objs, others)]
+        else:
+            new_objs = [callable(obj, other) for obj in self.objs]
+        return Group(new_objs)
+
+    def __check_and_return_iterable(self, arg):
+        """対象がGroupオブジェクトか判定し、対象をself.objs長にブロードキャストする.
+
+        対象がGroupの場合:
+            サイズが一致するかどうか検証し、そのままの対象を返す.
+        対象がGroupでない場合:
+            対象を複製し、self.objs長のリストにして返す.
+
+        Parameters
+        ----------
+        arg : Any or Group
+            チェックする対象
+
+        Returns
+        -------
+        iterable (Group or list)
+            self.objs長のイテラブルオブジェクト
+
+        Raises
+        ------
+        Exception
+            対象がGroupオブジェクトかつそのサイズが一致しない場合の例外
+        """
+        if isinstance(arg, Group):
+            if len(self) != len(arg):
+                raise Exception(
+                    'Error: group size is not match (self:{}, arg:{})'.format(len(self), len(arg)))
+            args = arg
+        else:
+            args = [arg] * len(self.objs)
+        return args
 
     def map(self, callable):
         """すべてのオブジェクトに対して関数を適用し、新しいグループを生成する.
@@ -95,7 +150,7 @@ class Group:
         ----------
         callable : Callable[Any, ]
             適用する関数
-        
+
         Examples
         --------
         >>> group = Group([1, 2, 3])
@@ -132,64 +187,64 @@ class Group:
         return self.map(lambda obj: -obj)
 
     def __add__(self, other):
-        return self.map(lambda obj: obj + other)
+        return self.__binary_operator(lambda obj, other: obj + other, other)
 
     def __sub__(self, other):
-        return self.map(lambda obj: obj - other)
+        return self.__binary_operator(lambda obj, other: obj - other, other)
 
     def __mul__(self, other):
-        return self.map(lambda obj: obj * other)
+        return self.__binary_operator(lambda obj, other: obj * other, other)
 
     def __truediv__(self, other):
-        return self.map(lambda obj: obj / other)
+        return self.__binary_operator(lambda obj, other: obj / other, other)
 
     def __floordiv__(self, other):
-        return self.map(lambda obj: obj // other)
+        return self.__binary_operator(lambda obj, other: obj // other, other)
 
     def __mod__(self, other):
-        return self.map(lambda obj: obj % other)
+        return self.__binary_operator(lambda obj, other: obj % other, other)
 
     def __divmod__(self, other):
-        return self.map(lambda obj: divmod(obj, other))
+        return self.__binary_operator(lambda obj, other: divmod(obj, other), other)
 
     def __pow__(self, other):
-        return self.map(lambda obj: obj ** other)
+        return self.__binary_operator(lambda obj, other: obj ** other, other)
 
     def __lshift__(self, other):
-        return self.map(lambda obj: obj << other)
+        return self.__binary_operator(lambda obj, other: obj << other, other)
 
     def __rshift__(self, other):
-        return self.map(lambda obj: obj >> other)
+        return self.__binary_operator(lambda obj, other: obj >> other, other)
 
     def __and__(self, other):
-        return self.map(lambda obj: obj & other)
+        return self.__binary_operator(lambda obj, other: obj & other, other)
 
     def __or__(self, other):
-        return self.map(lambda obj: obj | other)
+        return self.__binary_operator(lambda obj, other: obj | other, other)
 
     def __xor__(self, other):
-        return self.map(lambda obj: obj ^ other)
+        return self.__binary_operator(lambda obj, other: obj ^ other, other)
 
     def __abs__(self):
         return self.map(abs)
 
     def __eq__(self, other):
-        return self.map(lambda obj: obj == other)
+        return self.__binary_operator(lambda obj, other: obj == other, other)
 
     def __ne__(self, other):
-        return self.map(lambda obj: obj != other)
+        return self.__binary_operator(lambda obj, other: obj != other, other)
 
     def __le__(self, other):
-        return self.map(lambda obj: obj <= other)
+        return self.__binary_operator(lambda obj, other: obj <= other, other)
 
     def __ge__(self, other):
-        return self.map(lambda obj: obj >= other)
+        return self.__binary_operator(lambda obj, other: obj >= other, other)
 
     def __lt__(self, other):
-        return self.map(lambda obj: obj < other)
+        return self.__binary_operator(lambda obj, other: obj < other, other)
 
     def __gt__(self, other):
-        return self.map(lambda obj: obj > other)
+        return self.__binary_operator(lambda obj, other: obj > other, other)
 
     def __int__(self):
         return self.map(int)
@@ -210,29 +265,59 @@ class Group:
         return self.map(hash)
 
     def __getitem__(self, key):
-        return self.map(lambda obj: obj[key])
+        keys = self.__check_and_return_iterable(key)
+
+        new_objs = [obj[key] for obj, key in zip(self.objs, keys)]
+
+        return Group(new_objs)
 
     def __setitem__(self, key, value):
-        for obj in self.objs:
+        keys = self.__check_and_return_iterable(key)
+        values = self.__check_and_return_iterable(value)
+
+        for obj, key, value in zip(self.objs, keys, values):
             obj[key] = value
 
     def __delitem__(self, key):
-        def _func(obj):
+        keys = self.__check_and_return_iterable(key)
+
+        for obj, key in zip(self.objs, keys):
             del obj[key]
-        self.foreach(_func)
 
     def __getattr__(self, key):
-        return self.map(lambda obj: getattr(obj, key))
+        keys = self.__check_and_return_iterable(key)
+        new_objs = [getattr(obj, key) for obj, key in zip(self.objs, keys)]
+        return Group(new_objs)
 
     def __setattr__(self, key, value):
         if key in ('objs', '__dict__'):
             self.__dict__[key] = value
             return
-        for obj in self.objs:
+
+        keys = self.__check_and_return_iterable(key)
+        values = self.__check_and_return_iterable(value)
+
+        for obj, key, value in zip(self.objs, keys, values):
             setattr(obj, key, value)
 
     def __call__(self, *args, **kwargs):
-        return self.map(lambda obj: obj(*args, **kwargs))
+        new_argss = [list() for i in range(len(self.objs))]
+        for arg in args:
+            arg = self.__check_and_return_iterable(arg)
+            for i, a in enumerate(arg):
+                new_argss[i].append(a)
+
+        new_kwargss = [dict() for i in range(len(self.objs))]
+        for key, value in kwargs.items():
+            keys = self.__check_and_return_iterable(key)
+            values = self.__check_and_return_iterable(value)
+            for i, (key, value) in enumerate(zip(keys, values)):
+                new_kwargss[i][key] = value
+
+        new_objs = [obj(*new_args, **new_kwargs)
+                    for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)]
+
+        return Group(new_objs)
 
     def __round__(self):
         return self.map(math.round)
