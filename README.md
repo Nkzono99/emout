@@ -89,9 +89,9 @@ or
 >>>
 >>> # grouping
 >>> group = Group([data1, data2])
->>> group.phisp[10][100, :, :].plot(show=True)
+>>> group.phisp[10][100, :, :].plot(show=True, title=group.directory.name)
 >>>
 >>> # above code does the same as this code
->>> data1.phisp[10][100, :, :].plot(show=True)
->>> data2.phisp[10][100, :, :].plot(show=True)
+>>> data1.phisp[10][100, :, :].plot(show=True, title=data1.directory.name)
+>>> data2.phisp[10][100, :, :].plot(show=True, title=data2.directory.name)
 ```
