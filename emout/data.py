@@ -154,6 +154,23 @@ class GridDataSeries:
         return self.datafile.directory
 
     def __create_data_with_index(self, index):
+        """時間が指定された場合に、その時間におけるData3dを生成する.
+
+        Parameters
+        ----------
+        index : int
+            時間インデックス
+
+        Returns
+        -------
+        Data3d
+            生成したData3d
+
+        Raises
+        ------
+        IndexError
+            指定した時間が存在しない場合の例外
+        """
         if index not in self._index2key:
             raise IndexError()
 
@@ -164,6 +181,20 @@ class GridDataSeries:
                       name=name)
 
     def __create_data_with_indexes(self, indexes, tslice=None):
+        """時間が範囲で指定された場合に、Data4dを生成する.
+
+        Parameters
+        ----------
+        indexes : list
+            時間インデックスのリスト
+        tslice : slice, optional
+            時間インデックスの範囲, by default None
+
+        Returns
+        -------
+        Data4d
+            生成したData4d
+        """
         if tslice is not None:
             start = tslice.start or 0
             stop = tslice.stop or len(self)
@@ -180,6 +211,23 @@ class GridDataSeries:
                       tslice=tslice)
 
     def __getitem__(self, item):
+        """時系列データをスライスしたものを返す.
+
+        Parameters
+        ----------
+        item : int or slice or list or tuple(int or slice or list)
+            tzxyインデックスの範囲
+
+        Returns
+        -------
+        Data3d or Data4d
+            スライスされたデータ
+
+        Raises
+        ------
+        TypeError
+            itemのタイプが正しくない場合の例外
+        """
         # xyzの範囲も指定された場合
         if isinstance(item, tuple):
             xslice = item[1]
@@ -189,17 +237,17 @@ class GridDataSeries:
                 slices = (slice(None), *item[1:])
                 return self[item[0]][slices]
 
-        # tの範囲のみ指定された場合
-        if isinstance(item, int):
+        # 以下、tの範囲のみ指定された場合
+        if isinstance(item, int):  # tが一つだけ指定された場合
             if item < 0:
                 item = len(self) + item
             return self.__create_data_with_index(item)
 
-        elif isinstance(item, slice):
+        elif isinstance(item, slice):  # tがスライスで指定された場合
             indexes = list(utils.range_with_slice(item, maxlen=len(self)))
             return self.__create_data_with_indexes(indexes, tslice=item)
 
-        elif isinstance(item, list):
+        elif isinstance(item, list):  # tがリストで指定された場合
             return self.__create_data_with_indexes(item)
 
         else:
