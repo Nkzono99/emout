@@ -334,45 +334,87 @@
 
     <span class="k">def</span> <span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="o">-</span><span class="n">obj</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__invert__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="o">~</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">+</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__radd_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">+</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">-</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__rsub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">-</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">*</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">/</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rtruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">/</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">//</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rfloordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">//</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__mod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">%</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">%</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__divmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">),</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rdivmod__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">obj</span><span class="p">),</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">**</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rpow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">**</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__lshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">&lt;&lt;</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rlshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">&lt;&lt;</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__rshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">&gt;&gt;</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rrshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">&gt;&gt;</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__and__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">&amp;</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rand__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">&amp;</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">|</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__ror__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">|</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__xor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">obj</span> <span class="o">^</span> <span class="n">other</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="fm">__rxor__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__binary_operator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">other</span> <span class="o">^</span> <span class="n">obj</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">abs</span><span class="p">)</span>
@@ -479,6 +521,7 @@
 
     <span class="k">def</span> <span class="nf">__ceil__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>

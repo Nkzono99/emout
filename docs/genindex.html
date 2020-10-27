@@ -181,7 +181,7 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="emout.html#emout.data.DataFileInfo.abspath">abspath() (emout.data.DataFileInfo property)</a>
+      <li><a href="emout.utils.html#emout.utils.util.DataFileInfo.abspath">abspath() (emout.utils.util.DataFileInfo property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -213,26 +213,34 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="emout.html#emout.data.Data">Data (class in emout.data)</a>
 </li>
+      <li><a href="emout.html#emout.data.Data1d">Data1d (class in emout.data)</a>
+</li>
+      <li><a href="emout.html#emout.data.Data2d">Data2d (class in emout.data)</a>
+</li>
+      <li><a href="emout.html#emout.data.Data3d">Data3d (class in emout.data)</a>
+</li>
+      <li><a href="emout.html#emout.data.Data4d">Data4d (class in emout.data)</a>
+</li>
       <li><a href="emout.html#emout.data.Data.datafile">datafile (emout.data.Data attribute)</a>
 
       <ul>
         <li><a href="emout.html#emout.data.GridDataSeries.datafile">(emout.data.GridDataSeries attribute)</a>
 </li>
       </ul></li>
-      <li><a href="emout.html#emout.data.DataFileInfo">DataFileInfo (class in emout.data)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="emout.utils.html#emout.utils.util.DataFileInfo">DataFileInfo (class in emout.utils.util)</a>
 </li>
       <li><a href="emout.html#emout.data.Emout.dataname">dataname (emout.data.Emout attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="emout.html#emout.data.Emout.directory">directory (emout.data.Emout attribute)</a>
 </li>
       <li><a href="emout.html#emout.data.Data.directory">directory() (emout.data.Data property)</a>
 
       <ul>
-        <li><a href="emout.html#emout.data.DataFileInfo.directory">(emout.data.DataFileInfo property)</a>
-</li>
         <li><a href="emout.html#emout.data.GridDataSeries.directory">(emout.data.GridDataSeries property)</a>
+</li>
+        <li><a href="emout.utils.html#emout.utils.util.DataFileInfo.directory">(emout.utils.util.DataFileInfo property)</a>
 </li>
       </ul></li>
       <li><a href="emout.utils.html#emout.utils.emsesinp.UnitConversionKey.dx">dx (emout.utils.emsesinp.UnitConversionKey attribute)</a>
@@ -337,9 +345,9 @@
       <li><a href="emout.html#emout.data.Data.filename">filename() (emout.data.Data property)</a>
 
       <ul>
-        <li><a href="emout.html#emout.data.DataFileInfo.filename">(emout.data.DataFileInfo property)</a>
-</li>
         <li><a href="emout.html#emout.data.GridDataSeries.filename">(emout.data.GridDataSeries property)</a>
+</li>
+        <li><a href="emout.utils.html#emout.utils.util.DataFileInfo.filename">(emout.utils.util.DataFileInfo property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -358,12 +366,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="emout.utils.html#emout.utils.units.Units.G">G (emout.utils.units.Units attribute)</a>
 </li>
-      <li><a href="emout.html#emout.data.GridData">GridData (class in emout.data)</a>
+      <li><a href="emout.html#emout.data.GridDataSeries">GridDataSeries (class in emout.data)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="emout.html#emout.data.GridDataSeries">GridDataSeries (class in emout.data)</a>
-</li>
       <li><a href="emout.utils.html#emout.utils.group.Group">Group (class in emout.utils.group)</a>
 </li>
       <li><a href="emout.html#emout.data.GridDataSeries.group">group (emout.data.GridDataSeries attribute)</a>
@@ -418,11 +424,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="emout.utils.html#emout.utils.units.Units.L">L (emout.utils.units.Units attribute)</a>
 </li>
-      <li><a href="emout.utils.html#emout.utils.units.Units.length">length (emout.utils.units.Units attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="emout.html#emout.data.LineData">LineData (class in emout.data)</a>
+      <li><a href="emout.utils.html#emout.utils.units.Units.length">length (emout.utils.units.Units attribute)</a>
 </li>
       <li><a href="emout.utils.html#emout.utils.emsesinp.UnitConversionKey.load">load() (emout.utils.emsesinp.UnitConversionKey class method)</a>
 </li>
@@ -514,11 +518,13 @@
       <li><a href="emout.html#emout.data.Data.plot">plot() (emout.data.Data method)</a>
 
       <ul>
-        <li><a href="emout.html#emout.data.GridData.plot">(emout.data.GridData method)</a>
+        <li><a href="emout.html#emout.data.Data1d.plot">(emout.data.Data1d method)</a>
 </li>
-        <li><a href="emout.html#emout.data.LineData.plot">(emout.data.LineData method)</a>
+        <li><a href="emout.html#emout.data.Data2d.plot">(emout.data.Data2d method)</a>
 </li>
-        <li><a href="emout.html#emout.data.SlicedData.plot">(emout.data.SlicedData method)</a>
+        <li><a href="emout.html#emout.data.Data3d.plot">(emout.data.Data3d method)</a>
+</li>
+        <li><a href="emout.html#emout.data.Data4d.plot">(emout.data.Data4d method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -551,6 +557,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="emout.utils.html#emout.utils.units.Units.R">R (emout.utils.units.Units attribute)</a>
 </li>
+      <li><a href="emout.utils.html#emout.utils.util.range_with_slice">range_with_slice() (in module emout.utils.util)</a>
+</li>
       <li><a href="emout.utils.html#emout.utils.units.UnitTranslator.ratio">ratio (emout.utils.units.UnitTranslator attribute)</a>
 </li>
   </ul></td>
@@ -579,8 +587,6 @@
 </li>
       <li><a href="emout.html#emout.data.Data.slice_axes">slice_axes (emout.data.Data attribute)</a>
 </li>
-      <li><a href="emout.html#emout.data.SlicedData">SlicedData (class in emout.data)</a>
-</li>
       <li><a href="emout.html#emout.data.Data.slices">slices (emout.data.Data attribute)</a>
 </li>
   </ul></td>
@@ -608,6 +614,8 @@
       <li><a href="emout.utils.html#emout.utils.units.UnitTranslator.trans">trans() (emout.utils.units.UnitTranslator method)</a>
 </li>
       <li><a href="emout.utils.html#emout.utils.units.Units.translators">translators() (emout.utils.units.Units property)</a>
+</li>
+      <li><a href="emout.html#emout.data.Data.tslice">tslice() (emout.data.Data property)</a>
 </li>
   </ul></td>
 </tr></table>
