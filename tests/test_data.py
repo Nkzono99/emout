@@ -34,6 +34,7 @@ def test_data_type(data):
 
 @pytest.mark.parametrize('tslice, expected', [
     (1, list('zyx')),
+    (-1, list('zyx')),
     (slice(None), list('tzyx')),
     (slice(None, 1), list('tzyx')),
     (slice(1, None), list('tzyx')),
