@@ -185,45 +185,87 @@ class Group:
 
     def __neg__(self):
         return self.map(lambda obj: -obj)
+    
+    def __invert__(self):
+        return self.map(lambda obj: ~obj)
 
     def __add__(self, other):
         return self.__binary_operator(lambda obj, other: obj + other, other)
+    
+    def __radd_(self, other):
+        return self.__binary_operator(lambda obj, other: other + obj, other)
 
     def __sub__(self, other):
         return self.__binary_operator(lambda obj, other: obj - other, other)
+    
+    def __rsub(self, other):
+        return self.__binary_operator(lambda obj, other: other - obj, other)
 
     def __mul__(self, other):
         return self.__binary_operator(lambda obj, other: obj * other, other)
+    
+    def __rmul__(self, other):
+        return self.__binary_operator(lambda obj, other: other * obj, other)
 
     def __truediv__(self, other):
         return self.__binary_operator(lambda obj, other: obj / other, other)
+    
+    def __rtruediv__(self, other):
+        return self.__binary_operator(lambda obj, other: other / obj, other)
 
     def __floordiv__(self, other):
         return self.__binary_operator(lambda obj, other: obj // other, other)
+    
+    def __rfloordiv__(self, other):
+        return self.__binary_operator(lambda obj, other: other // obj, other)
 
     def __mod__(self, other):
         return self.__binary_operator(lambda obj, other: obj % other, other)
+    
+    def __rmod__(self, other):
+        return self.__binary_operator(lambda obj, other: other % obj, other)
 
     def __divmod__(self, other):
         return self.__binary_operator(lambda obj, other: divmod(obj, other), other)
+    
+    def __rdivmod__(self, other):
+        return self.__binary_operator(lambda obj, other: divmod(other, obj), other)
 
     def __pow__(self, other):
         return self.__binary_operator(lambda obj, other: obj ** other, other)
+    
+    def __rpow__(self, other):
+        return self.__binary_operator(lambda obj, other: other ** obj, other)
 
     def __lshift__(self, other):
         return self.__binary_operator(lambda obj, other: obj << other, other)
+    
+    def __rlshift__(self, other):
+        return self.__binary_operator(lambda obj, other: other << obj, other)
 
     def __rshift__(self, other):
         return self.__binary_operator(lambda obj, other: obj >> other, other)
+    
+    def __rrshift__(self, other):
+        return self.__binary_operator(lambda obj, other: other >> obj, other)
 
     def __and__(self, other):
         return self.__binary_operator(lambda obj, other: obj & other, other)
+    
+    def __rand__(self, other):
+        return self.__binary_operator(lambda obj, other: other & obj, other)
 
     def __or__(self, other):
         return self.__binary_operator(lambda obj, other: obj | other, other)
+    
+    def __ror__(self, other):
+        return self.__binary_operator(lambda obj, other: other | obj, other)
 
     def __xor__(self, other):
         return self.__binary_operator(lambda obj, other: obj ^ other, other)
+    
+    def __rxor__(self, other):
+        return self.__binary_operator(lambda obj, other: other ^ obj, other)
 
     def __abs__(self):
         return self.map(abs)
@@ -330,3 +372,4 @@ class Group:
 
     def __ceil__(self):
         return self.map(math.ceil)
+
