@@ -18,6 +18,21 @@ def slice2tuple(slice_obj: slice):
     stop = slice_obj.stop
     step = slice_obj.step
     return (start, stop, step)
+
+
+def range_with_slice(slice_obj, maxlen):
+    start = slice_obj.start or 0
+    if start < 0:
+        start = maxlen + start
+
+    stop = slice_obj.stop or maxlen
+    if stop < 0:
+        stop = maxlen + stop
+
+    step = slice_obj.step or 1
+    return range(start, stop, step)
+
+
 class DataFileInfo:
     """データファイル情報を管理するクラス.
     """
