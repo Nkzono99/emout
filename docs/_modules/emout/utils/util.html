@@ -147,7 +147,10 @@
            <div itemprop="articleBody">
             
   <h1>Source code for emout.utils.util</h1><div class="highlight"><pre>
-<div class="viewcode-block" id="slice2tuple"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.util.slice2tuple">[docs]</a><span></span><span class="k">def</span> <span class="nf">slice2tuple</span><span class="p">(</span><span class="n">slice_obj</span><span class="p">:</span> <span class="nb">slice</span><span class="p">):</span>
+<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+
+<div class="viewcode-block" id="slice2tuple"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.util.slice2tuple">[docs]</a><span class="k">def</span> <span class="nf">slice2tuple</span><span class="p">(</span><span class="n">slice_obj</span><span class="p">:</span> <span class="nb">slice</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;スライスオブジェクトをタプルに変換する.</span>
 
 <span class="sd">    Parameters</span>
@@ -164,6 +167,72 @@
     <span class="n">stop</span> <span class="o">=</span> <span class="n">slice_obj</span><span class="o">.</span><span class="n">stop</span>
     <span class="n">step</span> <span class="o">=</span> <span class="n">slice_obj</span><span class="o">.</span><span class="n">step</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="range_with_slice"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.util.range_with_slice">[docs]</a><span class="k">def</span> <span class="nf">range_with_slice</span><span class="p">(</span><span class="n">slice_obj</span><span class="p">,</span> <span class="n">maxlen</span><span class="p">):</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">slice_obj</span><span class="o">.</span><span class="n">start</span> <span class="ow">or</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">maxlen</span> <span class="o">+</span> <span class="n">start</span>
+
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">slice_obj</span><span class="o">.</span><span class="n">stop</span> <span class="ow">or</span> <span class="n">maxlen</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">maxlen</span> <span class="o">+</span> <span class="n">stop</span>
+
+    <span class="n">step</span> <span class="o">=</span> <span class="n">slice_obj</span><span class="o">.</span><span class="n">step</span> <span class="ow">or</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataFileInfo"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.util.DataFileInfo">[docs]</a><span class="k">class</span> <span class="nc">DataFileInfo</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;データファイル情報を管理するクラス.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;データファイル情報を管理するオブジェクトを生成する.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str or Path</span>
+<span class="sd">            ファイル名</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">filename</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;ファイル名を返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Path</span>
+<span class="sd">            ファイル名</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;ディレクトリの絶対パスを返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Path</span>
+<span class="sd">            ディレクトリの絶対パス</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">/</span> <span class="s1">&#39;../&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">abspath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;ファイルの絶対パスを返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Path</span>
+<span class="sd">            ファイルの絶対パス</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
