@@ -191,6 +191,8 @@ class GridDataSeries:
 
         # tの範囲のみ指定された場合
         if isinstance(item, int):
+            if item < 0:
+                item = len(self) + item
             return self.__create_data_with_index(item)
 
         elif isinstance(item, slice):
