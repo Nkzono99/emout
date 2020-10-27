@@ -590,7 +590,7 @@ class Data2d(Data):
                                tslice=tslice,
                                slice_axes=slice_axes)
 
-    def plot(self, axes='auto', show=False, **kwargs):
+    def plot(self, axes='auto', show=False, xunit=None, yunit=None, zunit=None, **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -599,8 +599,12 @@ class Data2d(Data):
             プロットする軸('xy', 'zx', etc), by default 'auto'
         show : bool
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
-        data2d : numpy.ndarray
-            2次元データ
+        xunit : UnitTranslator
+            プロットのx軸の単位変換器, by default None
+        yunit : UnitTranslator
+            プロットのy軸の単位変換器, by default None
+        zunit : UnitTranslator
+            プロットのz軸の単位変換器, by default None
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
@@ -651,16 +655,20 @@ class Data2d(Data):
         axis2 = self.slice_axes[self.use_axes.index(axes[1])]
         x = np.arange(*utils.slice2tuple(self.slices[axis1]))
         y = np.arange(*utils.slice2tuple(self.slices[axis2]))
+        z = self if axis1 > axis2 else self.T  # 'xz'等の場合は転置
+        if xunit is not None:
+            x = xunit.reverse(x)
+        if yunit is not None:
+            y = yunit.reverse(y)
+        if zunit is not None:
+            z = zunit.reverse(z)
 
         kwargs['xlabel'] = kwargs.get('xlabel', None) or axes[0]
         kwargs['ylabel'] = kwargs.get('ylabel', None) or axes[1]
         kwargs['title'] = kwargs.get('title', None) or self.name
 
         mesh = np.meshgrid(x, y)
-        if axis1 > axis2:
-            emplt.plot_2dmap(self, mesh=mesh, **kwargs)
-        else:
-            emplt.plot_2dmap(self.T, mesh=mesh, **kwargs)
+        emplt.plot_2dmap(z, mesh=mesh, **kwargs)
 
         if show:
             plt.show()
@@ -701,13 +709,17 @@ class Data1d(Data):
                                tslice=tslice,
                                slice_axes=slice_axes)
 
-    def plot(self, show=False, **kwargs):
+    def plot(self, show=False, xunit=None, yunit=None, **kwargs):
         """1次元データをプロットする.
 
         Parameters
         ----------
         show : bool
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+        xunit : UnitTranslator
+            プロットのx軸の単位変換器, by default None
+        yunit : UnitTranslator
+            プロットのy軸の単位変換器, by default None
         savefilename : str, optional
             保存するファイル名, by default None
         vmin : float, optional
@@ -735,11 +747,19 @@ class Data1d(Data):
                 'Error: cannot plot because data is not 1dim shape.')
 
         axis = self.slice_axes[0]
-        horizon_data = np.arange(*utils.slice2tuple(self.slices[axis]))
+        x = np.arange(*utils.slice2tuple(self.slices[axis]))
+        y = self
+
+        # "EMSES Unit" to "Physical Unit"
+        if xunit is not None:
+            x = xunit.reverse(x)
+        if yunit is not None:
+            y = yunit.reverse(y)
 
         kwargs['xlabel'] = kwargs.get('xlabel', None) or self.use_axes[0]
         kwargs['ylabel'] = kwargs.get('ylabel', None) or self.name
 
-        emplt.plot_line(self, x=horizon_data, **kwargs)
+        emplt.plot_line(y, x=x, **kwargs)
+
         if show:
             plt.show()
