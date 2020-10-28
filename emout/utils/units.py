@@ -306,7 +306,6 @@ class Units:
         self.L = L
         self.T = T
 
-    @property
     def translators(self):
         """変換器のリストを返す.
 
@@ -315,6 +314,7 @@ class Units:
         list(UnitTranslator)
             変換器のリスト
         """
-        translators = inspect.getmembers(
-            self, lambda x: isinstance(x, UnitTranslator))
-        return list(map(lambda x: x[1], translators))
+        return
+        # translators = inspect.getmembers(
+        #     self, lambda x: isinstance(x, UnitTranslator))
+        # return list(map(lambda x: x[1], translators))
