@@ -70,6 +70,14 @@ class UnitConversionKey:
         return 'dx=[{}],to_c=[{}]'.format(self.dx, self.to_c)
 
 
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, key):
+        return self[key]
+
+
 class InpFile:
     """パラメータファイルを管理する.
 
@@ -88,6 +96,12 @@ class InpFile:
                 if key in self.nml[group].keys():
                     return self.nml[group][key]
         raise KeyError()
+
+    def __getattr__(self, key):
+        item = self[key]
+        if isinstance(item, dict):
+            return AttrDict(item)
+        return item
 
     def remove(self, key, index=None):
         """パラメータを削除する.
