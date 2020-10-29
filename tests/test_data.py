@@ -3,11 +3,6 @@ import pytest
 
 
 @pytest.fixture
-def data(emdir):
-    return emout.Emout(emdir)
-
-
-@pytest.fixture
 def phisp(data):
     return data.phisp
 
