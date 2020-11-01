@@ -70,6 +70,12 @@ class RegexDict(dict):
                 return True
 
         return False
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except Exception:
+            return default
 
 
 class DataFileInfo:
