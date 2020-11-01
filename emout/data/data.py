@@ -20,6 +20,7 @@ class Emout:
     dataname : GridData
         3次元データ(datanameは"phisp"などのhdf5ファイルの先頭の名前)
     """
+
     name2unit = RegexDict({
         r'phisp': lambda self: self.unit.phi,
         r'nd[0-9]+p': lambda self: self.unit.n,
@@ -29,6 +30,7 @@ class Emout:
         r'b[xyz]': lambda self: self.unit.H,
         r'e[xyz]': lambda self: self.unit.E,
         r't': lambda self: self.unit.t,
+        r'axis': lambda self: self.unit.length,
     })
 
     def __init__(self, directory='./', inpfilename='plasma.inp'):
