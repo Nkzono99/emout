@@ -146,7 +146,10 @@ def plot_line(data1d,
         タイトル, by default None
     """
     if savefilename is not None:
-        fig = plt.figure(figsize=figsize)
+        if figsize is None:
+            fig = plt.figure()
+        else:
+            fig = plt.figure(figsize=figsize)
 
     if x is None:
         plt.plot(data1d, label=label)

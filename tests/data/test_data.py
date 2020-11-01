@@ -94,3 +94,27 @@ def test_shape(phisp):
     assert phisp[1][1, :, :].shape == (30, 30)
     assert phisp[1][1, :10, :].shape == (10, 30)
     assert phisp[1].shape == (100, 30, 30)
+
+
+@pytest.mark.parametrize('name', [
+    ('phisp'),
+    ('nd1p'),
+    ('nd12p'),
+    ('jx'),
+    ('jy'),
+    ('jz'),
+    ('bx'),
+    ('by'),
+    ('bz'),
+    ('ex'),
+    ('ey'),
+    ('ez'),
+    ('j1x'),
+    ('j1y'),
+    ('j1z'),
+    ('rho'),
+    ('rhobk')
+])
+def test_name2unit(name):
+    name2unit = emout.Emout.name2unit
+    assert name2unit.get(name) is not None
