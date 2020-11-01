@@ -27,7 +27,8 @@ class Emout:
         r'rhobk': lambda self: self.unit.rho,
         r'j.*': lambda self: self.unit.J,
         r'b[xyz]': lambda self: self.unit.H,
-        r'e[xyz]': lambda self: self.unit.E
+        r'e[xyz]': lambda self: self.unit.E,
+        r't': lambda self: self.unit.t,
     })
 
     def __init__(self, directory='./', inpfilename='plasma.inp'):
@@ -57,14 +58,17 @@ class Emout:
             name = str(h5file_path.name).replace('00_0000.h5', '')
 
             if self.unit is None:
+                tunit = None
                 axisunit = None
                 valunit = None
             else:
-                axisunit = self.unit.length
+                tunit = Emout.name2unit.get('t', lambda self: None)(self)
+                axisunit = Emout.name2unit.get('axis', lambda self: None)(self)
                 valunit = Emout.name2unit.get(name, lambda self: None)(self)
 
             series = GridDataSeries(h5file_path,
                                     name,
+                                    tunit=tunit,
                                     axisunit=axisunit,
                                     valunit=valunit)
             setattr(self, name, series)
