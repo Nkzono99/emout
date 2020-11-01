@@ -191,6 +191,8 @@ class Units:
         Potential [V]
     E : UnitTranslator
         Electric field [V/m]
+    H : UnitTranslator
+        Magnetic field [A/m]
     C : UnitTranslator
         Capacitance [F]
     R : UnitTranslator
@@ -264,6 +266,7 @@ class Units:
         J = (i / length**2)
         phi = (v**2 / q_m)
         E = (phi / length)
+        H = (i / length)
         C = (eps * length)
         R = (phi / i)
         G = (1 / R)
@@ -303,6 +306,7 @@ class Units:
         self.J = J.set_name('Current density', unit='A/m^2')
         self.phi = phi.set_name('Potential', unit='V')
         self.E = E.set_name('Electric field', unit='V/m')
+        self.H = H.set_name('Magnetic field', unit='A/m')
         self.C = C.set_name('Capacitance', unit='F')
         self.R = R.set_name('Resistance', unit='Ω')
         self.G = G.set_name('Conductance', unit='S')
