@@ -219,6 +219,14 @@
         <span class="k">return</span> <span class="s1">&#39;dx=[</span><span class="si">{}</span><span class="s1">],to_c=[</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_c</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="AttrDict"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.emsesinp.AttrDict">[docs]</a><span class="k">class</span> <span class="nc">AttrDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
 <div class="viewcode-block" id="InpFile"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.emsesinp.InpFile">[docs]</a><span class="k">class</span> <span class="nc">InpFile</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;パラメータファイルを管理する.</span>
 
@@ -237,6 +245,12 @@
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nml</span><span class="p">[</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nml</span><span class="p">[</span><span class="n">group</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">AttrDict</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span>
 
 <div class="viewcode-block" id="InpFile.remove"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.emsesinp.InpFile.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;パラメータを削除する.</span>

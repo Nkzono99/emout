@@ -174,6 +174,12 @@
 <div class="section" id="module-emout.utils.emsesinp">
 <span id="emout-utils-emsesinp-module"></span><h2>emout.utils.emsesinp module<a class="headerlink" href="#module-emout.utils.emsesinp" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
+<dt id="emout.utils.emsesinp.AttrDict">
+<em class="property">class </em><code class="sig-prename descclassname">emout.utils.emsesinp.</code><code class="sig-name descname">AttrDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/emsesinp.html#AttrDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.emsesinp.AttrDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+</dd></dl>
+
+<dl class="py class">
 <dt id="emout.utils.emsesinp.InpFile">
 <em class="property">class </em><code class="sig-prename descclassname">emout.utils.emsesinp.</code><code class="sig-name descname">InpFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/emsesinp.html#InpFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.emsesinp.InpFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -401,7 +407,7 @@
 <span id="emout-utils-units-module"></span><h2>emout.utils.units module<a class="headerlink" href="#module-emout.utils.units" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="emout.utils.units.UnitTranslator">
-<em class="property">class </em><code class="sig-prename descclassname">emout.utils.units.</code><code class="sig-name descname">UnitTranslator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">from_unit</span></em>, <em class="sig-param"><span class="n">to_unit</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'None'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/units.html#UnitTranslator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.units.UnitTranslator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.utils.units.</code><code class="sig-name descname">UnitTranslator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">from_unit</span></em>, <em class="sig-param"><span class="n">to_unit</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">unit</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/units.html#UnitTranslator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.units.UnitTranslator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>単位変換器.</p>
 <dl class="py attribute">
@@ -440,10 +446,21 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.UnitTranslator.name">
 <code class="sig-name descname">name</code><a class="headerlink" href="#emout.utils.units.UnitTranslator.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>単位の名前</p>
+<dd><p>単位の名前(例: “Mass”, “Frequency”)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.utils.units.UnitTranslator.unit">
+<code class="sig-name descname">unit</code><a class="headerlink" href="#emout.utils.units.UnitTranslator.unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>単位(例: “kg”, “Hz”)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str or None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -467,11 +484,14 @@
 
 <dl class="py method">
 <dt id="emout.utils.units.UnitTranslator.set_name">
-<code class="sig-name descname">set_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/units.html#UnitTranslator.set_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.units.UnitTranslator.set_name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">unit</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/units.html#UnitTranslator.set_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.units.UnitTranslator.set_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>名前を設定する.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – 名前</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – 名前</p></li>
+<li><p><strong>unit</strong> (<em>str</em>) – 単位</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>self</p>
@@ -535,7 +555,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.pi">
 <code class="sig-name descname">pi</code><a class="headerlink" href="#emout.utils.units.Units.pi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Circular constant</p>
+<dd><p>Circular constant []</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -546,7 +566,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.e">
 <code class="sig-name descname">e</code><a class="headerlink" href="#emout.utils.units.Units.e" title="Permalink to this definition">¶</a></dt>
-<dd><p>Napiers constant</p>
+<dd><p>Napiers constant []</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -557,7 +577,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.c">
 <code class="sig-name descname">c</code><a class="headerlink" href="#emout.utils.units.Units.c" title="Permalink to this definition">¶</a></dt>
-<dd><p>Light Speed</p>
+<dd><p>Light Speed [m/s]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -568,7 +588,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.e0">
 <code class="sig-name descname">e0</code><a class="headerlink" href="#emout.utils.units.Units.e0" title="Permalink to this definition">¶</a></dt>
-<dd><p>Velocity</p>
+<dd><p>FS-Permttivity [F/m]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -579,7 +599,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.m0">
 <code class="sig-name descname">m0</code><a class="headerlink" href="#emout.utils.units.Units.m0" title="Permalink to this definition">¶</a></dt>
-<dd><p>FS-Permeablity</p>
+<dd><p>FS-Permeablity [N/A^2]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -590,7 +610,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.qe">
 <code class="sig-name descname">qe</code><a class="headerlink" href="#emout.utils.units.Units.qe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Elementary charge</p>
+<dd><p>Elementary charge [C]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -601,7 +621,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.me">
 <code class="sig-name descname">me</code><a class="headerlink" href="#emout.utils.units.Units.me" title="Permalink to this definition">¶</a></dt>
-<dd><p>Electron mass</p>
+<dd><p>Electron mass [kg]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -612,7 +632,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.mi">
 <code class="sig-name descname">mi</code><a class="headerlink" href="#emout.utils.units.Units.mi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proton mass</p>
+<dd><p>Proton mass [kg]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -623,7 +643,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.qe_me">
 <code class="sig-name descname">qe_me</code><a class="headerlink" href="#emout.utils.units.Units.qe_me" title="Permalink to this definition">¶</a></dt>
-<dd><p>Electron charge-to-mass ratio</p>
+<dd><p>Electron charge-to-mass ratio [C/kg]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -634,7 +654,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.kB">
 <code class="sig-name descname">kB</code><a class="headerlink" href="#emout.utils.units.Units.kB" title="Permalink to this definition">¶</a></dt>
-<dd><p>Boltzmann constant</p>
+<dd><p>Boltzmann constant [J/K]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -645,7 +665,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.length">
 <code class="sig-name descname">length</code><a class="headerlink" href="#emout.utils.units.Units.length" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sim-to-Real length ratio</p>
+<dd><p>Sim-to-Real length ratio [m]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -656,7 +676,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.m">
 <code class="sig-name descname">m</code><a class="headerlink" href="#emout.utils.units.Units.m" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mass</p>
+<dd><p>Mass [kg]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -667,7 +687,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.t">
 <code class="sig-name descname">t</code><a class="headerlink" href="#emout.utils.units.Units.t" title="Permalink to this definition">¶</a></dt>
-<dd><p>Time</p>
+<dd><p>Time [s]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -678,7 +698,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.f">
 <code class="sig-name descname">f</code><a class="headerlink" href="#emout.utils.units.Units.f" title="Permalink to this definition">¶</a></dt>
-<dd><p>Frequency</p>
+<dd><p>Frequency [Hz]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -689,7 +709,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.v">
 <code class="sig-name descname">v</code><a class="headerlink" href="#emout.utils.units.Units.v" title="Permalink to this definition">¶</a></dt>
-<dd><p>Velocity</p>
+<dd><p>Velocity [m/s]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -700,7 +720,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.n">
 <code class="sig-name descname">n</code><a class="headerlink" href="#emout.utils.units.Units.n" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number density</p>
+<dd><p>Number density [/m^3]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -711,7 +731,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.N">
 <code class="sig-name descname">N</code><a class="headerlink" href="#emout.utils.units.Units.N" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flux</p>
+<dd><p>Flux [/m^2s]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -722,7 +742,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.F">
 <code class="sig-name descname">F</code><a class="headerlink" href="#emout.utils.units.Units.F" title="Permalink to this definition">¶</a></dt>
-<dd><p>Force</p>
+<dd><p>Force [N]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -733,7 +753,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.P">
 <code class="sig-name descname">P</code><a class="headerlink" href="#emout.utils.units.Units.P" title="Permalink to this definition">¶</a></dt>
-<dd><p>Power</p>
+<dd><p>Power [W]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -744,7 +764,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.W">
 <code class="sig-name descname">W</code><a class="headerlink" href="#emout.utils.units.Units.W" title="Permalink to this definition">¶</a></dt>
-<dd><p>Energy</p>
+<dd><p>Energy [J]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -755,7 +775,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.w">
 <code class="sig-name descname">w</code><a class="headerlink" href="#emout.utils.units.Units.w" title="Permalink to this definition">¶</a></dt>
-<dd><p>Energy density</p>
+<dd><p>Energy density [J/m^3]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a>]</p>
@@ -766,7 +786,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.eps">
 <code class="sig-name descname">eps</code><a class="headerlink" href="#emout.utils.units.Units.eps" title="Permalink to this definition">¶</a></dt>
-<dd><p>Permittivity</p>
+<dd><p>Permittivity  [F/m]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -777,7 +797,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.q">
 <code class="sig-name descname">q</code><a class="headerlink" href="#emout.utils.units.Units.q" title="Permalink to this definition">¶</a></dt>
-<dd><p>Charge</p>
+<dd><p>Charge [C]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -788,7 +808,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.rho">
 <code class="sig-name descname">rho</code><a class="headerlink" href="#emout.utils.units.Units.rho" title="Permalink to this definition">¶</a></dt>
-<dd><p>Charge density</p>
+<dd><p>Charge density [C/m^3]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -799,7 +819,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.q_m">
 <code class="sig-name descname">q_m</code><a class="headerlink" href="#emout.utils.units.Units.q_m" title="Permalink to this definition">¶</a></dt>
-<dd><p>Charge-to-mass ratio</p>
+<dd><p>Charge-to-mass ratio [C/kg]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -810,7 +830,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.i">
 <code class="sig-name descname">i</code><a class="headerlink" href="#emout.utils.units.Units.i" title="Permalink to this definition">¶</a></dt>
-<dd><p>Current</p>
+<dd><p>Current [A]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -821,7 +841,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.J">
 <code class="sig-name descname">J</code><a class="headerlink" href="#emout.utils.units.Units.J" title="Permalink to this definition">¶</a></dt>
-<dd><p>Current density</p>
+<dd><p>Current density [A/m^2]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -832,7 +852,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.phi">
 <code class="sig-name descname">phi</code><a class="headerlink" href="#emout.utils.units.Units.phi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Potential</p>
+<dd><p>Potential [V]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -843,7 +863,18 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.E">
 <code class="sig-name descname">E</code><a class="headerlink" href="#emout.utils.units.Units.E" title="Permalink to this definition">¶</a></dt>
-<dd><p>Electric field</p>
+<dd><p>Electric field [V/m]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.utils.units.Units.H">
+<code class="sig-name descname">H</code><a class="headerlink" href="#emout.utils.units.Units.H" title="Permalink to this definition">¶</a></dt>
+<dd><p>Magnetic field [A/m]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -854,7 +885,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.C">
 <code class="sig-name descname">C</code><a class="headerlink" href="#emout.utils.units.Units.C" title="Permalink to this definition">¶</a></dt>
-<dd><p>Capacitance</p>
+<dd><p>Capacitance [F]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -865,7 +896,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.R">
 <code class="sig-name descname">R</code><a class="headerlink" href="#emout.utils.units.Units.R" title="Permalink to this definition">¶</a></dt>
-<dd><p>Resistance</p>
+<dd><p>Resistance [Ω]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -876,7 +907,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.G">
 <code class="sig-name descname">G</code><a class="headerlink" href="#emout.utils.units.Units.G" title="Permalink to this definition">¶</a></dt>
-<dd><p>Conductance</p>
+<dd><p>Conductance [S]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -887,7 +918,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.mu">
 <code class="sig-name descname">mu</code><a class="headerlink" href="#emout.utils.units.Units.mu" title="Permalink to this definition">¶</a></dt>
-<dd><p>Permiability</p>
+<dd><p>Permiability [H/m]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -898,7 +929,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.B">
 <code class="sig-name descname">B</code><a class="headerlink" href="#emout.utils.units.Units.B" title="Permalink to this definition">¶</a></dt>
-<dd><p>Magnetic flux density</p>
+<dd><p>Magnetic flux density [T]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -909,7 +940,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.L">
 <code class="sig-name descname">L</code><a class="headerlink" href="#emout.utils.units.Units.L" title="Permalink to this definition">¶</a></dt>
-<dd><p>Inductance</p>
+<dd><p>Inductance [H]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -920,7 +951,7 @@
 <dl class="py attribute">
 <dt id="emout.utils.units.Units.T">
 <code class="sig-name descname">T</code><a class="headerlink" href="#emout.utils.units.Units.T" title="Permalink to this definition">¶</a></dt>
-<dd><p>Temperature</p>
+<dd><p>Temperature [K]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
@@ -930,7 +961,7 @@
 
 <dl class="py method">
 <dt id="emout.utils.units.Units.translators">
-<em class="property">property </em><code class="sig-name descname">translators</code><a class="headerlink" href="#emout.utils.units.Units.translators" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">translators</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/units.html#Units.translators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.units.Units.translators" title="Permalink to this definition">¶</a></dt>
 <dd><p>変換器のリストを返す.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -994,6 +1025,12 @@
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py class">
+<dt id="emout.utils.util.RegexDict">
+<em class="property">class </em><code class="sig-prename descclassname">emout.utils.util.</code><code class="sig-name descname">RegexDict</code><a class="reference internal" href="_modules/emout/utils/util.html#RegexDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.RegexDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
 </dd></dl>
 
 <dl class="py function">
