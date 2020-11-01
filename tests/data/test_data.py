@@ -8,8 +8,8 @@ def phisp(data):
 
 
 def test_open_data(data):
-    assert type(data.phisp) == emout.data.GridDataSeries
-    assert type(data.ex) == emout.data.GridDataSeries
+    assert type(data.phisp) == emout.data.data.GridDataSeries
+    assert type(data.ex) == emout.data.data.GridDataSeries
 
     with pytest.raises(AttributeError) as attr_error:
         data.no_attrs

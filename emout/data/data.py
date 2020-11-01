@@ -20,6 +20,7 @@ class Emout:
     dataname : GridData
         3次元データ(datanameは"phisp"などのhdf5ファイルの先頭の名前)
     """
+
     name2unit = RegexDict({
         r'phisp': lambda self: self.unit.phi,
         r'nd[0-9]+p': lambda self: self.unit.n,
@@ -27,7 +28,9 @@ class Emout:
         r'rhobk': lambda self: self.unit.rho,
         r'j.*': lambda self: self.unit.J,
         r'b[xyz]': lambda self: self.unit.H,
-        r'e[xyz]': lambda self: self.unit.E
+        r'e[xyz]': lambda self: self.unit.E,
+        r't': lambda self: self.unit.t,
+        r'axis': lambda self: self.unit.length,
     })
 
     def __init__(self, directory='./', inpfilename='plasma.inp'):
@@ -57,14 +60,17 @@ class Emout:
             name = str(h5file_path.name).replace('00_0000.h5', '')
 
             if self.unit is None:
+                tunit = None
                 axisunit = None
                 valunit = None
             else:
-                axisunit = self.unit.length
+                tunit = Emout.name2unit.get('t', lambda self: None)(self)
+                axisunit = Emout.name2unit.get('axis', lambda self: None)(self)
                 valunit = Emout.name2unit.get(name, lambda self: None)(self)
 
             series = GridDataSeries(h5file_path,
                                     name,
+                                    tunit=tunit,
                                     axisunit=axisunit,
                                     valunit=valunit)
             setattr(self, name, series)
@@ -682,9 +688,9 @@ class Data2d(Data):
         if axes == 'auto':
             axes = ''.join(sorted(self.use_axes))
 
-        if not re.match(r'x[yz]|y[xz]|z[xy]', axes):
+        if not re.match(r'x[yzt]|y[xzt]|z[xyt]|t[xyz]', axes):
             raise Exception(
-                'Error: axes "{axes}" cannot be used with SlicedData'.format(axes=axes))
+                'Error: axes "{axes}" cannot be used with Data2d'.format(axes=axes))
         if axes[0] not in self.use_axes or axes[1] not in self.use_axes:
             raise Exception(
                 'Error: axes "{axes}" cannot be used because {axes}-axis does not exist in this data.'.format(axes=axes))
