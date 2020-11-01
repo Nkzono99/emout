@@ -688,9 +688,9 @@ class Data2d(Data):
         if axes == 'auto':
             axes = ''.join(sorted(self.use_axes))
 
-        if not re.match(r'x[yz]|y[xz]|z[xy]', axes):
+        if not re.match(r'x[yzt]|y[xzt]|z[xyt]|t[xyz]', axes):
             raise Exception(
-                'Error: axes "{axes}" cannot be used with SlicedData'.format(axes=axes))
+                'Error: axes "{axes}" cannot be used with Data2d'.format(axes=axes))
         if axes[0] not in self.use_axes or axes[1] not in self.use_axes:
             raise Exception(
                 'Error: axes "{axes}" cannot be used because {axes}-axis does not exist in this data.'.format(axes=axes))
