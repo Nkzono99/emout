@@ -36,11 +36,11 @@ def range_with_slice(slice_obj, maxlen):
 
 class RegexDict(dict):
     def __getitem__(self, key):
-        if key in self:
+        if super().__contains__(key):
             return super().__getitem__(key)
 
         for regex in self:
-            if re.match(regex, key):
+            if re.fullmatch(regex, key):
                 return self[regex]
 
         raise KeyError()
@@ -50,7 +50,7 @@ class RegexDict(dict):
             return True
 
         for regex in self:
-            if re.match(regex, key):
+            if re.fullmatch(regex, key):
                 return True
 
         return False
