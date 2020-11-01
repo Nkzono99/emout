@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 def slice2tuple(slice_obj: slice):
@@ -31,6 +32,28 @@ def range_with_slice(slice_obj, maxlen):
 
     step = slice_obj.step or 1
     return range(start, stop, step)
+
+
+class RegexDict(dict):
+    def __getitem__(self, key):
+        if key in self:
+            return super().__getitem__(key)
+
+        for regex in self:
+            if re.match(regex, key):
+                return self[regex]
+
+        raise KeyError()
+
+    def __contains__(self, key):
+        if super().__contains__(key):
+            return True
+
+        for regex in self:
+            if re.match(regex, key):
+                return True
+
+        return False
 
 
 class DataFileInfo:

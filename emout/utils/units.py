@@ -12,11 +12,13 @@ class UnitTranslator:
         変換後の値
     ratio : float
         変換係数 (変換後 = 変換係数 * 変換前)
-    name : str
-        単位の名前
+    name : str or None
+        単位の名前(例: "Mass", "Frequency")
+    unit : str or None
+        単位(例: "kg", "Hz")
     """
 
-    def __init__(self, from_unit, to_unit, name="None"):
+    def __init__(self, from_unit, to_unit, name=None, unit=None):
         """単位変換器を生成する.
 
         Parameters
@@ -25,21 +27,26 @@ class UnitTranslator:
             変換前の値
         to_unit : float
             変換後の値
-        name : str
-            単位の名前, by default "None"
+        name : str or None
+            単位の名前(例: "Mass", "Frequency"), by default None
+        unit : str or None
+            単位(例: "kg", "Hz"), by default None
         """
         self.from_unit = from_unit
         self.to_unit = to_unit
         self.ratio = to_unit / from_unit
         self.name = name
+        self.unit = unit
 
-    def set_name(self, name):
+    def set_name(self, name, unit=None):
         """名前を設定する.
 
         Parameters
         ----------
         name : str
             名前
+        unit : str
+            単位
 
         Returns
         -------
@@ -47,6 +54,7 @@ class UnitTranslator:
             self
         """
         self.name = name
+        self.unit = unit
         return self
 
     def trans(self, value, reverse=False):
@@ -108,7 +116,7 @@ class UnitTranslator:
         return UnitTranslator(from_unit, to_unit)
 
     def __str__(self):
-        return '{}({:.4})'.format(self.name, self.ratio)
+        return '{}({:.4}, [{}])'.format(self.name, self.ratio, self.unit)
 
     def __repr__(self):
         return self.__str__()
@@ -126,77 +134,79 @@ class Units:
     to_c : float
         Light Speed in EMSES
     pi : UnitTranslator
-        Circular constant
+        Circular constant []
     e : UnitTranslator
-        Napiers constant
+        Napiers constant []
     c : UnitTranslator
-        Light Speed
+        Light Speed [m/s]
     e0 : UnitTranslator
-        Velocity
+        FS-Permttivity [F/m]
     m0 : UnitTranslator
-        FS-Permeablity
+        FS-Permeablity [N/A^2]
     qe : UnitTranslator
-        Elementary charge
+        Elementary charge [C]
     me : UnitTranslator
-        Electron mass
+        Electron mass [kg]
     mi : UnitTranslator
-        Proton mass
+        Proton mass [kg]
     qe_me : UnitTranslator
-        Electron charge-to-mass ratio
+        Electron charge-to-mass ratio [C/kg]
     kB : UnitTranslator
-        Boltzmann constant
+        Boltzmann constant [J/K]
     length : UnitTranslator
-        Sim-to-Real length ratio
+        Sim-to-Real length ratio [m]
     m : UnitTranslator
-        Mass
+        Mass [kg]
     t : UnitTranslator
-        Time
+        Time [s]
     f : UnitTranslator
-        Frequency
+        Frequency [Hz]
     v : UnitTranslator
-        Velocity
+        Velocity [m/s]
     n : UnitTranslator
-        Number density
+        Number density [/m^3]
     N : UnitTranslator
-        Flux
+        Flux [/m^2s]
     F : UnitTranslator
-        Force
+        Force [N]
     P : UnitTranslator
-        Power
+        Power [W]
     W : UnitTranslator
-        Energy
+        Energy [J]
     w : UnitTranslator]
-        Energy density
+        Energy density [J/m^3]
     eps : UnitTranslator
-        Permittivity
+        Permittivity  [F/m]
     q : UnitTranslator
-        Charge
+        Charge [C]
     rho : UnitTranslator
-        Charge density
+        Charge density [C/m^3]
     q_m : UnitTranslator
-        Charge-to-mass ratio
+        Charge-to-mass ratio [C/kg]
     i : UnitTranslator
-        Current
+        Current [A]
     J : UnitTranslator
-        Current density
+        Current density [A/m^2]
     phi : UnitTranslator
-        Potential
+        Potential [V]
     E : UnitTranslator
-        Electric field
+        Electric field [V/m]
+    H : UnitTranslator
+        Magnetic field [A/m]
     C : UnitTranslator
-        Capacitance
+        Capacitance [F]
     R : UnitTranslator
-        Resistance
+        Resistance [Ω]
     G : UnitTranslator
-        Conductance
+        Conductance [S]
     mu : UnitTranslator
-        Permiability
+        Permiability [H/m]
     B : UnitTranslator
-        Magnetic flux density
+        Magnetic flux density [T]
     L : UnitTranslator
-        Inductance
+        Inductance [H]
     T : UnitTranslator
-        Temperature
+        Temperature [K]
     """
 
     def __init__(self, dx, to_c):
@@ -213,98 +223,97 @@ class Units:
         self.to_c = to_c
         from_c = 299792458
         to_e0 = 1
-        pi = UnitTranslator(3.141592654, 3.141592654, name='Circular constant')
-        e = UnitTranslator(2.718281828, 2.718281828, name='Napiers constant')
+        pi = UnitTranslator(3.141592654, 3.141592654)
+        e = UnitTranslator(2.718281828, 2.718281828)
 
-        c = UnitTranslator(from_c, to_c, name='Light Speed')
-        v = (1 * c).set_name('Velocity')
+        c = UnitTranslator(from_c, to_c)
+        v = (1 * c)
 
         _m0 = 4 * pi.from_unit * 1E-7
-        e0 = UnitTranslator(1 / (_m0 * c.from_unit ** 2),
-                            to_e0).set_name('FS-Permttivity')
-        eps = (1 * e0).set_name('Permittivity')
-        mu = (1 / eps / v**2).set_name('Permiability')
-        m0 = UnitTranslator(_m0, mu.trans(_m0), name='FS-Permeablity')
+        e0 = UnitTranslator(1 / (_m0 * c.from_unit ** 2), to_e0)
+        eps = (1 * e0)
+        mu = (1 / eps / v**2)
+        m0 = UnitTranslator(_m0, mu.trans(_m0))
 
-        kB = UnitTranslator(1.38065052E-23, 1.38065052E-23,
-                            'Boltzmann constant')
+        kB = UnitTranslator(1.38065052E-23, 1.38065052E-23)
 
-        length = UnitTranslator(dx, 1, name='Sim-to-Real length ratio')
-        t = (length / v).set_name('Time')
-        f = (1 / t).set_name('Frequency')
-        n = (1 / (length ** 3)).set_name('Number density')
-        N = (v * n).set_name('Flux')
+        length = UnitTranslator(dx, 1)
+        t = (length / v)
+        f = (1 / t)
+        n = (1 / (length ** 3))
+        N = (v * n)
 
         _qe = 1.6021765E-19
         _me = 9.1093819E-31
         _mi = 1.67261E-27
-        qe_me = UnitTranslator(-_qe / _me, -1,
-                               name='Electron charge-to-mass ratio')
-        q_m = (1 * qe_me).set_name('Charge-to-mass ratio')
+        qe_me = UnitTranslator(-_qe / _me, -1)
+        q_m = (1 * qe_me)
 
-        q = (e0 / q_m * length * v**2).set_name('Charge')
-        m = (q / q_m).set_name('Mass')
+        q = (e0 / q_m * length * v**2)
+        m = (q / q_m)
 
-        qe = UnitTranslator(_qe, q.trans(_qe), name='Elementary charge')
-        me = UnitTranslator(_me, m.trans(_me), name='Electron mass')
-        mi = UnitTranslator(_mi, m.trans(_mi), 'Proton mass')
-        rho = (q / length**3).set_name('Charge density')
+        qe = UnitTranslator(_qe, q.trans(_qe))
+        me = UnitTranslator(_me, m.trans(_me))
+        mi = UnitTranslator(_mi, m.trans(_mi))
+        rho = (q / length**3)
 
-        F = (m * length / t**2).set_name('Force')
-        P = (F * v).set_name('Power')
-        W = (F * length).set_name('Energy')
-        w = (W / (length**3)).set_name('Energy density')
+        F = (m * length / t**2)
+        P = (F * v)
+        W = (F * length)
+        w = (W / (length**3))
 
-        i = (q / length * v).set_name('Current')
-        J = (i / length**2).set_name('Current density')
-        phi = (v**2 / q_m).set_name('Potential')
-        E = (phi / length).set_name('Electric field')
-        C = (eps * length).set_name('Capacitance')
-        R = (phi / i).set_name('Resistance')
-        G = (1 / R).set_name('Conductance')
+        i = (q / length * v)
+        J = (i / length**2)
+        phi = (v**2 / q_m)
+        E = (phi / length)
+        H = (i / length)
+        C = (eps * length)
+        R = (phi / i)
+        G = (1 / R)
 
-        B = (v / length / q_m).set_name('Magnetic flux density')
-        L = (mu * length).set_name('Inductance')
-        T = (W / kB).set_name('Temperature')
+        B = (v / length / q_m)
+        L = (mu * length)
+        T = (W / kB)
 
-        self.pi = pi
-        self.e = e
+        self.pi = pi.set_name('Circular constant', unit='')
+        self.e = e.set_name('Napiers constant', unit='')
 
-        self.c = c
-        self.e0 = e0
-        self.m0 = m0
-        self.qe = qe
-        self.me = me
-        self.mi = mi
-        self.qe_me = qe_me
-        self.kB = kB
-        self.length = length
+        self.c = c.set_name('Light Speed', unit='m/s')
+        self.e0 = e0.set_name('FS-Permttivity', unit='F/m')
+        self.m0 = m0.set_name('FS-Permeablity', unit='N/A^2')
+        self.qe = qe.set_name('Elementary charge', unit='C')
+        self.me = me.set_name('Electron mass', unit='kg')
+        self.mi = mi.set_name('Proton mass', unit='kg')
+        self.qe_me = qe_me.set_name('Electron charge-to-mass ratio', unit='C/kg')
+        self.kB = kB.set_name('Boltzmann constant', unit='J/K')
+        self.length = length.set_name('Sim-to-Real length ratio', unit='m')
 
-        self.m = m
-        self.t = t
-        self.f = f
-        self.v = v
-        self.n = n
-        self.N = N
-        self.F = F
-        self.P = P
-        self.W = W
-        self.w = w
-        self.eps = eps
-        self.q = q
-        self.rho = rho
-        self.q_m = q_m
-        self.i = i
-        self.J = J
-        self.phi = phi
-        self.E = E
-        self.C = C
-        self.R = R
-        self.G = G
-        self.mu = mu
-        self.B = B
-        self.L = L
-        self.T = T
+        self.m = m.set_name('Mass', unit='kg')
+        self.t = t.set_name('Time', unit='s')
+        self.f = f.set_name('Frequency', unit='Hz')
+        self.v = v.set_name('Velocity', unit='m/s')
+        self.n = n.set_name('Number density', unit='/m^3')
+        self.N = N.set_name('Flux', unit='/m^2s')
+        self.F = F.set_name('Force', unit='N')
+        self.P = P.set_name('Power', unit='W')
+        self.W = W.set_name('Energy', unit='J')
+        self.w = w.set_name('Energy density', unit='J/m^3')
+        self.eps = eps.set_name('Permittivity', unit='F/m')
+        self.q = q.set_name('Charge', unit='C')
+        self.rho = rho.set_name('Charge density', unit='C/m^3')
+        self.q_m = q_m.set_name('Charge-to-mass ratio', unit='C/kg')
+        self.i = i.set_name('Current', unit='A')
+        self.J = J.set_name('Current density', unit='A/m^2')
+        self.phi = phi.set_name('Potential', unit='V')
+        self.E = E.set_name('Electric field', unit='V/m')
+        self.H = H.set_name('Magnetic field', unit='A/m')
+        self.C = C.set_name('Capacitance', unit='F')
+        self.R = R.set_name('Resistance', unit='Ω')
+        self.G = G.set_name('Conductance', unit='S')
+        self.mu = mu.set_name('Permiability', unit='H/m')
+        self.B = B.set_name('Magnetic flux density', unit='T')
+        self.L = L.set_name('Inductance', unit='H')
+        self.T = T.set_name('Temperature', unit='K')
 
     def translators(self):
         """変換器のリストを返す.

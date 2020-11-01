@@ -7,7 +7,7 @@ import numpy as np
 
 import emout.plot as emplt
 import emout.utils as utils
-from emout.utils import InpFile, UnitConversionKey, Units, DataFileInfo
+from emout.utils import InpFile, UnitConversionKey, Units, DataFileInfo, RegexDict
 
 
 class Emout:
@@ -20,6 +20,15 @@ class Emout:
     dataname : GridData
         3次元データ(datanameは"phisp"などのhdf5ファイルの先頭の名前)
     """
+    name2unit = RegexDict({
+        r'phisp': lambda self: self.unit.phi,
+        r'nd[0-9]+p': lambda self: self.unit.n,
+        r'rho': lambda self: self.unit.rho,
+        r'rhobk': lambda self: self.unit.rho,
+        r'j.*': lambda self: self.unit.J,
+        r'b[xyz]': lambda self: self.unit.H,
+        r'e[xyz]': lambda self: self.unit.E
+    })
 
     def __init__(self, directory='./', inpfilename='plasma.inp'):
         """EMSES出力・inpファイルを管理するオブジェクトを生成する.
@@ -35,10 +44,7 @@ class Emout:
             directory = Path(directory)
         self.directory = directory
 
-        for h5file_path in self.directory.glob('*.h5'):
-            name = str(h5file_path.name).replace('00_0000.h5', '')
-            setattr(self, name, GridDataSeries(h5file_path, name))
-
+        # パラメータファイルの読み取りと単位変換器の初期化
         self._inp = None
         self._unit = None
         if inpfilename is not None and (directory / inpfilename).exists():
@@ -46,6 +52,22 @@ class Emout:
             convkey = UnitConversionKey.load(directory / inpfilename)
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+
+        for h5file_path in self.directory.glob('*.h5'):
+            name = str(h5file_path.name).replace('00_0000.h5', '')
+
+            if self.unit is None:
+                axisunit = None
+                valunit = None
+            else:
+                axisunit = self.unit.length
+                valunit = Emout.name2unit.get(name, lambda self: None)(self)
+
+            series = GridDataSeries(h5file_path,
+                                    name,
+                                    axisunit=axisunit,
+                                    valunit=valunit)
+            setattr(self, name, series)
 
     @property
     def inp(self):
@@ -85,7 +107,7 @@ class GridDataSeries:
         データセット名
     """
 
-    def __init__(self, filename, name):
+    def __init__(self, filename, name, tunit=None, axisunit=None, valunit=None):
         """3次元時系列データを生成する.
 
         Parameters
@@ -99,6 +121,9 @@ class GridDataSeries:
         self.h5 = h5py.File(str(filename), 'r')
         self.group = self.h5[list(self.h5.keys())[0]]
         self._index2key = {int(key): key for key in self.group.keys()}
+        self.tunit = tunit
+        self.axisunit = axisunit
+        self.valunit = valunit
 
         self.name = name
 
@@ -175,10 +200,14 @@ class GridDataSeries:
             raise IndexError()
 
         key = self._index2key[index]
-        name = "{} {}".format(self.name, index)
+
+        axisunits = [self.tunit] + [self.axisunit] * 3
+
         return Data3d(np.array(self.group[key]),
                       filename=self.filename,
-                      name=name)
+                      name=self.name,
+                      axisunits=axisunits,
+                      valunit=self.valunit)
 
     def __create_data_with_indexes(self, indexes, tslice=None):
         """時間が範囲で指定された場合に、Data4dを生成する.
@@ -205,10 +234,14 @@ class GridDataSeries:
         for i in indexes:
             array.append(self[i])
 
+        axisunits = [self.tunit] + [self.axisunit] * 3
+
         return Data4d(np.array(array),
                       filename=self.filename,
                       name=self.name,
-                      tslice=tslice)
+                      tslice=tslice,
+                      axisunits=axisunits,
+                      valunit=self.valunit)
 
     def __getitem__(self, item):
         """時系列データをスライスしたものを返す.
@@ -275,6 +308,10 @@ class Data(np.ndarray):
         管理するデータのxyz方向それぞれの範囲
     slice_axes : list(int)
         データ軸がxyzのどの方向に対応しているか表すリスト(0: t, 1: z, 2: y, 3: x)
+    axisunit : UnitTranslator or None
+        軸の単位変換器
+    valunit : UnitTranslator or None
+        値の単位変換器
     """
     def __new__(cls,
                 input_array,
@@ -284,10 +321,15 @@ class Data(np.ndarray):
                 yslice=None,
                 zslice=None,
                 tslice=None,
-                slice_axes=None):
+                slice_axes=None,
+                axisunits=None,
+                valunit=None):
         obj = np.asarray(input_array).view(cls)
         obj.datafile = DataFileInfo(filename)
         obj.name = name
+
+        obj.axisunits = axisunits
+        obj.valunit = valunit
 
         if xslice is None:
             xslice = slice(0, obj.shape[3], 1)
@@ -323,7 +365,9 @@ class Data(np.ndarray):
             'yslice': new_obj.yslice,
             'zslice': new_obj.zslice,
             'tslice': new_obj.tslice,
-            'slice_axes': new_obj.slice_axes
+            'slice_axes': new_obj.slice_axes,
+            'axisunits': new_obj.axisunits,
+            'valunit': new_obj.valunit
         }
 
         if len(new_obj.shape) == 1:
@@ -402,6 +446,8 @@ class Data(np.ndarray):
         self.name = getattr(obj, 'name', None)
         self.slices = getattr(obj, 'slices', None)
         self.slice_axes = getattr(obj, 'slice_axes', None)
+        self.axisunits = getattr(obj, 'axisunits', None)
+        self.valunit = getattr(obj, 'valunit', None)
 
     @property
     def filename(self):
@@ -510,37 +556,21 @@ class Data(np.ndarray):
 class Data4d(Data):
     """4次元データを管理する.
     """
-    def __new__(cls,
-                input_array,
-                filename=None,
-                name=None,
-                xslice=None,
-                yslice=None,
-                zslice=None,
-                tslice=None,
-                slice_axes=None):
-
+    def __new__(cls, input_array, **kwargs):
         obj = np.asarray(input_array).view(cls)
 
-        if xslice is None:
-            xslice = slice(0, obj.shape[3], 1)
-        if yslice is None:
-            yslice = slice(0, obj.shape[2], 1)
-        if zslice is None:
-            zslice = slice(0, obj.shape[1], 1)
-        if tslice is None:
-            tslice = slice(0, obj.shape[0], 1)
-        if slice_axes is None:
-            slice_axes = [0, 1, 2, 3]
+        if 'xslice' not in kwargs:
+            kwargs['xslice'] = slice(0, obj.shape[3], 1)
+        if 'yslice' not in kwargs:
+            kwargs['yslice'] = slice(0, obj.shape[2], 1)
+        if 'zslice' not in kwargs:
+            kwargs['zslice'] = slice(0, obj.shape[1], 1)
+        if 'tslice' not in kwargs:
+            kwargs['tslice'] = slice(0, obj.shape[0], 1)
+        if 'slice_axes' not in kwargs:
+            kwargs['slice_axes'] = [0, 1, 2, 3]
 
-        return super().__new__(cls, input_array,
-                               filename=filename,
-                               name=name,
-                               xslice=xslice,
-                               yslice=yslice,
-                               zslice=zslice,
-                               tslice=tslice,
-                               slice_axes=slice_axes)
+        return super().__new__(cls, input_array, **kwargs)
 
     def plot(mode='auto', **kwargs):
         """3次元データをプロットする.(未実装)
@@ -558,37 +588,21 @@ class Data4d(Data):
 class Data3d(Data):
     """3次元データを管理する.
     """
-    def __new__(cls,
-                input_array,
-                filename=None,
-                name=None,
-                xslice=None,
-                yslice=None,
-                zslice=None,
-                tslice=None,
-                slice_axes=None):
-
+    def __new__(cls, input_array, **kwargs):
         obj = np.asarray(input_array).view(cls)
 
-        if xslice is None:
-            xslice = slice(0, obj.shape[2], 1)
-        if yslice is None:
-            yslice = slice(0, obj.shape[1], 1)
-        if zslice is None:
-            zslice = slice(0, obj.shape[0], 1)
-        if tslice is None:
-            tslice = slice(0, 1, 1)
-        if slice_axes is None:
-            slice_axes = [1, 2, 3]
+        if 'xslice' not in kwargs:
+            kwargs['xslice'] = slice(0, obj.shape[2], 1)
+        if 'yslice' not in kwargs:
+            kwargs['yslice'] = slice(0, obj.shape[1], 1)
+        if 'zslice' not in kwargs:
+            kwargs['zslice'] = slice(0, obj.shape[0], 1)
+        if 'tslice' not in kwargs:
+            kwargs['tslice'] = slice(0, 1, 1)
+        if 'slice_axes' not in kwargs:
+            kwargs['slice_axes'] = [1, 2, 3]
 
-        return super().__new__(cls, input_array,
-                               filename=filename,
-                               name=name,
-                               xslice=xslice,
-                               yslice=yslice,
-                               zslice=zslice,
-                               tslice=tslice,
-                               slice_axes=slice_axes)
+        return super().__new__(cls, input_array, **kwargs)
 
     def plot(mode='auto', **kwargs):
         """3次元データをプロットする.(未実装)
@@ -606,39 +620,23 @@ class Data3d(Data):
 class Data2d(Data):
     """3次元データの2次元面を管理する.
     """
-    def __new__(cls,
-                input_array,
-                filename=None,
-                name=None,
-                xslice=None,
-                yslice=None,
-                zslice=None,
-                tslice=None,
-                slice_axes=None):
-
+    def __new__(cls, input_array, **kwargs):
         obj = np.asarray(input_array).view(cls)
 
-        if xslice is None:
-            xslice = slice(0, obj.shape[1], 1)
-        if yslice is None:
-            yslice = slice(0, obj.shape[0], 1)
-        if zslice is None:
-            zslice = slice(0, 1, 1)
-        if tslice is None:
-            tslice = slice(0, 1, 1)
-        if slice_axes is None:
-            slice_axes = [2, 3]
+        if 'xslice' not in kwargs:
+            kwargs['xslice'] = slice(0, obj.shape[1], 1)
+        if 'yslice' not in kwargs:
+            kwargs['yslice'] = slice(0, obj.shape[0], 1)
+        if 'zslice' not in kwargs:
+            kwargs['zslice'] = slice(0, 1, 1)
+        if 'tslice' not in kwargs:
+            kwargs['tslice'] = slice(0, 1, 1)
+        if 'slice_axes' not in kwargs:
+            kwargs['slice_axes'] = [2, 3]
 
-        return super().__new__(cls, input_array,
-                               filename=filename,
-                               name=name,
-                               xslice=xslice,
-                               yslice=yslice,
-                               zslice=zslice,
-                               tslice=tslice,
-                               slice_axes=slice_axes)
+        return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, axes='auto', show=False, xunit=None, yunit=None, zunit=None, **kwargs):
+    def plot(self, axes='auto', show=False, use_si=False, **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -647,12 +645,8 @@ class Data2d(Data):
             プロットする軸('xy', 'zx', etc), by default 'auto'
         show : bool
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
-        xunit : UnitTranslator
-            プロットのx軸の単位変換器, by default None
-        yunit : UnitTranslator
-            プロットのy軸の単位変換器, by default None
-        zunit : UnitTranslator
-            プロットのz軸の単位変換器, by default None
+        use_si : bool
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
@@ -698,22 +692,33 @@ class Data2d(Data):
             raise Exception(
                 'Error: axes "{axes}" cannot be used because data is not 2dim shape.'.format(axes=axes))
 
-        # x: 2, y: 1, z:0
+        # x: 3, y: 2, z:1 t:0
         axis1 = self.slice_axes[self.use_axes.index(axes[0])]
         axis2 = self.slice_axes[self.use_axes.index(axes[1])]
+
         x = np.arange(*utils.slice2tuple(self.slices[axis1]))
         y = np.arange(*utils.slice2tuple(self.slices[axis2]))
         z = self if axis1 > axis2 else self.T  # 'xz'等の場合は転置
-        if xunit is not None:
-            x = xunit.reverse(x)
-        if yunit is not None:
-            y = yunit.reverse(y)
-        if zunit is not None:
-            z = zunit.reverse(z)
 
-        kwargs['xlabel'] = kwargs.get('xlabel', None) or axes[0]
-        kwargs['ylabel'] = kwargs.get('ylabel', None) or axes[1]
-        kwargs['title'] = kwargs.get('title', None) or self.name
+        if use_si:
+            xunit = self.axisunits[axis1]
+            yunit = self.axisunits[axis2]
+
+            x = xunit.reverse(x)
+            y = yunit.reverse(y)
+            z = self.valunit.reverse(z)
+
+            _xlabel = '{} [{}]'.format(axes[0], xunit.unit)
+            _ylabel = '{} [{}]'.format(axes[1], yunit.unit)
+            _title = '{} [{}]'.format(self.name, self.valunit.unit)
+        else:
+            _xlabel = axes[0]
+            _ylabel = axes[1]
+            _title = self.name
+
+        kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
+        kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
+        kwargs['title'] = kwargs.get('title', None) or _title
 
         mesh = np.meshgrid(x, y)
         emplt.plot_2dmap(z, mesh=mesh, **kwargs)
@@ -725,49 +730,32 @@ class Data2d(Data):
 class Data1d(Data):
     """3次元データの1次元直線を管理する.
     """
-    def __new__(cls,
-                input_array,
-                filename=None,
-                name=None,
-                xslice=None,
-                yslice=None,
-                zslice=None,
-                tslice=None,
-                slice_axes=None):
+    def __new__(cls, input_array, **kwargs):
 
         obj = np.asarray(input_array).view(cls)
 
-        if xslice is None:
-            xslice = slice(0, obj.shape[1], 1)
-        if yslice is None:
-            yslice = slice(0, 1, 1)
-        if zslice is None:
-            zslice = slice(0, 1, 1)
-        if tslice is None:
-            tslice = slice(0, 1, 1)
-        if slice_axes is None:
-            slice_axes = [3]
+        if 'xslice' not in kwargs:
+            kwargs['xslice'] = slice(0, obj.shape[1], 1)
+        if 'yslice' not in kwargs:
+            kwargs['yslice'] = slice(0, 1, 1)
+        if 'zslice' not in kwargs:
+            kwargs['zslice'] = slice(0, 1, 1)
+        if 'tslice' not in kwargs:
+            kwargs['tslice'] = slice(0, 1, 1)
+        if 'slice_axes' not in kwargs:
+            kwargs['slice_axes'] = [3]
 
-        return super().__new__(cls, input_array,
-                               filename=filename,
-                               name=name,
-                               xslice=xslice,
-                               yslice=yslice,
-                               zslice=zslice,
-                               tslice=tslice,
-                               slice_axes=slice_axes)
+        return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, show=False, xunit=None, yunit=None, **kwargs):
+    def plot(self, show=False, use_si=False, **kwargs):
         """1次元データをプロットする.
 
         Parameters
         ----------
         show : bool
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
-        xunit : UnitTranslator
-            プロットのx軸の単位変換器, by default None
-        yunit : UnitTranslator
-            プロットのy軸の単位変換器, by default None
+        use_si : bool
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         savefilename : str, optional
             保存するファイル名, by default None
         vmin : float, optional
@@ -799,13 +787,20 @@ class Data1d(Data):
         y = self
 
         # "EMSES Unit" to "Physical Unit"
-        if xunit is not None:
-            x = xunit.reverse(x)
-        if yunit is not None:
-            y = yunit.reverse(y)
+        if use_si:
+            xunit = self.axisunits[axis]
 
-        kwargs['xlabel'] = kwargs.get('xlabel', None) or self.use_axes[0]
-        kwargs['ylabel'] = kwargs.get('ylabel', None) or self.name
+            x = xunit.reverse(x)
+            y = self.valunit.reverse(y)
+
+            _xlabel = '{} [{}]'.format(self.use_axes[0], xunit.unit)
+            _ylabel = '{} [{}]'.format(self.name, self.valunit.unit)
+        else:
+            _xlabel = self.use_axes[0]
+            _ylabel = self.name
+
+        kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
+        kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
 
         emplt.plot_line(y, x=x, **kwargs)
 

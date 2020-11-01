@@ -156,7 +156,7 @@
 
 <span class="kn">import</span> <span class="nn">emout.plot</span> <span class="k">as</span> <span class="nn">emplt</span>
 <span class="kn">import</span> <span class="nn">emout.utils</span> <span class="k">as</span> <span class="nn">utils</span>
-<span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="n">InpFile</span><span class="p">,</span> <span class="n">UnitConversionKey</span><span class="p">,</span> <span class="n">Units</span><span class="p">,</span> <span class="n">DataFileInfo</span>
+<span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="n">InpFile</span><span class="p">,</span> <span class="n">UnitConversionKey</span><span class="p">,</span> <span class="n">Units</span><span class="p">,</span> <span class="n">DataFileInfo</span><span class="p">,</span> <span class="n">RegexDict</span>
 
 
 <div class="viewcode-block" id="Emout"><a class="viewcode-back" href="../../emout.html#emout.data.Emout">[docs]</a><span class="k">class</span> <span class="nc">Emout</span><span class="p">:</span>
@@ -169,6 +169,15 @@
 <span class="sd">    dataname : GridData</span>
 <span class="sd">        3次元データ(datanameは&quot;phisp&quot;などのhdf5ファイルの先頭の名前)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name2unit</span> <span class="o">=</span> <span class="n">RegexDict</span><span class="p">({</span>
+        <span class="sa">r</span><span class="s1">&#39;phisp&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;nd[0-9]+p&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">n</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;rhobk&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;j.*&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;b[xyz]&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">H</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;e[xyz]&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">E</span>
+    <span class="p">})</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="n">inpfilename</span><span class="o">=</span><span class="s1">&#39;plasma.inp&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;EMSES出力・inpファイルを管理するオブジェクトを生成する.</span>
@@ -184,10 +193,7 @@
             <span class="n">directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">directory</span>
 
-        <span class="k">for</span> <span class="n">h5file_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.h5&#39;</span><span class="p">):</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">h5file_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;00_0000.h5&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">GridDataSeries</span><span class="p">(</span><span class="n">h5file_path</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
-
+        <span class="c1"># パラメータファイルの読み取りと単位変換器の初期化</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_inp</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_unit</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">inpfilename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">directory</span> <span class="o">/</span> <span class="n">inpfilename</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
@@ -195,6 +201,22 @@
             <span class="n">convkey</span> <span class="o">=</span> <span class="n">UnitConversionKey</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">directory</span> <span class="o">/</span> <span class="n">inpfilename</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">convkey</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_unit</span> <span class="o">=</span> <span class="n">Units</span><span class="p">(</span><span class="n">dx</span><span class="o">=</span><span class="n">convkey</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="n">to_c</span><span class="o">=</span><span class="n">convkey</span><span class="o">.</span><span class="n">to_c</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">h5file_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.h5&#39;</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">h5file_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;00_0000.h5&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">axisunit</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">valunit</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">axisunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span>
+                <span class="n">valunit</span> <span class="o">=</span> <span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="kc">None</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="n">series</span> <span class="o">=</span> <span class="n">GridDataSeries</span><span class="p">(</span><span class="n">h5file_path</span><span class="p">,</span>
+                                    <span class="n">name</span><span class="p">,</span>
+                                    <span class="n">axisunit</span><span class="o">=</span><span class="n">axisunit</span><span class="p">,</span>
+                                    <span class="n">valunit</span><span class="o">=</span><span class="n">valunit</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">series</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">inp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -234,7 +256,7 @@
 <span class="sd">        データセット名</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">valunit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;3次元時系列データを生成する.</span>
 
 <span class="sd">        Parameters</span>
@@ -248,6 +270,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">h5</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_index2key</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tunit</span> <span class="o">=</span> <span class="n">tunit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axisunit</span> <span class="o">=</span> <span class="n">axisunit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span> <span class="o">=</span> <span class="n">valunit</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
@@ -324,10 +349,14 @@
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">()</span>
 
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2key</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+
+        <span class="n">axisunits</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tunit</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axisunit</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
+
         <span class="k">return</span> <span class="n">Data3d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">[</span><span class="n">key</span><span class="p">]),</span>
                       <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
-                      <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+                      <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                      <span class="n">axisunits</span><span class="o">=</span><span class="n">axisunits</span><span class="p">,</span>
+                      <span class="n">valunit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__create_data_with_indexes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexes</span><span class="p">,</span> <span class="n">tslice</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;時間が範囲で指定された場合に、Data4dを生成する.</span>
@@ -354,10 +383,14 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indexes</span><span class="p">:</span>
             <span class="n">array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
+        <span class="n">axisunits</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tunit</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axisunit</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
+
         <span class="k">return</span> <span class="n">Data4d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">array</span><span class="p">),</span>
                       <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
                       <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                      <span class="n">tslice</span><span class="o">=</span><span class="n">tslice</span><span class="p">)</span>
+                      <span class="n">tslice</span><span class="o">=</span><span class="n">tslice</span><span class="p">,</span>
+                      <span class="n">axisunits</span><span class="o">=</span><span class="n">axisunits</span><span class="p">,</span>
+                      <span class="n">valunit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;時系列データをスライスしたものを返す.</span>
@@ -424,6 +457,10 @@
 <span class="sd">        管理するデータのxyz方向それぞれの範囲</span>
 <span class="sd">    slice_axes : list(int)</span>
 <span class="sd">        データ軸がxyzのどの方向に対応しているか表すリスト(0: t, 1: z, 2: y, 3: x)</span>
+<span class="sd">    axisunit : UnitTranslator or None</span>
+<span class="sd">        軸の単位変換器</span>
+<span class="sd">    valunit : UnitTranslator or None</span>
+<span class="sd">        値の単位変換器</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
                 <span class="n">input_array</span><span class="p">,</span>
@@ -433,10 +470,15 @@
                 <span class="n">yslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">zslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">tslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">slice_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                <span class="n">slice_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">axisunits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">valunit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">datafile</span> <span class="o">=</span> <span class="n">DataFileInfo</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="n">obj</span><span class="o">.</span><span class="n">axisunits</span> <span class="o">=</span> <span class="n">axisunits</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">valunit</span> <span class="o">=</span> <span class="n">valunit</span>
 
         <span class="k">if</span> <span class="n">xslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">xslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
@@ -472,7 +514,9 @@
             <span class="s1">&#39;yslice&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">yslice</span><span class="p">,</span>
             <span class="s1">&#39;zslice&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">zslice</span><span class="p">,</span>
             <span class="s1">&#39;tslice&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">tslice</span><span class="p">,</span>
-            <span class="s1">&#39;slice_axes&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">slice_axes</span>
+            <span class="s1">&#39;slice_axes&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">,</span>
+            <span class="s1">&#39;axisunits&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">axisunits</span><span class="p">,</span>
+            <span class="s1">&#39;valunit&#39;</span><span class="p">:</span> <span class="n">new_obj</span><span class="o">.</span><span class="n">valunit</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_obj</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -551,6 +595,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;slices&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;slice_axes&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;axisunits&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;valunit&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -659,37 +705,21 @@
 <div class="viewcode-block" id="Data4d"><a class="viewcode-back" href="../../emout.html#emout.data.Data4d">[docs]</a><span class="k">class</span> <span class="nc">Data4d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;4次元データを管理する.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
-                <span class="n">input_array</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">xslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">yslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">zslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">tslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">slice_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">xslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">yslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">yslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">zslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">zslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">tslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">slice_axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">slice_axes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;xslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;yslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;yslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;zslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;zslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;tslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;slice_axes&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;slice_axes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span>
-                               <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
-                               <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-                               <span class="n">xslice</span><span class="o">=</span><span class="n">xslice</span><span class="p">,</span>
-                               <span class="n">yslice</span><span class="o">=</span><span class="n">yslice</span><span class="p">,</span>
-                               <span class="n">zslice</span><span class="o">=</span><span class="n">zslice</span><span class="p">,</span>
-                               <span class="n">tslice</span><span class="o">=</span><span class="n">tslice</span><span class="p">,</span>
-                               <span class="n">slice_axes</span><span class="o">=</span><span class="n">slice_axes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Data4d.plot"><a class="viewcode-back" href="../../emout.html#emout.data.Data4d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;3次元データをプロットする.(未実装)</span>
@@ -707,37 +737,21 @@
 <div class="viewcode-block" id="Data3d"><a class="viewcode-back" href="../../emout.html#emout.data.Data3d">[docs]</a><span class="k">class</span> <span class="nc">Data3d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;3次元データを管理する.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
-                <span class="n">input_array</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">xslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">yslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">zslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">tslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">slice_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">xslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">yslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">yslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">zslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">zslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">tslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">slice_axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">slice_axes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;xslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;yslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;yslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;zslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;zslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;tslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;slice_axes&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;slice_axes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span>
-                               <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
-                               <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-                               <span class="n">xslice</span><span class="o">=</span><span class="n">xslice</span><span class="p">,</span>
-                               <span class="n">yslice</span><span class="o">=</span><span class="n">yslice</span><span class="p">,</span>
-                               <span class="n">zslice</span><span class="o">=</span><span class="n">zslice</span><span class="p">,</span>
-                               <span class="n">tslice</span><span class="o">=</span><span class="n">tslice</span><span class="p">,</span>
-                               <span class="n">slice_axes</span><span class="o">=</span><span class="n">slice_axes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Data3d.plot"><a class="viewcode-back" href="../../emout.html#emout.data.Data3d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;3次元データをプロットする.(未実装)</span>
@@ -755,39 +769,23 @@
 <div class="viewcode-block" id="Data2d"><a class="viewcode-back" href="../../emout.html#emout.data.Data2d">[docs]</a><span class="k">class</span> <span class="nc">Data2d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;3次元データの2次元面を管理する.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
-                <span class="n">input_array</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">xslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">yslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">zslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">tslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">slice_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">xslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">yslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">yslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">zslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">zslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">tslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">slice_axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">slice_axes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;xslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;yslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;yslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;zslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;zslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;tslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;slice_axes&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;slice_axes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span>
-                               <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
-                               <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-                               <span class="n">xslice</span><span class="o">=</span><span class="n">xslice</span><span class="p">,</span>
-                               <span class="n">yslice</span><span class="o">=</span><span class="n">yslice</span><span class="p">,</span>
-                               <span class="n">zslice</span><span class="o">=</span><span class="n">zslice</span><span class="p">,</span>
-                               <span class="n">tslice</span><span class="o">=</span><span class="n">tslice</span><span class="p">,</span>
-                               <span class="n">slice_axes</span><span class="o">=</span><span class="n">slice_axes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Data2d.plot"><a class="viewcode-back" href="../../emout.html#emout.data.Data2d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Data2d.plot"><a class="viewcode-back" href="../../emout.html#emout.data.Data2d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;2次元データをプロットする.</span>
 
 <span class="sd">        Parameters</span>
@@ -796,12 +794,8 @@
 <span class="sd">            プロットする軸(&#39;xy&#39;, &#39;zx&#39;, etc), by default &#39;auto&#39;</span>
 <span class="sd">        show : bool</span>
 <span class="sd">            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</span>
-<span class="sd">        xunit : UnitTranslator</span>
-<span class="sd">            プロットのx軸の単位変換器, by default None</span>
-<span class="sd">        yunit : UnitTranslator</span>
-<span class="sd">            プロットのy軸の単位変換器, by default None</span>
-<span class="sd">        zunit : UnitTranslator</span>
-<span class="sd">            プロットのz軸の単位変換器, by default None</span>
+<span class="sd">        use_si : bool</span>
+<span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
 <span class="sd">        mesh : (numpy.ndarray, numpy.ndarray), optional</span>
 <span class="sd">            メッシュ, by default None</span>
 <span class="sd">        savefilename : str, optional</span>
@@ -847,22 +841,33 @@
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
                 <span class="s1">&#39;Error: axes &quot;</span><span class="si">{axes}</span><span class="s1">&quot; cannot be used because data is not 2dim shape.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">))</span>
 
-        <span class="c1"># x: 2, y: 1, z:0</span>
+        <span class="c1"># x: 3, y: 2, z:1 t:0</span>
         <span class="n">axis1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
         <span class="n">axis2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">axis1</span><span class="p">]))</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">axis2</span><span class="p">]))</span>
         <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">axis1</span> <span class="o">&gt;</span> <span class="n">axis2</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># &#39;xz&#39;等の場合は転置</span>
-        <span class="k">if</span> <span class="n">xunit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">xunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">yunit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">yunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">zunit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">zunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
 
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+            <span class="n">xunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis1</span><span class="p">]</span>
+            <span class="n">yunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis2</span><span class="p">]</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">xunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">yunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+            <span class="n">_xlabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="n">_ylabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">yunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="n">_title</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_xlabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">_ylabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_title</span>
 
         <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
         <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2dmap</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -874,49 +879,32 @@
 <div class="viewcode-block" id="Data1d"><a class="viewcode-back" href="../../emout.html#emout.data.Data1d">[docs]</a><span class="k">class</span> <span class="nc">Data1d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;3次元データの1次元直線を管理する.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
-                <span class="n">input_array</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">xslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">yslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">zslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">tslice</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">slice_axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">xslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">xslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">yslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">yslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">zslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">zslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">tslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">slice_axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">slice_axes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;xslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;yslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;yslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;zslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;zslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;tslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tslice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;slice_axes&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;slice_axes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span>
-                               <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
-                               <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-                               <span class="n">xslice</span><span class="o">=</span><span class="n">xslice</span><span class="p">,</span>
-                               <span class="n">yslice</span><span class="o">=</span><span class="n">yslice</span><span class="p">,</span>
-                               <span class="n">zslice</span><span class="o">=</span><span class="n">zslice</span><span class="p">,</span>
-                               <span class="n">tslice</span><span class="o">=</span><span class="n">tslice</span><span class="p">,</span>
-                               <span class="n">slice_axes</span><span class="o">=</span><span class="n">slice_axes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Data1d.plot"><a class="viewcode-back" href="../../emout.html#emout.data.Data1d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Data1d.plot"><a class="viewcode-back" href="../../emout.html#emout.data.Data1d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;1次元データをプロットする.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        show : bool</span>
 <span class="sd">            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</span>
-<span class="sd">        xunit : UnitTranslator</span>
-<span class="sd">            プロットのx軸の単位変換器, by default None</span>
-<span class="sd">        yunit : UnitTranslator</span>
-<span class="sd">            プロットのy軸の単位変換器, by default None</span>
+<span class="sd">        use_si : bool</span>
+<span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
 <span class="sd">        savefilename : str, optional</span>
 <span class="sd">            保存するファイル名, by default None</span>
 <span class="sd">        vmin : float, optional</span>
@@ -948,13 +936,20 @@
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span>
 
         <span class="c1"># &quot;EMSES Unit&quot; to &quot;Physical Unit&quot;</span>
-        <span class="k">if</span> <span class="n">xunit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">xunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">yunit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">yunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+            <span class="n">xunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
 
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">xunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+            <span class="n">_xlabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="n">_ylabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_xlabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">_ylabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
 
         <span class="n">emplt</span><span class="o">.</span><span class="n">plot_line</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 

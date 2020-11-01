@@ -196,7 +196,7 @@
 <span id="emout-data-module"></span><h2>emout.data module<a class="headerlink" href="#module-emout.data" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="emout.data.Data">
-<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">axisunits</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">valunit</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></p>
 <p>3次元データを管理する.</p>
 <dl class="py attribute">
@@ -239,6 +239,28 @@
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>list(int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.Data.axisunit">
+<code class="sig-name descname">axisunit</code><a class="headerlink" href="#emout.data.Data.axisunit" title="Permalink to this definition">¶</a></dt>
+<dd><p>軸の単位変換器</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="emout.data.Data.valunit">
+<code class="sig-name descname">valunit</code><a class="headerlink" href="#emout.data.Data.valunit" title="Permalink to this definition">¶</a></dt>
+<dd><p>値の単位変換器</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a> or None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -368,19 +390,18 @@
 
 <dl class="py class">
 <dt id="emout.data.Data1d">
-<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data1d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data1d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data1d" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data1d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data1d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data1d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
 <p>3次元データの1次元直線を管理する.</p>
 <dl class="py method">
 <dt id="emout.data.Data1d.plot">
-<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">xunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data1d.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data1d.plot" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">use_si</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data1d.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data1d.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>1次元データをプロットする.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>show</strong> (<em>bool</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</p></li>
-<li><p><strong>xunit</strong> (<a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><em>UnitTranslator</em></a>) – プロットのx軸の単位変換器, by default None</p></li>
-<li><p><strong>yunit</strong> (<a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><em>UnitTranslator</em></a>) – プロットのy軸の単位変換器, by default None</p></li>
+<li><p><strong>use_si</strong> (<em>bool</em>) – SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</p></li>
 <li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名, by default None</p></li>
 <li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
 <li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
@@ -401,21 +422,19 @@
 
 <dl class="py class">
 <dt id="emout.data.Data2d">
-<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data2d" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
 <p>3次元データの2次元面を管理する.</p>
 <dl class="py method">
 <dt id="emout.data.Data2d.plot">
-<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axes</span><span class="o">=</span><span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">xunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data2d.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data2d.plot" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axes</span><span class="o">=</span><span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">use_si</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data2d.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data2d.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>2次元データをプロットする.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>axes</strong> (<em>str</em><em>, </em><em>optional</em>) – プロットする軸(‘xy’, ‘zx’, etc), by default ‘auto’</p></li>
 <li><p><strong>show</strong> (<em>bool</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</p></li>
-<li><p><strong>xunit</strong> (<a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><em>UnitTranslator</em></a>) – プロットのx軸の単位変換器, by default None</p></li>
-<li><p><strong>yunit</strong> (<a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><em>UnitTranslator</em></a>) – プロットのy軸の単位変換器, by default None</p></li>
-<li><p><strong>zunit</strong> (<a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><em>UnitTranslator</em></a>) – プロットのz軸の単位変換器, by default None</p></li>
+<li><p><strong>use_si</strong> (<em>bool</em>) – SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</p></li>
 <li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
 <li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
 <li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
@@ -443,7 +462,7 @@
 
 <dl class="py class">
 <dt id="emout.data.Data3d">
-<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data3d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data3d" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data3d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data3d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
 <p>3次元データを管理する.</p>
 <dl class="py method">
@@ -461,7 +480,7 @@
 
 <dl class="py class">
 <dt id="emout.data.Data4d">
-<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data4d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tslice</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">slice_axes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data4d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data4d" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">Data4d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_array</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#Data4d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.Data4d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#emout.data.Data" title="emout.data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">emout.data.Data</span></code></a></p>
 <p>4次元データを管理する.</p>
 <dl class="py method">
@@ -518,6 +537,11 @@
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt id="emout.data.Emout.name2unit">
+<code class="sig-name descname">name2unit</code><em class="property"> = {'b[xyz]': &lt;function Emout.&lt;lambda&gt;&gt;, 'e[xyz]': &lt;function Emout.&lt;lambda&gt;&gt;, 'j.*': &lt;function Emout.&lt;lambda&gt;&gt;, 'nd[0-9]+p': &lt;function Emout.&lt;lambda&gt;&gt;, 'phisp': &lt;function Emout.&lt;lambda&gt;&gt;, 'rho': &lt;function Emout.&lt;lambda&gt;&gt;, 'rhobk': &lt;function Emout.&lt;lambda&gt;&gt;}</em><a class="headerlink" href="#emout.data.Emout.name2unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt id="emout.data.Emout.unit">
 <em class="property">property </em><code class="sig-name descname">unit</code><a class="headerlink" href="#emout.data.Emout.unit" title="Permalink to this definition">¶</a></dt>
@@ -536,7 +560,7 @@
 
 <dl class="py class">
 <dt id="emout.data.GridDataSeries">
-<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">GridDataSeries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridDataSeries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridDataSeries" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">emout.data.</code><code class="sig-name descname">GridDataSeries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">tunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">axisunit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">valunit</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data.html#GridDataSeries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.GridDataSeries" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>3次元時系列データを管理する.</p>
 <dl class="py attribute">
