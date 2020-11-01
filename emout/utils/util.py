@@ -22,6 +22,20 @@ def slice2tuple(slice_obj: slice):
 
 
 def range_with_slice(slice_obj, maxlen):
+    """スライスを引数とするrange関数.
+
+    Parameters
+    ----------
+    slice_obj : slice
+        スライスオブジェクト
+    maxlen : int
+        最大数(スライスの値が負である場合に用いる)
+
+    Returns
+    -------
+    generator
+        rangeジェネレータ
+    """
     start = slice_obj.start or 0
     if start < 0:
         start = maxlen + start
@@ -35,6 +49,8 @@ def range_with_slice(slice_obj, maxlen):
 
 
 class RegexDict(dict):
+    """正規表現をキーとする辞書クラス.
+    """
     def __getitem__(self, key):
         if super().__contains__(key):
             return super().__getitem__(key)
