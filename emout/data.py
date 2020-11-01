@@ -636,7 +636,7 @@ class Data2d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, axes='auto', show=False, use_SI=False, **kwargs):
+    def plot(self, axes='auto', show=False, use_si=False, **kwargs):
         """2次元データをプロットする.
 
         Parameters
