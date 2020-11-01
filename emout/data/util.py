@@ -5,6 +5,7 @@ def wpet_unit(out):
     """wpe * tの単位変換器を生成する.
 
     以下のコードを実行することで、データのt軸をwpe*tで規格化できる.
+
     >>> Emout.name2unit['t'] = wpet_unit
 
     Parameters
@@ -29,6 +30,7 @@ def wpit_unit(out):
     """wpi * tの単位変換器を生成する.
 
     以下のコードを実行することで、データのt軸をwpe*tで規格化できる.
+
     >>> Emout.name2unit['t'] = wpit_unit
 
     Parameters
