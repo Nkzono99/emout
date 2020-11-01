@@ -86,12 +86,11 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">emout</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="emout.html">emout package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="emout.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="emout.data.html">emout.data package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="emout.plot.html">emout.plot package</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">emout.utils package</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="emout.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="emout.html#module-emout.data">emout.data module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="emout.html#module-emout">Module contents</a></li>
 </ul>
 </li>
@@ -1031,12 +1030,28 @@
 <dt id="emout.utils.util.RegexDict">
 <em class="property">class </em><code class="sig-prename descclassname">emout.utils.util.</code><code class="sig-name descname">RegexDict</code><a class="reference internal" href="_modules/emout/utils/util.html#RegexDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.RegexDict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<p>正規表現をキーとする辞書クラス.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt id="emout.utils.util.range_with_slice">
 <code class="sig-prename descclassname">emout.utils.util.</code><code class="sig-name descname">range_with_slice</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slice_obj</span></em>, <em class="sig-param"><span class="n">maxlen</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/util.html#range_with_slice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.range_with_slice" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>スライスを引数とするrange関数.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>slice_obj</strong> (<em>slice</em>) – スライスオブジェクト</p></li>
+<li><p><strong>maxlen</strong> (<em>int</em>) – 最大数(スライスの値が負である場合に用いる)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>rangeジェネレータ</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>generator</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="emout.utils.util.slice2tuple">

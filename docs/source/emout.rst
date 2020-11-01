@@ -7,19 +7,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   emout.data
    emout.plot
    emout.utils
-
-Submodules
-----------
-
-emout.data module
------------------
-
-.. automodule:: emout.data
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------
