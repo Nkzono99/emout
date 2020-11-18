@@ -72,8 +72,11 @@ def plot_2dmap(data2d,
     """
     if savefilename is not None:
         if figsize is None:
-            figsize = figsize_with_2d(data2d)
-        fig = plt.figure(figsize=figsize)
+            fig = plt.figure()
+        else:
+            if figsize == 'auto':
+                figsize = figsize_with_2d(data2d, dpi=dpi)
+            fig = plt.figure(figsize=figsize)
 
     if mesh is None:
         x = list(range(data2d.shape[1]))
