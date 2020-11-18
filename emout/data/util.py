@@ -49,3 +49,12 @@ def wpit_unit(out):
         name='wpi * t',
         unit=''
     )
+
+
+def none_unit(out):
+    return UnitTranslator(
+        1,
+        1,
+        name='',
+        unit=''
+    )

@@ -10,6 +10,15 @@ import emout.utils as utils
 from emout.utils import InpFile, UnitConversionKey, Units, DataFileInfo, RegexDict
 
 
+def none_unit(out):
+    return utils.UnitTranslator(
+        1,
+        1,
+        name='',
+        unit=''
+    )
+
+
 class Emout:
     """EMSES出力・inpファイルを管理する.
 
@@ -23,7 +32,7 @@ class Emout:
 
     name2unit = RegexDict({
         r'phisp': lambda self: self.unit.phi,
-        r'nd[0-9]+p': lambda self: self.unit.n,
+        r'nd[0-9]+p': none_unit,
         r'rho': lambda self: self.unit.rho,
         r'rhobk': lambda self: self.unit.rho,
         r'j.*': lambda self: self.unit.J,
