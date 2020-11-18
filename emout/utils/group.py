@@ -185,85 +185,85 @@ class Group:
 
     def __neg__(self):
         return self.map(lambda obj: -obj)
-    
+
     def __invert__(self):
         return self.map(lambda obj: ~obj)
 
     def __add__(self, other):
         return self.__binary_operator(lambda obj, other: obj + other, other)
-    
+
     def __radd_(self, other):
         return self.__binary_operator(lambda obj, other: other + obj, other)
 
     def __sub__(self, other):
         return self.__binary_operator(lambda obj, other: obj - other, other)
-    
+
     def __rsub(self, other):
         return self.__binary_operator(lambda obj, other: other - obj, other)
 
     def __mul__(self, other):
         return self.__binary_operator(lambda obj, other: obj * other, other)
-    
+
     def __rmul__(self, other):
         return self.__binary_operator(lambda obj, other: other * obj, other)
 
     def __truediv__(self, other):
         return self.__binary_operator(lambda obj, other: obj / other, other)
-    
+
     def __rtruediv__(self, other):
         return self.__binary_operator(lambda obj, other: other / obj, other)
 
     def __floordiv__(self, other):
         return self.__binary_operator(lambda obj, other: obj // other, other)
-    
+
     def __rfloordiv__(self, other):
         return self.__binary_operator(lambda obj, other: other // obj, other)
 
     def __mod__(self, other):
         return self.__binary_operator(lambda obj, other: obj % other, other)
-    
+
     def __rmod__(self, other):
         return self.__binary_operator(lambda obj, other: other % obj, other)
 
     def __divmod__(self, other):
         return self.__binary_operator(lambda obj, other: divmod(obj, other), other)
-    
+
     def __rdivmod__(self, other):
         return self.__binary_operator(lambda obj, other: divmod(other, obj), other)
 
     def __pow__(self, other):
         return self.__binary_operator(lambda obj, other: obj ** other, other)
-    
+
     def __rpow__(self, other):
         return self.__binary_operator(lambda obj, other: other ** obj, other)
 
     def __lshift__(self, other):
         return self.__binary_operator(lambda obj, other: obj << other, other)
-    
+
     def __rlshift__(self, other):
         return self.__binary_operator(lambda obj, other: other << obj, other)
 
     def __rshift__(self, other):
         return self.__binary_operator(lambda obj, other: obj >> other, other)
-    
+
     def __rrshift__(self, other):
         return self.__binary_operator(lambda obj, other: other >> obj, other)
 
     def __and__(self, other):
         return self.__binary_operator(lambda obj, other: obj & other, other)
-    
+
     def __rand__(self, other):
         return self.__binary_operator(lambda obj, other: other & obj, other)
 
     def __or__(self, other):
         return self.__binary_operator(lambda obj, other: obj | other, other)
-    
+
     def __ror__(self, other):
         return self.__binary_operator(lambda obj, other: other | obj, other)
 
     def __xor__(self, other):
         return self.__binary_operator(lambda obj, other: obj ^ other, other)
-    
+
     def __rxor__(self, other):
         return self.__binary_operator(lambda obj, other: other ^ obj, other)
 
@@ -306,22 +306,55 @@ class Group:
     def __hash__(self):
         return self.map(hash)
 
+    def __slice_to_iterable(self, slc):
+        start = slc.start
+        stop = slc.stop
+        step = slc.step
+        starts = self.__check_and_return_iterable(start)
+        stops = self.__check_and_return_iterable(stop)
+        steps = self.__check_and_return_iterable(step)
+        slices = []
+        for start, stop, step in zip(starts, stops, steps):
+            slices.append(slice(start, stop, step))
+        return slices
+
+    def __expand_key(self, key):
+        if not isinstance(key, tuple):
+            key = (key, )
+
+        slices = []
+        for k in key:
+            if isinstance(k, slice):
+                slices.append(self.__slice_to_iterable(k))
+            else:
+                it = self.__check_and_return_iterable(k)
+                slices.append(it)
+
+        keys = []
+        for key in zip(*slices):
+            if len(key) == 1:
+                keys.append(key[0])
+            else:
+                keys.append(tuple(key))
+
+        return keys
+
     def __getitem__(self, key):
-        keys = self.__check_and_return_iterable(key)
+        keys = self.__expand_key(key)
 
         new_objs = [obj[key] for obj, key in zip(self.objs, keys)]
 
         return Group(new_objs)
 
     def __setitem__(self, key, value):
-        keys = self.__check_and_return_iterable(key)
+        keys = self.__expand_key(key)
         values = self.__check_and_return_iterable(value)
 
         for obj, key, value in zip(self.objs, keys, values):
             obj[key] = value
 
     def __delitem__(self, key):
-        keys = self.__check_and_return_iterable(key)
+        keys = self.__expand_key(key)
 
         for obj, key in zip(self.objs, keys):
             del obj[key]
@@ -372,4 +405,3 @@ class Group:
 
     def __ceil__(self):
         return self.map(math.ceil)
-
