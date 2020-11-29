@@ -3,6 +3,7 @@ from pathlib import Path
 
 import h5py
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
 
 import emout.plot as emplt
@@ -567,6 +568,95 @@ class Data(np.ndarray):
         """
         raise NotImplementedError()
 
+    def gifplot(self,
+                fig=None,
+                axis=0,
+                show=False,
+                savefilename=None,
+                interval=200,
+                repeat=True,
+                title=None,
+                notitle=False,
+                use_si=False,
+                **kwargs):
+        """gifアニメーションを作成する
+
+        Parameters
+        ----------
+        fig : Figure
+            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
+        axis : int, optional
+            アニメーションする軸, by default 0
+        show : bool, optional
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+        savefilename : str, optional
+            保存するファイル名(Noneの場合保存しない), by default None
+        interval : int, optional
+            フレーム間のインターバル(ミリ秒), by default 400
+        repeat : bool
+            アニメーションをループするならTrue, by default True
+        title : str, optional
+            タイトル(Noneの場合データ名(phisp等)), by default None
+        notitle : bool, optional
+            タイトルを付けない場合True, by default False
+        use_si : bool
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        """
+        def _update(i, vmin, vmax):
+            plt.clf()
+
+            # 指定した軸でスライス
+            slices = [slice(None)] * len(self.shape)
+            slices[axis] = i
+            val = self[tuple(slices)]
+
+            # タイトルの設定
+            if notitle:
+                _title = title if len(title) > 0 else None
+            else:
+                if use_si:  # SI単位系を用いる場合
+                    title_format = title + '({} {})'
+                    axisunit = self.axisunits[axis]
+                    _title = title_format.format(
+                        axisunit.reverse(i), axisunit.unit)
+
+                else:  # EMSES単位系を用いる場合
+                    title_format = title + '({})'
+                    ax = list(utils.range_with_slice(self.slices[axis]))
+                    index = ax[i]
+                    _title = title_format.format(index)
+
+            val.plot(vmin=vmin, vmax=vmax, title=_title,
+                     use_si=use_si, **kwargs)
+
+        if title is None:
+            title = self.name
+
+        if use_si:
+            vmin = self.valunit.reverse(self.min())
+            vmax = self.valunit.reverse(self.max())
+        else:
+            vmin = self.min()
+            vmax = self.max()
+
+        if fig is None:
+            fig = plt.figure()
+
+        ani = animation.FuncAnimation(
+            fig,
+            _update,
+            fargs=(vmin, vmax),
+            interval=interval,
+            frames=self.shape[axis],
+            repeat=repeat)
+
+        if savefilename is not None:
+            ani.save(savefilename, writer='quantized-pillow')
+        elif show:
+            plt.show()
+        else:
+            return fig, ani
+
 
 class Data4d(Data):
     """4次元データを管理する.
@@ -685,6 +775,11 @@ class Data2d(Data):
         dpi : int, optional
             解像度(figsizeが指定された場合は無視される), by default 10
 
+        Returns
+        -------
+        AxesImage or None
+            プロットしたimageデータ(保存またはshowした場合None)
+
         Raises
         ------
         Exception
@@ -736,17 +831,19 @@ class Data2d(Data):
         kwargs['title'] = kwargs.get('title', None) or _title
 
         mesh = np.meshgrid(x, y)
-        emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+        img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
 
         if show:
             plt.show()
+            return None
+        else:
+            return img
 
 
 class Data1d(Data):
     """3次元データの1次元直線を管理する.
     """
     def __new__(cls, input_array, **kwargs):
-
         obj = np.asarray(input_array).view(cls)
 
         if 'xslice' not in kwargs:
@@ -788,6 +885,11 @@ class Data1d(Data):
         title : str, optional
             タイトル, by default None
 
+        Returns
+        -------
+        Line2D or None
+            プロットデータを表す線オブジェクト(保存または show した場合None)
+
         Raises
         ------
         Exception
@@ -817,7 +919,10 @@ class Data1d(Data):
         kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
 
-        emplt.plot_line(y, x=x, **kwargs)
+        line = emplt.plot_line(y, x=x, **kwargs)
 
         if show:
             plt.show()
+            return None
+        else:
+            return line

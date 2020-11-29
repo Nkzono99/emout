@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+from matplotlib.animation import PillowWriter, writers
 
 
 def slice2tuple(slice_obj: slice):
@@ -51,6 +52,7 @@ def range_with_slice(slice_obj, maxlen):
 class RegexDict(dict):
     """正規表現をキーとする辞書クラス.
     """
+
     def __getitem__(self, key):
         if super().__contains__(key):
             return super().__getitem__(key)
@@ -70,7 +72,7 @@ class RegexDict(dict):
                 return True
 
         return False
-    
+
     def get(self, key, default=None):
         try:
             return self[key]
@@ -129,3 +131,13 @@ class DataFileInfo:
 
     def __str__(self):
         return str(self._filename)
+
+
+@writers.register('quantized-pillow')
+class QuantizedPillowWriter(PillowWriter):
+    """ 色数を256としたPillowWriterラッパークラス.
+    """
+
+    def grab_frame(self, **savefig_kwargs):
+        super().grab_frame(**savefig_kwargs)
+        self._frames[-1] = self._frames[-1].convert('RGB').quantize()
