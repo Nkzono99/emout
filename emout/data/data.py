@@ -685,6 +685,11 @@ class Data2d(Data):
         dpi : int, optional
             解像度(figsizeが指定された場合は無視される), by default 10
 
+        Returns
+        -------
+        AxesImage or None
+            プロットしたimageデータ(保存またはshowした場合None)
+
         Raises
         ------
         Exception
@@ -736,17 +741,19 @@ class Data2d(Data):
         kwargs['title'] = kwargs.get('title', None) or _title
 
         mesh = np.meshgrid(x, y)
-        emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+        img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
 
         if show:
             plt.show()
+            return None
+        else:
+            return img
 
 
 class Data1d(Data):
     """3次元データの1次元直線を管理する.
     """
     def __new__(cls, input_array, **kwargs):
-
         obj = np.asarray(input_array).view(cls)
 
         if 'xslice' not in kwargs:
@@ -788,6 +795,11 @@ class Data1d(Data):
         title : str, optional
             タイトル, by default None
 
+        Returns
+        -------
+        Line2D or None
+            プロットデータを表す線オブジェクト(保存または show した場合None)
+
         Raises
         ------
         Exception
@@ -817,7 +829,10 @@ class Data1d(Data):
         kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
 
-        emplt.plot_line(y, x=x, **kwargs)
+        line = emplt.plot_line(y, x=x, **kwargs)
 
         if show:
             plt.show()
+            return None
+        else:
+            return line

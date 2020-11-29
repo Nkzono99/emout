@@ -69,6 +69,11 @@ def plot_2dmap(data2d,
         用いる補間方法, by default 'bilinear'
     dpi : int, optional
         解像度(figsizeが指定された場合は無視される), by default 10
+    
+    Returns
+    -------
+    AxesImage or None
+        プロットしたimageデータ(保存した場合None)
     """
     if savefilename is not None:
         if figsize is None:
@@ -92,13 +97,13 @@ def plot_2dmap(data2d,
 
     extent = [mesh[0][0, 0], mesh[0][-1, -1],
               mesh[1][0, 0], mesh[1][-1, -1]]
-    plt.imshow(data2d,
-               interpolation=interpolation,
-               cmap=cmap,
-               origin='lower',
-               vmin=vmin,
-               vmax=vmax,
-               extent=extent)
+    img = plt.imshow(data2d,
+                     interpolation=interpolation,
+                     cmap=cmap,
+                     origin='lower',
+                     vmin=vmin,
+                     vmax=vmax,
+                     extent=extent)
     plt.colorbar()
 
     if title is not None:
@@ -111,6 +116,9 @@ def plot_2dmap(data2d,
     if savefilename is not None:
         fig.savefig(savefilename)
         plt.close(fig)
+        return None
+    else:
+        return img
 
 
 def plot_line(data1d,
@@ -147,6 +155,11 @@ def plot_line(data1d,
         ラベル, by default None
     title : str, optional
         タイトル, by default None
+    
+    Returns
+    -------
+    Line2D or None
+        プロットデータを表す線オブジェクト(保存した場合None)
     """
     if savefilename is not None:
         if figsize is None:
@@ -155,9 +168,9 @@ def plot_line(data1d,
             fig = plt.figure(figsize=figsize)
 
     if x is None:
-        plt.plot(data1d, label=label)
+        line = plt.plot(data1d, label=label)
     else:
-        plt.plot(x, data1d, label=label)
+        line = plt.plot(x, data1d, label=label)
     plt.ylim([vmin, vmax])
 
     if title is not None:
@@ -170,3 +183,6 @@ def plot_line(data1d,
     if savefilename is not None:
         fig.savefig(savefilename)
         plt.close(fig)
+        return None
+    else:
+        return line
