@@ -616,13 +616,14 @@ class Data(np.ndarray):
             else:
                 if use_si:  # SI単位系を用いる場合
                     title_format = title + '({} {})'
-                    axisunit = self.axisunits[axis]
+                    ax = self.slice_axes[axis]
+                    axisunit = self.axisunits[ax]
                     _title = title_format.format(
                         axisunit.reverse(i), axisunit.unit)
 
                 else:  # EMSES単位系を用いる場合
                     title_format = title + '({})'
-                    ax = list(utils.range_with_slice(self.slices[axis]))
+                    ax = list(utils.range_with_slice(self.slices[self.axisunits[axis]]))
                     index = ax[i]
                     _title = title_format.format(index)
 
