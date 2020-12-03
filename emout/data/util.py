@@ -1,6 +1,22 @@
 from emout.utils import UnitTranslator
 
 
+def t_unit(out):
+    """tの単位変換器を生成する.
+
+    Parameters
+    ----------
+    out : Emout
+        Emoutオブジェクト
+
+    Returns
+    -------
+    UnitTranslator
+        tの単位変換器
+    """
+    return (out.unit.t * UnitTranslator(out.inp.ifdiag * out.inp.dt, 1)).set_name('t', unit='s')
+
+
 def wpet_unit(out):
     """wpe * tの単位変換器を生成する.
 

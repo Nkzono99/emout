@@ -9,6 +9,7 @@ import numpy as np
 import emout.plot as emplt
 import emout.utils as utils
 from emout.utils import InpFile, UnitConversionKey, Units, DataFileInfo, RegexDict
+from .util import t_unit
 
 
 def none_unit(out):
@@ -39,7 +40,7 @@ class Emout:
         r'j.*': lambda self: self.unit.J,
         r'b[xyz]': lambda self: self.unit.H,
         r'e[xyz]': lambda self: self.unit.E,
-        r't': lambda self: self.unit.t,
+        r't': t_unit,
         r'axis': lambda self: self.unit.length,
     })
 
