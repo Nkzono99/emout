@@ -223,12 +223,12 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="emout.data.data.Data.axisunit">
-<code class="sig-name descname">axisunit</code><a class="headerlink" href="#emout.data.data.Data.axisunit" title="Permalink to this definition">¶</a></dt>
+<dt id="emout.data.data.Data.axisunits">
+<code class="sig-name descname">axisunits</code><a class="headerlink" href="#emout.data.data.Data.axisunits" title="Permalink to this definition">¶</a></dt>
 <dd><p>軸の単位変換器</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a> or None</p>
+<dd class="field-odd"><p>list(<a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a>) or None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -243,6 +243,11 @@
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.axis">
+<code class="sig-name descname">axis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ax</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/data.html#Data.axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.data.Data.axis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt id="emout.data.data.Data.directory">
@@ -273,6 +278,27 @@
 </dd></dl>
 
 <dl class="py method">
+<dt id="emout.data.data.Data.gifplot">
+<code class="sig-name descname">gifplot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fig</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">axis</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">savefilename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interval</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">repeat</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">notitle</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">use_si</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/data.html#Data.gifplot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.data.Data.gifplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>gifアニメーションを作成する</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fig</strong> (<em>Figure</em>) – アニメーションを描画するFigure(Noneの場合新しく作成する), by default None</p></li>
+<li><p><strong>axis</strong> (<em>int</em><em>, </em><em>optional</em>) – アニメーションする軸, by default 0</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>optional</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>interval</strong> (<em>int</em><em>, </em><em>optional</em>) – フレーム間のインターバル(ミリ秒), by default 400</p></li>
+<li><p><strong>repeat</strong> (<em>bool</em>) – アニメーションをループするならTrue, by default True</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル(Noneの場合データ名(phisp等)), by default None</p></li>
+<li><p><strong>notitle</strong> (<em>bool</em><em>, </em><em>optional</em>) – タイトルを付けない場合True, by default False</p></li>
+<li><p><strong>use_si</strong> (<em>bool</em>) – SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="emout.data.data.Data.masked">
 <code class="sig-name descname">masked</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mask</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/data.html#Data.masked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.data.Data.masked" title="Permalink to this definition">¶</a></dt>
 <dd><p>マスクされたデータを返す.</p>
@@ -293,6 +319,34 @@
 <dt id="emout.data.data.Data.plot">
 <code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/data.html#Data.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.data.Data.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>データをプロットする.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.t">
+<em class="property">property </em><code class="sig-name descname">t</code><a class="headerlink" href="#emout.data.data.Data.t" title="Permalink to this definition">¶</a></dt>
+<dd><p>t軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>t軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.t_si">
+<em class="property">property </em><code class="sig-name descname">t_si</code><a class="headerlink" href="#emout.data.data.Data.t_si" title="Permalink to this definition">¶</a></dt>
+<dd><p>SI単位系でのt軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>SI単位系でのt軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -324,6 +378,48 @@
 </dd></dl>
 
 <dl class="py method">
+<dt id="emout.data.data.Data.val_si">
+<em class="property">property </em><code class="sig-name descname">val_si</code><a class="headerlink" href="#emout.data.data.Data.val_si" title="Permalink to this definition">¶</a></dt>
+<dd><p>SI単位系での値.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>SI単位系での値</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.x">
+<em class="property">property </em><code class="sig-name descname">x</code><a class="headerlink" href="#emout.data.data.Data.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>x軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>x軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.x_si">
+<em class="property">property </em><code class="sig-name descname">x_si</code><a class="headerlink" href="#emout.data.data.Data.x_si" title="Permalink to this definition">¶</a></dt>
+<dd><p>SI単位系でのx軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>SI単位系でのx軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="emout.data.data.Data.xslice">
 <em class="property">property </em><code class="sig-name descname">xslice</code><a class="headerlink" href="#emout.data.data.Data.xslice" title="Permalink to this definition">¶</a></dt>
 <dd><p>管理するx方向の範囲を返す.</p>
@@ -338,6 +434,34 @@
 </dd></dl>
 
 <dl class="py method">
+<dt id="emout.data.data.Data.y">
+<em class="property">property </em><code class="sig-name descname">y</code><a class="headerlink" href="#emout.data.data.Data.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>y軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>y軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.y_si">
+<em class="property">property </em><code class="sig-name descname">y_si</code><a class="headerlink" href="#emout.data.data.Data.y_si" title="Permalink to this definition">¶</a></dt>
+<dd><p>SI単位系でのy軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>SI単位系でのy軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="emout.data.data.Data.yslice">
 <em class="property">property </em><code class="sig-name descname">yslice</code><a class="headerlink" href="#emout.data.data.Data.yslice" title="Permalink to this definition">¶</a></dt>
 <dd><p>管理するy方向の範囲を返す.</p>
@@ -347,6 +471,34 @@
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>slice</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.z">
+<em class="property">property </em><code class="sig-name descname">z</code><a class="headerlink" href="#emout.data.data.Data.z" title="Permalink to this definition">¶</a></dt>
+<dd><p>z軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>z軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="emout.data.data.Data.z_si">
+<em class="property">property </em><code class="sig-name descname">z_si</code><a class="headerlink" href="#emout.data.data.Data.z_si" title="Permalink to this definition">¶</a></dt>
+<dd><p>SI単位系でのz軸.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>SI単位系でのz軸</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -391,6 +543,12 @@
 <li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
 </ul>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>プロットデータを表す線オブジェクト(保存または show した場合None)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Line2D or None</p>
+</dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><strong>Exception</strong> – データの次元が1でない場合の例外</p>
 </dd>
@@ -426,6 +584,12 @@
 <li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
 <li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存またはshowした場合None)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>AxesImage or None</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><ul class="simple">
@@ -518,7 +682,7 @@
 
 <dl class="py attribute">
 <dt id="emout.data.data.Emout.name2unit">
-<code class="sig-name descname">name2unit</code><em class="property"> = {'axis': &lt;function Emout.&lt;lambda&gt;&gt;, 'b[xyz]': &lt;function Emout.&lt;lambda&gt;&gt;, 'e[xyz]': &lt;function Emout.&lt;lambda&gt;&gt;, 'j.*': &lt;function Emout.&lt;lambda&gt;&gt;, 'nd[0-9]+p': &lt;function Emout.&lt;lambda&gt;&gt;, 'phisp': &lt;function Emout.&lt;lambda&gt;&gt;, 'rho': &lt;function Emout.&lt;lambda&gt;&gt;, 'rhobk': &lt;function Emout.&lt;lambda&gt;&gt;, 't': &lt;function Emout.&lt;lambda&gt;&gt;}</em><a class="headerlink" href="#emout.data.data.Emout.name2unit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">name2unit</code><em class="property"> = {'axis': &lt;function Emout.&lt;lambda&gt;&gt;, 'b[xyz]': &lt;function Emout.&lt;lambda&gt;&gt;, 'e[xyz]': &lt;function Emout.&lt;lambda&gt;&gt;, 'j.*': &lt;function Emout.&lt;lambda&gt;&gt;, 'nd[0-9]+p': &lt;function none_unit&gt;, 'phisp': &lt;function Emout.&lt;lambda&gt;&gt;, 'rho': &lt;function Emout.&lt;lambda&gt;&gt;, 'rhobk': &lt;function Emout.&lt;lambda&gt;&gt;, 't': &lt;function t_unit&gt;}</em><a class="headerlink" href="#emout.data.data.Emout.name2unit" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -643,9 +807,36 @@
 
 </dd></dl>
 
+<dl class="py function">
+<dt id="emout.data.data.none_unit">
+<code class="sig-prename descclassname">emout.data.data.</code><code class="sig-name descname">none_unit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">out</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/data.html#none_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.data.none_unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="module-emout.data.util">
 <span id="emout-data-util-module"></span><h2>emout.data.util module<a class="headerlink" href="#module-emout.data.util" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="emout.data.util.none_unit">
+<code class="sig-prename descclassname">emout.data.util.</code><code class="sig-name descname">none_unit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">out</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/util.html#none_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.util.none_unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="emout.data.util.t_unit">
+<code class="sig-prename descclassname">emout.data.util.</code><code class="sig-name descname">t_unit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">out</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/util.html#t_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.util.t_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>tの単位変換器を生成する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.data.data.Emout" title="emout.data.data.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt id="emout.data.util.wpet_unit">
 <code class="sig-prename descclassname">emout.data.util.</code><code class="sig-name descname">wpet_unit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">out</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/util.html#wpet_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.data.util.wpet_unit" title="Permalink to this definition">¶</a></dt>

@@ -9,6 +9,7 @@ import numpy as np
 import emout.plot as emplt
 import emout.utils as utils
 from emout.utils import InpFile, UnitConversionKey, Units, DataFileInfo, RegexDict
+from .util import t_unit
 
 
 def none_unit(out):
@@ -39,7 +40,7 @@ class Emout:
         r'j.*': lambda self: self.unit.J,
         r'b[xyz]': lambda self: self.unit.H,
         r'e[xyz]': lambda self: self.unit.E,
-        r't': lambda self: self.unit.t,
+        r't': t_unit,
         r'axis': lambda self: self.unit.length,
     })
 
@@ -324,7 +325,7 @@ class Data(np.ndarray):
         管理するデータのxyz方向それぞれの範囲
     slice_axes : list(int)
         データ軸がxyzのどの方向に対応しているか表すリスト(0: t, 1: z, 2: y, 3: x)
-    axisunit : UnitTranslator or None
+    axisunits : list(UnitTranslator) or None
         軸の単位変換器
     valunit : UnitTranslator or None
         値の単位変換器
@@ -531,6 +532,112 @@ class Data(np.ndarray):
         """
         return self.slices[0]
 
+    def axis(self, ax):
+        index = self.slice_axes[ax]
+        axis_slice = self.slices[index]
+        return np.array(*utils.slice2tuple(axis_slice))
+
+    @property
+    def x(self):
+        """x軸.
+
+        Returns
+        -------
+        np.ndarray
+            x軸
+        """
+        return np.arange(*utils.slice2tuple(self.xslice))
+
+    @property
+    def y(self):
+        """y軸.
+
+        Returns
+        -------
+        np.ndarray
+            y軸
+        """
+        return np.arange(*utils.slice2tuple(self.yslice))
+
+    @property
+    def z(self):
+        """z軸.
+
+        Returns
+        -------
+        np.ndarray
+            z軸
+        """
+        return np.arange(*utils.slice2tuple(self.zslice))
+
+    @property
+    def t(self):
+        """t軸.
+
+        Returns
+        -------
+        np.ndarray
+            t軸
+        """
+        slc = self.tslice
+        maxlen = (slc.stop - slc.start) // slc.step
+        return np.array(utils.range_with_slice(self.tslice, maxlen=maxlen))
+
+    @property
+    def x_si(self):
+        """SI単位系でのx軸.
+
+        Returns
+        -------
+        np.ndarray
+            SI単位系でのx軸
+        """
+        return self.axisunits[3].reverse(self.x)
+
+    @property
+    def y_si(self):
+        """SI単位系でのy軸.
+
+        Returns
+        -------
+        np.ndarray
+            SI単位系でのy軸
+        """
+        return self.axisunits[2].reverse(self.y)
+
+    @property
+    def z_si(self):
+        """SI単位系でのz軸.
+
+        Returns
+        -------
+        np.ndarray
+            SI単位系でのz軸
+        """
+        return self.axisunits[1].reverse(self.z)
+
+    @property
+    def t_si(self):
+        """SI単位系でのt軸.
+
+        Returns
+        -------
+        np.ndarray
+            SI単位系でのt軸
+        """
+        return self.axisunits[0].reverse(self.t)
+    
+    @property
+    def val_si(self):
+        """SI単位系での値.
+
+        Returns
+        -------
+        np.ndarray
+            SI単位系での値
+        """
+        return self.valunit.reverse(self)
+
     @ property
     def use_axes(self):
         """データ軸がxyzのどの方向に対応しているか表すリストを返す.
@@ -623,7 +730,9 @@ class Data(np.ndarray):
 
                 else:  # EMSES単位系を用いる場合
                     title_format = title + '({})'
-                    ax = list(utils.range_with_slice(self.slices[self.axisunits[axis]]))
+                    slc = self.slices[self.axisunits[axis]]
+                    maxlen = self.shape[axis]
+                    ax = list(utils.range_with_slice(slc, maxlen=maxlen))
                     index = ax[i]
                     _title = title_format.format(index)
 

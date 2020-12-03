@@ -152,6 +152,22 @@
 <span></span><span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="n">UnitTranslator</span>
 
 
+<div class="viewcode-block" id="t_unit"><a class="viewcode-back" href="../../../emout.data.html#emout.data.util.t_unit">[docs]</a><span class="k">def</span> <span class="nf">t_unit</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;tの単位変換器を生成する.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out : Emout</span>
+<span class="sd">        Emoutオブジェクト</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    UnitTranslator</span>
+<span class="sd">        tの単位変換器</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">t</span> <span class="o">*</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">ifdiag</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="wpet_unit"><a class="viewcode-back" href="../../../emout.data.html#emout.data.util.wpet_unit">[docs]</a><span class="k">def</span> <span class="nf">wpet_unit</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;wpe * tの単位変換器を生成する.</span>
 
@@ -198,6 +214,15 @@
         <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">wp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">ifdiag</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
         <span class="mi">1</span><span class="p">,</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;wpi * t&#39;</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="none_unit"><a class="viewcode-back" href="../../../emout.data.html#emout.data.util.none_unit">[docs]</a><span class="k">def</span> <span class="nf">none_unit</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
         <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
     <span class="p">)</span></div>
 </pre></div>
