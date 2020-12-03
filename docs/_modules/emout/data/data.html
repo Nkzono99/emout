@@ -154,11 +154,22 @@
 
 <span class="kn">import</span> <span class="nn">h5py</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.animation</span> <span class="k">as</span> <span class="nn">animation</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">emout.plot</span> <span class="k">as</span> <span class="nn">emplt</span>
 <span class="kn">import</span> <span class="nn">emout.utils</span> <span class="k">as</span> <span class="nn">utils</span>
 <span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="n">InpFile</span><span class="p">,</span> <span class="n">UnitConversionKey</span><span class="p">,</span> <span class="n">Units</span><span class="p">,</span> <span class="n">DataFileInfo</span><span class="p">,</span> <span class="n">RegexDict</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">t_unit</span>
+
+
+<div class="viewcode-block" id="none_unit"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.none_unit">[docs]</a><span class="k">def</span> <span class="nf">none_unit</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">UnitTranslator</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Emout"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Emout">[docs]</a><span class="k">class</span> <span class="nc">Emout</span><span class="p">:</span>
@@ -174,13 +185,13 @@
 
     <span class="n">name2unit</span> <span class="o">=</span> <span class="n">RegexDict</span><span class="p">({</span>
         <span class="sa">r</span><span class="s1">&#39;phisp&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span>
-        <span class="sa">r</span><span class="s1">&#39;nd[0-9]+p&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">n</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;nd[0-9]+p&#39;</span><span class="p">:</span> <span class="n">none_unit</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;rhobk&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;j.*&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;b[xyz]&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">H</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;e[xyz]&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">E</span><span class="p">,</span>
-        <span class="sa">r</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="n">t_unit</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;axis&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="p">,</span>
     <span class="p">})</span>
 
@@ -465,7 +476,7 @@
 <span class="sd">        管理するデータのxyz方向それぞれの範囲</span>
 <span class="sd">    slice_axes : list(int)</span>
 <span class="sd">        データ軸がxyzのどの方向に対応しているか表すリスト(0: t, 1: z, 2: y, 3: x)</span>
-<span class="sd">    axisunit : UnitTranslator or None</span>
+<span class="sd">    axisunits : list(UnitTranslator) or None</span>
 <span class="sd">        軸の単位変換器</span>
 <span class="sd">    valunit : UnitTranslator or None</span>
 <span class="sd">        値の単位変換器</span>
@@ -672,6 +683,112 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
+<div class="viewcode-block" id="Data.axis"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data.axis">[docs]</a>    <span class="k">def</span> <span class="nf">axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
+        <span class="n">axis_slice</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="n">axis_slice</span><span class="p">))</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;x軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            x軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xslice</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;y軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            y軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yslice</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;z軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            z軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zslice</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">t</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;t軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            t軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tslice</span>
+        <span class="n">maxlen</span> <span class="o">=</span> <span class="p">(</span><span class="n">slc</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">slc</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="o">//</span> <span class="n">slc</span><span class="o">.</span><span class="n">step</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tslice</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x_si</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;SI単位系でのx軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            SI単位系でのx軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y_si</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;SI単位系でのy軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            SI単位系でのy軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">z_si</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;SI単位系でのz軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            SI単位系でのz軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">t_si</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;SI単位系でのt軸.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            SI単位系でのt軸</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">val_si</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;SI単位系での値.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            SI単位系での値</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
     <span class="o">@</span> <span class="nb">property</span>
     <span class="k">def</span> <span class="nf">use_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;データ軸がxyzのどの方向に対応しているか表すリストを返す.</span>
@@ -707,7 +824,99 @@
 <div class="viewcode-block" id="Data.plot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;データをプロットする.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Data.gifplot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data.gifplot">[docs]</a>    <span class="k">def</span> <span class="nf">gifplot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">savefilename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">interval</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                <span class="n">repeat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">notitle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;gifアニメーションを作成する</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fig : Figure</span>
+<span class="sd">            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None</span>
+<span class="sd">        axis : int, optional</span>
+<span class="sd">            アニメーションする軸, by default 0</span>
+<span class="sd">        show : bool, optional</span>
+<span class="sd">            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</span>
+<span class="sd">        savefilename : str, optional</span>
+<span class="sd">            保存するファイル名(Noneの場合保存しない), by default None</span>
+<span class="sd">        interval : int, optional</span>
+<span class="sd">            フレーム間のインターバル(ミリ秒), by default 400</span>
+<span class="sd">        repeat : bool</span>
+<span class="sd">            アニメーションをループするならTrue, by default True</span>
+<span class="sd">        title : str, optional</span>
+<span class="sd">            タイトル(Noneの場合データ名(phisp等)), by default None</span>
+<span class="sd">        notitle : bool, optional</span>
+<span class="sd">            タイトルを付けない場合True, by default False</span>
+<span class="sd">        use_si : bool</span>
+<span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+
+            <span class="c1"># 指定した軸でスライス</span>
+            <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">slices</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slices</span><span class="p">)]</span>
+
+            <span class="c1"># タイトルの設定</span>
+            <span class="k">if</span> <span class="n">notitle</span><span class="p">:</span>
+                <span class="n">_title</span> <span class="o">=</span> <span class="n">title</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>  <span class="c1"># SI単位系を用いる場合</span>
+                    <span class="n">title_format</span> <span class="o">=</span> <span class="n">title</span> <span class="o">+</span> <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span>
+                    <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+                    <span class="n">axisunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
+                    <span class="n">_title</span> <span class="o">=</span> <span class="n">title_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">axisunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">axisunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># EMSES単位系を用いる場合</span>
+                    <span class="n">title_format</span> <span class="o">=</span> <span class="n">title</span> <span class="o">+</span> <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">)&#39;</span>
+                    <span class="n">slc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis</span><span class="p">]]</span>
+                    <span class="n">maxlen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+                    <span class="n">ax</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="n">slc</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">))</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">_title</span> <span class="o">=</span> <span class="n">title_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+            <span class="n">val</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">_title</span><span class="p">,</span>
+                     <span class="n">use_si</span><span class="o">=</span><span class="n">use_si</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+        <span class="n">ani</span> <span class="o">=</span> <span class="n">animation</span><span class="o">.</span><span class="n">FuncAnimation</span><span class="p">(</span>
+            <span class="n">fig</span><span class="p">,</span>
+            <span class="n">_update</span><span class="p">,</span>
+            <span class="n">fargs</span><span class="o">=</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">),</span>
+            <span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span>
+            <span class="n">frames</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span>
+            <span class="n">repeat</span><span class="o">=</span><span class="n">repeat</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">savefilename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ani</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">savefilename</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="s1">&#39;quantized-pillow&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ani</span></div></div>
 
 
 <div class="viewcode-block" id="Data4d"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data4d">[docs]</a><span class="k">class</span> <span class="nc">Data4d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
@@ -827,6 +1036,11 @@
 <span class="sd">        dpi : int, optional</span>
 <span class="sd">            解像度(figsizeが指定された場合は無視される), by default 10</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        AxesImage or None</span>
+<span class="sd">            プロットしたimageデータ(保存またはshowした場合None)</span>
+
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        Exception</span>
@@ -878,17 +1092,19 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_title</span>
 
         <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-        <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2dmap</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2dmap</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">img</span></div></div>
 
 
 <div class="viewcode-block" id="Data1d"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data1d">[docs]</a><span class="k">class</span> <span class="nc">Data1d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;3次元データの1次元直線を管理する.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;xslice&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
@@ -930,6 +1146,11 @@
 <span class="sd">        title : str, optional</span>
 <span class="sd">            タイトル, by default None</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Line2D or None</span>
+<span class="sd">            プロットデータを表す線オブジェクト(保存または show した場合None)</span>
+
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        Exception</span>
@@ -959,10 +1180,13 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
 
-        <span class="n">emplt</span><span class="o">.</span><span class="n">plot_line</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_line</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">line</span></div></div>
 </pre></div>
 
            </div>

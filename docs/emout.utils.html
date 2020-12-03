@@ -1027,10 +1027,31 @@
 </dd></dl>
 
 <dl class="py class">
+<dt id="emout.utils.util.QuantizedPillowWriter">
+<em class="property">class </em><code class="sig-prename descclassname">emout.utils.util.</code><code class="sig-name descname">QuantizedPillowWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fps</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">codec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bitrate</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/util.html#QuantizedPillowWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.QuantizedPillowWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.animation.PillowWriter</span></code></p>
+<p>色数を256としたPillowWriterラッパークラス.</p>
+<dl class="py method">
+<dt id="emout.utils.util.QuantizedPillowWriter.grab_frame">
+<code class="sig-name descname">grab_frame</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">savefig_kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/util.html#QuantizedPillowWriter.grab_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.QuantizedPillowWriter.grab_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grab the image information from the figure and save as a movie frame.</p>
+<p>All keyword arguments in <em>savefig_kwargs</em> are passed on to the
+<cite>~.Figure.savefig</cite> call that saves the figure.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt id="emout.utils.util.RegexDict">
 <em class="property">class </em><code class="sig-prename descclassname">emout.utils.util.</code><code class="sig-name descname">RegexDict</code><a class="reference internal" href="_modules/emout/utils/util.html#RegexDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.RegexDict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
 <p>正規表現をキーとする辞書クラス.</p>
+<dl class="py method">
+<dt id="emout.utils.util.RegexDict.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">default</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/utils/util.html#RegexDict.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.utils.util.RegexDict.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value for key if key is in the dictionary, else default.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
