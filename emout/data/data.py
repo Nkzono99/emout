@@ -385,6 +385,21 @@ class GridDataSeries:
 
 
 class MultiGridDataSeries(GridDataSeries):
+    """連続する複数の3次元時系列データを管理する.
+
+    Attributes
+    ----------
+    datafile : DataFileInfo
+        データファイル情報
+    name : str
+        データセット名
+    tunit : UnitTranslator
+        時間の単位変換器
+    axisunit : UnitTranslator
+        空間軸の単位変換器
+    valunit : UnitTranslator
+        値の単位変換器
+    """
     def __init__(self, *series):
         self.series = []
         for data in series:
