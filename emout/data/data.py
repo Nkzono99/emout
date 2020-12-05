@@ -400,6 +400,7 @@ class MultiGridDataSeries(GridDataSeries):
     valunit : UnitTranslator
         値の単位変換器
     """
+
     def __init__(self, *series):
         self.series = []
         for data in series:
