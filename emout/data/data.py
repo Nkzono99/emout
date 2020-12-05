@@ -1,14 +1,16 @@
 import re
+from itertools import chain
 from pathlib import Path
-
-import h5py
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import numpy as np
 
 import emout.plot as emplt
 import emout.utils as utils
-from emout.utils import InpFile, UnitConversionKey, Units, DataFileInfo, RegexDict
+import h5py
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as np
+from emout.utils import (DataFileInfo, InpFile, RegexDict, UnitConversionKey,
+                         Units)
+
 from .util import t_unit
 
 
@@ -44,19 +46,27 @@ class Emout:
         r'axis': lambda self: self.unit.length,
     })
 
-    def __init__(self, directory='./', inpfilename='plasma.inp'):
+    def __init__(self, directory='./', append_directories=[], inpfilename='plasma.inp'):
         """EMSES出力・inpファイルを管理するオブジェクトを生成する.
 
         Parameters
         ----------
         directory : str or Path
             管理するディレクトリ, by default './'
+        append_directories : list(str) or list(Path)
+            管理する継続ディレクトリのリスト, by default []
         inpfilename : str, optional
             パラメータファイルの名前, by default 'plasma.inp'
         """
         if not isinstance(directory, Path):
             directory = Path(directory)
         self.directory = directory
+
+        self.append_directories = []
+        for append_directory in append_directories:
+            if not isinstance(append_directory, Path):
+                append_directory = Path(append_directory)
+            self.append_directories.append(append_directory)
 
         # パラメータファイルの読み取りと単位変換器の初期化
         self._inp = None
@@ -67,24 +77,52 @@ class Emout:
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
-        for h5file_path in self.directory.glob('*.h5'):
+        for series in self.__fetch_series(self.directory):
+            setattr(self, series.name, series)
+
+        for append_directory in self.append_directories:
+            for series in self.__fetch_series(append_directory):
+                new_series = getattr(self, series.name).chain(series)
+                setattr(self, series.name, new_series)
+
+    def __fetch_series(self, directory):
+        """指定したディレクトリ内のh5ファイルを探査し、GridDataSeriesのリストとして返す.
+
+        Parameters
+        ----------
+        directory : Path
+            ディレクトリ
+
+        Returns
+        -------
+        list(GridDataSeries)
+            GridDataSeriesのリスト
+        """
+        series = []
+
+        if self.unit is None:
+            tunit = None
+            axisunit = None
+        else:
+            tunit = Emout.name2unit.get('t', lambda self: None)(self)
+            axisunit = Emout.name2unit.get('axis', lambda self: None)(self)
+
+        for h5file_path in directory.glob('*.h5'):
             name = str(h5file_path.name).replace('00_0000.h5', '')
 
             if self.unit is None:
-                tunit = None
-                axisunit = None
                 valunit = None
             else:
-                tunit = Emout.name2unit.get('t', lambda self: None)(self)
-                axisunit = Emout.name2unit.get('axis', lambda self: None)(self)
                 valunit = Emout.name2unit.get(name, lambda self: None)(self)
 
-            series = GridDataSeries(h5file_path,
-                                    name,
-                                    tunit=tunit,
-                                    axisunit=axisunit,
-                                    valunit=valunit)
-            setattr(self, name, series)
+            data = GridDataSeries(h5file_path,
+                                  name,
+                                  tunit=tunit,
+                                  axisunit=axisunit,
+                                  valunit=valunit)
+            series.append(data)
+
+        return series
 
     @property
     def inp(self):
@@ -195,7 +233,7 @@ class GridDataSeries:
         """
         return self.datafile.directory
 
-    def __create_data_with_index(self, index):
+    def _create_data_with_index(self, index):
         """時間が指定された場合に、その時間におけるData3dを生成する.
 
         Parameters
@@ -289,9 +327,10 @@ class GridDataSeries:
 
         # 以下、tの範囲のみ指定された場合
         if isinstance(item, int):  # tが一つだけ指定された場合
-            if item < 0:
-                item = len(self) + item
-            return self.__create_data_with_index(item)
+            index = item
+            if index < 0:
+                index = len(self) + index
+            return self._create_data_with_index(index)
 
         elif isinstance(item, slice):  # tがスライスで指定された場合
             indexes = list(utils.range_with_slice(item, maxlen=len(self)))
@@ -303,6 +342,39 @@ class GridDataSeries:
         else:
             raise TypeError()
 
+    def chain(self, other_series):
+        """GridDataSeriesを結合する.
+
+        Parameters
+        ----------
+        other_series : GridDataSeries
+            結合するGridDataSeries
+
+        Returns
+        -------
+        MultiGridDataSeries
+            結合したGridDataSeries
+        """
+        return MultiGridDataSeries(self, other_series)
+
+    def __add__(self, other_series):
+        """GridDataSeriesを結合する.
+
+        Parameters
+        ----------
+        other_series : GridDataSeries
+            結合するGridDataSeries
+
+        Returns
+        -------
+        MultiGridDataSeries
+            結合したGridDataSeries
+        """
+        if not isinstance(other_series, GridDataSeries):
+            raise TypeError()
+
+        return self.chain(other_series)
+
     def __iter__(self):
         indexes = sorted(self._index2key.keys())
         for index in indexes:
@@ -310,6 +382,167 @@ class GridDataSeries:
 
     def __len__(self):
         return len(self._index2key)
+
+
+class MultiGridDataSeries(GridDataSeries):
+    def __init__(self, *series):
+        self.series = []
+        for data in series:
+            self.series += self.__expand(data)
+
+        self.datafile = self.series[0].datafile
+        self.tunit = self.series[0].tunit
+        self.axisunit = self.series[0].axisunit
+        self.valunit = self.series[0].valunit
+
+        self.name = self.series[0].name
+
+    def __expand(self, data_series):
+        """与えられたオブジェクトがMultiGridDataSeriesなら展開してGridDataSeriesのリストとして返す.
+
+        Parameters
+        ----------
+        data_series : GridDataSeries or MultGridDataSeries
+            オブジェクト
+
+        Returns
+        -------
+        list(GridDataSeries)
+            GridDataSeriesのリスト
+
+        Raises
+        ------
+        TypeError
+            オブジェクトがGridDataSeriesでない場合の例外
+        """
+        if not isinstance(data_series, GridDataSeries):
+            raise TypeError()
+        if not isinstance(data_series, MultiGridDataSeries):
+            return [data_series]
+
+        # data_seriesがMultiGridDataSeriesならデータを展開して結合する.
+        expanded = []
+        for data in data_series.series:
+            expanded += self.__expand(data)
+
+        return expanded
+
+    def close(self):
+        """hdf5ファイルを閉じる.
+        """
+        for data in self.series:
+            series.h5.close()
+
+    def time_series(self, x, y, z):
+        """指定した範囲の時系列データを取得する.
+
+        Parameters
+        ----------
+        x : int or slice
+            x座標
+        y : int or slice
+            y座標
+        z : int or slice
+            z座標
+
+        Returns
+        -------
+        numpy.ndarray
+            指定した範囲の時系列データ
+        """
+        series = np.concatenate([data.time_series(x, y, z)
+                                 for data in self.series])
+        return series
+
+    @property
+    def filename(self):
+        """先頭データのファイル名を返す.
+
+        Returns
+        -------
+        Path
+            ファイル名
+        """
+        return self.series[0].datafile.filename
+
+    @property
+    def filenames(self):
+        """ファイル名のリストを返す.
+
+        Returns
+        -------
+        list(Path)
+            ファイル名のリスト
+        """
+        return [data.filename for data in self.series]
+
+    @property
+    def directory(self):
+        """先頭データのディレクトリ名を返す.
+
+        Returns
+        -------
+        Path
+            ディレクトリ名
+        """
+        return self.series[0].datafile.directory
+
+    @property
+    def directories(self):
+        """ディレクトリ名のリストを返す.
+
+        Returns
+        -------
+        list(Path)
+            ディレクトリ名のリスト
+        """
+        return [data.directory for data in self.series]
+
+    def _create_data_with_index(self, index):
+        """時間が指定された場合に、その時間におけるData3dを生成する.
+
+        Parameters
+        ----------
+        index : int
+            時間インデックス
+
+        Returns
+        -------
+        Data3d
+            生成したData3d
+
+        Raises
+        ------
+        IndexError
+            指定した時間が存在しない場合の例外
+        """
+        if index < len(self.series[0]):
+            return self.series[0][index]
+
+        length = len(self.series[0])
+        for series in self.series[1:]:
+            # 先頭データは前のデータの最後尾と重複しているためカウントしない
+            series_len = len(series) - 1
+
+            if index < series_len + length:
+                local_index = index - length + 1
+                return series[local_index]
+
+            length += series_len
+
+        raise IndexError()
+
+    def __iter__(self):
+        iters = [iter(self.series[0])]
+        for data in self.series[1:]:
+            it = iter(data)
+            next(it)  # 先頭データを捨てる
+            iters.append(it)
+        return chain(iters)
+
+    def __len__(self):
+        # 先頭データは前のデータの最後尾と重複しているためカウントしない
+        return np.sum([len(data) for data in self.series]) - (len(self.series) - 1)
 
 
 class Data(np.ndarray):
@@ -626,7 +859,7 @@ class Data(np.ndarray):
             SI単位系でのt軸
         """
         return self.axisunits[0].reverse(self.t)
-    
+
     @property
     def val_si(self):
         """SI単位系での値.

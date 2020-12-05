@@ -103,7 +103,8 @@ def plot_2dmap(data2d,
                      origin='lower',
                      vmin=vmin,
                      vmax=vmax,
-                     extent=extent)
+                     extent=extent,
+                     aspect='auto')
     plt.colorbar()
 
     if title is not None:
