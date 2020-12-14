@@ -933,7 +933,10 @@ class Data(np.ndarray):
                 repeat=True,
                 title=None,
                 notitle=False,
+                offsets=None,
                 use_si=False,
+                vmin=None,
+                vmax=None,
                 **kwargs):
         """gifアニメーションを作成する
 
@@ -955,9 +958,21 @@ class Data(np.ndarray):
             タイトル(Noneの場合データ名(phisp等)), by default None
         notitle : bool, optional
             タイトルを付けない場合True, by default False
+        offsets : (float or str, float or str, float or str)
+            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         """
+        def _offseted(line, offset):
+            if offset == 'left':
+                line -= line[0]
+            elif offset == 'center':
+                line -= line[len(line) // 2]
+            elif offset == 'right':
+                line -= line[-1]
+            else:
+                line += offset
+
         def _update(i, vmin, vmax):
             plt.clf()
 
@@ -970,33 +985,44 @@ class Data(np.ndarray):
             if notitle:
                 _title = title if len(title) > 0 else None
             else:
+                ax = self.slice_axes[axis]
+                slc = self.slices[ax]
+                maxlen = self.shape[axis]
+
+                line = list(utils.range_with_slice(slc, maxlen=maxlen))
+
+                if offsets is not None:
+                    line = _offseted(line, offsets[0])
+
+                index = line[i]
+
                 if use_si:  # SI単位系を用いる場合
                     title_format = title + '({} {})'
-                    ax = self.slice_axes[axis]
                     axisunit = self.axisunits[ax]
                     _title = title_format.format(
-                        axisunit.reverse(i), axisunit.unit)
+                        axisunit.reverse(index), axisunit.unit)
 
                 else:  # EMSES単位系を用いる場合
                     title_format = title + '({})'
-                    slc = self.slices[self.axisunits[axis]]
-                    maxlen = self.shape[axis]
-                    ax = list(utils.range_with_slice(slc, maxlen=maxlen))
-                    index = ax[i]
                     _title = title_format.format(index)
 
+            if offsets is not None:
+                offsets2d = (offsets[1], offsets[2])
+            else:
+                offsets2d = None
+
             val.plot(vmin=vmin, vmax=vmax, title=_title,
-                     use_si=use_si, **kwargs)
+                     use_si=use_si, offsets=offsets2d, **kwargs)
 
         if title is None:
             title = self.name
 
         if use_si:
-            vmin = self.valunit.reverse(self.min())
-            vmax = self.valunit.reverse(self.max())
+            vmin = vmin or self.valunit.reverse(self.min())
+            vmax = vmax or self.valunit.reverse(self.max())
         else:
-            vmin = self.min()
-            vmax = self.max()
+            vmin = vmin or self.min()
+            vmax = vmax or self.max()
 
         if fig is None:
             fig = plt.figure()
@@ -1100,7 +1126,7 @@ class Data2d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, axes='auto', show=False, use_si=False, **kwargs):
+    def plot(self, axes='auto', show=False, use_si=False, offsets=None, **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -1111,6 +1137,8 @@ class Data2d(Data):
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        offsets : (float or str, float or str, float or str)
+            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
@@ -1185,6 +1213,22 @@ class Data2d(Data):
             _ylabel = axes[1]
             _title = self.name
 
+        def _offseted(line, offset):
+            if offset == 'left':
+                line -= line[0]
+            elif offset == 'center':
+                line -= line[len(line) // 2]
+            elif offset == 'right':
+                line -= line[-1]
+            else:
+                line += offset
+            return line
+
+        if offsets is not None:
+            x = _offseted(x, offsets[0])
+            y = _offseted(y, offsets[1])
+            z = _offseted(z, offsets[2])
+
         kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
         kwargs['title'] = kwargs.get('title', None) or _title
@@ -1218,7 +1262,7 @@ class Data1d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, show=False, use_si=False, **kwargs):
+    def plot(self, show=False, use_si=False, offsets=None, **kwargs):
         """1次元データをプロットする.
 
         Parameters
@@ -1227,6 +1271,8 @@ class Data1d(Data):
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        offsets : (float or str, float or str)
+            プロットのx,y軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         savefilename : str, optional
             保存するファイル名, by default None
         vmin : float, optional
@@ -1274,6 +1320,21 @@ class Data1d(Data):
         else:
             _xlabel = self.use_axes[0]
             _ylabel = self.name
+
+        def _offseted(line, offset):
+            if offset == 'left':
+                line -= line[0]
+            elif offset == 'center':
+                line -= line[len(line) // 2]
+            elif offset == 'right':
+                line -= line[-1]
+            else:
+                line += offset
+            return line
+
+        if offsets is not None:
+            x = _offseted(x, offsets[0])
+            y = _offseted(y, offsets[1])
 
         kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
