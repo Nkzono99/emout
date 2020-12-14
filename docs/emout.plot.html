@@ -194,6 +194,37 @@
 </dd></dl>
 
 <dl class="py function">
+<dt id="emout.plot.basic_plot.plot_2d_vector">
+<code class="sig-prename descclassname">emout.plot.basic_plot.</code><code class="sig-name descname">plot_2d_vector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x_data2d</span></em>, <em class="sig-param"><span class="n">y_data2d</span></em>, <em class="sig-param"><span class="n">mesh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">savefilename</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">color</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">scaler</span><span class="o">=</span><span class="default_value">'standard'</span></em>, <em class="sig-param"><span class="n">skip</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xlabel</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ylabel</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dpi</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/plot/basic_plot.html#plot_2d_vector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2d_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>2次元カラーマップをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>mask_color</strong> (<em>str</em>) – マスクされた位置の色, by default ‘gray’</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="emout.plot.basic_plot.plot_2dmap">
 <code class="sig-prename descclassname">emout.plot.basic_plot.</code><code class="sig-name descname">plot_2dmap</code><span class="sig-paren">(</span><em class="sig-param">data2d</em>, <em class="sig-param">mesh=None</em>, <em class="sig-param">savefilename=None</em>, <em class="sig-param">cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;</em>, <em class="sig-param">mask_color='gray'</em>, <em class="sig-param">vmin=None</em>, <em class="sig-param">vmax=None</em>, <em class="sig-param">figsize=None</em>, <em class="sig-param">xlabel=None</em>, <em class="sig-param">ylabel=None</em>, <em class="sig-param">title=None</em>, <em class="sig-param">interpolation='bilinear'</em>, <em class="sig-param">dpi=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/plot/basic_plot.html#plot_2dmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2dmap" title="Permalink to this definition">¶</a></dt>
 <dd><p>2次元カラーマップをプロットする.</p>

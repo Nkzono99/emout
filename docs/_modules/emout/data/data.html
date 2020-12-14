@@ -150,16 +150,18 @@
             
   <h1>Source code for emout.data.data</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-
-<span class="kn">import</span> <span class="nn">h5py</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">matplotlib.animation</span> <span class="k">as</span> <span class="nn">animation</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">emout.plot</span> <span class="k">as</span> <span class="nn">emplt</span>
 <span class="kn">import</span> <span class="nn">emout.utils</span> <span class="k">as</span> <span class="nn">utils</span>
-<span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="n">InpFile</span><span class="p">,</span> <span class="n">UnitConversionKey</span><span class="p">,</span> <span class="n">Units</span><span class="p">,</span> <span class="n">DataFileInfo</span><span class="p">,</span> <span class="n">RegexDict</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">matplotlib.animation</span> <span class="k">as</span> <span class="nn">animation</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DataFileInfo</span><span class="p">,</span> <span class="n">InpFile</span><span class="p">,</span> <span class="n">RegexDict</span><span class="p">,</span> <span class="n">UnitConversionKey</span><span class="p">,</span>
+                         <span class="n">Units</span><span class="p">)</span>
+
 <span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">t_unit</span>
 
 
@@ -195,19 +197,27 @@
         <span class="sa">r</span><span class="s1">&#39;axis&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="p">,</span>
     <span class="p">})</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="n">inpfilename</span><span class="o">=</span><span class="s1">&#39;plasma.inp&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="n">append_directories</span><span class="o">=</span><span class="p">[],</span> <span class="n">inpfilename</span><span class="o">=</span><span class="s1">&#39;plasma.inp&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;EMSES出力・inpファイルを管理するオブジェクトを生成する.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        directory : str or Path</span>
 <span class="sd">            管理するディレクトリ, by default &#39;./&#39;</span>
+<span class="sd">        append_directories : list(str) or list(Path)</span>
+<span class="sd">            管理する継続ディレクトリのリスト, by default []</span>
 <span class="sd">        inpfilename : str, optional</span>
 <span class="sd">            パラメータファイルの名前, by default &#39;plasma.inp&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
             <span class="n">directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">directory</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">append_directories</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">append_directory</span> <span class="ow">in</span> <span class="n">append_directories</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">append_directory</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+                <span class="n">append_directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">append_directory</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_directories</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">append_directory</span><span class="p">)</span>
 
         <span class="c1"># パラメータファイルの読み取りと単位変換器の初期化</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_inp</span> <span class="o">=</span> <span class="kc">None</span>
@@ -218,24 +228,52 @@
             <span class="k">if</span> <span class="n">convkey</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_unit</span> <span class="o">=</span> <span class="n">Units</span><span class="p">(</span><span class="n">dx</span><span class="o">=</span><span class="n">convkey</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="n">to_c</span><span class="o">=</span><span class="n">convkey</span><span class="o">.</span><span class="n">to_c</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">h5file_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.h5&#39;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">series</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fetch_series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">series</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">append_directory</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_directories</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">series</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fetch_series</span><span class="p">(</span><span class="n">append_directory</span><span class="p">):</span>
+                <span class="n">new_series</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">new_series</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__fetch_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;指定したディレクトリ内のh5ファイルを探査し、GridDataSeriesのリストとして返す.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        directory : Path</span>
+<span class="sd">            ディレクトリ</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list(GridDataSeries)</span>
+<span class="sd">            GridDataSeriesのリスト</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tunit</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">axisunit</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tunit</span> <span class="o">=</span> <span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="kc">None</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">axisunit</span> <span class="o">=</span> <span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;axis&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="kc">None</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">h5file_path</span> <span class="ow">in</span> <span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.h5&#39;</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">h5file_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;00_0000.h5&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">tunit</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="n">axisunit</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="n">valunit</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">tunit</span> <span class="o">=</span> <span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="kc">None</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
-                <span class="n">axisunit</span> <span class="o">=</span> <span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;axis&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="kc">None</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="n">valunit</span> <span class="o">=</span> <span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="kc">None</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
 
-            <span class="n">series</span> <span class="o">=</span> <span class="n">GridDataSeries</span><span class="p">(</span><span class="n">h5file_path</span><span class="p">,</span>
-                                    <span class="n">name</span><span class="p">,</span>
-                                    <span class="n">tunit</span><span class="o">=</span><span class="n">tunit</span><span class="p">,</span>
-                                    <span class="n">axisunit</span><span class="o">=</span><span class="n">axisunit</span><span class="p">,</span>
-                                    <span class="n">valunit</span><span class="o">=</span><span class="n">valunit</span><span class="p">)</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">series</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">GridDataSeries</span><span class="p">(</span><span class="n">h5file_path</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="p">,</span>
+                                  <span class="n">tunit</span><span class="o">=</span><span class="n">tunit</span><span class="p">,</span>
+                                  <span class="n">axisunit</span><span class="o">=</span><span class="n">axisunit</span><span class="p">,</span>
+                                  <span class="n">valunit</span><span class="o">=</span><span class="n">valunit</span><span class="p">)</span>
+            <span class="n">series</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">series</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">inp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -346,7 +384,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">datafile</span><span class="o">.</span><span class="n">directory</span>
 
-    <span class="k">def</span> <span class="nf">__create_data_with_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_create_data_with_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;時間が指定された場合に、その時間におけるData3dを生成する.</span>
 
 <span class="sd">        Parameters</span>
@@ -440,9 +478,10 @@
 
         <span class="c1"># 以下、tの範囲のみ指定された場合</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># tが一つだけ指定された場合</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">item</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="n">item</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_data_with_index</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="n">index</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_data_with_index</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>  <span class="c1"># tがスライスで指定された場合</span>
             <span class="n">indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
@@ -454,6 +493,39 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">()</span>
 
+<div class="viewcode-block" id="GridDataSeries.chain"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.GridDataSeries.chain">[docs]</a>    <span class="k">def</span> <span class="nf">chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_series</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;GridDataSeriesを結合する.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_series : GridDataSeries</span>
+<span class="sd">            結合するGridDataSeries</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MultiGridDataSeries</span>
+<span class="sd">            結合したGridDataSeries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MultiGridDataSeries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_series</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_series</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;GridDataSeriesを結合する.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_series : GridDataSeries</span>
+<span class="sd">            結合するGridDataSeries</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        MultiGridDataSeries</span>
+<span class="sd">            結合したGridDataSeries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other_series</span><span class="p">,</span> <span class="n">GridDataSeries</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">other_series</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">indexes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_index2key</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indexes</span><span class="p">:</span>
@@ -461,6 +533,183 @@
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_index2key</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiGridDataSeries"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.MultiGridDataSeries">[docs]</a><span class="k">class</span> <span class="nc">MultiGridDataSeries</span><span class="p">(</span><span class="n">GridDataSeries</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;連続する複数の3次元時系列データを管理する.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    datafile : DataFileInfo</span>
+<span class="sd">        データファイル情報</span>
+<span class="sd">    name : str</span>
+<span class="sd">        データセット名</span>
+<span class="sd">    tunit : UnitTranslator</span>
+<span class="sd">        時間の単位変換器</span>
+<span class="sd">    axisunit : UnitTranslator</span>
+<span class="sd">        空間軸の単位変換器</span>
+<span class="sd">    valunit : UnitTranslator</span>
+<span class="sd">        値の単位変換器</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">series</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">series</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">series</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__expand</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">datafile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">datafile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tunit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axisunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axisunit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">valunit</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">__expand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_series</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;与えられたオブジェクトがMultiGridDataSeriesなら展開してGridDataSeriesのリストとして返す.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data_series : GridDataSeries or MultGridDataSeries</span>
+<span class="sd">            オブジェクト</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list(GridDataSeries)</span>
+<span class="sd">            GridDataSeriesのリスト</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            オブジェクトがGridDataSeriesでない場合の例外</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_series</span><span class="p">,</span> <span class="n">GridDataSeries</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_series</span><span class="p">,</span> <span class="n">MultiGridDataSeries</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">data_series</span><span class="p">]</span>
+
+        <span class="c1"># data_seriesがMultiGridDataSeriesならデータを展開して結合する.</span>
+        <span class="n">expanded</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_series</span><span class="o">.</span><span class="n">series</span><span class="p">:</span>
+            <span class="n">expanded</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__expand</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">expanded</span>
+
+<div class="viewcode-block" id="MultiGridDataSeries.close"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.MultiGridDataSeries.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;hdf5ファイルを閉じる.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">:</span>
+            <span class="n">series</span><span class="o">.</span><span class="n">h5</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MultiGridDataSeries.time_series"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.MultiGridDataSeries.time_series">[docs]</a>    <span class="k">def</span> <span class="nf">time_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;指定した範囲の時系列データを取得する.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : int or slice</span>
+<span class="sd">            x座標</span>
+<span class="sd">        y : int or slice</span>
+<span class="sd">            y座標</span>
+<span class="sd">        z : int or slice</span>
+<span class="sd">            z座標</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            指定した範囲の時系列データ</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">data</span><span class="o">.</span><span class="n">time_series</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+                                 <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">series</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;先頭データのファイル名を返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Path</span>
+<span class="sd">            ファイル名</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">datafile</span><span class="o">.</span><span class="n">filename</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">filenames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;ファイル名のリストを返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list(Path)</span>
+<span class="sd">            ファイル名のリスト</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">filename</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;先頭データのディレクトリ名を返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Path</span>
+<span class="sd">            ディレクトリ名</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">datafile</span><span class="o">.</span><span class="n">directory</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">directories</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;ディレクトリ名のリストを返す.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list(Path)</span>
+<span class="sd">            ディレクトリ名のリスト</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">directory</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_create_data_with_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;時間が指定された場合に、その時間におけるData3dを生成する.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            時間インデックス</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Data3d</span>
+<span class="sd">            生成したData3d</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        IndexError</span>
+<span class="sd">            指定した時間が存在しない場合の例外</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">series</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="c1"># 先頭データは前のデータの最後尾と重複しているためカウントしない</span>
+            <span class="n">series_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">series_len</span> <span class="o">+</span> <span class="n">length</span><span class="p">:</span>
+                <span class="n">local_index</span> <span class="o">=</span> <span class="n">index</span> <span class="o">-</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="n">series</span><span class="p">[</span><span class="n">local_index</span><span class="p">]</span>
+
+            <span class="n">length</span> <span class="o">+=</span> <span class="n">series_len</span>
+
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">iters</span> <span class="o">=</span> <span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">it</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>  <span class="c1"># 先頭データを捨てる</span>
+            <span class="n">iters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">chain</span><span class="p">(</span><span class="n">iters</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 先頭データは前のデータの最後尾と重複しているためカウントしない</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">])</span> <span class="o">-</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Data"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data">[docs]</a><span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -777,7 +1026,7 @@
 <span class="sd">            SI単位系でのt軸</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">val_si</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;SI単位系での値.</span>
@@ -835,7 +1084,10 @@
                 <span class="n">repeat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">notitle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">offsets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;gifアニメーションを作成する</span>
 
@@ -857,9 +1109,21 @@
 <span class="sd">            タイトル(Noneの場合データ名(phisp等)), by default None</span>
 <span class="sd">        notitle : bool, optional</span>
 <span class="sd">            タイトルを付けない場合True, by default False</span>
+<span class="sd">        offsets : (float or str, float or str, float or str)</span>
+<span class="sd">            プロットのx,y,z軸のオフセット(&#39;left&#39;: 最初を0, &#39;center&#39;: 中心を0, &#39;right&#39;: 最後尾を0, float: 値だけずらす), by default None</span>
 <span class="sd">        use_si : bool</span>
 <span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
+
         <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">):</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
 
@@ -872,33 +1136,44 @@
             <span class="k">if</span> <span class="n">notitle</span><span class="p">:</span>
                 <span class="n">_title</span> <span class="o">=</span> <span class="n">title</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
+                <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+                <span class="n">slc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
+                <span class="n">maxlen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+
+                <span class="n">line</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="n">slc</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="n">index</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
                 <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>  <span class="c1"># SI単位系を用いる場合</span>
                     <span class="n">title_format</span> <span class="o">=</span> <span class="n">title</span> <span class="o">+</span> <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">)&#39;</span>
-                    <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
                     <span class="n">axisunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
                     <span class="n">_title</span> <span class="o">=</span> <span class="n">title_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">axisunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">axisunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+                        <span class="n">axisunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">axisunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
 
                 <span class="k">else</span><span class="p">:</span>  <span class="c1"># EMSES単位系を用いる場合</span>
                     <span class="n">title_format</span> <span class="o">=</span> <span class="n">title</span> <span class="o">+</span> <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">)&#39;</span>
-                    <span class="n">slc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis</span><span class="p">]]</span>
-                    <span class="n">maxlen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
-                    <span class="n">ax</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="n">slc</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">))</span>
-                    <span class="n">index</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                     <span class="n">_title</span> <span class="o">=</span> <span class="n">title_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
+            <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">offsets2d</span> <span class="o">=</span> <span class="p">(</span><span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">offsets2d</span> <span class="o">=</span> <span class="kc">None</span>
+
             <span class="n">val</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">_title</span><span class="p">,</span>
-                     <span class="n">use_si</span><span class="o">=</span><span class="n">use_si</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                     <span class="n">use_si</span><span class="o">=</span><span class="n">use_si</span><span class="p">,</span> <span class="n">offsets</span><span class="o">=</span><span class="n">offsets2d</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
         <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
-            <span class="n">vmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
-            <span class="n">vmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="n">vmin</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmax</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">vmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-            <span class="n">vmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="n">vmin</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmax</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
@@ -1002,7 +1277,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Data2d.plot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data2d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Data2d.plot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data2d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">offsets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;2次元データをプロットする.</span>
 
 <span class="sd">        Parameters</span>
@@ -1013,6 +1288,8 @@
 <span class="sd">            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</span>
 <span class="sd">        use_si : bool</span>
 <span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
+<span class="sd">        offsets : (float or str, float or str, float or str)</span>
+<span class="sd">            プロットのx,y,z軸のオフセット(&#39;left&#39;: 最初を0, &#39;center&#39;: 中心を0, &#39;right&#39;: 最後尾を0, float: 値だけずらす), by default None</span>
 <span class="sd">        mesh : (numpy.ndarray, numpy.ndarray), optional</span>
 <span class="sd">            メッシュ, by default None</span>
 <span class="sd">        savefilename : str, optional</span>
@@ -1087,6 +1364,22 @@
             <span class="n">_ylabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
+        <span class="k">def</span> <span class="nf">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="k">return</span> <span class="n">line</span>
+
+        <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_title</span>
@@ -1120,7 +1413,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Data1d.plot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data1d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Data1d.plot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data1d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">offsets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;1次元データをプロットする.</span>
 
 <span class="sd">        Parameters</span>
@@ -1129,6 +1422,8 @@
 <span class="sd">            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</span>
 <span class="sd">        use_si : bool</span>
 <span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
+<span class="sd">        offsets : (float or str, float or str)</span>
+<span class="sd">            プロットのx,y軸のオフセット(&#39;left&#39;: 最初を0, &#39;center&#39;: 中心を0, &#39;right&#39;: 最後尾を0, float: 値だけずらす), by default None</span>
 <span class="sd">        savefilename : str, optional</span>
 <span class="sd">            保存するファイル名, by default None</span>
 <span class="sd">        vmin : float, optional</span>
@@ -1177,6 +1472,21 @@
             <span class="n">_xlabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">_ylabel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
+        <span class="k">def</span> <span class="nf">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="k">return</span> <span class="n">line</span>
+
+        <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
 
@@ -1187,6 +1497,141 @@
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">line</span></div></div>
+
+
+<div class="viewcode-block" id="VectorData2d"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.VectorData2d">[docs]</a><span class="k">class</span> <span class="nc">VectorData2d</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">Group</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">([</span><span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_data</span> <span class="o">=</span> <span class="n">x_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_data</span> <span class="o">=</span> <span class="n">y_data</span>
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;x_data&#39;</span><span class="p">,</span> <span class="s1">&#39;y_data&#39;</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VectorData2d.plot"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.VectorData2d.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_si</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">offsets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;2次元データをプロットする.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        axes : str, optional</span>
+<span class="sd">            プロットする軸(&#39;xy&#39;, &#39;zx&#39;, etc), by default &#39;auto&#39;</span>
+<span class="sd">        show : bool</span>
+<span class="sd">            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</span>
+<span class="sd">        use_si : bool</span>
+<span class="sd">            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</span>
+<span class="sd">        offsets : (float or str, float or str, float or str)</span>
+<span class="sd">            プロットのx,y,z軸のオフセット(&#39;left&#39;: 最初を0, &#39;center&#39;: 中心を0, &#39;right&#39;: 最後尾を0, float: 値だけずらす), by default None</span>
+<span class="sd">        mesh : (numpy.ndarray, numpy.ndarray), optional</span>
+<span class="sd">            メッシュ, by default None</span>
+<span class="sd">        savefilename : str, optional</span>
+<span class="sd">            保存するファイル名(Noneの場合保存しない), by default None</span>
+<span class="sd">        cmap : matplotlib.Colormap or str or None, optional</span>
+<span class="sd">            カラーマップ, by default cm.coolwarm</span>
+<span class="sd">        vmin : float, optional</span>
+<span class="sd">            最小値, by default None</span>
+<span class="sd">        vmax : float, optional</span>
+<span class="sd">            最大値, by default None</span>
+<span class="sd">        figsize : (float, float), optional</span>
+<span class="sd">            図のサイズ, by default None</span>
+<span class="sd">        xlabel : str, optional</span>
+<span class="sd">            x軸のラベル, by default None</span>
+<span class="sd">        ylabel : str, optional</span>
+<span class="sd">            y軸のラベル, by default None</span>
+<span class="sd">        title : str, optional</span>
+<span class="sd">            タイトル, by default None</span>
+<span class="sd">        interpolation : str, optional</span>
+<span class="sd">            用いる補間方法, by default &#39;bilinear&#39;</span>
+<span class="sd">        dpi : int, optional</span>
+<span class="sd">            解像度(figsizeが指定された場合は無視される), by default 10</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        AxesImage or None</span>
+<span class="sd">            プロットしたimageデータ(保存またはshowした場合None)</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            プロットする軸のパラメータが間違っている場合の例外</span>
+<span class="sd">        Exception</span>
+<span class="sd">            プロットする軸がデータにない場合の例外</span>
+<span class="sd">        Exception</span>
+<span class="sd">            データの次元が2でない場合の例外</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">axes</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">use_axes</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;x[yzt]|y[xzt]|z[xyt]|t[xyz]&#39;</span><span class="p">,</span> <span class="n">axes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s1">&#39;Error: axes &quot;</span><span class="si">{axes}</span><span class="s1">&quot; cannot be used with Data2d&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">use_axes</span> <span class="ow">or</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">use_axes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s1">&#39;Error: axes &quot;</span><span class="si">{axes}</span><span class="s1">&quot; cannot be used because </span><span class="si">{axes}</span><span class="s1">-axis does not exist in this data.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s1">&#39;Error: axes &quot;</span><span class="si">{axes}</span><span class="s1">&quot; cannot be used because data is not 2dim shape.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">))</span>
+
+        <span class="c1"># x: 3, y: 2, z:1 t:0</span>
+        <span class="n">axis1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">use_axes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="n">axis2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slice_axes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">use_axes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">axis1</span><span class="p">]))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">axis2</span><span class="p">]))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">axis1</span> <span class="o">&gt;</span> <span class="n">axis2</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># &#39;xz&#39;等の場合は転置</span>
+
+        <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+            <span class="n">xunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis1</span><span class="p">]</span>
+            <span class="n">yunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis2</span><span class="p">]</span>
+            <span class="n">valunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">valunit</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">xunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">yunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+            <span class="n">_xlabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="n">_ylabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">yunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="n">_title</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_xlabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">_ylabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">def</span> <span class="nf">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
+
+        <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_title</span>
+
+        <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2d_vector</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_data</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">img</span></div>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">VectorData2d</span><span class="p">(</span><span class="o">*</span><span class="n">item</span><span class="o">.</span><span class="n">objs</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

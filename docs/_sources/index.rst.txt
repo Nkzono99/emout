@@ -66,6 +66,10 @@ Usage
    >>> data.phisp[1][z, :, :].plot()  # plot xy-plane at z=100
    >>> data.phisp[1][:, y, x].plot()  # plot center line along z-axis
 
+   >>> data.phisp[1][z, :, :].plot(use_si=True)  # can plot with SI-unit (such as x[m], y[m], phisp[V])
+
+   >>> data.phisp[1][z, :, :].plot(show=True)  # to view the plot on the fly (same as matplotlib.pyplot.show())
+   >>> data.phisp[1][z, :, :].plot(savefilename='phisp.png')  # to save to the file
 
 パラメータファイル(plasma.inp)の取得
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -116,6 +120,14 @@ Usage
    >>> # above code does the same as this code
    >>> data1.phisp[10][100, :, :].plot(show=True, title=data1.directory.name)
    >>> data2.phisp[10][100, :, :].plot(show=True, title=data2.directory.name)
+
+継続したシミュレーション結果を扱う
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+   >>> import emout
+   >>> data = emout.Emout('output_dir', append_directories=['output_dir2', 'output_dir3'])
 
 .. toctree::
    :caption: Modules:
