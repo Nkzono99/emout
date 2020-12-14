@@ -69,7 +69,7 @@ def plot_2dmap(data2d,
         用いる補間方法, by default 'bilinear'
     dpi : int, optional
         解像度(figsizeが指定された場合は無視される), by default 10
-    
+
     Returns
     -------
     AxesImage or None
@@ -156,7 +156,7 @@ def plot_line(data1d,
         ラベル, by default None
     title : str, optional
         タイトル, by default None
-    
+
     Returns
     -------
     Line2D or None
@@ -187,3 +187,118 @@ def plot_line(data1d,
         return None
     else:
         return line
+
+
+def plot_2d_vector(x_data2d,
+                   y_data2d,
+                   mesh=None,
+                   savefilename=None,
+                   color=None,
+                   scaler='standard',
+                   skip=1,
+                   figsize=None,
+                   xlabel=None,
+                   ylabel=None,
+                   title=None,
+                   dpi=10):
+    """2次元カラーマップをプロットする.
+
+    Parameters
+    ----------
+    data2d : numpy.ndarray
+        2次元データ
+    mesh : (numpy.ndarray, numpy.ndarray), optional
+        メッシュ, by default None
+    savefilename : str, optional
+        保存するファイル名(Noneの場合保存しない), by default None
+    cmap : matplotlib.Colormap or str or None, optional
+        カラーマップ, by default cm.coolwarm
+    mask_color : str
+        マスクされた位置の色, by default 'gray'
+    vmin : float, optional
+        最小値, by default None
+    vmax : float, optional
+        最大値, by default None
+    figsize : (float, float), optional
+        図のサイズ, by default None
+    xlabel : str, optional
+        x軸のラベル, by default None
+    ylabel : str, optional
+        y軸のラベル, by default None
+    title : str, optional
+        タイトル, by default None
+    interpolation : str, optional
+        用いる補間方法, by default 'bilinear'
+    dpi : int, optional
+        解像度(figsizeが指定された場合は無視される), by default 10
+
+    Returns
+    -------
+    AxesImage or None
+        プロットしたimageデータ(保存した場合None)
+    """
+    if savefilename is not None:
+        if figsize is None:
+            fig = plt.figure()
+        else:
+            if figsize == 'auto':
+                figsize = figsize_with_2d(data2d, dpi=dpi)
+            fig = plt.figure(figsize=figsize)
+
+    if mesh is None:
+        x = list(range(x_data2d.shape[1]))
+        y = list(range(x_data2d.shape[0]))
+        mesh = np.meshgrid(x, y)
+
+    x = mesh[0]
+    y = mesh[1]
+    U = np.array(x_data2d)
+    V = np.array(y_data2d)
+
+    x_skip = skip if type(skip) == int else skip[0]
+    y_skip = skip if type(skip) == int else skip[1]
+    x = x[::y_skip, ::x_skip]
+    y = y[::y_skip, ::x_skip]
+    U = U[::y_skip, ::x_skip] * np.sqrt(x_skip**2 + y_skip**2) / np.sqrt(2)
+    V = V[::y_skip, ::x_skip] * np.sqrt(x_skip**2 + y_skip**2) / np.sqrt(2)
+
+    if scaler == 'standard':
+        norm = np.sqrt(U**2 + V**2)
+        U /= np.abs(norm).max()
+        V /= np.abs(norm).max()
+
+    elif scaler == 'normal':
+        norm = np.sqrt(U**2 + V**2)
+        U /= norm
+        V /= norm
+
+    elif scaler == 'log':
+        norm = np.sqrt(U**2 + V**2)
+        U = U / norm * np.log(norm+1)
+        V = V / norm * np.log(norm+1)
+        norm = np.sqrt(U**2 + V**2)
+        U /= np.abs(norm).max()
+        V /= np.abs(norm).max()
+
+    img = plt.quiver(x,
+                     y,
+                     U,
+                     V,
+                     angles='xy',
+                     scale_units='xy',
+                     scale=1)
+    plt.colorbar()
+
+    if title is not None:
+        plt.title(title)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+
+    if savefilename is not None:
+        fig.savefig(savefilename)
+        plt.close(fig)
+        return None
+    else:
+        return img
