@@ -65,7 +65,7 @@ class Group:
                         for obj, other in zip(self.objs, others)]
         else:
             new_objs = [callable(obj, other) for obj in self.objs]
-        return Group(new_objs)
+        return type(self)(new_objs)
 
     def __check_and_return_iterable(self, arg):
         """対象がGroupオブジェクトか判定し、対象をself.objs長にブロードキャストする.
@@ -119,7 +119,7 @@ class Group:
         Group([2, 4, 6])
         """
         new_objs = list(map(callable, self.objs))
-        return Group(new_objs)
+        return type(self)(new_objs)
 
     def filter(self, predicate):
         """オブジェクトのうち関数が真を返すもののみで新しいグループを生成する.
@@ -141,7 +141,7 @@ class Group:
         Group([1, 2])
         """
         new_objs = list(filter(predicate, self.objs))
-        return Group(new_objs)
+        return type(self)(new_objs)
 
     def foreach(self, callable):
         """すべてのオブジェクトに対して関数を適用する.
@@ -344,7 +344,7 @@ class Group:
 
         new_objs = [obj[key] for obj, key in zip(self.objs, keys)]
 
-        return Group(new_objs)
+        return type(self)(new_objs)
 
     def __setitem__(self, key, value):
         keys = self.__expand_key(key)
@@ -362,7 +362,7 @@ class Group:
     def __getattr__(self, key):
         keys = self.__check_and_return_iterable(key)
         new_objs = [getattr(obj, key) for obj, key in zip(self.objs, keys)]
-        return Group(new_objs)
+        return type(self)(new_objs)
 
     def __setattr__(self, key, value):
         if key in ('objs', '__dict__'):
@@ -392,7 +392,7 @@ class Group:
         new_objs = [obj(*new_args, **new_kwargs)
                     for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)]
 
-        return Group(new_objs)
+        return type(self)(new_objs)
 
     def __round__(self):
         return self.map(math.round)
