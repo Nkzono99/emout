@@ -1,3 +1,4 @@
+import scipy.constants as cn
 from emout.utils import UnitTranslator
 
 
@@ -74,3 +75,26 @@ def none_unit(out):
         name='',
         unit=''
     )
+
+
+def ndp_unit(out):
+    wpe = out.unit.f.reverse(out.inp.wp[0])
+    ne = wpe ** 2 * cn.m_e * cn.epsilon_0 / cn.e**2
+    return UnitTranslator(
+        ne * 1e-6,
+        1.0,
+        name='number density',
+        unit='/cc'
+    )
+
+
+def nd3p_unit(out):
+    wpp = out.unit.f.reverse(out.inp.wp[2])
+    np = wpp ** 2 * cn.m_e * cn.epsilon_0 / cn.e**2
+    return UnitTranslator(
+        np * 1e-6,
+        1.0,
+        name='number density',
+        unit='/cc'
+    )
+

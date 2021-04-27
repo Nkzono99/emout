@@ -283,6 +283,39 @@
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt id="emout.plot.basic_plot.plot_surface">
+<code class="sig-prename descclassname">emout.plot.basic_plot.</code><code class="sig-name descname">plot_surface</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">z</em>, <em class="sig-param">value</em>, <em class="sig-param">ax3d=None</em>, <em class="sig-param">add_colorbar=False</em>, <em class="sig-param">savefilename=None</em>, <em class="sig-param">cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;</em>, <em class="sig-param">mask_color='gray'</em>, <em class="sig-param">vmin=None</em>, <em class="sig-param">vmax=None</em>, <em class="sig-param">figsize=None</em>, <em class="sig-param">xlabel=None</em>, <em class="sig-param">ylabel=None</em>, <em class="sig-param">zlabel=None</em>, <em class="sig-param">title=None</em>, <em class="sig-param">interpolation='bilinear'</em>, <em class="sig-param">dpi=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/plot/basic_plot.html#plot_surface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_surface" title="Permalink to this definition">¶</a></dt>
+<dd><p>3次元表面プロットをする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – x座標のメッシュ</p></li>
+<li><p><strong>y</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – y座標のメッシュ</p></li>
+<li><p><strong>z</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – z座標のメッシュ</p></li>
+<li><p><strong>val</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – 値のメッシュ</p></li>
+<li><p><strong>ax3d</strong> (<em>Axes3D</em>) – Axes3Dオブジェクト, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>zlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – z軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="module-emout.plot">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.plot" title="Permalink to this headline">¶</a></h2>

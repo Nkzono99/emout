@@ -11,16 +11,7 @@ import numpy as np
 from emout.utils import (DataFileInfo, InpFile, RegexDict, UnitConversionKey,
                          Units)
 
-from .util import t_unit
-
-
-def none_unit(out):
-    return utils.UnitTranslator(
-        1,
-        1,
-        name='',
-        unit=''
-    )
+from .util import t_unit, ndp_unit, nd3p_unit
 
 
 class Emout:
@@ -36,7 +27,8 @@ class Emout:
 
     name2unit = RegexDict({
         r'phisp': lambda self: self.unit.phi,
-        r'nd[0-9]+p': none_unit,
+        r'nd[12]p': ndp_unit,
+        r'nd3p': nd3p_unit,
         r'rho': lambda self: self.unit.rho,
         r'rhobk': lambda self: self.unit.rho,
         r'j.*': lambda self: self.unit.J,
@@ -972,6 +964,7 @@ class Data(np.ndarray):
                 line -= line[-1]
             else:
                 line += offset
+            return line
 
         def _update(i, vmin, vmax):
             plt.clf()
@@ -989,7 +982,7 @@ class Data(np.ndarray):
                 slc = self.slices[ax]
                 maxlen = self.shape[axis]
 
-                line = list(utils.range_with_slice(slc, maxlen=maxlen))
+                line = np.array(utils.range_with_slice(slc, maxlen=maxlen))
 
                 if offsets is not None:
                     line = _offseted(line, offsets[0])
@@ -1007,7 +1000,7 @@ class Data(np.ndarray):
                     _title = title_format.format(index)
 
             if offsets is not None:
-                offsets2d = (offsets[1], offsets[2])
+                offsets2d = offsets[1:]
             else:
                 offsets2d = None
 
@@ -1126,7 +1119,7 @@ class Data2d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, axes='auto', show=False, use_si=False, offsets=None, **kwargs):
+    def plot(self, axes='auto', show=False, use_si=False, offsets=None, mode='cm', **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -1139,6 +1132,8 @@ class Data2d(Data):
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         offsets : (float or str, float or str, float or str)
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+        mode : str
+            プロットの種類('cm': カラーマップ, 'surf': サーフェースプロット)
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
@@ -1215,26 +1210,53 @@ class Data2d(Data):
 
         def _offseted(line, offset):
             if offset == 'left':
-                line -= line[0]
+                line -= line.ravel()[0]
             elif offset == 'center':
-                line -= line[len(line) // 2]
+                line -= line.ravel()[line.size // 2]
             elif offset == 'right':
-                line -= line[-1]
+                line -= line.ravel()[-1]
             else:
                 line += offset
             return line
-
-        if offsets is not None:
-            x = _offseted(x, offsets[0])
-            y = _offseted(y, offsets[1])
-            z = _offseted(z, offsets[2])
 
         kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
         kwargs['title'] = kwargs.get('title', None) or _title
 
-        mesh = np.meshgrid(x, y)
-        img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+
+        if mode == 'cm':
+            if offsets is not None:
+                x = _offseted(x, offsets[0])
+                y = _offseted(y, offsets[1])
+                z = _offseted(z, offsets[2])
+            mesh = np.meshgrid(x, y)
+
+            img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+        elif mode == 'surf':
+            mesh = np.meshgrid(x, y)
+
+            kwargs['zlabel'] = kwargs.get('zlabel', None) or _title
+            val = z
+            if 'x' not in self.use_axes:
+                y, z = mesh
+                x = self.x_si[0] if use_si else self.x[0]
+                x = np.zeros_like(mesh[0]) + x
+            elif 'y' not in self.use_axes:
+                x, z = mesh
+                y = self.y_si[0] if use_si else self.y[0]
+                y = np.zeros_like(mesh[0]) + y
+            elif 'z' not in self.use_axes:
+                x, y = mesh
+                z = self.z_si[0] if use_si else self.z[0]
+                z = np.zeros_like(mesh[0]) + z
+            
+            if offsets is not None:
+                x = _offseted(x, offsets[0])
+                y = _offseted(y, offsets[1])
+                z = _offseted(z, offsets[2])
+                val = _offseted(val, offsets[3])
+            
+            img = emplt.plot_surface(x, y, z, val, **kwargs)
 
         if show:
             plt.show()
@@ -1349,7 +1371,8 @@ class Data1d(Data):
 
 
 class VectorData2d(utils.Group):
-    def __init__(self, x_data, y_data):
+    def __init__(self, objs):
+        x_data, y_data = objs
         super().__init__([x_data, y_data])
         self.x_data = x_data
         self.y_data = y_data
@@ -1429,7 +1452,6 @@ class VectorData2d(utils.Group):
 
         x = np.arange(*utils.slice2tuple(self.objs[0].slices[axis1]))
         y = np.arange(*utils.slice2tuple(self.objs[0].slices[axis2]))
-        z = self.objs[0] if axis1 > axis2 else self.objs[0].T  # 'xz'等の場合は転置
 
         if use_si:
             xunit = self.objs[0].axisunits[axis1]
@@ -1438,16 +1460,21 @@ class VectorData2d(utils.Group):
 
             x = xunit.reverse(x)
             y = yunit.reverse(y)
-            z = valunit.reverse(z)
 
             _xlabel = '{} [{}]'.format(axes[0], xunit.unit)
             _ylabel = '{} [{}]'.format(axes[1], yunit.unit)
             _title = '{} [{}]'.format(
-                self.objs[0].name, self.objs[0].valunit.unit)
+                self.objs[0].name, valunit.unit)
+            
+            x_data = self.x_data.val_si
+            y_data = self.y_data.val_si
         else:
             _xlabel = axes[0]
             _ylabel = axes[1]
             _title = self.objs[0].name
+    
+            x_data = self.x_data
+            y_data = self.y_data
 
         def _offseted(line, offset):
             if offset == 'left':
@@ -1458,11 +1485,11 @@ class VectorData2d(utils.Group):
                 line -= line[-1]
             else:
                 line += offset
+            return line
 
         if offsets is not None:
             x = _offseted(x, offsets[0])
             y = _offseted(y, offsets[1])
-            z = _offseted(z, offsets[2])
 
         kwargs['xlabel'] = kwargs.get('xlabel', None) or _xlabel
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
@@ -1470,14 +1497,10 @@ class VectorData2d(utils.Group):
 
         mesh = np.meshgrid(x, y)
         img = emplt.plot_2d_vector(
-            self.x_data, self.y_data, mesh=mesh, **kwargs)
+            x_data, y_data, mesh=mesh, **kwargs)
 
         if show:
             plt.show()
             return None
         else:
             return img
-
-    def __getitem__(self, key):
-        item = super().__getitem__(key)
-        return VectorData2d(*item.objs)
