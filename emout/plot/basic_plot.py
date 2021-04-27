@@ -1,9 +1,37 @@
 import copy
 
+import emout.utils as utils
+import matplotlib
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from matplotlib.colors import Colormap
 import numpy as np
+from matplotlib.colors import Colormap
+import matplotlib.colors as mcolors
+
+_r = 0.98
+_d = 0.5
+mycmap = mcolors.LinearSegmentedColormap('gray-jet', {
+    'red':   ((0.00, 0.3, 0.3),
+              (_d*(1-_r), 0.3, 0.3),
+              (0.35*_r+(1-_r), 0, 0),
+              (0.66*_r+(1-_r), 1, 1),
+              (0.89*_r+(1-_r), 1, 1),
+              (1.00, 0.5, 0.5)),
+    'green': ((0.00, 0.3, 0.3),
+              (_d*(1-_r), 0.3, 0.3),
+              (0.125*_r+(1-_r), 0, 0),
+              (0.375*_r+(1-_r), 1, 1),
+              (0.640*_r+(1-_r), 1, 1),
+              (0.910*_r+(1-_r), 0, 0),
+              (1.000, 0, 0)),
+    'blue':  ((0.00, 0.3, 0.3),
+              (_d*(1-_r), 0.3, 0.3),
+              (0.00*_r+(1-_r), 0.5, 0.5),
+              (0.11*_r+(1-_r), 1, 1),
+              (0.34*_r+(1-_r), 1, 1),
+              (0.65*_r+(1-_r), 0, 0),
+              (1.00, 0, 0))
+})
 
 
 def figsize_with_2d(data2d, dpi=10):
@@ -29,7 +57,7 @@ def figsize_with_2d(data2d, dpi=10):
 def plot_2dmap(data2d,
                mesh=None,
                savefilename=None,
-               cmap=cm.coolwarm,
+               cmap=mycmap,
                mask_color='gray',
                vmin=None,
                vmax=None,
