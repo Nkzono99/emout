@@ -1,6 +1,33 @@
-from pathlib import Path
 import re
+from pathlib import Path
+
+import numpy as np
+import scipy.interpolate as interp
 from matplotlib.animation import PillowWriter, writers
+
+
+def interp2d(mesh, n, **kwargs):
+    ny, nx = mesh.shape
+
+    if (mesh == mesh[0, 0]).all():
+        return np.zeros((int(ny * n), int(nx * n))) + mesh[0, 0]
+
+    x_sparse = np.linspace(0, 1, nx)
+    y_sparse = np.linspace(0, 1, ny)
+
+    X_sparse, Y_sparse = np.meshgrid(x_sparse, y_sparse)
+
+    x_dense = np.linspace(0, 1, int(nx * n))
+    y_dense = np.linspace(0, 1, int(ny * n))
+    X_dense, Y_dense = np.meshgrid(x_dense, y_dense)
+
+    points = (X_sparse.flatten(), Y_sparse.flatten())
+    value = mesh.flatten()
+    points_dense = (X_dense.flatten(), Y_dense.flatten())
+
+    mesh_dense = interp.griddata(points, value, points_dense, **kwargs)
+
+    return mesh_dense.reshape(X_dense.shape)
 
 
 def slice2tuple(slice_obj: slice):
