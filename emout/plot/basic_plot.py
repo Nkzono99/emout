@@ -66,7 +66,8 @@ def plot_2dmap(data2d,
                ylabel=None,
                title=None,
                interpolation='bilinear',
-               dpi=10):
+               dpi=10,
+               **kwargs):
     """2次元カラーマップをプロットする.
 
     Parameters
@@ -148,6 +149,102 @@ def plot_2dmap(data2d,
         return None
     else:
         return img
+
+
+def plot_2d_contour(data2d,
+                    mesh=None,
+                    levels=None,
+                    colors=['black'],
+                    cmap=None,
+                    alpha=1,
+                    vmin=None,
+                    vmax=None,
+                    savefilename=None,
+                    figsize=None,
+                    xlabel=None,
+                    ylabel=None,
+                    title=None,
+                    dpi=10,
+                    fmt='%1.1f',
+                    fontsize=12,
+                    **kwargs):
+    """2次元カラーマップをプロットする.
+
+    Parameters
+    ----------
+    data2d : numpy.ndarray
+        2次元データ
+    mesh : (numpy.ndarray, numpy.ndarray), optional
+        メッシュ, by default None
+    savefilename : str, optional
+        保存するファイル名(Noneの場合保存しない), by default None
+    cmap : matplotlib.Colormap or str or None, optional
+        カラーマップ, by default cm.coolwarm
+    mask_color : str
+        マスクされた位置の色, by default 'gray'
+    vmin : float, optional
+        最小値, by default None
+    vmax : float, optional
+        最大値, by default None
+    figsize : (float, float), optional
+        図のサイズ, by default None
+    xlabel : str, optional
+        x軸のラベル, by default None
+    ylabel : str, optional
+        y軸のラベル, by default None
+    title : str, optional
+        タイトル, by default None
+    interpolation : str, optional
+        用いる補間方法, by default 'bilinear'
+    dpi : int, optional
+        解像度(figsizeが指定された場合は無視される), by default 10
+
+    Returns
+    -------
+    AxesImage or None
+        プロットしたimageデータ(保存した場合None)
+    """
+    if savefilename is not None:
+        if figsize is None:
+            fig = plt.figure()
+        else:
+            if figsize == 'auto':
+                figsize = figsize_with_2d(data2d, dpi=dpi)
+            fig = plt.figure(figsize=figsize)
+
+    if mesh is None:
+        x = list(range(data2d.shape[1]))
+        y = list(range(data2d.shape[0]))
+        mesh = np.meshgrid(x, y)
+
+    kwargs = {
+        'alpha': alpha,
+        'vmin': vmin,
+        'vmax': vmax,
+    }
+    print(cmap)
+    if cmap is None:
+        kwargs['colors'] = colors
+    else:
+        kwargs['cmap'] = cmap
+    if levels is not None:
+        kwargs['levels'] = levels
+    cont = plt.contour(*mesh, data2d, **kwargs)
+    cont.clabel(fmt=fmt, fontsize=fontsize)
+
+    if title is not None:
+        plt.title(title)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+
+    if savefilename is not None:
+        fig.savefig(savefilename)
+        plt.close(fig)
+        return None
+    else:
+        return cont
 
 
 def plot_surface(x, y, z, value,
@@ -409,7 +506,7 @@ def plot_2d_vector(x_data2d,
     y = y[::y_skip, ::x_skip]
     U = U[::y_skip, ::x_skip]
     V = V[::y_skip, ::x_skip]
-    
+
     norm = np.sqrt(U**2 + V**2)
 
     if scaler == 'standard':
@@ -432,7 +529,7 @@ def plot_2d_vector(x_data2d,
         norm_mean = np.nanmean(np.sqrt(U**2 + V**2))
         U *= scale / norm_mean * multiplier
         V *= scale / norm_mean * multiplier
-    
+
     img = plt.quiver(x,
                      y,
                      U,
