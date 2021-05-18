@@ -168,7 +168,7 @@ def plot_2d_contour(data2d,
                     fmt='%1.1f',
                     fontsize=12,
                     **kwargs):
-    """2次元カラーマップをプロットする.
+    """2次元等高線をプロットする.
 
     Parameters
     ----------
@@ -176,10 +176,14 @@ def plot_2d_contour(data2d,
         2次元データ
     mesh : (numpy.ndarray, numpy.ndarray), optional
         メッシュ, by default None
+    levels : int
+        等高線数, by default None
+    alpha : float
+        透明度(0.0~1.0), by default 1
     savefilename : str, optional
         保存するファイル名(Noneの場合保存しない), by default None
     cmap : matplotlib.Colormap or str or None, optional
-        カラーマップ, by default cm.coolwarm
+        カラーマップ, by default None
     mask_color : str
         マスクされた位置の色, by default 'gray'
     vmin : float, optional
@@ -198,6 +202,10 @@ def plot_2d_contour(data2d,
         用いる補間方法, by default 'bilinear'
     dpi : int, optional
         解像度(figsizeが指定された場合は無視される), by default 10
+    fmt : str
+        clabelの形式, by default '%1.1f'
+    fontsize : str
+        clabelのフォントサイズ, by default 12
 
     Returns
     -------

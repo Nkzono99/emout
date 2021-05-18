@@ -1133,7 +1133,7 @@ class Data2d(Data):
         offsets : (float or str, float or str, float or str)
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         mode : str
-            プロットの種類('cm': カラーマップ, 'surf': サーフェースプロット)
+            プロットの種類('cm': カラーマップ, 'cont': 等高線プロット, 'surf': サーフェースプロット)
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
