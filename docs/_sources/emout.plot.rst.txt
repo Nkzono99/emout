@@ -12,6 +12,14 @@ emout.plot.basic\_plot module
    :undoc-members:
    :show-inheritance:
 
+emout.plot.extra\_plot module
+-----------------------------
+
+.. automodule:: emout.plot.extra_plot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

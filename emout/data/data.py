@@ -1133,7 +1133,7 @@ class Data2d(Data):
         offsets : (float or str, float or str, float or str)
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         mode : str
-            プロットの種類('cm': カラーマップ, 'surf': サーフェースプロット)
+            プロットの種類('cm': カラーマップ, 'cont': 等高線プロット, 'surf': サーフェースプロット)
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
@@ -1223,16 +1223,7 @@ class Data2d(Data):
         kwargs['ylabel'] = kwargs.get('ylabel', None) or _ylabel
         kwargs['title'] = kwargs.get('title', None) or _title
 
-
-        if mode == 'cm':
-            if offsets is not None:
-                x = _offseted(x, offsets[0])
-                y = _offseted(y, offsets[1])
-                z = _offseted(z, offsets[2])
-            mesh = np.meshgrid(x, y)
-
-            img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
-        elif mode == 'surf':
+        if mode == 'surf':
             mesh = np.meshgrid(x, y)
 
             kwargs['zlabel'] = kwargs.get('zlabel', None) or _title
@@ -1249,20 +1240,35 @@ class Data2d(Data):
                 x, y = mesh
                 z = self.z_si[0] if use_si else self.z[0]
                 z = np.zeros_like(mesh[0]) + z
-            
+
             if offsets is not None:
                 x = _offseted(x, offsets[0])
                 y = _offseted(y, offsets[1])
                 z = _offseted(z, offsets[2])
                 val = _offseted(val, offsets[3])
+
+            imgs = emplt.plot_surface(x, y, z, val, **kwargs)
+        else:
+            if offsets is not None:
+                x = _offseted(x, offsets[0])
+                y = _offseted(y, offsets[1])
+                z = _offseted(z, offsets[2])
+            mesh = np.meshgrid(x, y)
             
-            img = emplt.plot_surface(x, y, z, val, **kwargs)
+            imgs = []
+            if 'cm' in mode:
+                img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+                imgs.append(img)
+
+            if 'cont' in mode:
+                img = emplt.plot_2d_contour(z, mesh=mesh, **kwargs)
+                imgs.append(img)
 
         if show:
             plt.show()
             return None
         else:
-            return img
+            return imgs[0] if len(imgs) == 1 else imgs
 
 
 class Data1d(Data):
@@ -1465,14 +1471,14 @@ class VectorData2d(utils.Group):
             _ylabel = '{} [{}]'.format(axes[1], yunit.unit)
             _title = '{} [{}]'.format(
                 self.objs[0].name, valunit.unit)
-            
+
             x_data = self.x_data.val_si
             y_data = self.y_data.val_si
         else:
             _xlabel = axes[0]
             _ylabel = axes[1]
             _title = self.objs[0].name
-    
+
             x_data = self.x_data
             y_data = self.y_data
 

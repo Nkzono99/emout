@@ -12,10 +12,10 @@ setup(
     description='Emses output manager',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version='0.11.1',
+    version='0.12.0',
     install_requires=_require_packages('requirements.txt'),
     author='Nkzono99',
-    author_email='1735112t@gsuite.stu.kobe-u.ac.jp',
+    author_email='210x218x@gsuite.stu.kobe-u.ac.jp',
     url='https://github.com/Nkzono99/emout',
     packages=find_packages(),
     classifiers=[

@@ -162,16 +162,7 @@
 <span class="kn">from</span> <span class="nn">emout.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DataFileInfo</span><span class="p">,</span> <span class="n">InpFile</span><span class="p">,</span> <span class="n">RegexDict</span><span class="p">,</span> <span class="n">UnitConversionKey</span><span class="p">,</span>
                          <span class="n">Units</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">t_unit</span>
-
-
-<div class="viewcode-block" id="none_unit"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.none_unit">[docs]</a><span class="k">def</span> <span class="nf">none_unit</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">UnitTranslator</span><span class="p">(</span>
-        <span class="mi">1</span><span class="p">,</span>
-        <span class="mi">1</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
-        <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
-    <span class="p">)</span></div>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">t_unit</span><span class="p">,</span> <span class="n">ndp_unit</span><span class="p">,</span> <span class="n">nd3p_unit</span>
 
 
 <div class="viewcode-block" id="Emout"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Emout">[docs]</a><span class="k">class</span> <span class="nc">Emout</span><span class="p">:</span>
@@ -187,7 +178,8 @@
 
     <span class="n">name2unit</span> <span class="o">=</span> <span class="n">RegexDict</span><span class="p">({</span>
         <span class="sa">r</span><span class="s1">&#39;phisp&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span>
-        <span class="sa">r</span><span class="s1">&#39;nd[0-9]+p&#39;</span><span class="p">:</span> <span class="n">none_unit</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;nd[12]p&#39;</span><span class="p">:</span> <span class="n">ndp_unit</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s1">&#39;nd3p&#39;</span><span class="p">:</span> <span class="n">nd3p_unit</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;rhobk&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
         <span class="sa">r</span><span class="s1">&#39;j.*&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
@@ -1123,6 +1115,7 @@
                 <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="k">return</span> <span class="n">line</span>
 
         <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">):</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
@@ -1140,7 +1133,7 @@
                 <span class="n">slc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
                 <span class="n">maxlen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
 
-                <span class="n">line</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="n">slc</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">))</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">range_with_slice</span><span class="p">(</span><span class="n">slc</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">maxlen</span><span class="p">))</span>
 
                 <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">line</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1158,7 +1151,7 @@
                     <span class="n">_title</span> <span class="o">=</span> <span class="n">title_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">offsets2d</span> <span class="o">=</span> <span class="p">(</span><span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">offsets2d</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">offsets2d</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1291,7 +1284,7 @@
 <span class="sd">        offsets : (float or str, float or str, float or str)</span>
 <span class="sd">            プロットのx,y,z軸のオフセット(&#39;left&#39;: 最初を0, &#39;center&#39;: 中心を0, &#39;right&#39;: 最後尾を0, float: 値だけずらす), by default None</span>
 <span class="sd">        mode : str</span>
-<span class="sd">            プロットの種類(&#39;cm&#39;: カラーマップ, &#39;surf&#39;: サーフェースプロット)</span>
+<span class="sd">            プロットの種類(&#39;cm&#39;: カラーマップ, &#39;cont&#39;: 等高線プロット, &#39;surf&#39;: サーフェースプロット)</span>
 <span class="sd">        mesh : (numpy.ndarray, numpy.ndarray), optional</span>
 <span class="sd">            メッシュ, by default None</span>
 <span class="sd">        savefilename : str, optional</span>
@@ -1368,29 +1361,22 @@
 
         <span class="k">def</span> <span class="nf">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
-                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
-                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">line</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
-                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
             <span class="k">return</span> <span class="n">line</span>
-
-        <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_title</span>
 
-        <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;surf&#39;</span><span class="p">:</span>
+            <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;cm&#39;</span><span class="p">:</span>
-            <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2dmap</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;surf&#39;</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;zlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;zlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_title</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">z</span>
             <span class="k">if</span> <span class="s1">&#39;x&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_axes</span><span class="p">:</span>
@@ -1405,13 +1391,35 @@
                 <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">mesh</span>
                 <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_si</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">use_si</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">mesh</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">z</span>
-            <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+            <span class="n">imgs</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            
+            <span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="s1">&#39;cm&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2dmap</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;cont&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2d_contour</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">img</span></div></div>
+            <span class="k">return</span> <span class="n">imgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">imgs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">imgs</span></div></div>
 
 
 <div class="viewcode-block" id="Data1d"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.Data1d">[docs]</a><span class="k">class</span> <span class="nc">Data1d</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
@@ -1520,7 +1528,8 @@
 
 
 <div class="viewcode-block" id="VectorData2d"><a class="viewcode-back" href="../../../emout.data.html#emout.data.data.VectorData2d">[docs]</a><span class="k">class</span> <span class="nc">VectorData2d</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">Group</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">objs</span><span class="p">):</span>
+        <span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span> <span class="o">=</span> <span class="n">objs</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">([</span><span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x_data</span> <span class="o">=</span> <span class="n">x_data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">y_data</span> <span class="o">=</span> <span class="n">y_data</span>
@@ -1600,7 +1609,6 @@
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">axis1</span><span class="p">]))</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">*</span><span class="n">utils</span><span class="o">.</span><span class="n">slice2tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slices</span><span class="p">[</span><span class="n">axis2</span><span class="p">]))</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">axis1</span> <span class="o">&gt;</span> <span class="n">axis2</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># &#39;xz&#39;等の場合は転置</span>
 
         <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
             <span class="n">xunit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axisunits</span><span class="p">[</span><span class="n">axis1</span><span class="p">]</span>
@@ -1609,16 +1617,21 @@
 
             <span class="n">x</span> <span class="o">=</span> <span class="n">xunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">yunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">valunit</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
 
             <span class="n">_xlabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
             <span class="n">_ylabel</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">yunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
             <span class="n">_title</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">valunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">valunit</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+
+            <span class="n">x_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_data</span><span class="o">.</span><span class="n">val_si</span>
+            <span class="n">y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_data</span><span class="o">.</span><span class="n">val_si</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_xlabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">_ylabel</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+
+            <span class="n">x_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_data</span>
+            <span class="n">y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_data</span>
 
         <span class="k">def</span> <span class="nf">_offseted</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
@@ -1629,11 +1642,11 @@
                 <span class="n">line</span> <span class="o">-=</span> <span class="n">line</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">line</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="k">return</span> <span class="n">line</span>
 
         <span class="k">if</span> <span class="n">offsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">_offseted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xlabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_xlabel</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ylabel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ylabel&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_ylabel</span>
@@ -1641,17 +1654,13 @@
 
         <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
         <span class="n">img</span> <span class="o">=</span> <span class="n">emplt</span><span class="o">.</span><span class="n">plot_2d_vector</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">x_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_data</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">img</span></div>
-
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">VectorData2d</span><span class="p">(</span><span class="o">*</span><span class="n">item</span><span class="o">.</span><span class="n">objs</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="n">img</span></div></div>
 </pre></div>
 
            </div>
