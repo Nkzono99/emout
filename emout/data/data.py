@@ -439,7 +439,7 @@ class MultiGridDataSeries(GridDataSeries):
         """hdf5ファイルを閉じる.
         """
         for data in self.series:
-            series.h5.close()
+            self.series.h5.close()
 
     def time_series(self, x, y, z):
         """指定した範囲の時系列データを取得する.
@@ -1055,7 +1055,7 @@ class Data4d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(mode='auto', **kwargs):
+    def plot(self, mode='auto', **kwargs):
         """3次元データをプロットする.(未実装)
 
         Parameters
@@ -1087,7 +1087,7 @@ class Data3d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(mode='auto', **kwargs):
+    def plot(self, mode='auto', **kwargs):
         """3次元データをプロットする.(未実装)
 
         Parameters
