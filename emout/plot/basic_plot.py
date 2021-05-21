@@ -104,14 +104,6 @@ def plot_2dmap(data2d,
     AxesImage or None
         プロットしたimageデータ(保存した場合None)
     """
-    if savefilename is not None:
-        if figsize is None:
-            fig = plt.figure()
-        else:
-            if figsize == 'auto':
-                figsize = figsize_with_2d(data2d, dpi=dpi)
-            fig = plt.figure(figsize=figsize)
-
     if mesh is None:
         x = list(range(data2d.shape[1]))
         y = list(range(data2d.shape[0]))
@@ -144,8 +136,8 @@ def plot_2dmap(data2d,
         plt.ylabel(ylabel)
 
     if savefilename is not None:
-        fig.savefig(savefilename)
-        plt.close(fig)
+        plt.gcf().savefig(savefilename)
+        plt.close(plt.gcf())
         return None
     else:
         return img
@@ -212,14 +204,6 @@ def plot_2d_contour(data2d,
     AxesImage or None
         プロットしたimageデータ(保存した場合None)
     """
-    if savefilename is not None:
-        if figsize is None:
-            fig = plt.figure()
-        else:
-            if figsize == 'auto':
-                figsize = figsize_with_2d(data2d, dpi=dpi)
-            fig = plt.figure(figsize=figsize)
-
     if mesh is None:
         x = list(range(data2d.shape[1]))
         y = list(range(data2d.shape[0]))
@@ -230,7 +214,6 @@ def plot_2d_contour(data2d,
         'vmin': vmin,
         'vmax': vmax,
     }
-    print(cmap)
     if cmap is None:
         kwargs['colors'] = colors
     else:
@@ -248,8 +231,8 @@ def plot_2d_contour(data2d,
         plt.ylabel(ylabel)
 
     if savefilename is not None:
-        fig.savefig(savefilename)
-        plt.close(fig)
+        plt.gcf().savefig(savefilename)
+        plt.close(plt.gcf())
         return None
     else:
         return cont
