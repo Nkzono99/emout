@@ -1254,13 +1254,19 @@ class Data2d(Data):
                 y = _offseted(y, offsets[1])
                 z = _offseted(z, offsets[2])
             mesh = np.meshgrid(x, y)
-            
+
             imgs = []
-            if 'cm' in mode:
+            if 'cm' in mode and 'cont' in mode:
+                savefilename = kwargs.get('savefilename', None)
+                kwargs['savefilename'] = None
+                img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+                kwargs['savefilename'] = savefilename
+                img2 = emplt.plot_2d_contour(z, mesh=mesh, **kwargs)
+                imgs = [img, img2]
+            elif 'cm' in mode:
                 img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
                 imgs.append(img)
-
-            if 'cont' in mode:
+            elif 'cont' in mode:
                 img = emplt.plot_2d_contour(z, mesh=mesh, **kwargs)
                 imgs.append(img)
 
