@@ -87,6 +87,7 @@ class InpFile:
 
     def __init__(self, filename):
         self.nml = f90nml.read(filename)
+        self.convkey = UnitConversionKey.load(filename)
 
     def __getitem__(self, key):
         if key in self.nml.keys():
@@ -185,6 +186,7 @@ class InpFile:
         convkey : UnitConversionKey, optional
             単位変換キー, by default None
         """
+        convkey = convkey or self.convkey
         with open(filename, 'wt', encoding='utf-8') as f:
             if convkey is not None:
                 f.write('!!key {}\n'.format(convkey.keytext))
