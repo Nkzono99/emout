@@ -926,7 +926,7 @@ class Data(np.ndarray):
                 title=None,
                 notitle=False,
                 offsets=None,
-                use_si=False,
+                use_si=True,
                 vmin=None,
                 vmax=None,
                 **kwargs):
@@ -939,7 +939,7 @@ class Data(np.ndarray):
         axis : int, optional
             アニメーションする軸, by default 0
         show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default True
         savefilename : str, optional
             保存するファイル名(Noneの場合保存しない), by default None
         interval : int, optional
@@ -1119,7 +1119,7 @@ class Data2d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, axes='auto', show=False, use_si=False, offsets=None, mode='cm', **kwargs):
+    def plot(self, axes='auto', show=False, use_si=True, offsets=None, mode='cm', **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -1129,7 +1129,7 @@ class Data2d(Data):
         show : bool
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default True
         offsets : (float or str, float or str, float or str)
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         mode : str
@@ -1247,7 +1247,7 @@ class Data2d(Data):
                 z = _offseted(z, offsets[2])
                 val = _offseted(val, offsets[3])
 
-            imgs = emplt.plot_surface(x, y, z, val, **kwargs)
+            imgs = [emplt.plot_surface(x, y, z, val, **kwargs)]
         else:
             if offsets is not None:
                 x = _offseted(x, offsets[0])
@@ -1296,7 +1296,7 @@ class Data1d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, show=False, use_si=False, offsets=None, **kwargs):
+    def plot(self, show=False, use_si=True, offsets=None, **kwargs):
         """1次元データをプロットする.
 
         Parameters
@@ -1304,7 +1304,7 @@ class Data1d(Data):
         show : bool
             プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default True
         offsets : (float or str, float or str)
             プロットのx,y軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         savefilename : str, optional
