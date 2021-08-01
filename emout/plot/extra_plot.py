@@ -1,5 +1,9 @@
+from emout.utils.emsesinp import InpFile
+from emout.utils.units import Units
+from typing import Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
+from emout import Emout
 
 
 def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange='minmax', **kwargs):
@@ -46,6 +50,49 @@ def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange=
 
     if show:
         plt.show()
+
+
+def plot_hole_line(
+        inp_or_data: Union[InpFile, Emout],
+        unit: Units = None,
+        use_si: bool = True,
+        offsets: Tuple[int, int] = (0, 0),
+        axis='xz',
+        color='black',
+        linewidth=None,
+        fix_lims=True):
+    if isinstance(inp_or_data, InpFile):
+        inp: InpFile = inp_or_data
+    else:
+        data: Emout = inp_or_data
+        inp = data.inp
+        unit = data.unit
+    
+    if fix_lims:
+        plt.xlim(plt.xlim())
+        plt.ylim(plt.ylim())
+
+    xl = inp.xlrechole[1]
+    xu = inp.xurechole[1]
+    yl = inp.ylrechole[1]
+    yu = inp.yurechole[1]
+    zl = inp.zlrechole[1]+0.5
+    zu = inp.zurechole[0]
+    nx = inp.nx
+    ny = inp.ny
+    nz = inp.nz
+
+    if axis == 'xz':
+        xs = np.array([0., xl, xl, xu, xu, nx-1])
+        ys = np.array([zu, zu, zl, zl, zu, zu])
+
+    if use_si and unit is not None:
+        xs = unit.length.reverse(xs)
+        ys = unit.length.reverse(ys)
+
+    im = plt.plot(xs + offsets[0], ys + offsets[1], color=color, linewidth=linewidth)
+
+    return im
 
 
 def plot_line_of_hole_half(inp, off, unit):
