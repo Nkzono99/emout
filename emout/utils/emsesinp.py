@@ -89,6 +89,15 @@ class InpFile:
         self.nml = f90nml.read(filename)
         self.convkey = UnitConversionKey.load(filename)
 
+    def __contains__(self, key):
+        if key in self.nml.keys():
+            return True
+        else:
+            for group in self.nml.keys():
+                if key in self.nml[group].keys():
+                    return True
+        return False
+
     def __getitem__(self, key):
         if key in self.nml.keys():
             return self.nml[key]
@@ -98,11 +107,32 @@ class InpFile:
                     return self.nml[group][key]
         raise KeyError()
 
+    def __setitem__(self, key, item):
+        if key in self.nml.keys():
+            self.nml[key] = item
+            return
+        else:
+            for group in self.nml.keys():
+                if key in self.nml[group].keys():
+                    self.nml[group][key] = item
+                    return
+        raise KeyError()
+
     def __getattr__(self, key):
         item = self[key]
         if isinstance(item, dict):
             return AttrDict(item)
         return item
+
+    def __setattr__(self, key, item):
+        if key in ['nml', 'convkey']:
+            super().__setattr__(key, item)
+            return
+
+        if key not in self:
+            raise KeyError()
+
+        self[key] = item
 
     def remove(self, key, index=None):
         """パラメータを削除する.
