@@ -168,3 +168,18 @@ class QuantizedPillowWriter(PillowWriter):
     def grab_frame(self, **savefig_kwargs):
         super().grab_frame(**savefig_kwargs)
         self._frames[-1] = self._frames[-1].convert('RGB').quantize()
+
+
+def hole_mask(inp, reverse=False):
+    shape = (inp.nz+1, inp.ny+1, inp.nx+1)
+    xl = int(inp.xlrechole[0])
+    xu = int(inp.xurechole[0])
+    yl = int(inp.ylrechole[0])
+    yu = int(inp.yurechole[0])
+    zu = int(inp.zssurf)
+    zl = int(inp.zlrechole[1])
+
+    mask = np.ones(shape, dtype=bool)
+    mask[zu:, :, :] = False
+    mask[zl:zu, yl:yu+1, xl:xu+1] = False
+    return (not reverse) == mask
