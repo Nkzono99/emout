@@ -1,8 +1,10 @@
+from emout.utils.util import hole_mask
 import re
 from itertools import chain
 from pathlib import Path
+from typing import Callable, Union
 
-import emout.plot as emplt
+import emout.plot.basic_plot as emplt
 import emout.utils as utils
 import h5py
 import matplotlib.animation as animation
@@ -891,7 +893,7 @@ class Data(np.ndarray):
         to_axis = {3: 'x', 2: 'y', 1: 'z', 0: 't'}
         return list(map(lambda a: to_axis[a], self.slice_axes))
 
-    def masked(self, mask):
+    def masked(self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]):
         """マスクされたデータを返す.
 
         Parameters
