@@ -275,6 +275,8 @@ class Units:
         L = (mu * length)
         T = (W / kB)
 
+        a = (v / t)
+
         self.pi = pi.set_name('Circular constant', unit='')
         self.e = e.set_name('Napiers constant', unit='')
 
@@ -314,6 +316,7 @@ class Units:
         self.B = B.set_name('Magnetic flux density', unit='T')
         self.L = L.set_name('Inductance', unit='H')
         self.T = T.set_name('Temperature', unit='K')
+        self.a = a.set_name('Acceleration', unit='m/s^2')
 
     def translators(self):
         """変換器のリストを返す.
