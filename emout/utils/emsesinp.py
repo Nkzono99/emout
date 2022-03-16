@@ -271,3 +271,5 @@ class InpFile:
 
         conv1d('emissn', 'curf', 'J')
         conv1d('emissn', 'curfs', 'J')
+
+        self.convkey = UnitConversionKey(unit_to.dx, unit_to.to_c)
