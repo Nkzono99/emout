@@ -1,6 +1,9 @@
 import re
 
 import f90nml
+from numpy import isin
+
+from emout.utils.units import Units
 
 
 class UnitConversionKey:
@@ -85,9 +88,13 @@ class InpFile:
         Namelistオブジェクト
     """
 
-    def __init__(self, filename):
-        self.nml = f90nml.read(filename)
-        self.convkey = UnitConversionKey.load(filename)
+    def __init__(self, filename=None, convkey=None):
+        if filename:
+            self.nml = f90nml.read(filename)
+            self.convkey = UnitConversionKey.load(filename) or convkey
+        else:
+            self.nml = f90nml.Namelist()
+            self.convkey = convkey
 
     def __contains__(self, key):
         if key in self.nml.keys():
@@ -227,3 +234,40 @@ class InpFile:
 
     def __repr__(self):
         return str(self)
+
+    def conversion(self, unit_from: Units, unit_to: Units):
+        def conv(group, name, unit_name):
+            value_from = self[group][name]
+
+            value = getattr(unit_from, unit_name).reverse(value_from)
+            value_to = getattr(unit_to, unit_name).trans(value)
+
+            self[group][name] = value_to
+
+        def conv1d(group, name, unit_name):
+            if group not in self:
+                return
+            if name not in self[group]:
+                return
+
+            values_from = self[group][name]
+
+            values_to = []
+            for value_from in values_from:
+                if value_from is None:
+                    value_to = None
+                else:
+                    value = getattr(unit_from, unit_name).reverse(value_from)
+                    value_to = getattr(unit_to, unit_name).trans(value)
+                values_to.append(value_to)
+
+            self[group][name] = values_to
+
+        conv1d('plasma', 'wp', 'f')
+
+        conv1d('intp', 'path', 'v')
+        conv1d('intp', 'peth', 'v')
+        conv1d('intp', 'vdri', 'v')
+
+        conv1d('emissn', 'curf', 'J')
+        conv1d('emissn', 'curfs', 'J')
