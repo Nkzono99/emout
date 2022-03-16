@@ -984,7 +984,7 @@ class Data(np.ndarray):
                 slc = self.slices[ax]
                 maxlen = self.shape[axis]
 
-                line = np.array(utils.range_with_slice(slc, maxlen=maxlen))
+                line = np.array(utils.range_with_slice(slc, maxlen=maxlen), dtype=float)
 
                 if offsets is not None:
                     line = _offseted(line, offsets[0])
@@ -1397,7 +1397,7 @@ class VectorData2d(utils.Group):
             return
         super().__setattr__(key, value)
 
-    def plot(self, axes='auto', show=False, use_si=False, offsets=None, **kwargs):
+    def plot(self, axes='auto', show=False, use_si=True, offsets=None, **kwargs):
         """2次元データをプロットする.
 
         Parameters
@@ -1464,8 +1464,8 @@ class VectorData2d(utils.Group):
         axis1 = self.objs[0].slice_axes[self.objs[0].use_axes.index(axes[0])]
         axis2 = self.objs[0].slice_axes[self.objs[0].use_axes.index(axes[1])]
 
-        x = np.arange(*utils.slice2tuple(self.objs[0].slices[axis1]))
-        y = np.arange(*utils.slice2tuple(self.objs[0].slices[axis2]))
+        x = np.arange(*utils.slice2tuple(self.objs[0].slices[axis1]), dtype=float)
+        y = np.arange(*utils.slice2tuple(self.objs[0].slices[axis2]), dtype=float)
 
         if use_si:
             xunit = self.objs[0].axisunits[axis1]
@@ -1491,6 +1491,7 @@ class VectorData2d(utils.Group):
             y_data = self.y_data
 
         def _offseted(line, offset):
+            line = line.astype(float)
             if offset == 'left':
                 line -= line[0]
             elif offset == 'center':
