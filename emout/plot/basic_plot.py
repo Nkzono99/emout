@@ -8,23 +8,23 @@ import numpy as np
 from matplotlib.colors import Colormap
 import matplotlib.colors as mcolors
 
-_r = 0.98
+_r = 0.9
 _d = 0.5
 mycmap = mcolors.LinearSegmentedColormap('gray-jet', {
-    'red':   ((0.00, 0.3, 0.3),
+    'red':   ((0.00, 0.2, 0.2),
               (_d*(1-_r), 0.3, 0.3),
               (0.35*_r+(1-_r), 0, 0),
               (0.66*_r+(1-_r), 1, 1),
               (0.89*_r+(1-_r), 1, 1),
               (1.00, 0.5, 0.5)),
-    'green': ((0.00, 0.3, 0.3),
+    'green': ((0.00, 0.2, 0.2),
               (_d*(1-_r), 0.3, 0.3),
               (0.125*_r+(1-_r), 0, 0),
               (0.375*_r+(1-_r), 1, 1),
               (0.640*_r+(1-_r), 1, 1),
               (0.910*_r+(1-_r), 0, 0),
               (1.000, 0, 0)),
-    'blue':  ((0.00, 0.3, 0.3),
+    'blue':  ((0.00, 0.2, 0.2),
               (_d*(1-_r), 0.3, 0.3),
               (0.00*_r+(1-_r), 0.5, 0.5),
               (0.11*_r+(1-_r), 1, 1),
@@ -67,6 +67,8 @@ def plot_2dmap(data2d,
                title=None,
                interpolation='bilinear',
                dpi=10,
+               colorbar_label='',
+               cbargs={},
                **kwargs):
     """2次元カラーマップをプロットする.
 
@@ -125,8 +127,15 @@ def plot_2dmap(data2d,
                      vmin=vmin,
                      vmax=vmax,
                      extent=extent,
-                     aspect='auto')
-    plt.colorbar()
+                     aspect='auto',
+                     **kwargs)
+    if 'cb' in cbargs:
+        cb = plt.colorbar(label=colorbar_label, **cbargs['cb'])
+    else:
+        cb = plt.colorbar(label=colorbar_label)
+
+    if 'others' in cbargs and 'yticklabels' in cbargs['others']:
+        cb.ax.set_yticklabels(cbargs['others']['yticklabels'])
 
     if title is not None:
         plt.title(title)
@@ -253,7 +262,8 @@ def plot_surface(x, y, z, value,
                  title=None,
                  ninterp=1,
                  function='linear',
-                 dpi=10):
+                 dpi=10,
+                 colorbar_label=''):
     """3次元表面プロットをする.
 
     Parameters
@@ -336,7 +346,7 @@ def plot_surface(x, y, z, value,
                              vmax=vmax,
                              shade=False)
     if add_colorbar:
-        plt.colorbar(mappable, ax=ax3d)
+        plt.colorbar(mappable, ax=ax3d, label=colorbar_label)
 
     if title is not None:
         ax3d.set_title(title)
@@ -364,7 +374,8 @@ def plot_line(data1d,
               xlabel=None,
               ylabel=None,
               label=None,
-              title=None):
+              title=None,
+              **kwargs):
     """1次元データをプロットする.
 
     Parameters
@@ -402,9 +413,9 @@ def plot_line(data1d,
             fig = plt.figure(figsize=figsize)
 
     if x is None:
-        line = plt.plot(data1d, label=label)
+        line = plt.plot(data1d, label=label, **kwargs)
     else:
-        line = plt.plot(x, data1d, label=label)
+        line = plt.plot(x, data1d, label=label, **kwargs)
     plt.ylim([vmin, vmax])
 
     if title is not None:
@@ -435,7 +446,8 @@ def plot_2d_vector(x_data2d,
                    xlabel=None,
                    ylabel=None,
                    title=None,
-                   dpi=10):
+                   dpi=10,
+                   cmap=None):
     """2次元ベクトル図をプロットする.
 
     Parameters
@@ -521,14 +533,26 @@ def plot_2d_vector(x_data2d,
         U *= scale / norm_mean * multiplier
         V *= scale / norm_mean * multiplier
 
-    img = plt.quiver(x,
-                     y,
-                     U,
-                     V,
-                     angles='xy',
-                     scale_units='xy',
-                     scale=1,
-                     )
+    if cmap is None:
+        img = plt.quiver(x,
+                        y,
+                        U,
+                        V,
+                        angles='xy',
+                        scale_units='xy',
+                        scale=1,
+                        )
+    else:
+        img = plt.quiver(x,
+                        y,
+                        U,
+                        V,
+                        np.sqrt(U**2+V**2),
+                        angles='xy',
+                        scale_units='xy',
+                        scale=1,
+                        cmap=cmap,
+                        )
 
     if title is not None:
         plt.title(title)
