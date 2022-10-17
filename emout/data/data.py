@@ -38,6 +38,7 @@ class Emout:
         r'e[xyz]': lambda self: self.unit.E,
         r't': t_unit,
         r'axis': lambda self: self.unit.length,
+        r'rhobksp[1-9]': lambda self: self.unit.rho,
     })
 
     def __init__(self, directory='./', append_directories=[], inpfilename='plasma.inp'):
