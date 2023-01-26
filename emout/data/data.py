@@ -13,7 +13,7 @@ import numpy as np
 from emout.utils import (DataFileInfo, InpFile, RegexDict, UnitConversionKey,
                          Units)
 
-from .util import t_unit, ndp_unit, nd3p_unit
+from .util import t_unit, ndp_unit
 
 
 class Emout:
@@ -29,8 +29,16 @@ class Emout:
 
     name2unit = RegexDict({
         r'phisp': lambda self: self.unit.phi,
-        r'nd[12]p': ndp_unit,
-        r'nd3p': nd3p_unit,
+        # r'nd[12]p': ndp_unit,
+        r'nd1p': ndp_unit(0),
+        r'nd2p': ndp_unit(1),
+        r'nd3p': ndp_unit(2),
+        r'nd4p': ndp_unit(3),
+        r'nd5p': ndp_unit(4),
+        r'nd6p': ndp_unit(5),
+        r'nd7p': ndp_unit(6),
+        r'nd8p': ndp_unit(7),
+        r'nd9p': ndp_unit(8),
         r'rho': lambda self: self.unit.rho,
         r'rhobk': lambda self: self.unit.rho,
         r'j.*': lambda self: self.unit.J,

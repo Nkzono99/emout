@@ -77,15 +77,29 @@ def none_unit(out):
     )
 
 
-def ndp_unit(out):
-    wpe = out.unit.f.reverse(out.inp.wp[0])
-    ne = wpe ** 2 * cn.m_e * cn.epsilon_0 / cn.e**2
-    return UnitTranslator(
-        ne * 1e-6,
-        1.0,
-        name='number density',
-        unit='/cc'
-    )
+# def ndp_unit(out):
+#     wpe = out.unit.f.reverse(out.inp.wp[0])
+#     ne = wpe ** 2 * cn.m_e * cn.epsilon_0 / cn.e**2
+#     return UnitTranslator(
+#         ne * 1e-6,
+#         1.0,
+#         name='number density',
+#         unit='/cc'
+#     )
+
+
+def ndp_unit(ispec):
+    def ndp_unit(out):
+        wp = out.unit.f.reverse(out.inp.wp[ispec])
+        mp = abs(cn.m_e / out.inp.qm[ispec])
+        np = wp ** 2 * mp * cn.epsilon_0 / cn.e**2
+        return UnitTranslator(
+            np * 1e-6,
+            1.0,
+            name='number density',
+            unit='/cc'
+        )
+    return ndp_unit
 
 
 def nd3p_unit(out):
