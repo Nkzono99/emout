@@ -2,7 +2,7 @@ from emout.utils.util import hole_mask
 import re
 from itertools import chain
 from pathlib import Path
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
@@ -80,29 +80,19 @@ class Emout:
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
-        for series in self.__fetch_series(self.directory):
-            setattr(self, series.name, series)
+    def __fetch_filepath(self, directory: Path, pattern: str):
+        filepathes = list(directory.glob(pattern))
+        if len(filepathes) == 0:
+            raise Exception(f'{pattern} is not found.')
+        if len(filepathes) >= 2:
+            raise Exception(
+                f'There are multiple files that satisfy {pattern}.  Please specify so that just one is specified.')
 
-        for append_directory in self.append_directories:
-            for series in self.__fetch_series(append_directory):
-                new_series = getattr(self, series.name).chain(series)
-                setattr(self, series.name, new_series)
+        filepath = filepathes[0]
 
-    def __fetch_series(self, directory):
-        """指定したディレクトリ内のh5ファイルを探査し、GridDataSeriesのリストとして返す.
+        return filepath
 
-        Parameters
-        ----------
-        directory : Path
-            ディレクトリ
-
-        Returns
-        -------
-        list(GridDataSeries)
-            GridDataSeriesのリスト
-        """
-        series = []
-
+    def __load_griddata(self, h5file_path: Path):
         if self.unit is None:
             tunit = None
             axisunit = None
@@ -110,22 +100,35 @@ class Emout:
             tunit = Emout.name2unit.get('t', lambda self: None)(self)
             axisunit = Emout.name2unit.get('axis', lambda self: None)(self)
 
-        for h5file_path in directory.glob('*.h5'):
-            name = str(h5file_path.name).replace('00_0000.h5', '')
+        name = str(h5file_path.name).replace('00_0000.h5', '')
 
-            if self.unit is None:
-                valunit = None
-            else:
-                valunit = Emout.name2unit.get(name, lambda self: None)(self)
+        if self.unit is None:
+            valunit = None
+        else:
+            valunit = Emout.name2unit.get(name, lambda self: None)(self)
 
-            data = GridDataSeries(h5file_path,
-                                  name,
-                                  tunit=tunit,
-                                  axisunit=axisunit,
-                                  valunit=valunit)
-            series.append(data)
+        data = GridDataSeries(h5file_path,
+                              name,
+                              tunit=tunit,
+                              axisunit=axisunit,
+                              valunit=valunit)
 
-        return series
+        return data
+
+    def __getattr__(self, __name: str) -> Any:
+        filepath = self.__fetch_filepath(self.directory, f'{__name}00_0000.h5')
+        griddata = self.__load_griddata(filepath)
+
+        for append_directory in self.append_directories:
+            filepath = self.__fetch_filepath(append_directory,
+                                             f'{__name}00_0000.h5')
+            griddata_append = self.__load_griddata(filepath)
+
+            griddata = griddata.chain(griddata_append)
+
+        setattr(self, __name, griddata)
+
+        return griddata
 
     @property
     def inp(self):
@@ -993,7 +996,8 @@ class Data(np.ndarray):
                 slc = self.slices[ax]
                 maxlen = self.shape[axis]
 
-                line = np.array(utils.range_with_slice(slc, maxlen=maxlen), dtype=float)
+                line = np.array(utils.range_with_slice(
+                    slc, maxlen=maxlen), dtype=float)
 
                 if offsets is not None:
                     line = _offseted(line, offsets[0])
@@ -1473,8 +1477,10 @@ class VectorData2d(utils.Group):
         axis1 = self.objs[0].slice_axes[self.objs[0].use_axes.index(axes[0])]
         axis2 = self.objs[0].slice_axes[self.objs[0].use_axes.index(axes[1])]
 
-        x = np.arange(*utils.slice2tuple(self.objs[0].slices[axis1]), dtype=float)
-        y = np.arange(*utils.slice2tuple(self.objs[0].slices[axis2]), dtype=float)
+        x = np.arange(
+            *utils.slice2tuple(self.objs[0].slices[axis1]), dtype=float)
+        y = np.arange(
+            *utils.slice2tuple(self.objs[0].slices[axis2]), dtype=float)
 
         if use_si:
             xunit = self.objs[0].axisunits[axis1]
