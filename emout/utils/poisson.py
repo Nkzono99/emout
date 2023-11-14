@@ -15,13 +15,13 @@ POISSON_SLICES = {
 POISSON_FFT_FORWARDS = {
     'periodic': scipy.fft.fft,
     'dirichlet': partial(scipy.fft.dst, type=1),
-    'neumann': partial(scipy.fft.dct, type=1),
+    'neumann': partial(scipy.fft.dct, type=1, orthogonalize=False),
 }
 
 POISSON_FFT_BACKWARDS = {
     'periodic': scipy.fft.ifft,
     'dirichlet': partial(scipy.fft.idst, type=1),
-    'neumann': partial(scipy.fft.idct, type=1),
+    'neumann': partial(scipy.fft.idct, type=1, orthogonalize=False),
 }
 
 
@@ -110,7 +110,7 @@ def poisson(rho: np.ndarray,
 
     # When all boundary conditions are periodic boundaries, there is no reference for the potential
     # and it is not uniquely determined, so the average is set to zero
-    if all([_type == 'periodic' for _type in boundary_types]):
+    if all([_type in ('periodic', 'neumann') for _type in boundary_types]):
         phik[0, 0, 0] = 0.
 
     # FFT backward
