@@ -207,9 +207,11 @@ class Units:
         Inductance [H]
     T : UnitTranslator
         Temperature [K]
+    a : UnitTranslator
+        Acceleration [m/s^2]
     """
 
-    def __init__(self, dx, to_c):
+    def __init__(self, dx: float, to_c: float):
         """EMSES用の単位変換器を生成する.
 
         Parameters
@@ -217,10 +219,13 @@ class Units:
         dx : float, optional 
             Grid length [m]
         to_c : float
-            Light Speed in EMSES
+            Light speed in EMSES unit
         """
         self.dx = dx
+        """Grid length [m]"""
         self.to_c = to_c
+        """Light speed in EMSES"""
+
         from_c = 299792458
         to_e0 = 1
         pi = UnitTranslator(3.141592654, 3.141592654)
@@ -278,45 +283,119 @@ class Units:
         a = (v / t)
 
         self.pi = pi.set_name('Circular constant', unit='')
+        """Unit translator for Circular constant []"""
+
         self.e = e.set_name('Napiers constant', unit='')
+        """Unit translator for Napiers constant []"""
 
         self.c = c.set_name('Light Speed', unit='m/s')
+        """Unit translator for Light Speed [m/s]"""
+
         self.e0 = e0.set_name('FS-Permttivity', unit='F/m')
+        """Unit translator for FS-Permttivity [F/m]"""
+
         self.m0 = m0.set_name('FS-Permeablity', unit='N/A^2')
+        """Unit translator for FS-Permeablity [N/A^2]"""
+
         self.qe = qe.set_name('Elementary charge', unit='C')
+        """Unit translator for Elementary charge [C]"""
+
         self.me = me.set_name('Electron mass', unit='kg')
+        """Unit translator for Electron mass [kg]"""
+
         self.mi = mi.set_name('Proton mass', unit='kg')
-        self.qe_me = qe_me.set_name('Electron charge-to-mass ratio', unit='C/kg')
+        """Unit translator for Proton mass [kg]"""
+
+        self.qe_me = qe_me.set_name(
+            'Electron charge-to-mass ratio', unit='C/kg')
+        """Unit translator for Electron charge-to-mass ratio [C/kg]"""
+
         self.kB = kB.set_name('Boltzmann constant', unit='J/K')
+        """Unit translator for Boltzmann constant [J/K]"""
+
         self.length = length.set_name('Sim-to-Real length ratio', unit='m')
+        """Unit translator for Sim-to-Real length ratio [m]"""
 
         self.m = m.set_name('Mass', unit='kg')
+        """Unit translator for Mass [kg]"""
+
         self.t = t.set_name('Time', unit='s')
+        """Unit translator for Time [s]"""
+
         self.f = f.set_name('Frequency', unit='Hz')
+        """Unit translator for Frequency [Hz]"""
+
         self.v = v.set_name('Velocity', unit='m/s')
+        """Unit translator for Velocity [m/s]"""
+
         self.n = n.set_name('Number density', unit='/m^3')
+        """Unit translator for Number density [/m^3]"""
+
         self.N = N.set_name('Flux', unit='/m^2s')
+        """Unit translator for Flux [/m^2s]"""
+
         self.F = F.set_name('Force', unit='N')
+        """Unit translator for Force [N]"""
+
         self.P = P.set_name('Power', unit='W')
+        """Unit translator for Power [W]"""
+
         self.W = W.set_name('Energy', unit='J')
+        """Unit translator for Energy [J]"""
+
         self.w = w.set_name('Energy density', unit='J/m^3')
+        """Unit translator for Energy density [J/m^3]"""
+
         self.eps = eps.set_name('Permittivity', unit='F/m')
+        """Unit translator for Permittivity  [F/m]"""
+
         self.q = q.set_name('Charge', unit='C')
+        """Unit translator for Charge [C]"""
+
         self.rho = rho.set_name('Charge density', unit='C/m^3')
+        """Unit translator for Charge density [C/m^3]"""
+
         self.q_m = q_m.set_name('Charge-to-mass ratio', unit='C/kg')
+        """Unit translator for Charge-to-mass ratio [C/kg]"""
+
         self.i = i.set_name('Current', unit='A')
+        """Unit translator for Current [A]"""
+
         self.J = J.set_name('Current density', unit='A/m^2')
+        """Unit translator for Current density [A/m^2]"""
+
         self.phi = phi.set_name('Potential', unit='V')
+        """Unit translator for Potential [V]"""
+
         self.E = E.set_name('Electric field', unit='V/m')
+        """Unit translator for Electric field [V/m]"""
+
         self.H = H.set_name('Magnetic field', unit='A/m')
+        """Unit translator for Magnetic field [A/m]"""
+
         self.C = C.set_name('Capacitance', unit='F')
+        """Unit translator for Capacitance [F]"""
+
         self.R = R.set_name('Resistance', unit='Ω')
+        """Unit translator for Resistance [Ω]"""
+
         self.G = G.set_name('Conductance', unit='S')
+        """Unit translator for Conductance [S]"""
+
         self.mu = mu.set_name('Permiability', unit='H/m')
+        """Unit translator for Permiability [H/m]"""
+
         self.B = B.set_name('Magnetic flux density', unit='T')
+        """Unit translator for Magnetic flux density [T]"""
+
         self.L = L.set_name('Inductance', unit='H')
+        """Unit translator for Inductance [H]"""
+
         self.T = T.set_name('Temperature', unit='K')
+        """Unit translator for Temperature [K]"""
+
         self.a = a.set_name('Acceleration', unit='m/s^2')
+        """Unit translator for Acceleration [m/s^2]"""
 
     def translators(self):
         """変換器のリストを返す.
