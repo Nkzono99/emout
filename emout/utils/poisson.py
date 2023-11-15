@@ -5,7 +5,6 @@ import numpy as np
 import scipy.constants as cn
 import scipy.fft
 
-
 POISSON_SLICES = {
     'periodic': slice(0, -1),
     'dirichlet': slice(1, -1),
@@ -40,6 +39,28 @@ def __calc_modified_wave_number(k, n, boundary_type):
         wn = 2.0*(np.cos(np.pi*(k)/float(n)) - 1.0)
 
     return wn
+
+
+def __fft_forward3d(data3d, boundary_types):
+    forward = [POISSON_FFT_FORWARDS[_type] for _type in boundary_types]
+
+    result3d = data3d
+    result3d = forward[2](result3d, axis=0, norm='ortho')
+    result3d = forward[1](result3d, axis=1, norm='ortho')
+    result3d = forward[0](result3d, axis=2, norm='ortho')
+
+    return result3d
+
+
+def __fft_backward3d(data3d, boundary_types):
+    backward = [POISSON_FFT_BACKWARDS[_type] for _type in boundary_types]
+
+    result3d = data3d
+    result3d = backward[2](result3d, axis=0, norm='ortho')
+    result3d = backward[1](result3d, axis=1, norm='ortho')
+    result3d = backward[0](result3d, axis=2, norm='ortho')
+
+    return result3d
 
 
 def poisson(rho: np.ndarray,
@@ -79,22 +100,17 @@ def poisson(rho: np.ndarray,
         }
         boundary_types = [btypes_dict[btype] for btype in btypes]
 
-    # Poisson's equation: dphi/dx^2 = -rho/epsilon_0
-    rho = -rho / epsilon_0 * dx*dx
-
     slices = [POISSON_SLICES[_type] for _type in boundary_types]
-    forward = [POISSON_FFT_FORWARDS[_type] for _type in boundary_types]
-    backward = [POISSON_FFT_BACKWARDS[_type] for _type in boundary_types]
+
+    # Poisson's equation: dphi/dx^2 = -rho/epsilon_0
+    rho_target = -rho[slices[2], slices[1], slices[0]] / epsilon_0 * dx*dxx
 
     # FFT forward.
-    rhok = rho[slices[2], slices[1], slices[0]]
-    rhok = forward[2](rhok, axis=0, norm='ortho')
-    rhok = forward[1](rhok, axis=1, norm='ortho')
-    rhok = forward[0](rhok, axis=2, norm='ortho')
+    rhok = __fft_forward3d(rho_target, boundary_types)
 
     # Caluculate a modified wave number.
     modified_wave_number = np.zeros_like(rhok, dtype=float)
-    nz, ny, nx = np.array(rho.shape)-1
+    nz, ny, nx = np.array(rho.shape) - 1
     for kx in range(rhok.shape[2]):
         modified_wave_number[:, :, kx] \
             += __calc_modified_wave_number(kx, nx, boundary_types[0])
@@ -114,10 +130,7 @@ def poisson(rho: np.ndarray,
         phik[0, 0, 0] = 0.
 
     # FFT backward
-    _phi = phik
-    _phi = backward[2](_phi, axis=0, norm='ortho')
-    _phi = backward[1](_phi, axis=1, norm='ortho')
-    _phi = backward[0](_phi, axis=2, norm='ortho')
+    _phi = __fft_backward3d(phik, boundary_types)
 
     # Create an array of the same shape as the input rho array.
     phi = np.zeros_like(rho)
