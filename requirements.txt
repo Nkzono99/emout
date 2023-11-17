@@ -3,4 +3,5 @@ numpy
 matplotlib
 h5py
 f90nml
+scipy
 #
