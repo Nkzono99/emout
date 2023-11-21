@@ -3,23 +3,13 @@ EMSESの出力ファイルを取り扱うパッケージ
 
 * Documentation: https://nkzono99.github.io/emout/
 
-## Requirement
-* numpy
-* h5py
-* matplotlib
-* f90nml
-
 ## Installation
 ```
-> pip install emout
-
-or
-
-> pip install git+https://github.com/Nkzono99/emout.git
+pip install emout
 ```
 
 ## Usage
-以下のようなフォルダ構成の場合のサンプルコード.
+以下のようなフォルダ構成の場合の使い方.
 ```
 .
 └── output_dir
@@ -71,11 +61,45 @@ or
 ```
 
 ### 単位変換を行う
+> [!NOTE]
+> パラメータファイル (plasma.inp) の一行目に以下を記述している場合のみ、EMSES単位からSI単位系への変換がサポートされます。
+> 
+> ```
+> !!key dx=[0.5],to_c=[10000.0]
+> ```
+> 
+> ```dx```: グリッド幅 [m]
+> ```to_c```: EMSES内部での光速の規格化された値
+
 ```
 >>> data.unit.v.trans(1)  # velocity: Physical unit to EMSES unit
 3.3356409519815205e-05
 >>> data.unit.v.reverse(1)  # velocity: EMSES unit to Physical unit
 29979.2458
+```
+
+### SI単位系への変換
+> [!NOTE]
+> パラメータファイル (plasma.inp) の一行目に以下を記述している場合のみ、EMSES単位からSI単位系への変換がサポートされます。
+> 
+> ```
+> !!key dx=[0.5],to_c=[10000.0]
+> ```
+> 
+> ```dx```: グリッド幅 [m]
+> ```to_c```: EMSES内部での光速の規格化された値
+
+```
+>>> # SI単位系に変換した値を取得する
+>>> phisp_volt = data.phisp[-1, :, :, :].val_si
+>>> j1z_A_per_m2 = data.j1z[-1, :, :, :].val_si
+>>> nd1p_per_cc = data.nd1p[-1, :, :, :].val_si
+```
+
+### 継続したシミュレーション結果を扱う
+```
+>>> import emout
+>>> data = emout.Emout('output_dir', append_directories=['output_dir2', 'output_dir3'])
 ```
 
 ### データマスクを適用する
@@ -86,25 +110,4 @@ or
 >>> # above code does the same as this code
 >>> phi = data.phisp[1].copy()
 >>> phi[phi < phi.mean()] = np.nan
-```
-
-### グループ化する
-```
->>> from emout.utils import Group
->>> data1 = emout.Emout('output_dir1')
->>> data2 = emout.Emout('output_dir2')
->>>
->>> # grouping
->>> group = Group([data1, data2])
->>> group.phisp[10][100, :, :].plot(show=True, title=group.directory.name)
->>>
->>> # above code does the same as this code
->>> data1.phisp[10][100, :, :].plot(show=True, title=data1.directory.name)
->>> data2.phisp[10][100, :, :].plot(show=True, title=data2.directory.name)
-```
-
-### 継続したシミュレーション結果を扱う
-```
->>> import emout
->>> data = emout.Emout('output_dir', append_directories=['output_dir2', 'output_dir3'])
 ```
