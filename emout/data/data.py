@@ -943,6 +943,7 @@ class Data(np.ndarray):
                 use_si=True,
                 vmin=None,
                 vmax=None,
+                to_html: bool = False,
                 **kwargs):
         """gifアニメーションを作成する
 
@@ -968,6 +969,8 @@ class Data(np.ndarray):
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        to_html : bool
+            アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
         """
         def _offseted(line, offset):
             if offset == 'left':
@@ -1043,7 +1046,10 @@ class Data(np.ndarray):
             frames=self.shape[axis],
             repeat=repeat)
 
-        if savefilename is not None:
+        if to_html:
+            from IPython.display import HTML
+            return HTML(ani.to_jshtml())
+        elif savefilename is not None:
             ani.save(savefilename, writer='quantized-pillow')
         elif show:
             plt.show()
