@@ -282,6 +282,8 @@ class Units:
 
         a = (v / t)
 
+        EC = (G / length)
+
         self.pi = pi.set_name('Circular constant', unit='')
         """Unit translator for Circular constant []"""
 
@@ -396,6 +398,9 @@ class Units:
 
         self.a = a.set_name('Acceleration', unit='m/s^2')
         """Unit translator for Acceleration [m/s^2]"""
+
+        self.EC = EC.set_name('Electric conductivity', unit='S/m')
+        """Unit translator for Electric conductivity [S/m]"""
 
     def translators(self):
         """変換器のリストを返す.
