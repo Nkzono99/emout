@@ -972,6 +972,9 @@ class Data(np.ndarray):
         to_html : bool
             アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
         """
+        if self.valunit is None:
+            use_si = False
+
         def _offseted(line, offset):
             if offset == 'left':
                 line -= line[0]
@@ -1192,6 +1195,9 @@ class Data2d(Data):
         Exception
             データの次元が2でない場合の例外
         """
+        if self.valunit is None:
+            use_si = False
+
         if axes == 'auto':
             axes = ''.join(sorted(self.use_axes))
 
@@ -1355,6 +1361,9 @@ class Data1d(Data):
         Exception
             データの次元が1でない場合の例外
         """
+        if self.valunit is None:
+            use_si = False
+
         if len(self.shape) != 1:
             raise Exception(
                 'Error: cannot plot because data is not 1dim shape.')
@@ -1466,6 +1475,9 @@ class VectorData2d(utils.Group):
         Exception
             データの次元が2でない場合の例外
         """
+        if self.valunit is None:
+            use_si = False
+
         if axes == 'auto':
             axes = ''.join(sorted(self.objs[0].use_axes))
 
