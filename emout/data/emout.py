@@ -8,6 +8,7 @@ import scipy.constants as cn
 from emout.utils import InpFile, RegexDict, UnitConversionKey, Units, UnitTranslator
 
 from .vector_data import VectorData2d
+from .griddata_series import GridDataSeries
 
 
 def t_unit(out: "Emout") -> UnitTranslator:
