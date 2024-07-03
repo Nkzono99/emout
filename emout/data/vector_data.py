@@ -1,14 +1,16 @@
 import re
+from typing import Any, List, Union, Tuple, Literal
 
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 
 import emout.plot.basic_plot as emplt
-import matplotlib.animation as animation
 import emout.utils as utils
 
+
 class VectorData(utils.Group):
-    def __init__(self, objs, name=None, attrs=None):
+    def __init__(self, objs: List[Any], name=None, attrs=None):
         x_data, y_data = objs
 
         if attrs is None:
@@ -34,21 +36,23 @@ class VectorData(utils.Group):
         super().__setattr__(key, value)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.attrs["name"]
-    
+
     def gifplot(
         self,
-        fig=None,
-        axis=0,
-        show=False,
-        savefilename=None,
-        interval=200,
-        repeat=True,
-        title=None,
-        notitle=False,
-        offsets=None,
-        use_si=True,
+        fig: Union[plt.Figure, None] = None,
+        axis: int = 0,
+        show: bool = False,
+        savefilename: Union[str, None] = None,
+        interval: int = 200,
+        repeat: bool = True,
+        title: Union[str, None] = None,
+        notitle: bool = False,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        use_si: bool = True,
         to_html: bool = False,
         **kwargs,
     ):
@@ -175,11 +179,13 @@ class VectorData(utils.Group):
 
     def plot2d(
         self,
-        mode="stream",
-        axes="auto",
-        show=False,
-        use_si=True,
-        offsets=None,
+        mode: Literal["stream", "vec"] = "stream",
+        axes: Literal["auto", "xy", "yz", "zx", "yx", "zy", "xy"] = "auto",
+        show: bool = False,
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
         **kwargs,
     ):
         """2次元データをプロットする.
@@ -316,5 +322,6 @@ class VectorData(utils.Group):
             return None
         else:
             return img
+
 
 VectorData2d = VectorData

@@ -1,17 +1,26 @@
 import re
 from itertools import chain
+from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import List, Tuple, Union
 
 import h5py
 import numpy as np
+import pandas as pd
 
 import emout.utils as utils
-from emout.utils import DataFileInfo, InpFile, RegexDict, UnitConversionKey, Units
+from emout.utils import (
+    DataFileInfo,
+    InpFile,
+    RegexDict,
+    UnitConversionKey,
+    Units,
+    UnitTranslator,
+)
 
 from .data import Data3d, Data4d
-from .vector_data import VectorData2d
 from .util import ndp_unit, t_unit
+from .vector_data import VectorData2d
 
 
 class Emout:
@@ -80,7 +89,7 @@ class Emout:
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
-    def __fetch_filepath(self, directory: Path, pattern: str):
+    def __fetch_filepath(self, directory: Path, pattern: str) -> Path:
         filepathes = list(directory.glob(pattern))
         if len(filepathes) == 0:
             raise Exception(f"{pattern} is not found.")
@@ -93,7 +102,7 @@ class Emout:
 
         return filepath
 
-    def __load_griddata(self, h5file_path: Path):
+    def __load_griddata(self, h5file_path: Path) -> "GridDataSeries":
         if self.unit is None:
             tunit = None
             axisunit = None
@@ -114,7 +123,7 @@ class Emout:
 
         return data
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, __name: str) -> "GridDataSeries":
         m = re.match("(.+)([xyz])([xyz])$", __name)
         if m:
             dname = m.group(1)
@@ -143,7 +152,7 @@ class Emout:
         return griddata
 
     @property
-    def inp(self):
+    def inp(self) -> Union[InpFile, None]:
         """パラメータの辞書(Namelist)を返す.
 
         Returns
@@ -154,7 +163,7 @@ class Emout:
         return self._inp
 
     @property
-    def unit(self):
+    def unit(self) -> Union[Units, None]:
         """単位変換オブジェクトを返す.
 
         Returns
@@ -165,8 +174,7 @@ class Emout:
         return self._unit
 
     @property
-    def icur(self):
-        import pandas as pd
+    def icur(self) -> pd.DataFrame:
 
         names = []
         for ispec in range(self.inp.nspec):
@@ -180,9 +188,7 @@ class Emout:
         return df
 
     @property
-    def pbody(self):
-        import pandas as pd
-
+    def pbody(self) -> pd.DataFrame:
         names = ["step"] + [f"body{i+1}" for i in range(self.inp.npc + 1)]
 
         df = pd.read_csv(self.directory / "pbody", sep="\s+", names=names)
@@ -205,7 +211,14 @@ class GridDataSeries:
         データセット名
     """
 
-    def __init__(self, filename, name, tunit=None, axisunit=None, valunit=None):
+    def __init__(
+        self,
+        filename: PathLike,
+        name: str,
+        tunit: UnitTranslator = None,
+        axisunit: UnitTranslator = None,
+        valunit: UnitTranslator = None,
+    ):
         """3次元時系列データを生成する.
 
         Parameters
@@ -225,11 +238,11 @@ class GridDataSeries:
 
         self.name = name
 
-    def close(self):
+    def close(self) -> None:
         """hdf5ファイルを閉じる."""
         self.h5.close()
 
-    def time_series(self, x, y, z):
+    def time_series(self, x, y, z) -> np.ndarray:
         """指定した範囲の時系列データを取得する.
 
         Parameters
@@ -254,7 +267,7 @@ class GridDataSeries:
         return np.array(series)
 
     @property
-    def filename(self):
+    def filename(self) -> Path:
         """ファイル名を返す.
 
         Returns
@@ -265,7 +278,7 @@ class GridDataSeries:
         return self.datafile.filename
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         """ディレクトリ名を返す.
 
         Returns
@@ -275,7 +288,7 @@ class GridDataSeries:
         """
         return self.datafile.directory
 
-    def _create_data_with_index(self, index):
+    def _create_data_with_index(self, index: int) -> Data3d:
         """時間が指定された場合に、その時間におけるData3dを生成する.
 
         Parameters
@@ -308,7 +321,9 @@ class GridDataSeries:
             valunit=self.valunit,
         )
 
-    def __create_data_with_indexes(self, indexes, tslice=None):
+    def __create_data_with_indexes(
+        self, indexes: List[int], tslice: slice = None
+    ) -> Data4d:
         """時間が範囲で指定された場合に、Data4dを生成する.
 
         Parameters
@@ -344,7 +359,9 @@ class GridDataSeries:
             valunit=self.valunit,
         )
 
-    def __getitem__(self, item):
+    def __getitem__(
+        self, item: Union[int, slice, List[int], Tuple[Union[int, slice, List[int]]]]
+    ) -> Union["Data3d", "Data4d"]:
         """時系列データをスライスしたものを返す.
 
         Parameters
@@ -388,7 +405,7 @@ class GridDataSeries:
         else:
             raise TypeError()
 
-    def chain(self, other_series):
+    def chain(self, other_series: "GridDataSeries") -> "MultiGridDataSeries":
         """GridDataSeriesを結合する.
 
         Parameters
@@ -403,7 +420,7 @@ class GridDataSeries:
         """
         return MultiGridDataSeries(self, other_series)
 
-    def __add__(self, other_series):
+    def __add__(self, other_series: "GridDataSeries") -> "MultiGridDataSeries":
         """GridDataSeriesを結合する.
 
         Parameters
@@ -459,12 +476,14 @@ class MultiGridDataSeries(GridDataSeries):
 
         self.name = self.series[0].name
 
-    def __expand(self, data_series):
+    def __expand(
+        self, data_series: Union["GridDataSeries", "MultiGridDataSeries"]
+    ) -> List[GridDataSeries]:
         """与えられたオブジェクトがMultiGridDataSeriesなら展開してGridDataSeriesのリストとして返す.
 
         Parameters
         ----------
-        data_series : GridDataSeries or MultGridDataSeries
+        data_series : GridDataSeries or MultiGridDataSeries
             オブジェクト
 
         Returns
@@ -489,12 +508,14 @@ class MultiGridDataSeries(GridDataSeries):
 
         return expanded
 
-    def close(self):
+    def close(self) -> None:
         """hdf5ファイルを閉じる."""
         for data in self.series:
             self.series.h5.close()
 
-    def time_series(self, x, y, z):
+    def time_series(
+        self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice]
+    ):
         """指定した範囲の時系列データを取得する.
 
         Parameters
@@ -515,7 +536,7 @@ class MultiGridDataSeries(GridDataSeries):
         return series
 
     @property
-    def filename(self):
+    def filename(self) -> Path:
         """先頭データのファイル名を返す.
 
         Returns
@@ -526,7 +547,7 @@ class MultiGridDataSeries(GridDataSeries):
         return self.series[0].datafile.filename
 
     @property
-    def filenames(self):
+    def filenames(self) -> List[Path]:
         """ファイル名のリストを返す.
 
         Returns
@@ -537,7 +558,7 @@ class MultiGridDataSeries(GridDataSeries):
         return [data.filename for data in self.series]
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         """先頭データのディレクトリ名を返す.
 
         Returns
@@ -548,7 +569,7 @@ class MultiGridDataSeries(GridDataSeries):
         return self.series[0].datafile.directory
 
     @property
-    def directories(self):
+    def directories(self) -> List[Path]:
         """ディレクトリ名のリストを返す.
 
         Returns
@@ -558,7 +579,7 @@ class MultiGridDataSeries(GridDataSeries):
         """
         return [data.directory for data in self.series]
 
-    def _create_data_with_index(self, index):
+    def _create_data_with_index(self, index: int) -> Data3d:
         """時間が指定された場合に、その時間におけるData3dを生成する.
 
         Parameters
@@ -600,6 +621,6 @@ class MultiGridDataSeries(GridDataSeries):
             iters.append(it)
         return chain(iters)
 
-    def __len__(self):
+    def __len__(self) -> int:
         # 先頭データは前のデータの最後尾と重複しているためカウントしない
         return np.sum([len(data) for data in self.series]) - (len(self.series) - 1)
