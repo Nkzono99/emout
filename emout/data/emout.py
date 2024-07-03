@@ -9,7 +9,8 @@ import numpy as np
 import emout.utils as utils
 from emout.utils import DataFileInfo, InpFile, RegexDict, UnitConversionKey, Units
 
-from .data import Data3d, Data4d, VectorData2d
+from .data import Data3d, Data4d
+from .vector_data import VectorData2d
 from .util import ndp_unit, t_unit
 
 
