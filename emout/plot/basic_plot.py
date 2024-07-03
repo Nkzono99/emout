@@ -1,12 +1,12 @@
 import copy
 
-import emout.utils as utils
 import matplotlib
 import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Colormap
-import matplotlib.colors as mcolors
+
+import emout.utils as utils
 
 _r = 0.9
 _d = 0.5

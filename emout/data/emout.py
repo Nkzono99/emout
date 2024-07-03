@@ -164,6 +164,31 @@ class Emout:
         """
         return self._unit
 
+    @property
+    def icur(self):
+        import pandas as pd
+
+        names = []
+        for ispec in range(self.inp.nspec):
+            names.append(f"{ispec+1}_step")
+            for ipc in range(self.inp.npc):
+                names.append(f"{ispec+1}_body{ipc+1}")
+                names.append(f"{ispec+1}_body{ipc+1}_ema")
+
+        df = pd.read_csv(self.directory / "icur", sep="\s+", header=None, names=names)
+
+        return df
+
+    @property
+    def pbody(self):
+        import pandas as pd
+
+        names = ["step"] + [f"body{i+1}" for i in range(self.inp.npc + 1)]
+
+        df = pd.read_csv(self.directory / "pbody", sep="\s+", names=names)
+
+        return df
+
 
 class GridDataSeries:
     """3次元時系列データを管理する.
