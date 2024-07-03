@@ -233,7 +233,7 @@ class VectorData(utils.Group):
         Exception
             データの次元が2でない場合の例外
         """
-        if self.valunit is None:
+        if self.objs[0].valunit is None:
             use_si = False
 
         if axes == "auto":
