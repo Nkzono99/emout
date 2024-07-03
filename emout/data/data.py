@@ -1,19 +1,19 @@
-from emout.utils.util import hole_mask
 import re
 from itertools import chain
 from pathlib import Path
 from typing import Any, Callable, Union
 
-import emout.plot.basic_plot as emplt
-import emout.utils as utils
 import h5py
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+
+import emout.plot.basic_plot as emplt
+import emout.utils as utils
 from emout.utils import (DataFileInfo, InpFile, RegexDict, UnitConversionKey,
                          Units)
 
-from .util import t_unit, ndp_unit
+from .util import ndp_unit, t_unit
 
 
 class Emout:
@@ -936,6 +936,9 @@ class Data(np.ndarray):
         else:
             masked[mask(masked)] = np.nan
         return masked
+    
+    def to_numpy(self):
+        return np.array(self)
 
     def plot(self, **kwargs):
         """データをプロットする.
