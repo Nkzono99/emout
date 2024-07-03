@@ -12,10 +12,34 @@ emout.data.data module
    :undoc-members:
    :show-inheritance:
 
-emout.data.util module
-----------------------
+emout.data.data\_loader module
+------------------------------
 
-.. automodule:: emout.data.util
+.. automodule:: emout.data.data_loader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+emout.data.emout module
+-----------------------
+
+.. automodule:: emout.data.emout
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+emout.data.griddata\_series module
+----------------------------------
+
+.. automodule:: emout.data.griddata_series
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+emout.data.vector\_data module
+------------------------------
+
+.. automodule:: emout.data.vector_data
    :members:
    :undoc-members:
    :show-inheritance:

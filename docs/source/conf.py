@@ -22,7 +22,7 @@ copyright = '2020, Nkzono99'
 author = 'Nkzono99'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.1'
+release = '1.1.0'
 
 
 # -- General configuration ---------------------------------------------------
