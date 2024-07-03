@@ -567,3 +567,257 @@ def plot_2d_vector(x_data2d,
         return None
     else:
         return img
+
+
+def plot_2d_streamline(x_data2d,
+                   y_data2d,
+                   mesh=None,
+                   savefilename=None,
+                   color=None,
+                   scale=1,
+                   scaler='standard',
+                   skip=1,
+                   easy_to_read=True,
+                   figsize=None,
+                   xlabel=None,
+                   ylabel=None,
+                   title=None,
+                   dpi=10,
+                   cmap=None):
+    """2次元ベクトル図をプロットする.
+
+    Parameters
+    ----------
+    x_data2d, y_data2d : numpy.ndarray
+        2次元データ
+    mesh : (numpy.ndarray, numpy.ndarray), optional
+        メッシュ, by default None
+    savefilename : str, optional
+        保存するファイル名(Noneの場合保存しない), by default None
+    color : str
+        ベクトルの色, by default None
+    scale : float
+        ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1
+    skip : int
+        プロットするデータ間隔, by default 1
+    easy_to_read : bool
+        ベクトルを見やすい大きさにスケーリングするならTrue, by default True
+    figsize : (float, float), optional
+        図のサイズ, by default None
+    xlabel : str, optional
+        x軸のラベル, by default None
+    ylabel : str, optional
+        y軸のラベル, by default None
+    title : str, optional
+        タイトル, by default None
+    interpolation : str, optional
+        用いる補間方法, by default 'bilinear'
+    dpi : int, optional
+        解像度(figsizeが指定された場合は無視される), by default 10
+
+    Returns
+    -------
+    AxesImage or None
+        プロットしたimageデータ(保存した場合None)
+    """
+    fig = None
+    if savefilename is not None:
+        if figsize is None:
+            fig = plt.figure()
+        else:
+            if figsize == 'auto':
+                figsize = figsize_with_2d(x_data2d, dpi=dpi)
+            fig = plt.figure(figsize=figsize)
+
+    if mesh is None:
+        x = list(range(x_data2d.shape[1]))
+        y = list(range(x_data2d.shape[0]))
+        mesh = np.meshgrid(x, y)
+
+    x = mesh[0]
+    y = mesh[1]
+    U = np.array(x_data2d)
+    V = np.array(y_data2d)
+
+    x_skip = skip if type(skip) == int else skip[0]
+    y_skip = skip if type(skip) == int else skip[1]
+    x = x[::y_skip, ::x_skip]
+    y = y[::y_skip, ::x_skip]
+    U = U[::y_skip, ::x_skip]
+    V = V[::y_skip, ::x_skip]
+
+    img = plt.streamplot(x,
+                        y,
+                        U,
+                        V,
+                        cmap=cmap,
+                        )
+
+    if title is not None:
+        plt.title(title)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+
+    if savefilename is not None:
+        fig.savefig(savefilename)
+        plt.close(fig)
+        return None
+    else:
+        return img
+
+
+def plot_3d_quiver(x_data3d,
+                   y_data3d,
+                   z_data3d,
+                   ax3d=None,
+                   mesh=None,
+                   savefilename=None,
+                   color=None,
+                   scale=1,
+                   scaler='standard',
+                   skip=1,
+                   easy_to_read=True,
+                   figsize=None,
+                   xlabel=None,
+                   ylabel=None,
+                   title=None,
+                   dpi=10,
+                   cmap=None):
+    """2次元ベクトル図をプロットする.
+
+    Parameters
+    ----------
+    x_data2d, y_data2d : numpy.ndarray
+        2次元データ
+    mesh : (numpy.ndarray, numpy.ndarray), optional
+        メッシュ, by default None
+    savefilename : str, optional
+        保存するファイル名(Noneの場合保存しない), by default None
+    color : str
+        ベクトルの色, by default None
+    scale : float
+        ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1
+    skip : int
+        プロットするデータ間隔, by default 1
+    easy_to_read : bool
+        ベクトルを見やすい大きさにスケーリングするならTrue, by default True
+    figsize : (float, float), optional
+        図のサイズ, by default None
+    xlabel : str, optional
+        x軸のラベル, by default None
+    ylabel : str, optional
+        y軸のラベル, by default None
+    title : str, optional
+        タイトル, by default None
+    interpolation : str, optional
+        用いる補間方法, by default 'bilinear'
+    dpi : int, optional
+        解像度(figsizeが指定された場合は無視される), by default 10
+
+    Returns
+    -------
+    AxesImage or None
+        プロットしたimageデータ(保存した場合None)
+    """
+    fig = None
+    if savefilename is not None:
+        if figsize is None:
+            fig = plt.figure()
+        else:
+            if figsize == 'auto':
+                figsize = figsize_with_2d(x_data3d[:, 0, :], dpi=dpi)
+            fig = plt.figure(figsize=figsize)
+    
+    if ax3d is None:
+        ax3d = fig.add_subplot(projection='3d')
+
+    if mesh is None:
+        x = list(range(x_data3d.shape[1]))
+        y = list(range(x_data3d.shape[0]))
+        z = list(range(x_data3d.shape[0]))
+        mesh = np.meshgrid(x, y, z)
+
+    x = mesh[0]
+    y = mesh[1]
+    z = mesh[2]
+    U = np.array(x_data3d)
+    V = np.array(y_data3d)
+    W = np.array(z_data3d)
+
+    x_skip = skip if type(skip) == int else skip[0]
+    y_skip = skip if type(skip) == int else skip[1]
+    z_skip = skip if type(skip) == int else skip[2]
+    x = x[::z_skip, ::y_skip, ::x_skip]
+    y = y[::z_skip, ::y_skip, ::x_skip]
+    z = z[::z_skip, ::y_skip, ::x_skip]
+    U = U[::z_skip, ::y_skip, ::x_skip]
+    V = V[::z_skip, ::y_skip, ::x_skip]
+    W = W[::z_skip, ::y_skip, ::x_skip]
+
+    norm = np.sqrt(U**2 + V**2)
+
+    if scaler == 'standard':
+        norm_max = np.nanmax(np.abs(norm))
+        U /= norm_max
+        V /= norm_max
+        W /= norm_max
+
+    elif scaler == 'normal':
+        U /= norm
+        V /= norm
+        W /= norm
+
+    elif scaler == 'log':
+        U = U / norm * np.log(norm+1)
+        V = V / norm * np.log(norm+1)
+        W = W / norm * np.log(norm+1)
+
+    # 見やすい大きさに線形スケーリングを行う
+    if easy_to_read:
+        dx = (x.max() - x.min()) / x.shape[0]
+        multiplier = dx * 1.2
+        norm_mean = np.nanmean(np.sqrt(U**2 + V**2))
+        U *= scale / norm_mean * multiplier
+        V *= scale / norm_mean * multiplier
+        W *= scale / norm_mean * multiplier
+
+    if cmap is None:
+        img = ax3d.quiver(x,
+                        y,
+                        z,
+                        U,
+                        V,
+                        W,
+                        angles='xy',
+                        scale_units='xy',
+                        scale=1,
+                        )
+    else:
+        img = ax3d.quiver(x,
+                        y,
+                        z,
+                        U,
+                        V,
+                        W,
+                        np.sqrt(U**2+V**2+W**2),
+                        angles='xy',
+                        scale_units='xy',
+                        scale=1,
+                        cmap=cmap,
+                        )
+
+    if title is not None:
+        plt.title(title)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+
+    if savefilename is not None:
+        fig.savefig(savefilename)
+        plt.close(fig)
+        return None
+    else:
+        return img

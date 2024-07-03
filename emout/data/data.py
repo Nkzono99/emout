@@ -1437,11 +1437,13 @@ class VectorData2d(utils.Group):
             return
         super().__setattr__(key, value)
 
-    def plot(self, axes='auto', show=False, use_si=True, offsets=None, **kwargs):
+    def plot(self, mode='stream', axes='auto', show=False, use_si=True, offsets=None, **kwargs):
         """2次元データをプロットする.
 
         Parameters
         ----------
+        mode : str
+            プロットの種類('vec': quiver plot, 'stream': streamline plot), by default 'stream'
         axes : str, optional
             プロットする軸('xy', 'zx', etc), by default 'auto'
         show : bool
@@ -1556,9 +1558,13 @@ class VectorData2d(utils.Group):
         kwargs['title'] = kwargs.get('title', None) or _title
 
         mesh = np.meshgrid(x, y)
-        img = emplt.plot_2d_vector(
-            x_data, y_data, mesh=mesh, **kwargs)
-
+        if 'vec' in mode:
+            img = emplt.plot_2d_vector(
+                x_data, y_data, mesh=mesh, **kwargs)
+        elif 'stream' in mode:
+            img = emplt.plot_2d_streamline(
+                x_data, y_data, mesh=mesh, **kwargs)
+            
         if show:
             plt.show()
             return None
