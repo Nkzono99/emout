@@ -20,6 +20,14 @@ emout.utils.group module
    :undoc-members:
    :show-inheritance:
 
+emout.utils.poisson module
+--------------------------
+
+.. automodule:: emout.utils.poisson
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 emout.utils.units module
 ------------------------
 

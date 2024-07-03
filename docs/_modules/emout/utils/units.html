@@ -1,157 +1,80 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>emout.utils.units &mdash; emout 0.4.1 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-
-  
-  
-  
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.utils.units &mdash; emout 1.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
 
   
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=fc837d61"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> emout
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            emout
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Modules:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Modules:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">emout</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">emout</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-      <li>emout.utils.units</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">emout.utils.units</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for emout.utils.units</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">inspect</span>
-
-
-<div class="viewcode-block" id="UnitTranslator"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator">[docs]</a><span class="k">class</span> <span class="nc">UnitTranslator</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;単位変換器.</span>
+<div class="viewcode-block" id="UnitTranslator">
+<a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator">[docs]</a>
+<span></span><span class="k">class</span> <span class="nc">UnitTranslator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;単位変換器.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -168,7 +91,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_unit</span><span class="p">,</span> <span class="n">to_unit</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;単位変換器を生成する.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;単位変換器を生成する.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -187,8 +110,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span>
 
-<div class="viewcode-block" id="UnitTranslator.set_name"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator.set_name">[docs]</a>    <span class="k">def</span> <span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;名前を設定する.</span>
+<div class="viewcode-block" id="UnitTranslator.set_name">
+<a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator.set_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;名前を設定する.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -206,8 +131,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="UnitTranslator.trans"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator.trans">[docs]</a>    <span class="k">def</span> <span class="nf">trans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;単位変換を行う.</span>
+
+<div class="viewcode-block" id="UnitTranslator.trans">
+<a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator.trans">[docs]</a>
+    <span class="k">def</span> <span class="nf">trans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;単位変換を行う.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -226,8 +154,11 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span></div>
 
-<div class="viewcode-block" id="UnitTranslator.reverse"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator.reverse">[docs]</a>    <span class="k">def</span> <span class="nf">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;単位逆変換を行う.</span>
+
+<div class="viewcode-block" id="UnitTranslator.reverse">
+<a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.UnitTranslator.reverse">[docs]</a>
+    <span class="k">def</span> <span class="nf">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;単位逆変換を行う.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -240,6 +171,7 @@
 <span class="sd">            変換前の値</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trans</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
 
     <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">from_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_unit</span> <span class="o">*</span> <span class="n">other</span><span class="o">.</span><span class="n">from_unit</span>
@@ -260,268 +192,259 @@
         <span class="k">return</span> <span class="n">other</span> <span class="o">/</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="n">from_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_unit</span> <span class="o">**</span> <span class="n">other</span>
-        <span class="n">to_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_unit</span> <span class="o">**</span> <span class="n">other</span>
+        <span class="n">from_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_unit</span><span class="o">**</span><span class="n">other</span>
+        <span class="n">to_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_unit</span><span class="o">**</span><span class="n">other</span>
         <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">from_unit</span><span class="p">,</span> <span class="n">to_unit</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">(</span><span class="si">{:.4}</span><span class="s1">, [</span><span class="si">{}</span><span class="s1">])&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(</span><span class="si">{:.4}</span><span class="s2">, [</span><span class="si">{}</span><span class="s2">])&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="Units"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.Units">[docs]</a><span class="k">class</span> <span class="nc">Units</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;EMSES用の単位変換器を管理する.</span>
+
+<div class="viewcode-block" id="Units">
+<a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.Units">[docs]</a>
+<span class="k">class</span> <span class="nc">Units</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;EMSES用の単位変換器を管理する.</span>
 
 <span class="sd">    SI単位系からEMSES単位系への変換を行う.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    dx : float</span>
-<span class="sd">        Grid length [m]</span>
-<span class="sd">    to_c : float</span>
-<span class="sd">        Light Speed in EMSES</span>
-<span class="sd">    pi : UnitTranslator</span>
-<span class="sd">        Circular constant []</span>
-<span class="sd">    e : UnitTranslator</span>
-<span class="sd">        Napiers constant []</span>
-<span class="sd">    c : UnitTranslator</span>
-<span class="sd">        Light Speed [m/s]</span>
-<span class="sd">    e0 : UnitTranslator</span>
-<span class="sd">        FS-Permttivity [F/m]</span>
-<span class="sd">    m0 : UnitTranslator</span>
-<span class="sd">        FS-Permeablity [N/A^2]</span>
-<span class="sd">    qe : UnitTranslator</span>
-<span class="sd">        Elementary charge [C]</span>
-<span class="sd">    me : UnitTranslator</span>
-<span class="sd">        Electron mass [kg]</span>
-<span class="sd">    mi : UnitTranslator</span>
-<span class="sd">        Proton mass [kg]</span>
-<span class="sd">    qe_me : UnitTranslator</span>
-<span class="sd">        Electron charge-to-mass ratio [C/kg]</span>
-<span class="sd">    kB : UnitTranslator</span>
-<span class="sd">        Boltzmann constant [J/K]</span>
-<span class="sd">    length : UnitTranslator</span>
-<span class="sd">        Sim-to-Real length ratio [m]</span>
-<span class="sd">    m : UnitTranslator</span>
-<span class="sd">        Mass [kg]</span>
-<span class="sd">    t : UnitTranslator</span>
-<span class="sd">        Time [s]</span>
-<span class="sd">    f : UnitTranslator</span>
-<span class="sd">        Frequency [Hz]</span>
-<span class="sd">    v : UnitTranslator</span>
-<span class="sd">        Velocity [m/s]</span>
-<span class="sd">    n : UnitTranslator</span>
-<span class="sd">        Number density [/m^3]</span>
-<span class="sd">    N : UnitTranslator</span>
-<span class="sd">        Flux [/m^2s]</span>
-<span class="sd">    F : UnitTranslator</span>
-<span class="sd">        Force [N]</span>
-<span class="sd">    P : UnitTranslator</span>
-<span class="sd">        Power [W]</span>
-<span class="sd">    W : UnitTranslator</span>
-<span class="sd">        Energy [J]</span>
-<span class="sd">    w : UnitTranslator]</span>
-<span class="sd">        Energy density [J/m^3]</span>
-<span class="sd">    eps : UnitTranslator</span>
-<span class="sd">        Permittivity  [F/m]</span>
-<span class="sd">    q : UnitTranslator</span>
-<span class="sd">        Charge [C]</span>
-<span class="sd">    rho : UnitTranslator</span>
-<span class="sd">        Charge density [C/m^3]</span>
-<span class="sd">    q_m : UnitTranslator</span>
-<span class="sd">        Charge-to-mass ratio [C/kg]</span>
-<span class="sd">    i : UnitTranslator</span>
-<span class="sd">        Current [A]</span>
-<span class="sd">    J : UnitTranslator</span>
-<span class="sd">        Current density [A/m^2]</span>
-<span class="sd">    phi : UnitTranslator</span>
-<span class="sd">        Potential [V]</span>
-<span class="sd">    E : UnitTranslator</span>
-<span class="sd">        Electric field [V/m]</span>
-<span class="sd">    H : UnitTranslator</span>
-<span class="sd">        Magnetic field [A/m]</span>
-<span class="sd">    C : UnitTranslator</span>
-<span class="sd">        Capacitance [F]</span>
-<span class="sd">    R : UnitTranslator</span>
-<span class="sd">        Resistance [Ω]</span>
-<span class="sd">    G : UnitTranslator</span>
-<span class="sd">        Conductance [S]</span>
-<span class="sd">    mu : UnitTranslator</span>
-<span class="sd">        Permiability [H/m]</span>
-<span class="sd">    B : UnitTranslator</span>
-<span class="sd">        Magnetic flux density [T]</span>
-<span class="sd">    L : UnitTranslator</span>
-<span class="sd">        Inductance [H]</span>
-<span class="sd">    T : UnitTranslator</span>
-<span class="sd">        Temperature [K]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">to_c</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;EMSES用の単位変換器を生成する.</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">to_c</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;EMSES用の単位変換器を生成する.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        dx : float, optional </span>
+<span class="sd">        dx : float, optional</span>
 <span class="sd">            Grid length [m]</span>
 <span class="sd">        to_c : float</span>
-<span class="sd">            Light Speed in EMSES</span>
+<span class="sd">            Light speed in EMSES unit</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">dx</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Grid length [m]&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">to_c</span> <span class="o">=</span> <span class="n">to_c</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Light speed in EMSES&quot;&quot;&quot;</span>
+
         <span class="n">from_c</span> <span class="o">=</span> <span class="mi">299792458</span>
         <span class="n">to_e0</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">pi</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mf">3.141592654</span><span class="p">,</span> <span class="mf">3.141592654</span><span class="p">)</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mf">2.718281828</span><span class="p">,</span> <span class="mf">2.718281828</span><span class="p">)</span>
 
         <span class="n">c</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">from_c</span><span class="p">,</span> <span class="n">to_c</span><span class="p">)</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">c</span>
 
-        <span class="n">_m0</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">pi</span><span class="o">.</span><span class="n">from_unit</span> <span class="o">*</span> <span class="mf">1E-7</span>
-        <span class="n">e0</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">_m0</span> <span class="o">*</span> <span class="n">c</span><span class="o">.</span><span class="n">from_unit</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">to_e0</span><span class="p">)</span>
-        <span class="n">eps</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">e0</span><span class="p">)</span>
-        <span class="n">mu</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">eps</span> <span class="o">/</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">_m0</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">pi</span><span class="o">.</span><span class="n">from_unit</span> <span class="o">*</span> <span class="mf">1e-7</span>
+        <span class="n">e0</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">_m0</span> <span class="o">*</span> <span class="n">c</span><span class="o">.</span><span class="n">from_unit</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span> <span class="n">to_e0</span><span class="p">)</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">e0</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">eps</span> <span class="o">/</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span>
         <span class="n">m0</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">_m0</span><span class="p">,</span> <span class="n">mu</span><span class="o">.</span><span class="n">trans</span><span class="p">(</span><span class="n">_m0</span><span class="p">))</span>
 
-        <span class="n">kB</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mf">1.38065052E-23</span><span class="p">,</span> <span class="mf">1.38065052E-23</span><span class="p">)</span>
+        <span class="n">kB</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mf">1.38065052e-23</span><span class="p">,</span> <span class="mf">1.38065052e-23</span><span class="p">)</span>
 
         <span class="n">length</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">v</span><span class="p">)</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">length</span> <span class="o">**</span> <span class="mi">3</span><span class="p">))</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">length</span> <span class="o">/</span> <span class="n">v</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">t</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">length</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">n</span>
 
-        <span class="n">_qe</span> <span class="o">=</span> <span class="mf">1.6021765E-19</span>
-        <span class="n">_me</span> <span class="o">=</span> <span class="mf">9.1093819E-31</span>
-        <span class="n">_mi</span> <span class="o">=</span> <span class="mf">1.67261E-27</span>
+        <span class="n">_qe</span> <span class="o">=</span> <span class="mf">1.6021765e-19</span>
+        <span class="n">_me</span> <span class="o">=</span> <span class="mf">9.1093819e-31</span>
+        <span class="n">_mi</span> <span class="o">=</span> <span class="mf">1.67261e-27</span>
         <span class="n">qe_me</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="o">-</span><span class="n">_qe</span> <span class="o">/</span> <span class="n">_me</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">q_m</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">qe_me</span><span class="p">)</span>
+        <span class="n">q_m</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">qe_me</span>
 
-        <span class="n">q</span> <span class="o">=</span> <span class="p">(</span><span class="n">e0</span> <span class="o">/</span> <span class="n">q_m</span> <span class="o">*</span> <span class="n">length</span> <span class="o">*</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span> <span class="o">/</span> <span class="n">q_m</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">e0</span> <span class="o">/</span> <span class="n">q_m</span> <span class="o">*</span> <span class="n">length</span> <span class="o">*</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">q</span> <span class="o">/</span> <span class="n">q_m</span>
 
         <span class="n">qe</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">_qe</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">trans</span><span class="p">(</span><span class="n">_qe</span><span class="p">))</span>
         <span class="n">me</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">_me</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">trans</span><span class="p">(</span><span class="n">_me</span><span class="p">))</span>
         <span class="n">mi</span> <span class="o">=</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">_mi</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">trans</span><span class="p">(</span><span class="n">_mi</span><span class="p">))</span>
-        <span class="n">rho</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span> <span class="o">/</span> <span class="n">length</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">q</span> <span class="o">/</span> <span class="n">length</span><span class="o">**</span><span class="mi">3</span>
 
-        <span class="n">F</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">length</span> <span class="o">/</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="p">(</span><span class="n">F</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
-        <span class="n">W</span> <span class="o">=</span> <span class="p">(</span><span class="n">F</span> <span class="o">*</span> <span class="n">length</span><span class="p">)</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span> <span class="o">/</span> <span class="p">(</span><span class="n">length</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">length</span> <span class="o">/</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">F</span> <span class="o">*</span> <span class="n">v</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">F</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">W</span> <span class="o">/</span> <span class="p">(</span><span class="n">length</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
 
-        <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span> <span class="o">/</span> <span class="n">length</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
-        <span class="n">J</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">length</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">q_m</span><span class="p">)</span>
-        <span class="n">E</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi</span> <span class="o">/</span> <span class="n">length</span><span class="p">)</span>
-        <span class="n">H</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">length</span><span class="p">)</span>
-        <span class="n">C</span> <span class="o">=</span> <span class="p">(</span><span class="n">eps</span> <span class="o">*</span> <span class="n">length</span><span class="p">)</span>
-        <span class="n">R</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi</span> <span class="o">/</span> <span class="n">i</span><span class="p">)</span>
-        <span class="n">G</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">R</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">q</span> <span class="o">/</span> <span class="n">length</span> <span class="o">*</span> <span class="n">v</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="n">length</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">q_m</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">phi</span> <span class="o">/</span> <span class="n">length</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="n">length</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">phi</span> <span class="o">/</span> <span class="n">i</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">R</span>
 
-        <span class="n">B</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">/</span> <span class="n">length</span> <span class="o">/</span> <span class="n">q_m</span><span class="p">)</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="p">(</span><span class="n">mu</span> <span class="o">*</span> <span class="n">length</span><span class="p">)</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span> <span class="o">/</span> <span class="n">kB</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">length</span> <span class="o">/</span> <span class="n">q_m</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">W</span> <span class="o">/</span> <span class="n">kB</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">pi</span> <span class="o">=</span> <span class="n">pi</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Circular constant&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Napiers constant&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">t</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Light Speed&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">e0</span> <span class="o">=</span> <span class="n">e0</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;FS-Permttivity&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;F/m&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">m0</span> <span class="o">=</span> <span class="n">m0</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;FS-Permeablity&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;N/A^2&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qe</span> <span class="o">=</span> <span class="n">qe</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Elementary charge&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">me</span> <span class="o">=</span> <span class="n">me</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Electron mass&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mi</span> <span class="o">=</span> <span class="n">mi</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Proton mass&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qe_me</span> <span class="o">=</span> <span class="n">qe_me</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Electron charge-to-mass ratio&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;C/kg&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kB</span> <span class="o">=</span> <span class="n">kB</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Boltzmann constant&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;J/K&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Sim-to-Real length ratio&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
+        <span class="n">EC</span> <span class="o">=</span> <span class="n">G</span> <span class="o">/</span> <span class="n">length</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Mass&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Frequency&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Hz&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Velocity&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Number density&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;/m^3&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Flux&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;/m^2s&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Force&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Power&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;W&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Energy&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;J&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Energy density&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;J/m^3&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Permittivity&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;F/m&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Charge&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Charge density&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;C/m^3&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q_m</span> <span class="o">=</span> <span class="n">q_m</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Charge-to-mass ratio&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;C/kg&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Current&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">J</span> <span class="o">=</span> <span class="n">J</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Current density&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A/m^2&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Potential&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Electric field&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V/m&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Magnetic field&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A/m&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Capacitance&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;F&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Resistance&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Ω&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Conductance&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;S&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Permiability&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;H/m&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Magnetic flux density&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Inductance&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s1">&#39;Temperature&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;K&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pi</span> <span class="o">=</span> <span class="n">pi</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Circular constant&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Circular constant []&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Units.translators"><a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.Units.translators">[docs]</a>    <span class="k">def</span> <span class="nf">translators</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;変換器のリストを返す.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Napiers constant&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Napiers constant []&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Light Speed&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;m/s&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Light Speed [m/s]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">e0</span> <span class="o">=</span> <span class="n">e0</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;FS-Permttivity&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;F/m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for FS-Permttivity [F/m]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">m0</span> <span class="o">=</span> <span class="n">m0</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;FS-Permeablity&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;N/A^2&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for FS-Permeablity [N/A^2]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qe</span> <span class="o">=</span> <span class="n">qe</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Elementary charge&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Elementary charge [C]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">me</span> <span class="o">=</span> <span class="n">me</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Electron mass&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;kg&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Electron mass [kg]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mi</span> <span class="o">=</span> <span class="n">mi</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Proton mass&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;kg&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Proton mass [kg]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">qe_me</span> <span class="o">=</span> <span class="n">qe_me</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Electron charge-to-mass ratio&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;C/kg&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Electron charge-to-mass ratio [C/kg]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kB</span> <span class="o">=</span> <span class="n">kB</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Boltzmann constant&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;J/K&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Boltzmann constant [J/K]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Sim-to-Real length ratio&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Sim-to-Real length ratio [m]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Mass&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;kg&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Mass [kg]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Time [s]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Frequency&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Frequency [Hz]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Velocity&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;m/s&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Velocity [m/s]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Number density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;/m^3&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Number density [/m^3]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Flux&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;/m^2s&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Flux [/m^2s]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Force&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;N&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Force [N]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Power&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;W&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Power [W]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Energy&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;J&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Energy [J]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Energy density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;J/m^3&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Energy density [J/m^3]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Permittivity&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;F/m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Permittivity  [F/m]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Charge&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Charge [C]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Charge density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;C/m^3&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Charge density [C/m^3]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_m</span> <span class="o">=</span> <span class="n">q_m</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Charge-to-mass ratio&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;C/kg&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Charge-to-mass ratio [C/kg]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Current&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Current [A]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">J</span> <span class="o">=</span> <span class="n">J</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Current density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A/m^2&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Current density [A/m^2]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Potential&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Potential [V]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Electric field&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V/m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Electric field [V/m]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Magnetic field&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A/m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Magnetic field [A/m]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Capacitance&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Capacitance [F]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Resistance&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Ω&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Resistance [Ω]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Conductance&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;S&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Conductance [S]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Permiability&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;H/m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Permiability [H/m]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Magnetic flux density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Magnetic flux density [T]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Inductance&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;H&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Inductance [H]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Temperature&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;K&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Temperature [K]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Acceleration&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;m/s^2&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Acceleration [m/s^2]&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">EC</span> <span class="o">=</span> <span class="n">EC</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="s2">&quot;Electric conductivity&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;S/m&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unit translator for Electric conductivity [S/m]&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Units.translators">
+<a class="viewcode-back" href="../../../emout.utils.html#emout.utils.units.Units.translators">[docs]</a>
+    <span class="k">def</span> <span class="nf">translators</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;変換器のリストを返す.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        list(UnitTranslator)</span>
 <span class="sd">            変換器のリスト</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span></div></div>
+        <span class="k">return</span></div>
+</div>
+
         <span class="c1"># translators = inspect.getmembers(</span>
         <span class="c1">#     self, lambda x: isinstance(x, UnitTranslator))</span>
         <span class="c1"># return list(map(lambda x: x[1], translators))</span>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        
-        &copy; Copyright 2020, Nkzono99
-
-    </p>
+    <p>&#169; Copyright 2020, Nkzono99.</p>
   </div>
-    
-    
-    
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
-    
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

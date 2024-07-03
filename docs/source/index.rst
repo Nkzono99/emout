@@ -8,20 +8,18 @@ Welcome to emout's documentation!
 
 EMSESの出力ファイルを取り扱うパッケージ.
 
-Requirement
------------
-   
-   * numpy
-   * h5py
-   * matplotlib
-   * f90nml
-
 Installation
 ------------
 
    ::
      
      $ pip install emout
+
+Example code
+------------
+
+- `Visualization of simulation results for lunar surface charging <https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb>`_
+
 
 Usage
 -----
