@@ -116,6 +116,18 @@ class Emout:
         return data
 
     def __getattr__(self, __name: str) -> Any:
+        m = re.match('(.+)([xyz])([xyz])$', __name)
+        if m:
+            dname = m.group(1)
+            axis1 = m.group(2)
+            axis2 = m.group(3)
+            vector_data = VectorData2d([getattr(self, f'{dname}{axis1}'), getattr(self, f'{dname}{axis2}')])
+            
+            setattr(self, __name, vector_data)
+            
+            return vector_data
+            
+        
         filepath = self.__fetch_filepath(self.directory, f'{__name}00_0000.h5')
         griddata = self.__load_griddata(filepath)
 
