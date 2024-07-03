@@ -33,7 +33,7 @@ class Group:
     Group([[1, 2, 5], [3, 4, 5]])
     """
 
-    def __init__(self, objs):
+    def __init__(self, objs, attrs=None):
         """グループを生成する.
 
         Parameters
@@ -43,6 +43,7 @@ class Group:
         """
         self.__dict__ = dict()
         self.objs = objs
+        self.attrs = attrs
 
     def __binary_operator(self, callable, other):
         """グループに対して二項演算を行う.
@@ -64,7 +65,7 @@ class Group:
             new_objs = [callable(obj, other) for obj, other in zip(self.objs, others)]
         else:
             new_objs = [callable(obj, other) for obj in self.objs]
-        return type(self)(new_objs)
+        return type(self)(new_objs, attrs=self.attrs)
 
     def __check_and_return_iterable(self, arg):
         """対象がGroupオブジェクトか判定し、対象をself.objs長にブロードキャストする.
@@ -121,7 +122,7 @@ class Group:
         Group([2, 4, 6])
         """
         new_objs = list(map(callable, self.objs))
-        return type(self)(new_objs)
+        return type(self)(new_objs, attrs=self.attrs)
 
     def filter(self, predicate):
         """オブジェクトのうち関数が真を返すもののみで新しいグループを生成する.
@@ -143,7 +144,7 @@ class Group:
         Group([1, 2])
         """
         new_objs = list(filter(predicate, self.objs))
-        return type(self)(new_objs)
+        return type(self)(new_objs, attrs=self.attrs)
 
     def foreach(self, callable):
         """すべてのオブジェクトに対して関数を適用する.
@@ -346,7 +347,7 @@ class Group:
 
         new_objs = [obj[key] for obj, key in zip(self.objs, keys)]
 
-        return type(self)(new_objs)
+        return type(self)(new_objs, attrs=self.attrs)
 
     def __setitem__(self, key, value):
         keys = self.__expand_key(key)
@@ -364,10 +365,10 @@ class Group:
     def __getattr__(self, key):
         keys = self.__check_and_return_iterable(key)
         new_objs = [getattr(obj, key) for obj, key in zip(self.objs, keys)]
-        return type(self)(new_objs)
+        return type(self)(new_objs, attrs=self.attrs)
 
     def __setattr__(self, key, value):
-        if key in ("objs", "__dict__"):
+        if key in ("objs", "__dict__", "attrs"):
             self.__dict__[key] = value
             return
 
@@ -396,7 +397,7 @@ class Group:
             for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)
         ]
 
-        return type(self)(new_objs)
+        return type(self)(new_objs, attrs=self.attrs)
 
     def __round__(self):
         return self.map(math.round)

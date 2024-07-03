@@ -876,9 +876,22 @@ class Data1d(Data):
 
 
 class VectorData2d(utils.Group):
-    def __init__(self, objs):
+    def __init__(self, objs, name=None, attrs=None):
         x_data, y_data = objs
-        super().__init__([x_data, y_data])
+
+        if attrs is None:
+            attrs = dict()
+
+        if name:
+            attrs["name"] = name
+        elif "name" in attrs:
+            pass
+        elif hasattr(x_data, "name"):
+            attrs["name"] = name
+        else:
+            attrs["name"] = ""
+
+        super().__init__([x_data, y_data], attrs=attrs)
         self.x_data = x_data
         self.y_data = y_data
 
@@ -888,7 +901,22 @@ class VectorData2d(utils.Group):
             return
         super().__setattr__(key, value)
 
+    @property
+    def name(self):
+        return self.attrs["name"]
+
     def plot(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if self.x_data.ndim == 2:
+            self.plot2d(
+                *args,
+                **kwargs,
+            )
+
+    def plot2d(
         self,
         mode="stream",
         axes="auto",
@@ -988,14 +1016,14 @@ class VectorData2d(utils.Group):
 
             _xlabel = "{} [{}]".format(axes[0], xunit.unit)
             _ylabel = "{} [{}]".format(axes[1], yunit.unit)
-            _title = "{} [{}]".format(self.objs[0].name, valunit.unit)
+            _title = "{} [{}]".format(self.name, valunit.unit)
 
             x_data = self.x_data.val_si
             y_data = self.y_data.val_si
         else:
             _xlabel = axes[0]
             _ylabel = axes[1]
-            _title = self.objs[0].name
+            _title = self.name
 
             x_data = self.x_data
             y_data = self.y_data

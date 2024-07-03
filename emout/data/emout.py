@@ -120,7 +120,8 @@ class Emout:
             axis1 = m.group(2)
             axis2 = m.group(3)
             vector_data = VectorData2d(
-                [getattr(self, f"{dname}{axis1}"), getattr(self, f"{dname}{axis2}")]
+                [getattr(self, f"{dname}{axis1}"), getattr(self, f"{dname}{axis2}")],
+                name=__name,
             )
 
             setattr(self, __name, vector_data)
