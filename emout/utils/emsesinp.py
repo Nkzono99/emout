@@ -11,7 +11,7 @@ class UnitConversionKey:
 
     Attributes
     ----------
-    dx : float 
+    dx : float
         グリッド幅[m]
     to_c : float
         EMSES単位系での光速の値
@@ -22,7 +22,7 @@ class UnitConversionKey:
 
         Parameters
         ----------
-        dx : float 
+        dx : float
             グリッド幅[m]
         to_c : float
             EMSES単位系での光速の値
@@ -47,15 +47,15 @@ class UnitConversionKey:
         UnitConversionKey or None
             単位変換キー
         """
-        with open(filename, 'r', encoding='utf-8') as f:
+        with open(filename, "r", encoding="utf-8") as f:
             line = f.readline()
 
-        if not line.startswith('!!key'):
+        if not line.startswith("!!key"):
             return None
 
         # !!key dx=[1.0],to_c=[10000.0]
         text = line[6:].strip()
-        pattern = r'dx=\[([+-]?\d+(?:\.\d+)?)\],to_c=\[([+-]?\d+(?:\.\d+)?)\]'
+        pattern = r"dx=\[([+-]?\d+(?:\.\d+)?)\],to_c=\[([+-]?\d+(?:\.\d+)?)\]"
         m = re.match(pattern, text)
         dx = float(m.group(1))
         to_c = float(m.group(2))
@@ -70,7 +70,7 @@ class UnitConversionKey:
         str
             単位変換キーの文字列
         """
-        return 'dx=[{}],to_c=[{}]'.format(self.dx, self.to_c)
+        return "dx=[{}],to_c=[{}]".format(self.dx, self.to_c)
 
 
 class AttrDict(dict):
@@ -132,7 +132,7 @@ class InpFile:
         return item
 
     def __setattr__(self, key, item):
-        if key in ['nml', 'convkey']:
+        if key in ["nml", "convkey"]:
             super().__setattr__(key, item)
             return
 
@@ -161,12 +161,11 @@ class InpFile:
                             del self.nml[group][key]
                             del self.nml[group].start_index[key]
                         else:
-                            start_index, = self.nml[group].start_index[key]
+                            (start_index,) = self.nml[group].start_index[key]
                             del self.nml[group][key][index - start_index]
 
                             if index == start_index:
-                                self.nml[group].start_index[key] = [
-                                    start_index + 1]
+                                self.nml[group].start_index[key] = [start_index + 1]
 
                             if len(list(self.nml[group][key])) == 0:
                                 del self.nml[group][key]
@@ -195,16 +194,22 @@ class InpFile:
         if name in self.nml[group].start_index:
             end_index = start_index + len(value)
 
-            start_index_init, = self.nml[group].start_index[name]
+            (start_index_init,) = self.nml[group].start_index[name]
             end_index_init = start_index_init + len(self.nml[group][name])
 
             min_start_index = min(start_index, start_index_init)
             max_end_index = max(end_index, end_index_init)
 
             new_list = [None] * (max_end_index - min_start_index)
-            for i, index in enumerate(range(start_index_init-min_start_index, end_index_init-min_start_index)):
+            for i, index in enumerate(
+                range(
+                    start_index_init - min_start_index, end_index_init - min_start_index
+                )
+            ):
                 new_list[index] = self.nml[group][name][i]
-            for i, index in enumerate(range(start_index-min_start_index, end_index-min_start_index)):
+            for i, index in enumerate(
+                range(start_index - min_start_index, end_index - min_start_index)
+            ):
                 new_list[index] = value[i]
 
             self.nml[group].start_index[name] = [min_start_index]
@@ -224,9 +229,9 @@ class InpFile:
             単位変換キー, by default None
         """
         convkey = convkey or self.convkey
-        with open(filename, 'wt', encoding='utf-8') as f:
+        with open(filename, "wt", encoding="utf-8") as f:
             if convkey is not None:
-                f.write('!!key {}\n'.format(convkey.keytext))
+                f.write("!!key {}\n".format(convkey.keytext))
             f90nml.write(self.nml, f, force=True)
 
     def __str__(self):
@@ -263,13 +268,13 @@ class InpFile:
 
             self[group][name] = values_to
 
-        conv1d('plasma', 'wp', 'f')
+        conv1d("plasma", "wp", "f")
 
-        conv1d('intp', 'path', 'v')
-        conv1d('intp', 'peth', 'v')
-        conv1d('intp', 'vdri', 'v')
+        conv1d("intp", "path", "v")
+        conv1d("intp", "peth", "v")
+        conv1d("intp", "vdri", "v")
 
-        conv1d('emissn', 'curf', 'J')
-        conv1d('emissn', 'curfs', 'J')
+        conv1d("emissn", "curf", "J")
+        conv1d("emissn", "curfs", "J")
 
         self.convkey = UnitConversionKey(unit_to.dx, unit_to.to_c)

@@ -77,8 +77,7 @@ def range_with_slice(slice_obj, maxlen):
 
 
 class RegexDict(dict):
-    """正規表現をキーとする辞書クラス.
-    """
+    """正規表現をキーとする辞書クラス."""
 
     def __getitem__(self, key):
         if super().__contains__(key):
@@ -108,8 +107,7 @@ class RegexDict(dict):
 
 
 class DataFileInfo:
-    """データファイル情報を管理するクラス.
-    """
+    """データファイル情報を管理するクラス."""
 
     def __init__(self, filename):
         """データファイル情報を管理するオブジェクトを生成する.
@@ -143,7 +141,7 @@ class DataFileInfo:
         Path
             ディレクトリの絶対パス
         """
-        return (self._filename / '../').resolve()
+        return (self._filename / "../").resolve()
 
     @property
     def abspath(self):
@@ -160,18 +158,17 @@ class DataFileInfo:
         return str(self._filename)
 
 
-@writers.register('quantized-pillow')
+@writers.register("quantized-pillow")
 class QuantizedPillowWriter(PillowWriter):
-    """ 色数を256としたPillowWriterラッパークラス.
-    """
+    """色数を256としたPillowWriterラッパークラス."""
 
     def grab_frame(self, **savefig_kwargs):
         super().grab_frame(**savefig_kwargs)
-        self._frames[-1] = self._frames[-1].convert('RGB').quantize()
+        self._frames[-1] = self._frames[-1].convert("RGB").quantize()
 
 
 def hole_mask(inp, reverse=False):
-    shape = (inp.nz+1, inp.ny+1, inp.nx+1)
+    shape = (inp.nz + 1, inp.ny + 1, inp.nx + 1)
     xl = int(inp.xlrechole[0])
     xu = int(inp.xurechole[0])
     yl = int(inp.ylrechole[0])
@@ -181,5 +178,5 @@ def hole_mask(inp, reverse=False):
 
     mask = np.ones(shape, dtype=bool)
     mask[zu:, :, :] = False
-    mask[zl:zu, yl:yu+1, xl:xu+1] = False
+    mask[zl:zu, yl : yu + 1, xl : xu + 1] = False
     return (not reverse) == mask
