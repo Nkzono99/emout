@@ -17,7 +17,7 @@ class Group:
     - format : return 'Group([objs])'
     - len : return len(objs)
     - iter : return iter(objs)
-    - in : return other in objs 
+    - in : return other in objs
 
     Examples
     --------
@@ -61,8 +61,7 @@ class Group:
         """
         if isinstance(other, Group):
             others = other
-            new_objs = [callable(obj, other)
-                        for obj, other in zip(self.objs, others)]
+            new_objs = [callable(obj, other) for obj, other in zip(self.objs, others)]
         else:
             new_objs = [callable(obj, other) for obj in self.objs]
         return type(self)(new_objs)
@@ -93,7 +92,10 @@ class Group:
         if isinstance(arg, Group):
             if len(self) != len(arg):
                 raise Exception(
-                    'Error: group size is not match (self:{}, arg:{})'.format(len(self), len(arg)))
+                    "Error: group size is not match (self:{}, arg:{})".format(
+                        len(self), len(arg)
+                    )
+                )
             args = arg
         else:
             args = [arg] * len(self.objs)
@@ -163,7 +165,7 @@ class Group:
             callable(obj)
 
     def __str__(self):
-        return 'Group({})'.format(self.objs)
+        return "Group({})".format(self.objs)
 
     def __repr__(self):
         return str(self)
@@ -232,10 +234,10 @@ class Group:
         return self.__binary_operator(lambda obj, other: divmod(other, obj), other)
 
     def __pow__(self, other):
-        return self.__binary_operator(lambda obj, other: obj ** other, other)
+        return self.__binary_operator(lambda obj, other: obj**other, other)
 
     def __rpow__(self, other):
-        return self.__binary_operator(lambda obj, other: other ** obj, other)
+        return self.__binary_operator(lambda obj, other: other**obj, other)
 
     def __lshift__(self, other):
         return self.__binary_operator(lambda obj, other: obj << other, other)
@@ -320,7 +322,7 @@ class Group:
 
     def __expand_key(self, key):
         if not isinstance(key, tuple):
-            key = (key, )
+            key = (key,)
 
         slices = []
         for k in key:
@@ -365,7 +367,7 @@ class Group:
         return type(self)(new_objs)
 
     def __setattr__(self, key, value):
-        if key in ('objs', '__dict__'):
+        if key in ("objs", "__dict__"):
             self.__dict__[key] = value
             return
 
@@ -389,8 +391,10 @@ class Group:
             for i, (key, value) in enumerate(zip(keys, values)):
                 new_kwargss[i][key] = value
 
-        new_objs = [obj(*new_args, **new_kwargs)
-                    for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)]
+        new_objs = [
+            obj(*new_args, **new_kwargs)
+            for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)
+        ]
 
         return type(self)(new_objs)
 

@@ -1,12 +1,16 @@
-from emout.utils.emsesinp import InpFile
-from emout.utils.units import Units
 from typing import Tuple, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
+
 from emout import Emout
+from emout.utils.emsesinp import InpFile
+from emout.utils.units import Units
 
 
-def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange='minmax', **kwargs):
+def plot_surface_with_hole(
+    data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", **kwargs
+):
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
     yl = int(inp.ylrechole[1])
@@ -14,60 +18,60 @@ def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange=
     zl = int(inp.zlrechole[1])
     zu = int(inp.zurechole[0])
 
-    if kwargs.get('use_si', False):
+    if kwargs.get("use_si", False):
         vmax = data_xyz.val_si.max()
         vmin = data_xyz.val_si.min()
     else:
         vmax = data_xyz.max()
         vmin = data_xyz.min()
 
-    if vrange == 'minmax':
+    if vrange == "minmax":
         pass
-    elif vrange == 'center':
+    elif vrange == "center":
         vmax = max(abs(vmax), abs(vmin))
         vmin = -vmax
 
-    kwargs['vmax'] = kwargs.get('vmax', None) or vmax
-    kwargs['vmin'] = kwargs.get('vmin', None) or vmin
+    kwargs["vmax"] = kwargs.get("vmax", None) or vmax
+    kwargs["vmin"] = kwargs.get("vmin", None) or vmin
 
     # plot top surface
-    data_xyz[zu, :yl+1, :].plot(mode='surf', **kwargs)
-    data_xyz[zu, yu:, :].plot(mode='surf', **kwargs)
-    data_xyz[zu, yl:yu+1, :xl+1].plot(mode='surf', **kwargs)
-    data_xyz[zu, yl:yu+1, xu:].plot(mode='surf', **kwargs)
+    data_xyz[zu, : yl + 1, :].plot(mode="surf", **kwargs)
+    data_xyz[zu, yu:, :].plot(mode="surf", **kwargs)
+    data_xyz[zu, yl : yu + 1, : xl + 1].plot(mode="surf", **kwargs)
+    data_xyz[zu, yl : yu + 1, xu:].plot(mode="surf", **kwargs)
 
     # plot wall
-    data_xyz[zl:zu+1, yl, xl:xu+1].plot(mode='surf', **kwargs)
-    data_xyz[zl:zu+1, yu, xl:xu+1].plot(mode='surf', **kwargs)
-    data_xyz[zl:zu+1, yl:yu+1, xl].plot(mode='surf', **kwargs)
-    data_xyz[zl:zu+1, yl:yu+1, xu].plot(mode='surf', **kwargs)
+    data_xyz[zl : zu + 1, yl, xl : xu + 1].plot(mode="surf", **kwargs)
+    data_xyz[zl : zu + 1, yu, xl : xu + 1].plot(mode="surf", **kwargs)
+    data_xyz[zl : zu + 1, yl : yu + 1, xl].plot(mode="surf", **kwargs)
+    data_xyz[zl : zu + 1, yl : yu + 1, xu].plot(mode="surf", **kwargs)
 
     # plot bottom
-    data_xyz[zl, yl:yu+1, xl:xu+1].plot(
-        mode='surf',
-        add_colorbar=add_colorbar,
-        **kwargs)
+    data_xyz[zl, yl : yu + 1, xl : xu + 1].plot(
+        mode="surf", add_colorbar=add_colorbar, **kwargs
+    )
 
     if show:
         plt.show()
 
 
 def plot_hole_line(
-        inp_or_data: Union[InpFile, Emout],
-        unit: Units = None,
-        use_si: bool = True,
-        offsets: Tuple[int, int] = (0, 0),
-        axis='xz',
-        color='black',
-        linewidth=None,
-        fix_lims=True):
+    inp_or_data: Union[InpFile, Emout],
+    unit: Units = None,
+    use_si: bool = True,
+    offsets: Tuple[int, int] = (0, 0),
+    axis="xz",
+    color="black",
+    linewidth=None,
+    fix_lims=True,
+):
     if isinstance(inp_or_data, InpFile):
         inp: InpFile = inp_or_data
     else:
         data: Emout = inp_or_data
         inp = data.inp
         unit = data.unit
-    
+
     if fix_lims:
         plt.xlim(plt.xlim())
         plt.ylim(plt.ylim())
@@ -76,14 +80,14 @@ def plot_hole_line(
     xu = inp.xurechole[1]
     yl = inp.ylrechole[1]
     yu = inp.yurechole[1]
-    zl = inp.zlrechole[1]+0.5
+    zl = inp.zlrechole[1] + 0.5
     zu = inp.zurechole[0]
     nx = inp.nx
     ny = inp.ny
     nz = inp.nz
 
-    if axis == 'xz':
-        xs = np.array([0., xl, xl, xu, xu, nx-1])
+    if axis == "xz":
+        xs = np.array([0.0, xl, xl, xu, xu, nx - 1])
         ys = np.array([zu, zu, zl, zl, zu, zu])
 
     if use_si and unit is not None:
@@ -112,44 +116,46 @@ def plot_line_of_hole_half(inp, off, unit):
 
     ax = plt.gca()
 
-    surf_points = np.array([
-        [xc, yl-off, zu],
-        [xc, yl, zu],
-        [xl, yl, zu],
-        [xl, yu, zu],
-        [xc, yu, zu],
-        [xc, yu+off, zu],
-        [xc-off, yu+off, zu],
-        [xc-off, yl-off, zu],
-        [xc, yl-off, zu]
-    ])
+    surf_points = np.array(
+        [
+            [xc, yl - off, zu],
+            [xc, yl, zu],
+            [xl, yl, zu],
+            [xl, yu, zu],
+            [xc, yu, zu],
+            [xc, yu + off, zu],
+            [xc - off, yu + off, zu],
+            [xc - off, yl - off, zu],
+            [xc, yl - off, zu],
+        ]
+    )
 
-    bottom_points = np.array([
-        [xc, yl, zl],
-        [xc, yu, zl],
-        [xl, yu, zl],
-        [xl, yl, zl],
-        [xc, yl, zl]
-    ])
+    bottom_points = np.array(
+        [[xc, yl, zl], [xc, yu, zl], [xl, yu, zl], [xl, yl, zl], [xc, yl, zl]]
+    )
 
-    bottom2_points = np.array([
-        [xc, yl-off, zl-off//2],
-        [xc, yu+off, zl-off//2],
-        [xc-off, yu+off, zl-off//2],
-        [xc-off, yl-off, zl-off//2],
-        [xc, yl-off, zl-off//2]
-    ])
+    bottom2_points = np.array(
+        [
+            [xc, yl - off, zl - off // 2],
+            [xc, yu + off, zl - off // 2],
+            [xc - off, yu + off, zl - off // 2],
+            [xc - off, yl - off, zl - off // 2],
+            [xc, yl - off, zl - off // 2],
+        ]
+    )
 
-    lines = np.array([
-        [[xc, yl, zl], [xc, yl, zu]],
-        [[xl, yl, zl], [xl, yl, zu]],
-        [[xl, yu, zl], [xl, yu, zu]],
-        [[xc, yu, zl], [xc, yu, zu]],
-        [[xc, yl-off, zl-off//2], [xc, yl-off, zu]],
-        [[xc, yu+off, zl-off//2], [xc, yu+off, zu]],
-        [[xc-off, yu+off, zl-off//2], [xc-off, yu+off, zu]],
-        [[xc-off, yl-off, zl-off//2], [xc-off, yl-off, zu]]
-    ])
+    lines = np.array(
+        [
+            [[xc, yl, zl], [xc, yl, zu]],
+            [[xl, yl, zl], [xl, yl, zu]],
+            [[xl, yu, zl], [xl, yu, zu]],
+            [[xc, yu, zl], [xc, yu, zu]],
+            [[xc, yl - off, zl - off // 2], [xc, yl - off, zu]],
+            [[xc, yu + off, zl - off // 2], [xc, yu + off, zu]],
+            [[xc - off, yu + off, zl - off // 2], [xc - off, yu + off, zu]],
+            [[xc - off, yl - off, zl - off // 2], [xc - off, yl - off, zu]],
+        ]
+    )
 
     surf_points = unit.reverse(surf_points)
     bottom_points = unit.reverse(bottom_points)
@@ -163,15 +169,17 @@ def plot_line_of_hole_half(inp, off, unit):
         return x, y, z
 
     offsets = (-xc_si, -yc_si, -zu_si)
-    ax.plot(*parse(surf_points, offsets), color='black')
-    ax.plot(*parse(bottom_points, offsets), color='black')
-    ax.plot(*parse(bottom2_points, offsets), color='black')
+    ax.plot(*parse(surf_points, offsets), color="black")
+    ax.plot(*parse(bottom_points, offsets), color="black")
+    ax.plot(*parse(bottom2_points, offsets), color="black")
 
     for line in lines:
-        ax.plot(*parse(line, offsets), color='black')
+        ax.plot(*parse(line, offsets), color="black")
 
 
-def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=False, vrange='minmax', **kwargs):
+def plot_surface_with_hole_half(
+    data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", **kwargs
+):
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
     yl = int(inp.ylrechole[1])
@@ -179,44 +187,44 @@ def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=F
     zl = int(inp.zlrechole[1])
     zu = int(inp.zurechole[0])
 
-    xlen = (xu - xl)/2 + off
+    xlen = (xu - xl) / 2 + off
     ylen = yu - yl + off * 2
     zlen = zu - zl + off
 
     lenmax = max(max(xlen, ylen), zlen)
-    box_aspect = (xlen/lenmax, ylen/lenmax, zlen/lenmax)
+    box_aspect = (xlen / lenmax, ylen / lenmax, zlen / lenmax)
 
-    plt.gca(projection='3d').set_box_aspect(box_aspect)
+    plt.gca(projection="3d").set_box_aspect(box_aspect)
 
     xc = (xl + xu) // 2
     yc = (xl + xu) // 2
     zc = (xl + xu) // 2
 
-    if kwargs.get('use_si', False):
+    if kwargs.get("use_si", False):
         vmax = data_xyz.val_si.max()
         vmin = data_xyz.val_si.min()
     else:
         vmax = data_xyz.max()
         vmin = data_xyz.min()
 
-    if vrange == 'minmax':
+    if vrange == "minmax":
         pass
-    elif vrange == 'center':
+    elif vrange == "center":
         vmax = max(abs(vmax), abs(vmin))
         vmin = -vmax
 
-    kwargs['vmax'] = kwargs.get('vmax', None) or vmax
-    kwargs['vmin'] = kwargs.get('vmin', None) or vmin
+    kwargs["vmax"] = kwargs.get("vmax", None) or vmax
+    kwargs["vmin"] = kwargs.get("vmin", None) or vmin
 
     # plot top surface
-    data_xyz[zu, yl-off:yl+1, xl-off:xc+1].plot(mode='surf', **kwargs)
-    data_xyz[zu, yu:yu+off, xl-off:xc+1].plot(mode='surf', **kwargs)
-    data_xyz[zu, yl:yu+1, xl-off:xl+1].plot(mode='surf', **kwargs)
+    data_xyz[zu, yl - off : yl + 1, xl - off : xc + 1].plot(mode="surf", **kwargs)
+    data_xyz[zu, yu : yu + off, xl - off : xc + 1].plot(mode="surf", **kwargs)
+    data_xyz[zu, yl : yu + 1, xl - off : xl + 1].plot(mode="surf", **kwargs)
 
     # plot wall
-    data_xyz[zl:zu+1, yl, xl:xc+1].plot(mode='surf', **kwargs)
-    data_xyz[zl:zu+1, yu, xl:xc+1].plot(mode='surf', **kwargs)
-    data_xyz[zl:zu+1, yl:yu+1, xl].plot(mode='surf', **kwargs)
+    data_xyz[zl : zu + 1, yl, xl : xc + 1].plot(mode="surf", **kwargs)
+    data_xyz[zl : zu + 1, yu, xl : xc + 1].plot(mode="surf", **kwargs)
+    data_xyz[zl : zu + 1, yl : yu + 1, xl].plot(mode="surf", **kwargs)
 
     # innner wall
     def alltrue(x):
@@ -224,20 +232,25 @@ def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=F
 
     masked = data_xyz.masked(alltrue)
 
-    masked[zl-off//2:zu+1, yl-off:yl+1, xc].plot(mode='surf', **kwargs)
-    masked[zl-off//2:zu+1, yu:yu+off, xc].plot(mode='surf', **kwargs)
-    masked[zl-off//2:zu+1, yl-off, xl-off:xc+1].plot(mode='surf', **kwargs)
-    masked[zl-off//2:zu+1, yu+off-1, xl-off:xc+1].plot(mode='surf', **kwargs)
-    masked[zl-off//2:zl+1, yl:yu+1, xc].plot(mode='surf', **kwargs)
+    masked[zl - off // 2 : zu + 1, yl - off : yl + 1, xc].plot(mode="surf", **kwargs)
+    masked[zl - off // 2 : zu + 1, yu : yu + off, xc].plot(mode="surf", **kwargs)
+    masked[zl - off // 2 : zu + 1, yl - off, xl - off : xc + 1].plot(
+        mode="surf", **kwargs
+    )
+    masked[zl - off // 2 : zu + 1, yu + off - 1, xl - off : xc + 1].plot(
+        mode="surf", **kwargs
+    )
+    masked[zl - off // 2 : zl + 1, yl : yu + 1, xc].plot(mode="surf", **kwargs)
 
     # plot bottom
-    data_xyz[zl, yl:yu+1, xl:xc+1].plot(
-        mode='surf',
+    data_xyz[zl, yl : yu + 1, xl : xc + 1].plot(
+        mode="surf",
         add_colorbar=add_colorbar,
-        xlabel='x[m]',
-        ylabel='y[m]',
-        zlabel='z[m]',
-        **kwargs)
+        xlabel="x[m]",
+        ylabel="y[m]",
+        zlabel="z[m]",
+        **kwargs
+    )
 
     if show:
         plt.show()

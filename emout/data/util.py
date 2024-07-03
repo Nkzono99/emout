@@ -1,4 +1,5 @@
 import scipy.constants as cn
+
 from emout.utils import UnitTranslator
 
 
@@ -15,7 +16,9 @@ def t_unit(out):
     UnitTranslator
         tの単位変換器
     """
-    return (out.unit.t * UnitTranslator(out.inp.ifdiag * out.inp.dt, 1)).set_name('t', unit='s')
+    return (out.unit.t * UnitTranslator(out.inp.ifdiag * out.inp.dt, 1)).set_name(
+        "t", unit="s"
+    )
 
 
 def wpet_unit(out):
@@ -36,10 +39,7 @@ def wpet_unit(out):
         wpe * tの単位変換器
     """
     return UnitTranslator(
-        out.inp.wp[0] * out.inp.ifdiag * out.inp.dt,
-        1,
-        name='wpe * t',
-        unit=''
+        out.inp.wp[0] * out.inp.ifdiag * out.inp.dt, 1, name="wpe * t", unit=""
     )
 
 
@@ -61,20 +61,12 @@ def wpit_unit(out):
         wpi * tの単位変換器
     """
     return UnitTranslator(
-        out.inp.wp[1] * out.inp.ifdiag * out.inp.dt,
-        1,
-        name='wpi * t',
-        unit=''
+        out.inp.wp[1] * out.inp.ifdiag * out.inp.dt, 1, name="wpi * t", unit=""
     )
 
 
 def none_unit(out):
-    return UnitTranslator(
-        1,
-        1,
-        name='',
-        unit=''
-    )
+    return UnitTranslator(1, 1, name="", unit="")
 
 
 # def ndp_unit(out):
@@ -92,23 +84,13 @@ def ndp_unit(ispec):
     def ndp_unit(out):
         wp = out.unit.f.reverse(out.inp.wp[ispec])
         mp = abs(cn.m_e / out.inp.qm[ispec])
-        np = wp ** 2 * mp * cn.epsilon_0 / cn.e**2
-        return UnitTranslator(
-            np * 1e-6,
-            1.0,
-            name='number density',
-            unit='/cc'
-        )
+        np = wp**2 * mp * cn.epsilon_0 / cn.e**2
+        return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")
+
     return ndp_unit
 
 
 def nd3p_unit(out):
     wpp = out.unit.f.reverse(out.inp.wp[2])
-    np = wpp ** 2 * cn.m_e * cn.epsilon_0 / cn.e**2
-    return UnitTranslator(
-        np * 1e-6,
-        1.0,
-        name='number density',
-        unit='/cc'
-    )
-
+    np = wpp**2 * cn.m_e * cn.epsilon_0 / cn.e**2
+    return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")

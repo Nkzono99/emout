@@ -7,13 +7,14 @@ import scipy.constants as cn
 import scipy.fft
 
 
-def poisson(rho: np.ndarray,
-            dx: float,
-            boundary_types: List[str] = ['periodic', 'periodic', 'periodic'],
-            boundary_values: Tuple[Tuple[float]] = [
-                (0., 0.), (0., 0.), (0., 0.)],
-            btypes: str = None,
-            epsilon_0=cn.epsilon_0):
+def poisson(
+    rho: np.ndarray,
+    dx: float,
+    boundary_types: List[str] = ["periodic", "periodic", "periodic"],
+    boundary_values: Tuple[Tuple[float]] = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)],
+    btypes: str = None,
+    epsilon_0=cn.epsilon_0,
+):
     """Solve Poisson's equation with FFT.
 
     Parameters
@@ -42,27 +43,30 @@ def poisson(rho: np.ndarray,
     # If a boundary condition is specified in abbreviated form by btypes, revert to the original notation.
     if btypes:
         btypes_dict = {
-            'p': 'periodic',
-            'd': 'dirichlet',
-            'n': 'neumann',
+            "p": "periodic",
+            "d": "dirichlet",
+            "n": "neumann",
         }
         boundary_types = [btypes_dict[btype] for btype in btypes]
 
     POISSON_BOUNDARIES = {
-        'periodic': PeriodicPoissonBoundary,
-        'dirichlet': DirichletPoissonBoundary,
-        'neumann': NeumannPoissonBoundary,
+        "periodic": PeriodicPoissonBoundary,
+        "dirichlet": DirichletPoissonBoundary,
+        "neumann": NeumannPoissonBoundary,
     }
 
     # [x-boundary, y-boundary, z-boundary]
-    boundaries: List[PoissonBoundary] = [POISSON_BOUNDARIES[_type](2-i, boundary_values[i])
-                                         for i, _type in enumerate(boundary_types)]
+    boundaries: List[PoissonBoundary] = [
+        POISSON_BOUNDARIES[_type](2 - i, boundary_values[i])
+        for i, _type in enumerate(boundary_types)
+    ]
 
-    rho_target = rho[tuple(boundary.get_target_slice()
-                           for boundary in reversed(boundaries))].copy()
+    rho_target = rho[
+        tuple(boundary.get_target_slice() for boundary in reversed(boundaries))
+    ].copy()
 
     # Poisson's equation: dphi/dx^2 = -rho/epsilon_0
-    rho_target = -rho_target / epsilon_0 * dx*dx
+    rho_target = -rho_target / epsilon_0 * dx * dx
 
     # Transpose boundary values.
     for boundary in boundaries:
@@ -81,31 +85,27 @@ def poisson(rho: np.ndarray,
     nz, ny, nx = np.array(rho.shape) - 1
 
     for kx in range(rhok.shape[2]):
-        modified_wave_number[:, :, kx] \
-            += boundaries[0].modified_wave_number(kx, nx)
+        modified_wave_number[:, :, kx] += boundaries[0].modified_wave_number(kx, nx)
     for ky in range(rhok.shape[1]):
-        modified_wave_number[:, ky, :] \
-            += boundaries[1].modified_wave_number(ky, ny)
+        modified_wave_number[:, ky, :] += boundaries[1].modified_wave_number(ky, ny)
     for kz in range(rhok.shape[0]):
-        modified_wave_number[kz, :, :] \
-            += boundaries[2].modified_wave_number(kz, nz)
+        modified_wave_number[kz, :, :] += boundaries[2].modified_wave_number(kz, nz)
 
     # Solve the equation in the wavenumber domain
-    phik = rhok/modified_wave_number
+    phik = rhok / modified_wave_number
 
     # When all boundary conditions are periodic|neumann boundaries,
     # there is no reference for the potential and it is not uniquely determined,
     # so the average is set to zero.
-    if all([_type in ('periodic', 'neumann') for _type in boundary_types]):
-        phik[0, 0, 0] = 0.
+    if all([_type in ("periodic", "neumann") for _type in boundary_types]):
+        phik[0, 0, 0] = 0.0
 
     # FFT backward
     _phi = fft3d.backward(phik)
 
     # Create an array of the same shape as the input rho array.
     phi = np.zeros_like(rho)
-    phi[tuple(boundary.get_target_slice()
-              for boundary in reversed(boundaries))] = _phi
+    phi[tuple(boundary.get_target_slice() for boundary in reversed(boundaries))] = _phi
 
     # In the above, the operation was performed on the array excluding the boundary values,
     # so the boundary values are substituted here.
@@ -116,33 +116,35 @@ def poisson(rho: np.ndarray,
 
 
 class FFT3d:
-    def __init__(self,
-                 forwards: List[Callable[[np.ndarray], np.ndarray]],
-                 backwards: List[Callable[[np.ndarray], np.ndarray]]):
+    def __init__(
+        self,
+        forwards: List[Callable[[np.ndarray], np.ndarray]],
+        backwards: List[Callable[[np.ndarray], np.ndarray]],
+    ):
         self.__forwards = forwards
         self.__backwards = backwards
 
     def forward(self, data3d: np.ndarray) -> np.ndarray:
         result3d = data3d
 
-        result3d = self.__forwards[2](result3d, axis=0, norm='ortho')
-        result3d = self.__forwards[1](result3d, axis=1, norm='ortho')
-        result3d = self.__forwards[0](result3d, axis=2, norm='ortho')
+        result3d = self.__forwards[2](result3d, axis=0, norm="ortho")
+        result3d = self.__forwards[1](result3d, axis=1, norm="ortho")
+        result3d = self.__forwards[0](result3d, axis=2, norm="ortho")
 
         return result3d
 
     def backward(self, data3d: np.ndarray) -> np.ndarray:
         result3d = data3d
 
-        result3d = self.__backwards[2](result3d, axis=0, norm='ortho')
-        result3d = self.__backwards[1](result3d, axis=1, norm='ortho')
-        result3d = self.__backwards[0](result3d, axis=2, norm='ortho')
+        result3d = self.__backwards[2](result3d, axis=0, norm="ortho")
+        result3d = self.__backwards[1](result3d, axis=1, norm="ortho")
+        result3d = self.__backwards[0](result3d, axis=2, norm="ortho")
 
         return result3d
 
 
 class PoissonBoundary(metaclass=ABCMeta):
-    def __init__(self, axis: int, boundary_values: Tuple[float] = (0., 0.)):
+    def __init__(self, axis: int, boundary_values: Tuple[float] = (0.0, 0.0)):
         self.__axis = axis
         self.__boundary_values = boundary_values
 
@@ -197,11 +199,11 @@ class PeriodicPoissonBoundary(PoissonBoundary):
         return slice(0, -1)
 
     def modified_wave_number(self, k: int, n: int) -> float:
-        if (k <= int(n/2)):
-            wn = 2.0*np.sin(np.pi*k/float(n))
+        if k <= int(n / 2):
+            wn = 2.0 * np.sin(np.pi * k / float(n))
         else:
-            wn = 2.0*np.sin(np.pi*(n - k)/float(n))
-        wn = -wn*wn
+            wn = 2.0 * np.sin(np.pi * (n - k) / float(n))
+        wn = -wn * wn
 
         return wn
 
@@ -225,15 +227,17 @@ class DirichletPoissonBoundary(PoissonBoundary):
         return slice(1, -1)
 
     def modified_wave_number(self, k: int, n: int) -> float:
-        wn = 2.0*(np.cos(np.pi*(k + 1)/float(n + 1)) - 1.0)
+        wn = 2.0 * (np.cos(np.pi * (k + 1) / float(n + 1)) - 1.0)
 
         return wn
 
     def transpose_boundary_values(self, rho_target: np.ndarray, dx: float) -> None:
-        rho_target[self._get_slices_at(0)] = \
+        rho_target[self._get_slices_at(0)] = (
             rho_target[self._get_slices_at(0)] - self.boundary_values[0]
-        rho_target[self._get_slices_at(-1)] = \
+        )
+        rho_target[self._get_slices_at(-1)] = (
             rho_target[self._get_slices_at(-1)] - self.boundary_values[1]
+        )
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
         phi[self._get_slices_at(0)] = self.boundary_values[0]
@@ -253,14 +257,16 @@ class NeumannPoissonBoundary(PoissonBoundary):
         return slice(None, None)
 
     def modified_wave_number(self, k: int, n: int) -> float:
-        wn = 2.0*(np.cos(np.pi*(k)/float(n)) - 1.0)
+        wn = 2.0 * (np.cos(np.pi * (k) / float(n)) - 1.0)
         return wn
 
     def transpose_boundary_values(self, rho_target: np.ndarray, dx: float) -> None:
-        rho_target[self._get_slices_at(0)] = \
-            rho_target[self._get_slices_at(0)] - self.boundary_values[0]*dx
-        rho_target[self._get_slices_at(-1)] = \
-            rho_target[self._get_slices_at(-1)] + self.boundary_values[1]*dx
+        rho_target[self._get_slices_at(0)] = (
+            rho_target[self._get_slices_at(0)] - self.boundary_values[0] * dx
+        )
+        rho_target[self._get_slices_at(-1)] = (
+            rho_target[self._get_slices_at(-1)] + self.boundary_values[1] * dx
+        )
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
         pass
