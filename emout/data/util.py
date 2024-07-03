@@ -1,9 +1,13 @@
+from typing import Callable
+
 import scipy.constants as cn
 
 from emout.utils import UnitTranslator
 
+from .emout import Emout
 
-def t_unit(out):
+
+def t_unit(out: Emout) -> UnitTranslator:
     """tの単位変換器を生成する.
 
     Parameters
@@ -21,7 +25,7 @@ def t_unit(out):
     )
 
 
-def wpet_unit(out):
+def wpet_unit(out: Emout) -> UnitTranslator:
     """wpe * tの単位変換器を生成する.
 
     以下のコードを実行することで、データのt軸をwpe*tで規格化できる.
@@ -43,7 +47,7 @@ def wpet_unit(out):
     )
 
 
-def wpit_unit(out):
+def wpit_unit(out: Emout) -> UnitTranslator:
     """wpi * tの単位変換器を生成する.
 
     以下のコードを実行することで、データのt軸をwpe*tで規格化できる.
@@ -65,23 +69,12 @@ def wpit_unit(out):
     )
 
 
-def none_unit(out):
+def none_unit(out: Emout) -> UnitTranslator:
     return UnitTranslator(1, 1, name="", unit="")
 
 
-# def ndp_unit(out):
-#     wpe = out.unit.f.reverse(out.inp.wp[0])
-#     ne = wpe ** 2 * cn.m_e * cn.epsilon_0 / cn.e**2
-#     return UnitTranslator(
-#         ne * 1e-6,
-#         1.0,
-#         name='number density',
-#         unit='/cc'
-#     )
-
-
-def ndp_unit(ispec):
-    def ndp_unit(out):
+def ndp_unit(ispec: int) -> Callable[[Emout], UnitTranslator]:
+    def ndp_unit(out: Emout) -> UnitTranslator:
         wp = out.unit.f.reverse(out.inp.wp[ispec])
         mp = abs(cn.m_e / out.inp.qm[ispec])
         np = wp**2 * mp * cn.epsilon_0 / cn.e**2
@@ -90,7 +83,7 @@ def ndp_unit(ispec):
     return ndp_unit
 
 
-def nd3p_unit(out):
+def nd3p_unit(out: Emout) -> UnitTranslator:
     wpp = out.unit.f.reverse(out.inp.wp[2])
     np = wpp**2 * cn.m_e * cn.epsilon_0 / cn.e**2
     return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")

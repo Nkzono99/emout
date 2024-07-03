@@ -1,5 +1,7 @@
 import re
-from typing import Callable, Union
+from os import PathLike
+from pathlib import Path
+from typing import Callable, List, Literal, Tuple, Union
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -167,7 +169,7 @@ class Data(np.ndarray):
         self.valunit = getattr(obj, "valunit", None)
 
     @property
-    def filename(self):
+    def filename(self) -> Path:
         """ファイル名を返す.
 
         Returns
@@ -178,7 +180,7 @@ class Data(np.ndarray):
         return self.datafile.filename
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         """ディレクトリ名を返す
 
         Returns
@@ -189,7 +191,7 @@ class Data(np.ndarray):
         return self.datafile.directory
 
     @property
-    def xslice(self):
+    def xslice(self) -> slice:
         """管理するx方向の範囲を返す.
 
         Returns
@@ -200,7 +202,7 @@ class Data(np.ndarray):
         return self.slices[3]
 
     @property
-    def yslice(self):
+    def yslice(self) -> slice:
         """管理するy方向の範囲を返す.
 
         Returns
@@ -211,7 +213,7 @@ class Data(np.ndarray):
         return self.slices[2]
 
     @property
-    def zslice(self):
+    def zslice(self) -> slice:
         """管理するz方向の範囲を返す.
 
         Returns
@@ -222,7 +224,7 @@ class Data(np.ndarray):
         return self.slices[1]
 
     @property
-    def tslice(self):
+    def tslice(self) -> slice:
         """管理するt方向の範囲を返す.
 
         Returns
@@ -232,13 +234,13 @@ class Data(np.ndarray):
         """
         return self.slices[0]
 
-    def axis(self, ax):
+    def axis(self, ax: int) -> np.ndarray:
         index = self.slice_axes[ax]
         axis_slice = self.slices[index]
         return np.array(*utils.slice2tuple(axis_slice))
 
     @property
-    def x(self):
+    def x(self) -> np.ndarray:
         """x軸.
 
         Returns
@@ -249,7 +251,7 @@ class Data(np.ndarray):
         return np.arange(*utils.slice2tuple(self.xslice))
 
     @property
-    def y(self):
+    def y(self) -> np.ndarray:
         """y軸.
 
         Returns
@@ -260,7 +262,7 @@ class Data(np.ndarray):
         return np.arange(*utils.slice2tuple(self.yslice))
 
     @property
-    def z(self):
+    def z(self) -> np.ndarray:
         """z軸.
 
         Returns
@@ -271,7 +273,7 @@ class Data(np.ndarray):
         return np.arange(*utils.slice2tuple(self.zslice))
 
     @property
-    def t(self):
+    def t(self) -> np.ndarray:
         """t軸.
 
         Returns
@@ -284,7 +286,7 @@ class Data(np.ndarray):
         return np.array(utils.range_with_slice(self.tslice, maxlen=maxlen))
 
     @property
-    def x_si(self):
+    def x_si(self) -> np.ndarray:
         """SI単位系でのx軸.
 
         Returns
@@ -295,7 +297,7 @@ class Data(np.ndarray):
         return self.axisunits[3].reverse(self.x)
 
     @property
-    def y_si(self):
+    def y_si(self) -> np.ndarray:
         """SI単位系でのy軸.
 
         Returns
@@ -306,7 +308,7 @@ class Data(np.ndarray):
         return self.axisunits[2].reverse(self.y)
 
     @property
-    def z_si(self):
+    def z_si(self) -> np.ndarray:
         """SI単位系でのz軸.
 
         Returns
@@ -317,7 +319,7 @@ class Data(np.ndarray):
         return self.axisunits[1].reverse(self.z)
 
     @property
-    def t_si(self):
+    def t_si(self) -> np.ndarray:
         """SI単位系でのt軸.
 
         Returns
@@ -328,18 +330,18 @@ class Data(np.ndarray):
         return self.axisunits[0].reverse(self.t)
 
     @property
-    def val_si(self):
+    def val_si(self) -> "Data":
         """SI単位系での値.
 
         Returns
         -------
-        np.ndarray
+        Data
             SI単位系での値
         """
         return self.valunit.reverse(self)
 
     @property
-    def use_axes(self):
+    def use_axes(self) -> List[str]:
         """データ軸がxyzのどの方向に対応しているか表すリストを返す.
 
         Returns
@@ -350,7 +352,9 @@ class Data(np.ndarray):
         to_axis = {3: "x", 2: "y", 1: "z", 0: "t"}
         return list(map(lambda a: to_axis[a], self.slice_axes))
 
-    def masked(self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]):
+    def masked(
+        self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]
+    ) -> "Data":
         """マスクされたデータを返す.
 
         Parameters
@@ -370,7 +374,7 @@ class Data(np.ndarray):
             masked[mask(masked)] = np.nan
         return masked
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.ndarray:
         return np.array(self)
 
     def plot(self, **kwargs):
@@ -379,18 +383,20 @@ class Data(np.ndarray):
 
     def gifplot(
         self,
-        fig=None,
-        axis=0,
-        show=False,
-        savefilename=None,
-        interval=200,
-        repeat=True,
-        title=None,
-        notitle=False,
-        offsets=None,
-        use_si=True,
-        vmin=None,
-        vmax=None,
+        fig: Union[plt.Figure, None] = None,
+        axis: int = 0,
+        show: bool = False,
+        savefilename: PathLike = None,
+        interval: int = 200,
+        repeat: bool = True,
+        title: Union[str, None] = None,
+        notitle: bool = False,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        use_si: bool = True,
+        vmin: float = None,
+        vmax: float = None,
         to_html: bool = False,
         **kwargs,
     ):
@@ -534,7 +540,7 @@ class Data4d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, mode="auto", **kwargs):
+    def plot(self, mode: Literal["auto"] = "auto", **kwargs):
         """3次元データをプロットする.(未実装)
 
         Parameters
@@ -566,7 +572,7 @@ class Data3d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, mode="auto", **kwargs):
+    def plot(self, mode: Literal["auto"] = "auto", **kwargs):
         """3次元データをプロットする.(未実装)
 
         Parameters
@@ -599,7 +605,15 @@ class Data2d(Data):
         return super().__new__(cls, input_array, **kwargs)
 
     def plot(
-        self, axes="auto", show=False, use_si=True, offsets=None, mode="cm", **kwargs
+        self,
+        axes: Literal["auto", "xy", "yz", "zx", "yx", "zy", "xy"] = "auto",
+        show: bool = False,
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        mode: Literal["cm", "cm+cont", "cont"] = "cm",
+        **kwargs,
     ):
         """2次元データをプロットする.
 
@@ -787,7 +801,13 @@ class Data1d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, show=False, use_si=True, offsets=None, **kwargs):
+    def plot(
+        self,
+        show: bool = False,
+        use_si: bool = True,
+        offsets: Union[Tuple[Union[float, str], Union[float, str]], None] = None,
+        **kwargs,
+    ):
         """1次元データをプロットする.
 
         Parameters

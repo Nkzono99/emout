@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-from .data import Emout
+from .emout import Emout
 
 
 def search_dirs(filename_patterns: List[str]) -> List[Path]:
