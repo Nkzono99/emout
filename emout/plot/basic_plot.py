@@ -124,7 +124,7 @@ def plot_2dmap(
 
     if cmap is not None:
         if isinstance(cmap, str):
-            cmap = copy.copy(cm.get_cmap(str(cmap)))
+            cmap = copy.copy(plt.get_cmap(str(cmap)))
         else:
             cmap = copy.copy(cmap)
         cmap.set_bad(color=mask_color)
@@ -597,17 +597,17 @@ def plot_2d_streamline(
     y_data2d,
     mesh=None,
     savefilename=None,
-    color=None,
-    scale=1,
-    scaler="standard",
     skip=1,
-    easy_to_read=True,
     figsize=None,
     xlabel=None,
     ylabel=None,
     title=None,
     dpi=10,
     cmap=None,
+    norm="linear",
+    vmin=None,
+    vmax=None,
+    density=1,
 ):
     """2次元ベクトル図をプロットする.
 
@@ -671,13 +671,39 @@ def plot_2d_streamline(
     U = U[::y_skip, ::x_skip]
     V = V[::y_skip, ::x_skip]
 
-    img = plt.streamplot(
-        x,
-        y,
-        U,
-        V,
-        cmap=cmap,
-    )
+    if cmap:
+        length = np.sqrt(U**2 + V**2)
+        vmin = vmin or length.min()
+        vmax = vmax or length.max()
+
+        if norm == "linear":
+            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+        elif norm == "log":
+            norm = mcolors.LogNorm(vmin=vmin, vmax=vmax)
+        elif norm == "centered":
+            norm = mcolors.CenteredNorm()
+        elif norm == "symlog":
+            norm = mcolors.SymLogNorm(vmin=vmin, vmax=vmax)
+
+        img = plt.streamplot(
+            x,
+            y,
+            U,
+            V,
+            color=length,
+            cmap=cmap,
+            norm=norm,
+            density=density,
+        )
+    else:
+        img = plt.streamplot(
+            x,
+            y,
+            U,
+            V,
+            cmap=cmap,
+            density=density,
+        )
 
     if title is not None:
         plt.title(title)
