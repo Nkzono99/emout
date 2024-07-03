@@ -5,7 +5,6 @@ import matplotlib
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Colormap
 import matplotlib.colors as mcolors
 
 _r = 0.9
