@@ -54,7 +54,7 @@
 <li class="toctree-l4"><a class="reference internal" href="emout.utils.html">emout.utils package</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="emout.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="emout.html#module-emout">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -571,20 +571,530 @@
 </dd></dl>
 
 </section>
-<section id="emout-data-data-loader-module">
-<h2>emout.data.data_loader module<a class="headerlink" href="#emout-data-data-loader-module" title="Link to this heading"></a></h2>
+<section id="module-emout.data.data_loader">
+<span id="emout-data-data-loader-module"></span><h2>emout.data.data_loader module<a class="headerlink" href="#module-emout.data.data_loader" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.data_loader.load_emouts">
+<span class="sig-prename descclassname"><span class="pre">emout.data.data_loader.</span></span><span class="sig-name descname"><span class="pre">load_emouts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/emout/data/data_loader.html#load_emouts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.data_loader.load_emouts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.data_loader.search_dirs">
+<span class="sig-prename descclassname"><span class="pre">emout.data.data_loader.</span></span><span class="sig-name descname"><span class="pre">search_dirs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/emout/data/data_loader.html#search_dirs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.data_loader.search_dirs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="emout-data-emout-module">
-<h2>emout.data.emout module<a class="headerlink" href="#emout-data-emout-module" title="Link to this heading"></a></h2>
+<section id="module-emout.data.emout">
+<span id="emout-data-emout-module"></span><h2>emout.data.emout module<a class="headerlink" href="#module-emout.data.emout" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.data.emout.Emout">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">Emout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append_directories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inpfilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plasma.inp'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/emout.html#Emout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.Emout" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>EMSES出力・inpファイルを管理する.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.directory">
+<span class="sig-name descname"><span class="pre">directory</span></span><a class="headerlink" href="#emout.data.emout.Emout.directory" title="Link to this definition"></a></dt>
+<dd><p>管理するディレクトリ</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.dataname">
+<span class="sig-name descname"><span class="pre">dataname</span></span><a class="headerlink" href="#emout.data.emout.Emout.dataname" title="Link to this definition"></a></dt>
+<dd><p>3次元データ(datanameは”phisp”などのhdf5ファイルの先頭の名前)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GridData</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.icur">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">icur</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#emout.data.emout.Emout.icur" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.inp">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="emout.utils.html#emout.utils.emsesinp.InpFile" title="emout.utils.emsesinp.InpFile"><span class="pre">InpFile</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#emout.data.emout.Emout.inp" title="Link to this definition"></a></dt>
+<dd><p>パラメータの辞書(Namelist)を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>パラメータの辞書(Namelist)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="emout.utils.html#emout.utils.emsesinp.InpFile" title="emout.utils.emsesinp.InpFile">InpFile</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.name2unit">
+<span class="sig-name descname"><span class="pre">name2unit</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'axis':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'b[xyz]':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'e[xyz]':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'j.*':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'nd1p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd2p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd3p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd4p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd5p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd6p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd7p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd8p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'nd9p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit.&lt;locals&gt;.ndp_unit&gt;,</span> <span class="pre">'phisp':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'rho':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'rhobk':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'rhobksp[1-9]':</span> <span class="pre">&lt;function</span> <span class="pre">Emout.&lt;lambda&gt;&gt;,</span> <span class="pre">'t':</span> <span class="pre">&lt;function</span> <span class="pre">t_unit&gt;}</span></em><a class="headerlink" href="#emout.data.emout.Emout.name2unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.pbody">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbody</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#emout.data.emout.Emout.pbody" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.emout.Emout.unit">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="emout.utils.html#emout.utils.units.Units" title="emout.utils.units.Units"><span class="pre">Units</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#emout.data.emout.Emout.unit" title="Link to this definition"></a></dt>
+<dd><p>単位変換オブジェクトを返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>単位変換オブジェクト</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.Units" title="emout.utils.units.Units">Units</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.emout.nd3p_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">nd3p_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a></span></span><a class="reference internal" href="_modules/emout/data/emout.html#nd3p_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.nd3p_unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.emout.ndp_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">ndp_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/emout/data/emout.html#ndp_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.ndp_unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.emout.none_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">none_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a></span></span><a class="reference internal" href="_modules/emout/data/emout.html#none_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.none_unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.emout.t_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">t_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a></span></span><a class="reference internal" href="_modules/emout/data/emout.html#t_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.t_unit" title="Link to this definition"></a></dt>
+<dd><p>tの単位変換器を生成する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.emout.wpet_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">wpet_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a></span></span><a class="reference internal" href="_modules/emout/data/emout.html#wpet_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.wpet_unit" title="Link to this definition"></a></dt>
+<dd><p>wpe * tの単位変換器を生成する.</p>
+<p>以下のコードを実行することで、データのt軸をwpe*tで規格化できる.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wpet_unit</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>wpe * tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.data.emout.wpit_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.data.emout.</span></span><span class="sig-name descname"><span class="pre">wpit_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><span class="pre">Emout</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a></span></span><a class="reference internal" href="_modules/emout/data/emout.html#wpit_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.emout.wpit_unit" title="Link to this definition"></a></dt>
+<dd><p>wpi * tの単位変換器を生成する.</p>
+<p>以下のコードを実行することで、データのt軸をwpe*tで規格化できる.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wpit_unit</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.data.emout.Emout" title="emout.data.emout.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>wpi * tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="emout-data-util-module">
-<h2>emout.data.util module<a class="headerlink" href="#emout-data-util-module" title="Link to this heading"></a></h2>
+<section id="module-emout.data.griddata_series">
+<span id="emout-data-griddata-series-module"></span><h2>emout.data.griddata_series module<a class="headerlink" href="#module-emout.data.griddata_series" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.data.griddata_series.</span></span><span class="sig-name descname"><span class="pre">GridDataSeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PathLike</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator"><span class="pre">UnitTranslator</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/griddata_series.html#GridDataSeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>3次元時系列データを管理する.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.datafile">
+<span class="sig-name descname"><span class="pre">datafile</span></span><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.datafile" title="Link to this definition"></a></dt>
+<dd><p>データファイル情報</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.util.DataFileInfo" title="emout.utils.util.DataFileInfo">DataFileInfo</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.h5">
+<span class="sig-name descname"><span class="pre">h5</span></span><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.h5" title="Link to this definition"></a></dt>
+<dd><p>hdf5ファイルオブジェクト</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>h5py.File</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.group">
+<span class="sig-name descname"><span class="pre">group</span></span><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.group" title="Link to this definition"></a></dt>
+<dd><p>データセット</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>h5py.Datasets</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.name" title="Link to this definition"></a></dt>
+<dd><p>データセット名</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.chain">
+<span class="sig-name descname"><span class="pre">chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other_series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#emout.data.griddata_series.GridDataSeries" title="emout.data.griddata_series.GridDataSeries"><span class="pre">GridDataSeries</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#emout.data.griddata_series.MultiGridDataSeries" title="emout.data.griddata_series.MultiGridDataSeries"><span class="pre">MultiGridDataSeries</span></a></span></span><a class="reference internal" href="_modules/emout/data/griddata_series.html#GridDataSeries.chain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.chain" title="Link to this definition"></a></dt>
+<dd><p>GridDataSeriesを結合する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_series</strong> (<a class="reference internal" href="#emout.data.griddata_series.GridDataSeries" title="emout.data.griddata_series.GridDataSeries"><em>GridDataSeries</em></a>) – 結合するGridDataSeries</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>結合したGridDataSeries</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#emout.data.griddata_series.MultiGridDataSeries" title="emout.data.griddata_series.MultiGridDataSeries">MultiGridDataSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/emout/data/griddata_series.html#GridDataSeries.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.close" title="Link to this definition"></a></dt>
+<dd><p>hdf5ファイルを閉じる.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.directory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">directory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.directory" title="Link to this definition"></a></dt>
+<dd><p>ディレクトリ名を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ディレクトリ名</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.filename">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filename</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.filename" title="Link to this definition"></a></dt>
+<dd><p>ファイル名を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ファイル名</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.griddata_series.GridDataSeries.time_series">
+<span class="sig-name descname"><span class="pre">time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/emout/data/griddata_series.html#GridDataSeries.time_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.GridDataSeries.time_series" title="Link to this definition"></a></dt>
+<dd><p>指定した範囲の時系列データを取得する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em><em> or </em><em>slice</em>) – x座標</p></li>
+<li><p><strong>y</strong> (<em>int</em><em> or </em><em>slice</em>) – y座標</p></li>
+<li><p><strong>z</strong> (<em>int</em><em> or </em><em>slice</em>) – z座標</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>指定した範囲の時系列データ</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.data.griddata_series.</span></span><span class="sig-name descname"><span class="pre">MultiGridDataSeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/griddata_series.html#MultiGridDataSeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#emout.data.griddata_series.GridDataSeries" title="emout.data.griddata_series.GridDataSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GridDataSeries</span></code></a></p>
+<p>連続する複数の3次元時系列データを管理する.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.datafile">
+<span class="sig-name descname"><span class="pre">datafile</span></span><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.datafile" title="Link to this definition"></a></dt>
+<dd><p>データファイル情報</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.util.DataFileInfo" title="emout.utils.util.DataFileInfo">DataFileInfo</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.name" title="Link to this definition"></a></dt>
+<dd><p>データセット名</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.tunit">
+<span class="sig-name descname"><span class="pre">tunit</span></span><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.tunit" title="Link to this definition"></a></dt>
+<dd><p>時間の単位変換器</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.axisunit">
+<span class="sig-name descname"><span class="pre">axisunit</span></span><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.axisunit" title="Link to this definition"></a></dt>
+<dd><p>空間軸の単位変換器</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.valunit">
+<span class="sig-name descname"><span class="pre">valunit</span></span><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.valunit" title="Link to this definition"></a></dt>
+<dd><p>値の単位変換器</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/emout/data/griddata_series.html#MultiGridDataSeries.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.close" title="Link to this definition"></a></dt>
+<dd><p>hdf5ファイルを閉じる.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.directories">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">directories</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.directories" title="Link to this definition"></a></dt>
+<dd><p>ディレクトリ名のリストを返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ディレクトリ名のリスト</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list(Path)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.directory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">directory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.directory" title="Link to this definition"></a></dt>
+<dd><p>先頭データのディレクトリ名を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ディレクトリ名</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.filename">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filename</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.filename" title="Link to this definition"></a></dt>
+<dd><p>先頭データのファイル名を返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ファイル名</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.filenames">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filenames</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.filenames" title="Link to this definition"></a></dt>
+<dd><p>ファイル名のリストを返す.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ファイル名のリスト</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list(Path)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.griddata_series.MultiGridDataSeries.time_series">
+<span class="sig-name descname"><span class="pre">time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">slice</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">slice</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">slice</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/griddata_series.html#MultiGridDataSeries.time_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.griddata_series.MultiGridDataSeries.time_series" title="Link to this definition"></a></dt>
+<dd><p>指定した範囲の時系列データを取得する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em><em> or </em><em>slice</em>) – x座標</p></li>
+<li><p><strong>y</strong> (<em>int</em><em> or </em><em>slice</em>) – y座標</p></li>
+<li><p><strong>z</strong> (<em>int</em><em> or </em><em>slice</em>) – z座標</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>指定した範囲の時系列データ</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="emout-data-vector-data-module">
-<h2>emout.data.vector_data module<a class="headerlink" href="#emout-data-vector-data-module" title="Link to this heading"></a></h2>
+<section id="module-emout.data.vector_data">
+<span id="emout-data-vector-data-module"></span><h2>emout.data.vector_data module<a class="headerlink" href="#module-emout.data.vector_data" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.data.vector_data.VectorData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.data.vector_data.</span></span><span class="sig-name descname"><span class="pre">VectorData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/vector_data.html#VectorData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.vector_data.VectorData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="emout.utils.html#emout.utils.group.Group" title="emout.utils.group.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.vector_data.VectorData.gifplot">
+<span class="sig-name descname"><span class="pre">gifplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/vector_data.html#VectorData.gifplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.vector_data.VectorData.gifplot" title="Link to this definition"></a></dt>
+<dd><p>gifアニメーションを作成する</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fig</strong> (<em>Figure</em>) – アニメーションを描画するFigure(Noneの場合新しく作成する), by default None</p></li>
+<li><p><strong>axis</strong> (<em>int</em><em>, </em><em>optional</em>) – アニメーションする軸, by default 0</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>optional</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default True</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>interval</strong> (<em>int</em><em>, </em><em>optional</em>) – フレーム間のインターバル(ミリ秒), by default 400</p></li>
+<li><p><strong>repeat</strong> (<em>bool</em>) – アニメーションをループするならTrue, by default True</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル(Noneの場合データ名(phisp等)), by default None</p></li>
+<li><p><strong>notitle</strong> (<em>bool</em><em>, </em><em>optional</em>) – タイトルを付けない場合True, by default False</p></li>
+<li><p><strong>offsets</strong> (<em>(</em><em>float</em><em> or </em><em>str</em><em>, </em><em>float</em><em> or </em><em>str</em><em>, </em><em>float</em><em> or </em><em>str</em><em>)</em>) – プロットのx,y,z軸のオフセット(‘left’: 最初を0, ‘center’: 中心を0, ‘right’: 最後尾を0, float: 値だけずらす), by default None</p></li>
+<li><p><strong>use_si</strong> (<em>bool</em>) – SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</p></li>
+<li><p><strong>to_html</strong> (<em>bool</em>) – アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.data.vector_data.VectorData.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#emout.data.vector_data.VectorData.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.vector_data.VectorData.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/vector_data.html#VectorData.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.vector_data.VectorData.plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.data.vector_data.VectorData.plot2d">
+<span class="sig-name descname"><span class="pre">plot2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'stream'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'vec'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stream'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'auto'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'xy'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yz'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'zx'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yx'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'zy'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/emout/data/vector_data.html#VectorData.plot2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.data.vector_data.VectorData.plot2d" title="Link to this definition"></a></dt>
+<dd><p>2次元データをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>str</em>) – プロットの種類(‘vec’: quiver plot, ‘stream’: streamline plot), by default ‘stream’</p></li>
+<li><p><strong>axes</strong> (<em>str</em><em>, </em><em>optional</em>) – プロットする軸(‘xy’, ‘zx’, etc), by default ‘auto’</p></li>
+<li><p><strong>show</strong> (<em>bool</em>) – プロットを表示する場合True(ファイルに保存する場合は非表示), by default False</p></li>
+<li><p><strong>use_si</strong> (<em>bool</em>) – SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False</p></li>
+<li><p><strong>offsets</strong> (<em>(</em><em>float</em><em> or </em><em>str</em><em>, </em><em>float</em><em> or </em><em>str</em><em>, </em><em>float</em><em> or </em><em>str</em><em>)</em>) – プロットのx,y,z軸のオフセット(‘left’: 最初を0, ‘center’: 中心を0, ‘right’: 最後尾を0, float: 値だけずらす), by default None</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存またはshowした場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – プロットする軸のパラメータが間違っている場合の例外</p></li>
+<li><p><strong>Exception</strong> – プロットする軸がデータにない場合の例外</p></li>
+<li><p><strong>Exception</strong> – データの次元が2でない場合の例外</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.data.vector_data.VectorData2d">
+<span class="sig-prename descclassname"><span class="pre">emout.data.vector_data.</span></span><span class="sig-name descname"><span class="pre">VectorData2d</span></span><a class="headerlink" href="#emout.data.vector_data.VectorData2d" title="Link to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#emout.data.vector_data.VectorData" title="emout.data.vector_data.VectorData"><code class="xref py py-class docutils literal notranslate"><span class="pre">VectorData</span></code></a></p>
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<section id="module-emout.data">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.data" title="Link to this heading"></a></h2>
 </section>
 </section>
 

@@ -28,10 +28,10 @@ emout.data.emout module
    :undoc-members:
    :show-inheritance:
 
-emout.data.util module
-----------------------
+emout.data.griddata\_series module
+----------------------------------
 
-.. automodule:: emout.data.util
+.. automodule:: emout.data.griddata_series
    :members:
    :undoc-members:
    :show-inheritance:
