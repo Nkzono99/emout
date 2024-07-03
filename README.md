@@ -10,7 +10,7 @@ pip install emout
 
 ## Example code
 
-- Visualization of simulation results for lunar surface charging (https://github.com/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
+-  [Visualization of simulation results for lunar surface charging](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
 
 ## Usage
 以下のようなフォルダ構成の場合の使い方.
