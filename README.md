@@ -8,6 +8,10 @@ EMSESの出力ファイルを取り扱うパッケージ
 pip install emout
 ```
 
+## Example code
+
+- Visualization of simulation results for lunar surface charging (https://github.com/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
+
 ## Usage
 以下のようなフォルダ構成の場合の使い方.
 ```
