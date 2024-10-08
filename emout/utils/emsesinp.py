@@ -278,3 +278,11 @@ class InpFile:
         conv1d("emissn", "curfs", "J")
 
         self.convkey = UnitConversionKey(unit_to.dx, unit_to.to_c)
+
+    @property
+    def dx(self) -> float:
+        return self.convkey.dx
+
+    @property
+    def to_c(self) -> float:
+        return self.convkey.to_c
