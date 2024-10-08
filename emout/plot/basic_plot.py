@@ -79,6 +79,7 @@ def plot_2dmap(
     dpi=10,
     colorbar_label="",
     cbargs={},
+    add_colorbar=True,
     **kwargs
 ):
     """2次元カラーマップをプロットする.
@@ -111,6 +112,8 @@ def plot_2dmap(
         用いる補間方法, by default 'bilinear'
     dpi : int, optional
         解像度(figsizeが指定された場合は無視される), by default 10
+    add_colorbar: bool, optional
+        カラーバーを追加する場合True, by default True
 
     Returns
     -------
@@ -141,10 +144,11 @@ def plot_2dmap(
         aspect="auto",
         **kwargs
     )
-    if "cb" in cbargs:
-        cb = plt.colorbar(label=colorbar_label, **cbargs["cb"])
-    else:
-        cb = plt.colorbar(label=colorbar_label)
+    if add_colorbar:
+        if "cb" in cbargs:
+            cb = plt.colorbar(label=colorbar_label, **cbargs["cb"])
+        else:
+            cb = plt.colorbar(label=colorbar_label)
 
     if "others" in cbargs and "yticklabels" in cbargs["others"]:
         cb.ax.set_yticklabels(cbargs["others"]["yticklabels"])
@@ -603,6 +607,7 @@ def plot_2d_streamline(
     ylabel=None,
     title=None,
     dpi=10,
+    color=None,
     cmap=None,
     norm="linear",
     vmin=None,
@@ -701,7 +706,7 @@ def plot_2d_streamline(
             y,
             U,
             V,
-            cmap=cmap,
+            color=color,
             density=density,
         )
 

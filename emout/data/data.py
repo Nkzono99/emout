@@ -3,12 +3,12 @@ from os import PathLike
 from pathlib import Path
 from typing import Callable, List, Literal, Tuple, Union
 
-import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
+from emout.plot.animation_plot import FrameUpdater
 from emout.utils import DataFileInfo
 
 
@@ -375,11 +375,50 @@ class Data(np.ndarray):
         return masked
 
     def to_numpy(self) -> np.ndarray:
+        """numpyのndarrayに変換する."""
         return np.array(self)
 
     def plot(self, **kwargs):
         """データをプロットする."""
         raise NotImplementedError()
+
+    def build_frame_updater(
+        self,
+        axis: int = 0,
+        title: Union[str, None] = None,
+        notitle: bool = False,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        use_si: bool = True,
+        vmin: float = None,
+        vmax: float = None,
+        **kwargs,
+    ) -> FrameUpdater:
+        """アニメーション描画処理を構築する.
+
+        Parameters
+        ----------
+        axis : int, optional
+            アニメーションする軸, by default 0
+        title : str, optional
+            タイトル(Noneの場合データ名(phisp等)), by default None
+        notitle : bool, optional
+            タイトルを付けない場合True, by default False
+        offsets : (float or str, float or str, float or str)
+            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+        use_si : bool
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        vmin : float, optional
+            最小値, by default None
+        vmax : float, optional
+            最大値, by default None
+        """
+        updater = FrameUpdater(
+            self, axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+        )
+
+        return updater
 
     def gifplot(
         self,
@@ -400,7 +439,7 @@ class Data(np.ndarray):
         to_html: bool = False,
         **kwargs,
     ):
-        """gifアニメーションを作成する
+        """gifアニメーションを作成する.
 
         Parameters
         ----------
@@ -422,103 +461,30 @@ class Data(np.ndarray):
             タイトルを付けない場合True, by default False
         offsets : (float or str, float or str, float or str)
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+        vmin : float, optional
+            最小値, by default None
+        vmax : float, optional
+            最大値, by default None
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         to_html : bool
             アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
         """
-        if self.valunit is None:
-            use_si = False
-
-        def _offseted(line, offset):
-            if offset == "left":
-                line -= line[0]
-            elif offset == "center":
-                line -= line[len(line) // 2]
-            elif offset == "right":
-                line -= line[-1]
-            else:
-                line += offset
-            return line
-
-        def _update(i, vmin, vmax):
-            plt.clf()
-
-            # 指定した軸でスライス
-            slices = [slice(None)] * len(self.shape)
-            slices[axis] = i
-            val = self[tuple(slices)]
-
-            # タイトルの設定
-            if notitle:
-                _title = title if len(title) > 0 else None
-            else:
-                ax = self.slice_axes[axis]
-                slc = self.slices[ax]
-                maxlen = self.shape[axis]
-
-                line = np.array(utils.range_with_slice(slc, maxlen=maxlen), dtype=float)
-
-                if offsets is not None:
-                    line = _offseted(line, offsets[0])
-
-                index = line[i]
-
-                if use_si:  # SI単位系を用いる場合
-                    title_format = title + "({} {})"
-                    axisunit = self.axisunits[ax]
-                    _title = title_format.format(axisunit.reverse(index), axisunit.unit)
-
-                else:  # EMSES単位系を用いる場合
-                    title_format = title + "({})"
-                    _title = title_format.format(index)
-
-            if offsets is not None:
-                offsets2d = offsets[1:]
-            else:
-                offsets2d = None
-
-            val.plot(
-                vmin=vmin,
-                vmax=vmax,
-                title=_title,
-                use_si=use_si,
-                offsets=offsets2d,
-                **kwargs,
-            )
-
-        if title is None:
-            title = self.name
-
-        if use_si:
-            vmin = vmin or self.valunit.reverse(self.min())
-            vmax = vmax or self.valunit.reverse(self.max())
-        else:
-            vmin = vmin or self.min()
-            vmax = vmax or self.max()
-
-        if fig is None:
-            fig = plt.figure()
-
-        ani = animation.FuncAnimation(
-            fig,
-            _update,
-            fargs=(vmin, vmax),
-            interval=interval,
-            frames=self.shape[axis],
-            repeat=repeat,
+        updater = self.build_frame_updater(
+            axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
         )
 
-        if to_html:
-            from IPython.display import HTML
+        animator = updater.to_animator()
 
-            return HTML(ani.to_jshtml())
-        elif savefilename is not None:
-            ani.save(savefilename, writer="quantized-pillow")
-        elif show:
-            plt.show()
-        else:
-            return fig, ani
+        return animator.plot(
+            fig=fig,
+            show=show,
+            savefilename=savefilename,
+            interval=interval,
+            repeat=repeat,
+            to_html=to_html,
+            **kwargs,
+        )
 
 
 class Data4d(Data):
@@ -541,7 +507,7 @@ class Data4d(Data):
         return super().__new__(cls, input_array, **kwargs)
 
     def plot(self, mode: Literal["auto"] = "auto", **kwargs):
-        """3次元データをプロットする.(未実装)
+        """4次元データをプロットする.(未実装)
 
         Parameters
         ----------
@@ -586,7 +552,7 @@ class Data3d(Data):
 
 
 class Data2d(Data):
-    """3次元データの2次元面を管理する."""
+    """2次元データの2次元面を管理する."""
 
     def __new__(cls, input_array, **kwargs):
         obj = np.asarray(input_array).view(cls)

@@ -4,9 +4,13 @@ from typing import Any, List, Union, Tuple, Literal
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+from os import PathLike
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
+from emout.utils import UnitTranslator
+
+from emout.plot.animation_plot import FrameUpdater
 
 
 class VectorData(utils.Group):
@@ -38,6 +42,112 @@ class VectorData(utils.Group):
     @property
     def name(self) -> str:
         return self.attrs["name"]
+
+    @property
+    def valunit(self) -> UnitTranslator:
+        return self.objs[0].valunit
+
+    @property
+    def axisunits(self) -> UnitTranslator:
+        return self.objs[0].axisunits
+
+    @property
+    def slice_axes(self) -> np.ndarray:
+        return self.objs[0].slice_axes
+
+    @property
+    def slices(self) -> np.ndarray:
+        return self.objs[0].slices
+
+    @property
+    def shape(self) -> np.ndarray:
+        return self.objs[0].shape
+
+    def build_frame_updater(
+        self,
+        axis: int = 0,
+        title: Union[str, None] = None,
+        notitle: bool = False,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        use_si: bool = True,
+        vmin: float = None,
+        vmax: float = None,
+        **kwargs,
+    ):
+        if vmin is None:
+            vmin = min(self.objs[0].min(), self.objs[1].min())
+        if vmax is None:
+            vmax = max(self.objs[0].max(), self.objs[1].max())
+        """FrameUpdaterを生成する"""
+        updater = FrameUpdater(
+            self, axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+        )
+
+        return updater
+
+    def gifplot(
+        self,
+        fig: Union[plt.Figure, None] = None,
+        axis: int = 0,
+        show: bool = False,
+        savefilename: PathLike = None,
+        interval: int = 200,
+        repeat: bool = True,
+        title: Union[str, None] = None,
+        notitle: bool = False,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        use_si: bool = True,
+        vmin: float = None,
+        vmax: float = None,
+        to_html: bool = False,
+        **kwargs,
+    ):
+        """gifアニメーションを作成する
+
+        Parameters
+        ----------
+        fig : Figure
+            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
+        axis : int, optional
+            アニメーションする軸, by default 0
+        show : bool, optional
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default True
+        savefilename : str, optional
+            保存するファイル名(Noneの場合保存しない), by default None
+        interval : int, optional
+            フレーム間のインターバル(ミリ秒), by default 400
+        repeat : bool
+            アニメーションをループするならTrue, by default True
+        title : str, optional
+            タイトル(Noneの場合データ名(phisp等)), by default None
+        notitle : bool, optional
+            タイトルを付けない場合True, by default False
+        offsets : (float or str, float or str, float or str)
+            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+        use_si : bool
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        to_html : bool
+            アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
+        """
+        updater = self.build_frame_updater(
+            axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+        )
+
+        animator = updater.to_animator([[[updater]]])
+
+        return animator.plot(
+            fig=fig,
+            show=show,
+            savefilename=savefilename,
+            interval=interval,
+            repeat=repeat,
+            to_html=to_html,
+            **kwargs,
+        )
 
     def gifplot(
         self,
