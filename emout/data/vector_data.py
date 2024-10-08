@@ -1,16 +1,15 @@
 import re
-from typing import Any, List, Union, Tuple, Literal
+from os import PathLike
+from typing import Any, List, Literal, Tuple, Union
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from os import PathLike
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
-from emout.utils import UnitTranslator
-
 from emout.plot.animation_plot import FrameUpdater
+from emout.utils import UnitTranslator
 
 
 class VectorData(utils.Group):

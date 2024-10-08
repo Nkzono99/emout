@@ -1,6 +1,6 @@
 import collections
 from os import PathLike
-from typing import Callable, List, Literal, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -19,8 +19,11 @@ def flatten_list(l):
             yield el
 
 
-class PlotAnimator:
-    def __init__(self, layout):
+class Animator:
+    def __init__(
+        self,
+        layout: List[List[List[Union["FrameUpdater", Callable[[int], None], None]]]],
+    ):
         self._layout = layout
 
     def plot(
@@ -46,14 +49,6 @@ class PlotAnimator:
             フレーム間のインターバル(ミリ秒), by default 400
         repeat : bool
             アニメーションをループするならTrue, by default True
-        title : str, optional
-            タイトル(Noneの場合データ名(phisp等)), by default None
-        notitle : bool, optional
-            タイトルを付けない場合True, by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
-        use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         to_html : bool
             アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
         """
@@ -96,6 +91,7 @@ class PlotAnimator:
 
     @property
     def frames(self):
+        """管理いているFrameUpdaterの最小フレーム数."""
         updaters = list(flatten_list(self._layout))
         if not updaters:
             raise ValueError("Updaters have no elements")
@@ -108,6 +104,7 @@ class PlotAnimator:
 
     @property
     def shape(self):
+        """レイアウトの形状."""
         return (len(self._layout), len(self._layout[0]))
 
 
@@ -149,10 +146,10 @@ class FrameUpdater:
         self.vmax = vmax
         self.kwargs = kwargs
 
-    def __call__(self, i):
+    def __call__(self, i: int):
         self.update(i)
 
-    def update(self, i):
+    def update(self, i: int):
         data = self.data
         axis = self.axis
         title = self.title
@@ -204,7 +201,7 @@ class FrameUpdater:
             **kwargs,
         )
 
-    def _offseted(self, line, offset):
+    def _offseted(self, line: List, offset: Union[str, float]):
         if offset == "left":
             line -= line[0]
         elif offset == "center":
@@ -216,10 +213,17 @@ class FrameUpdater:
         return line
 
     def to_animator(self, layout=None):
+        """アニメーターに変換する.
+
+        Parameters
+        ----------
+        layout: List[List[List[FrameUpdater]]]
+            アニメーションプロットのレイアウト
+        """
         if layout is None:
             layout = [[[self]]]
 
-        return PlotAnimator(layout=layout)
+        return Animator(layout=layout)
 
     def __len__(self):
         return self.data.shape[self.axis]
