@@ -1,14 +1,14 @@
 import re
+import warnings
 from os import PathLike
 from typing import Any, List, Literal, Tuple, Union
 
-import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
-from emout.plot.animation_plot import FrameUpdater
+from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import UnitTranslator
 
 
@@ -75,11 +75,30 @@ class VectorData(utils.Group):
         vmax: float = None,
         **kwargs,
     ):
+        """アニメーション描画処理を構築する.
+
+        Parameters
+        ----------
+        axis : int, optional
+            アニメーションする軸, by default 0
+        title : str, optional
+            タイトル(Noneの場合データ名(phisp等)), by default None
+        notitle : bool, optional
+            タイトルを付けない場合True, by default False
+        offsets : (float or str, float or str, float or str)
+            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+        use_si : bool
+            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+        vmin : float, optional
+            最小値, by default None
+        vmax : float, optional
+            最大値, by default None
+        """
         if vmin is None:
             vmin = min(self.objs[0].min(), self.objs[1].min())
         if vmax is None:
             vmax = max(self.objs[0].max(), self.objs[1].max())
-        """FrameUpdaterを生成する"""
+
         updater = FrameUpdater(
             self, axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
         )
@@ -90,8 +109,8 @@ class VectorData(utils.Group):
         self,
         fig: Union[plt.Figure, None] = None,
         axis: int = 0,
-        show: bool = False,
-        savefilename: PathLike = None,
+        action: ANIMATER_PLOT_MODE = "return",
+        filename: PathLike = None,
         interval: int = 200,
         repeat: bool = True,
         title: Union[str, None] = None,
@@ -102,7 +121,10 @@ class VectorData(utils.Group):
         use_si: bool = True,
         vmin: float = None,
         vmax: float = None,
+        show: bool = False,
+        savefilename: PathLike = None,
         to_html: bool = False,
+        return_updater: bool = False,
         **kwargs,
     ):
         """gifアニメーションを作成する
@@ -113,10 +135,19 @@ class VectorData(utils.Group):
             アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
         axis : int, optional
             アニメーションする軸, by default 0
-        show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default True
-        savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
+
+        action : {'return', 'show', 'to_html', 'save', 'frames'}, optional
+            Determines the behavior of the function:
+
+            - 'return': The plot object is returned without rendering it.
+            - 'show': The plot is displayed immediately.
+            - 'to_html': The plot is converted to an Ipython.display.HTML object and returned.
+            - 'save': The plot is saved to a file specified by 'filename' argument.
+            - 'frames': FrameUpdater object is returned without rendering it.
+
+        filename : str, optional
+            保存するファイル名(actionが'save'以外の場合やNoneの場合保存されない), by default None
+
         interval : int, optional
             フレーム間のインターバル(ミリ秒), by default 400
         repeat : bool
@@ -129,17 +160,89 @@ class VectorData(utils.Group):
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+
+        show : bool, optional
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the 'action'='show' instead for equivalent functionality.
+
+        savefilename : str, optional
+            保存するファイル名(Noneの場合保存しない), by default None
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the plot('action'='save', filename='example.gif') instead for equivalent functionality.
+
         to_html : bool
             アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the 'action'='to_html' instead for equivalent functionality.
+
+        return_updater : bool
+            FrameUpdaterを返す場合True, by default False
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the 'action'='frames' instead for equivalent functionality.
+
+        Returns
+        -------
+        Depending on the selected action:
+
+        - If 'return': Returns the tuple of the plot object (fig, animation).
+        - If 'show': Does not return anything, displays the plot.
+        - If 'to_html': Returns an Ipython.display.HTML object of the plot (for Jupyter).
+        - If 'save': Does not return anything, saves the plot to a file.
+        - If 'frames': Returns FrameUpdater object.
+
+        Examples
+        --------
+        >>> fig, ani = gifplot(action="return")
+        Returns the tuple of the plot object.
+
+        >>> gifplot(action="show")
+        Displays the plot.
+
+        >>> html = gifplot(action="to_html")
+        Returns the HTML representation of the plot.
+
+        >>> gifplot(action="save", filename = "example.gif")
+        Saves the plot to a file.
+
+        >>> updater = gifplot(action="frames")
+        Returns FrameUpdater object.
         """
+        if return_updater:
+            warnings.warn(
+                "The 'return_updater' flag is deprecated. "
+                "Please use gifplot(action='frames') instead.",
+                DeprecationWarning,
+            )
+            action = "frames"
+
+        print(f"vector: {action}")
+
         updater = self.build_frame_updater(
             axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
         )
+
+        if action == "frames":
+            return updater
 
         animator = updater.to_animator([[[updater]]])
 
         return animator.plot(
             fig=fig,
+            action=action,
+            filename=filename,
             show=show,
             savefilename=savefilename,
             interval=interval,
@@ -147,133 +250,6 @@ class VectorData(utils.Group):
             to_html=to_html,
             **kwargs,
         )
-
-    def gifplot(
-        self,
-        fig: Union[plt.Figure, None] = None,
-        axis: int = 0,
-        show: bool = False,
-        savefilename: Union[str, None] = None,
-        interval: int = 200,
-        repeat: bool = True,
-        title: Union[str, None] = None,
-        notitle: bool = False,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
-        use_si: bool = True,
-        to_html: bool = False,
-        **kwargs,
-    ):
-        """gifアニメーションを作成する
-
-        Parameters
-        ----------
-        fig : Figure
-            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
-        axis : int, optional
-            アニメーションする軸, by default 0
-        show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default True
-        savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
-        interval : int, optional
-            フレーム間のインターバル(ミリ秒), by default 400
-        repeat : bool
-            アニメーションをループするならTrue, by default True
-        title : str, optional
-            タイトル(Noneの場合データ名(phisp等)), by default None
-        notitle : bool, optional
-            タイトルを付けない場合True, by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
-        use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
-        to_html : bool
-            アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
-        """
-        if self.objs[0].valunit is None:
-            use_si = False
-
-        def _offseted(line, offset):
-            if offset == "left":
-                line -= line[0]
-            elif offset == "center":
-                line -= line[len(line) // 2]
-            elif offset == "right":
-                line -= line[-1]
-            else:
-                line += offset
-            return line
-
-        def _update(i):
-            plt.clf()
-
-            # 指定した軸でスライス
-            slices = [slice(None)] * len(self.objs[0].shape)
-            slices[axis] = i
-            val = self[tuple(slices)]
-
-            # タイトルの設定
-            if notitle:
-                _title = title if len(title) > 0 else None
-            else:
-                ax = self.objs[0].slice_axes[axis]
-                slc = self.objs[0].slices[ax]
-                maxlen = self.objs[0].shape[axis]
-
-                line = np.array(utils.range_with_slice(slc, maxlen=maxlen), dtype=float)
-
-                if offsets is not None:
-                    line = _offseted(line, offsets[0])
-
-                index = line[i]
-
-                if use_si:  # SI単位系を用いる場合
-                    title_format = title + "({} {})"
-                    axisunit = self.objs[0].axisunits[ax]
-                    _title = title_format.format(axisunit.reverse(index), axisunit.unit)
-
-                else:  # EMSES単位系を用いる場合
-                    title_format = title + "({})"
-                    _title = title_format.format(index)
-
-            if offsets is not None:
-                offsets2d = offsets[1:]
-            else:
-                offsets2d = None
-
-            val.plot(
-                title=_title,
-                use_si=use_si,
-                offsets=offsets2d,
-                **kwargs,
-            )
-
-        if title is None:
-            title = self.name
-
-        if fig is None:
-            fig = plt.figure()
-
-        ani = animation.FuncAnimation(
-            fig,
-            _update,
-            interval=interval,
-            frames=self.objs[0].shape[axis],
-            repeat=repeat,
-        )
-
-        if to_html:
-            from IPython.display import HTML
-
-            return HTML(ani.to_jshtml())
-        elif savefilename is not None:
-            ani.save(savefilename, writer="quantized-pillow")
-        elif show:
-            plt.show()
-        else:
-            return fig, ani
 
     def plot(
         self,
