@@ -8,8 +8,9 @@ import numpy as np
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
-from emout.plot.animation_plot import FrameUpdater
+from emout.plot.animation_plot import FrameUpdater, ANIMATER_PLOT_MODE
 from emout.utils import DataFileInfo
+import warnings
 
 
 class Data(np.ndarray):
@@ -424,6 +425,8 @@ class Data(np.ndarray):
         self,
         fig: Union[plt.Figure, None] = None,
         axis: int = 0,
+        action: ANIMATER_PLOT_MODE = "return",
+        filename: PathLike = None,
         show: bool = False,
         savefilename: PathLike = None,
         interval: int = 200,
@@ -437,6 +440,7 @@ class Data(np.ndarray):
         vmin: float = None,
         vmax: float = None,
         to_html: bool = False,
+        return_updater: bool = False,
         **kwargs,
     ):
         """gifアニメーションを作成する.
@@ -447,10 +451,19 @@ class Data(np.ndarray):
             アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
         axis : int, optional
             アニメーションする軸, by default 0
-        show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default True
-        savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
+
+        action : {'return', 'show', 'to_html', 'save', 'frames'}, optional
+            Determines the behavior of the function:
+
+            - 'return': The plot object is returned without rendering it.
+            - 'show': The plot is displayed immediately.
+            - 'to_html': The plot is converted to an Ipython.display.HTML object and returned.
+            - 'save': The plot is saved to a file specified by 'filename' argument.
+            - 'frames': FrameUpdater object is returned without rendering it.
+
+        filename : str, optional
+            保存するファイル名(actionが'save'以外の場合やNoneの場合保存されない), by default None
+
         interval : int, optional
             フレーム間のインターバル(ミリ秒), by default 400
         repeat : bool
@@ -467,17 +480,87 @@ class Data(np.ndarray):
             最大値, by default None
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+
+        show : bool, optional
+            プロットを表示する場合True(ファイルに保存する場合は非表示), by default
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the 'action'='show' instead for equivalent functionality.
+
+        savefilename : str, optional
+            保存するファイル名(Noneの場合保存しない), by default None
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the plot('action'='save', filename='example.gif') instead for equivalent functionality.
+
         to_html : bool
             アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the 'action'='to_html' instead for equivalent functionality.
+
+        return_updater : bool
+            FrameUpdaterを返す場合True, by default False
+
+            .. deprecated :: 1.2.1
+
+               This parameter is deprecated and will be removed in version 2.0.0.
+               Use the 'action'='frames' instead for equivalent functionality.
+               
+        Returns
+        -------
+        Depending on the selected action:
+
+        - If 'return': Returns the tuple of the plot object (fig, animation).
+        - If 'show': Does not return anything, displays the plot.
+        - If 'to_html': Returns an Ipython.display.HTML object of the plot (for Jupyter).
+        - If 'save': Does not return anything, saves the plot to a file.
+        - If 'frames': Returns FrameUpdater object.
+
+        Examples
+        --------
+        >>> fig, ani = gifplot(action="return")
+        Returns the tuple of the plot object.
+
+        >>> gifplot(action="show")
+        Displays the plot.
+
+        >>> html = gifplot(action="to_html")
+        Returns the HTML representation of the plot.
+
+        >>> gifplot(action="save", filename = "example.gif")
+        Saves the plot to a file.
+
+        >>> updater = gifplot(action="frames")
+        Returns FrameUpdater object.
         """
+        if return_updater:
+            warnings.warn(
+                "The 'return_updater' flag is deprecated. "
+                "Please use gifplot(action='frames') instead.",
+                DeprecationWarning,
+            )
+            action = "frames"
+
         updater = self.build_frame_updater(
             axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
         )
+
+        if action == "frames":
+            return updater
 
         animator = updater.to_animator()
 
         return animator.plot(
             fig=fig,
+            action=action,
+            filename=filename,
             show=show,
             savefilename=savefilename,
             interval=interval,
