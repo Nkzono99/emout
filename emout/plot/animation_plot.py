@@ -61,8 +61,12 @@ class Animator:
             shape = self.shape
             for line in self._layout:
                 for plot in line:
-                    plt.subplot(shape[0], shape[1], j + 1)
                     j += 1
+
+                    if plot[0] is None:
+                        continue
+
+                    plt.subplot(shape[0], shape[1], j)
                     for updater in plot:
                         if updater is None:
                             continue
@@ -105,7 +109,13 @@ class Animator:
     @property
     def shape(self):
         """レイアウトの形状."""
-        return (len(self._layout), len(self._layout[0]))
+        nrows = len(self._layout)
+
+        ncols = 1
+        for l in self._layout:
+            ncols = max(ncols, len(l))
+
+        return (nrows, ncols)
 
 
 class FrameUpdater:
