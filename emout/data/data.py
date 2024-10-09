@@ -11,7 +11,6 @@ import emout.utils as utils
 from emout.plot.animation_plot import FrameUpdater
 from emout.utils import DataFileInfo
 
-
 class Data(np.ndarray):
     """3次元データを管理する.
 
@@ -437,6 +436,7 @@ class Data(np.ndarray):
         vmin: float = None,
         vmax: float = None,
         to_html: bool = False,
+        return_updater: bool = False,
         **kwargs,
     ):
         """gifアニメーションを作成する.
@@ -469,10 +469,15 @@ class Data(np.ndarray):
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
         to_html : bool
             アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
+        return_updater : bool
+            FrameUpdaterを返す場合True, by default False
         """
         updater = self.build_frame_updater(
             axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
         )
+
+        if return_updater:
+            return updater
 
         animator = updater.to_animator()
 
