@@ -425,7 +425,7 @@ class Data(np.ndarray):
         self,
         fig: Union[plt.Figure, None] = None,
         axis: int = 0,
-        action: ANIMATER_PLOT_MODE = "return",
+        action: ANIMATER_PLOT_MODE = "to_html",
         filename: PathLike = None,
         show: bool = False,
         savefilename: PathLike = None,
@@ -452,7 +452,7 @@ class Data(np.ndarray):
         axis : int, optional
             アニメーションする軸, by default 0
 
-        action : {'return', 'show', 'to_html', 'save', 'frames'}, optional
+        action : {'return', 'show', 'to_html', 'save', 'frames'}, optional, by default 'to_html'
             Determines the behavior of the function:
 
             - 'return': The plot object is returned without rendering it.

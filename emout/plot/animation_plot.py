@@ -33,7 +33,7 @@ class Animator:
     def plot(
         self,
         fig: Union[plt.Figure, None] = None,
-        action: ANIMATER_PLOT_MODE = "return",
+        action: ANIMATER_PLOT_MODE = "to_html",
         filename: PathLike = None,
         interval: int = 200,
         repeat: bool = True,
@@ -48,7 +48,7 @@ class Animator:
         fig : Figure
             アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
 
-        action : {'return', 'show', 'to_html', 'save'}, optional, by default 'return'
+        action : {'return', 'show', 'to_html', 'save'}, optional, by default 'to_html'
             Determines the behavior of the function:
 
             - 'return': The plot object (fig, ani) is returned without rendering it.
