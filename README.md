@@ -79,19 +79,20 @@ pip install emout
 >>> data.phisp[:, z, :, :].gifplot(axis=0) # Selectable data axes to animate
 # (if axis=0, the first axis, i.e. the time axis, is selected, by default axis=0)
 
->>> data.phisp[:, z, :, :].gifplot(savefilename='phisp.gif') # for save on a file
+>>> data.phisp[:, z, :, :].gifplot(action='save', filename='phisp.gif') # for save on a file
 
->>> data.phisp[:, z, :, :].gifplot(to_html=True) # for display on jupyter
+>>> data.phisp[:, z, :, :].gifplot(action='to_html') # for display on jupyter
 
 # If you want to annimation several data at once,
 # prepare multiple frame update objects for each data at first.
->>> updater0 = data.phisp[:, z, :, :].build_frame_updater(mode='cmap')
->>> updater1 = data.phisp[:, z, :, :].build_frame_updater(mode='cont')
+>>> updater0 = data.phisp[:, z, :, :].gifplot(action='frames', mode='cmap')
+>>> updater1 = data.phisp[:, z, :, :].build_frame_updater(mode='cont') # == gifplot(action='frames', mode='cont')
 >>> updater2 = data.nd1p[:, z, :, :].build_frame_updater(mode='cmap', vmin=1e-3, vmax=20, norm='log')
 >>> updater3 = data.nd2p[:, z, :, :].build_frame_updater(mode='cmap', vmin=1e-3, vmax=20, norm='log')
 >>> updater4 = data.j2xy[:, z, :, :].build_frame_updater(mode='stream')
->>> animator = updater0.to_animator(layout=[[[updater0, updater1], [updater2], [updater3, updater4]]]) # create animator object from frame object (phisp: cmap+cont, nd1p: cmap, nd2p: cmap+current-stream)
->>> animator.plot(to_html=True) # write plot function like gifplot 
+>>> layout = [[[updater0, updater1], [updater2], [updater3, updater4]]]
+>>> animator = updater0.to_animator(layout=layout) # create animator object from frame object (phisp: cmap+cont, nd1p: cmap, nd2p: cmap+current-stream)
+>>> animator.plot(action='to_html') # write plot function like gifplot 
 ```
 
 ### 単位変換を行う
