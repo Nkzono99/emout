@@ -135,7 +135,7 @@ class Emout:
         ----------
         directory : str or Path
             管理するディレクトリ, by default './'
-        append_directories : list(str) or list(Path)
+        append_directories : list(str) or list(Path) or "auto"
             管理する継続ディレクトリのリスト, by default []
         inpfilename : str, optional
             パラメータファイルの名前, by default 'plasma.inp'
@@ -144,7 +144,11 @@ class Emout:
             directory = Path(directory)
         self.directory = directory
 
+        if append_directories == "auto":
+            append_directories = self.__fetch_append_directories(directory)
+
         self.append_directories = []
+
         for append_directory in append_directories:
             if not isinstance(append_directory, Path):
                 append_directory = Path(append_directory)
@@ -158,6 +162,23 @@ class Emout:
             convkey = UnitConversionKey.load(directory / inpfilename)
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+    
+    def __fetch_append_directories(self, directory: Path):
+        append_directories = []
+
+        i = 2
+        while True:
+            path_next = f"{str(directory.resolve())}_{i}"
+            directory_next = Path(path_next)
+
+            if not directory_next.exists():
+                break
+
+            append_directories.append(directory_next)
+
+            i += 1
+
+        return append_directories
 
     def __fetch_filepath(self, directory: Path, pattern: str) -> Path:
         filepathes = list(directory.glob(pattern))
