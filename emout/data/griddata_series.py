@@ -197,7 +197,6 @@ class GridDataSeries:
         """
         # xyzの範囲も指定された場合
         if isinstance(item, tuple):
-            xslice = item[1]
             if isinstance(item[0], int):
                 return self[item[0]][item[1:]]
             else:

@@ -1,14 +1,17 @@
 import re
+import warnings
 from pathlib import Path
-from typing import Callable, Union
+from typing import Callable, Literal, Union
 
+import h5py
+import numpy as np
 import pandas as pd
 import scipy.constants as cn
+from emout.utils import (InpFile, RegexDict, UnitConversionKey, Units,
+                         UnitTranslator)
 
-from emout.utils import InpFile, RegexDict, UnitConversionKey, Units, UnitTranslator
-
-from .vector_data import VectorData2d
 from .griddata_series import GridDataSeries
+from .vector_data import VectorData2d
 
 
 def t_unit(out: "Emout") -> UnitTranslator:
@@ -122,13 +125,16 @@ class Emout:
             r"j.*": lambda self: self.unit.J,
             r"b[xyz]": lambda self: self.unit.H,
             r"e[xyz]": lambda self: self.unit.E,
+            r"re[xyz]": lambda self: self.unit.E,
             r"t": t_unit,
             r"axis": lambda self: self.unit.length,
             r"rhobksp[1-9]": lambda self: self.unit.rho,
         }
     )
 
-    def __init__(self, directory="./", append_directories=[], inpfilename="plasma.inp"):
+    def __init__(
+        self, directory="./", append_directories=None, ad=None, inpfilename="plasma.inp"
+    ):
         """EMSES出力・inpファイルを管理するオブジェクトを生成する.
 
         Parameters
@@ -137,6 +143,8 @@ class Emout:
             管理するディレクトリ, by default './'
         append_directories : list(str) or list(Path) or "auto"
             管理する継続ディレクトリのリスト, by default []
+        ad : list(str) or list(Path) or "auto"
+            管理する継続ディレクトリのリスト, by default []
         inpfilename : str, optional
             パラメータファイルの名前, by default 'plasma.inp'
         """
@@ -144,8 +152,13 @@ class Emout:
             directory = Path(directory)
         self.directory = directory
 
+        append_directories = append_directories or ad
+
         if append_directories == "auto":
             append_directories = self.__fetch_append_directories(directory)
+
+        if append_directories is None:
+            append_directories = []
 
         self.append_directories = []
 
@@ -162,7 +175,7 @@ class Emout:
             convkey = UnitConversionKey.load(directory / inpfilename)
             if convkey is not None:
                 self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
-    
+
     def __fetch_append_directories(self, directory: Path):
         append_directories = []
 
@@ -174,11 +187,73 @@ class Emout:
             if not directory_next.exists():
                 break
 
+            try:
+                with h5py.File(directory_next / "phisp00_0000.h5") as f:
+                    pass
+            except OSError:
+                warnings.warn(
+                    f"{directory_next.resolve()} exists, but the h5 file cannot be opened."
+                )
+                break
+            except FileNotFoundError:
+                warnings.warn(
+                    f"{directory_next.resolve()} exists, but the h5 file cannot be found."
+                )
+                break
+
             append_directories.append(directory_next)
 
             i += 1
 
         return append_directories
+
+    def __getattr__(self, __name: str) -> "GridDataSeries":
+        m = re.match(r"^r(e[xyz])$", __name)
+        if m:
+            self.__create_ref_hdf5(m.group(1))
+
+        m = re.match(r"(.+)([xyz])([xyz])$", __name)
+        if m:
+            dname = m.group(1)
+            axis1 = m.group(2)
+            axis2 = m.group(3)
+            vector_data = VectorData2d(
+                [getattr(self, f"{dname}{axis1}"), getattr(self, f"{dname}{axis2}")],
+                name=__name,
+            )
+
+            setattr(self, f"_{__name}", vector_data)
+
+            return vector_data
+
+        filepath = self.__fetch_filepath(self.directory, f"{__name}00_0000.h5")
+        griddata = self.__load_griddata(filepath)
+
+        for append_directory in self.append_directories:
+            filepath = self.__fetch_filepath(append_directory, f"{__name}00_0000.h5")
+            griddata_append = self.__load_griddata(filepath)
+
+            griddata = griddata.chain(griddata_append)
+
+        setattr(self, f"_{__name}", griddata)
+
+        return griddata
+
+    def __create_ref_hdf5(self, name: str) -> None:
+        axis = "zyx".index(name[-1])
+
+        btype = ["periodic", "dirichlet", "neumann"][self.inp.mtd_vbnd[2 - axis]]
+
+        filepath = self.__fetch_filepath(self.directory, f"{name}00_0000.h5")
+        _create_rlocated_electric_field_hdf5(
+            filepath.parent, name=name, axis=axis, btype=btype
+        )
+
+        for append_directory in self.append_directories:
+            filepath = self.__fetch_filepath(append_directory, f"{name}00_0000.h5")
+            _create_rlocated_electric_field_hdf5(
+                filepath.parent, name=name, axis=axis, btype=btype
+            )
 
     def __fetch_filepath(self, directory: Path, pattern: str) -> Path:
         filepathes = list(directory.glob(pattern))
@@ -213,34 +288,6 @@ class Emout:
         )
 
         return data
-
-    def __getattr__(self, __name: str) -> "GridDataSeries":
-        m = re.match("(.+)([xyz])([xyz])$", __name)
-        if m:
-            dname = m.group(1)
-            axis1 = m.group(2)
-            axis2 = m.group(3)
-            vector_data = VectorData2d(
-                [getattr(self, f"{dname}{axis1}"), getattr(self, f"{dname}{axis2}")],
-                name=__name,
-            )
-
-            setattr(self, __name, vector_data)
-
-            return vector_data
-
-        filepath = self.__fetch_filepath(self.directory, f"{__name}00_0000.h5")
-        griddata = self.__load_griddata(filepath)
-
-        for append_directory in self.append_directories:
-            filepath = self.__fetch_filepath(append_directory, f"{__name}00_0000.h5")
-            griddata_append = self.__load_griddata(filepath)
-
-            griddata = griddata.chain(griddata_append)
-
-        setattr(self, __name, griddata)
-
-        return griddata
 
     @property
     def inp(self) -> Union[InpFile, None]:
@@ -285,3 +332,50 @@ class Emout:
         df = pd.read_csv(self.directory / "pbody", sep="\s+", names=names)
 
         return df
+
+
+def _create_rlocated_electric_field_hdf5(
+    directory: Path,
+    name: str,
+    axis: int,
+    btype: Literal["periodic", "dirichlet", "neumann"],
+):
+    if (directory / f"r{name}00_0000.h5").exists():
+        return
+
+    with h5py.File(directory / f"{name}00_0000.h5", "r") as h5_ef:
+        ef = h5_ef[name]
+
+        with h5py.File(directory / f"r{name}00_0000.h5", "w") as h5_rf:
+            rf = h5_rf.create_group(f"r{name}")
+
+            for key in ef.keys():
+                rf[key] = relocated_electric_field(
+                    np.array(ef[key]),
+                    axis=axis,
+                    btype=btype,
+                )
+
+
+def relocated_electric_field(
+    ef: np.ndarray, axis: int, btype: Literal["periodic", "dirichlet", "neumann"]
+):
+    def slc(a, b=None):
+        s = slice(a, b) if b else a
+        slices = tuple(s if i == axis else slice(None, None) for i in range(3))
+
+        return slices
+
+    # Relocated electric field buffer
+    ref = np.zeros_like(ef)
+
+    ref[slc(1, -1)] = 0.5 * (ef[slc(None, -2)] + ef[slc(1, -1)])
+
+    if btype in ["periodic", "neumann"]:
+        ref[slc(0)] = 0
+        ref[slc(-1)] = 0
+    else:
+        ref[slc(0)] = ef[slc(0)]
+        ref[slc(-1)] = ef[slc(-1)]
+
+    return ref
