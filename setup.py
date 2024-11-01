@@ -12,7 +12,7 @@ setup(
     description='Emses output manager',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version='1.2.2',
+    version='1.3.0',
     install_requires=_require_packages('requirements.txt'),
     author='Nkzono99',
     author_email='210x218x@gsuite.stu.kobe-u.ac.jp',
