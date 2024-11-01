@@ -37,12 +37,14 @@ pip install emout
 11
 >>> data.phisp[0].shape
 (513, 65, 65)
->>> data.j1x  # data of "j1x00_0000.h5"
->>> data.bz  # data of "bz00_0000.h5"
->>> data.j1xy  # vector data object of "j1x00_0000.h5" and "j1y00_0000.h5"
+>>> data.j1x  # data from "j1x00_0000.h5"
+>>> data.bz  # data from "bz00_0000.h5"
+>>> data.j1xy  # vector data object from "j1x00_0000.h5" and "j1y00_0000.h5"
 
->>> data.icur  # data of "icur" as pandas.DataFrame
->>> data.pbody  # data of "pbody" as pandas.DataFrame
+>>> data.rex  # data from "rex00_0000.h5", created by relocating 'ex00_0000.h5'
+
+>>> data.icur  # data from "icur" as pandas.DataFrame
+>>> data.pbody  # data from "pbody" as pandas.DataFrame
 ```
 
 ### パラメータファイル(plasma.inp)を取得する
