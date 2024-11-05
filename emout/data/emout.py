@@ -7,8 +7,8 @@ import h5py
 import numpy as np
 import pandas as pd
 import scipy.constants as cn
-from emout.utils import (InpFile, RegexDict, UnitConversionKey, Units,
-                         UnitTranslator)
+
+from emout.utils import InpFile, RegexDict, UnitConversionKey, Units, UnitTranslator
 
 from .griddata_series import GridDataSeries
 from .vector_data import VectorData2d
@@ -124,6 +124,7 @@ class Emout:
             r"rhobk": lambda self: self.unit.rho,
             r"j.*": lambda self: self.unit.J,
             r"b[xyz]": lambda self: self.unit.H,
+            r"rb[xyz]": lambda self: self.unit.H,
             r"e[xyz]": lambda self: self.unit.E,
             r"re[xyz]": lambda self: self.unit.E,
             r"t": t_unit,
@@ -208,9 +209,9 @@ class Emout:
         return append_directories
 
     def __getattr__(self, __name: str) -> "GridDataSeries":
-        m = re.match(r"^r(e[xyz])$", __name)
+        m = re.match(r"^r([eb][xyz])$", __name)
         if m:
-            self.__create_ref_hdf5(m.group(1))
+            self.__create_relocated_field_hdf5(m.group(1))
 
         m = re.match(r"(.+)([xyz])([xyz])$", __name)
         if m:
@@ -239,19 +240,17 @@ class Emout:
 
         return griddata
 
-    def __create_ref_hdf5(self, name: str) -> None:
+    def __create_relocated_field_hdf5(self, name: str) -> None:
         axis = "zyx".index(name[-1])
 
         btype = ["periodic", "dirichlet", "neumann"][self.inp.mtd_vbnd[2 - axis]]
 
         filepath = self.__fetch_filepath(self.directory, f"{name}00_0000.h5")
-        _create_rlocated_electric_field_hdf5(
-            filepath.parent, name=name, axis=axis, btype=btype
-        )
+        _create_relocated_field_hdf5(filepath.parent, name=name, axis=axis, btype=btype)
 
         for append_directory in self.append_directories:
             filepath = self.__fetch_filepath(append_directory, f"{name}00_0000.h5")
-            _create_rlocated_electric_field_hdf5(
+            _create_relocated_field_hdf5(
                 filepath.parent, name=name, axis=axis, btype=btype
             )
 
@@ -334,24 +333,29 @@ class Emout:
         return df
 
 
-def _create_rlocated_electric_field_hdf5(
+def _create_relocated_field_hdf5(
     directory: Path,
     name: str,
     axis: int,
     btype: Literal["periodic", "dirichlet", "neumann"],
 ):
+    if name.startswith("b"):
+        relocated = relocated_magnetic_field
+    elif name.startswith("e"):
+        relocated = relocated_electric_field
+
     if (directory / f"r{name}00_0000.h5").exists():
         return
 
-    with h5py.File(directory / f"{name}00_0000.h5", "r") as h5_ef:
-        ef = h5_ef[name]
+    with h5py.File(directory / f"{name}00_0000.h5", "r") as h5_field:
+        field = h5_field[name]
 
-        with h5py.File(directory / f"r{name}00_0000.h5", "w") as h5_rf:
-            rf = h5_rf.create_group(f"r{name}")
+        with h5py.File(directory / f"r{name}00_0000.h5", "w") as h5_relocated:
+            rfield = h5_relocated.create_group(f"r{name}")
 
-            for key in ef.keys():
-                rf[key] = relocated_electric_field(
-                    np.array(ef[key]),
+            for key in field.keys():
+                rfield[key] = relocated(
+                    np.array(field[key]),
                     axis=axis,
                     btype=btype,
                 )
@@ -371,7 +375,10 @@ def relocated_electric_field(
 
     ref[slc(1, -1)] = 0.5 * (ef[slc(None, -2)] + ef[slc(1, -1)])
 
-    if btype in ["periodic", "neumann"]:
+    if btype in "periodic":
+        ref[slc(0)] = 0.5 * (ef[slc(-2)] + ef[slc(1)])
+        ref[slc(-1)] = 0.5 * (ef[slc(-2)] + ef[slc(1)])
+    elif btype in "neumann":
         ref[slc(0)] = 0
         ref[slc(-1)] = 0
     else:
@@ -379,3 +386,57 @@ def relocated_electric_field(
         ref[slc(-1)] = ef[slc(-1)]
 
     return ref
+
+
+def relocated_magnetic_field(
+    bf: np.array, axis: int, btype: Literal["periodic", "dirichlet", "neumann"]
+):
+    def slc(s1, s2=slice(None, None)):
+        axis1 = (axis + 1) % 3
+        axis2 = (axis + 2) % 3
+
+        slices = [None, None, None]
+
+        slices[axis] = slice(None, None)
+        slices[axis1] = s1
+        slices[axis2] = s2
+        slices = tuple(slices)
+
+        return slices
+
+    # Relocated electric field buffer
+    rbf = np.zeros_like(bf)
+
+    # xy平面に1グリッド覆うように拡張する
+    bfe = np.empty(
+        np.array(bf.shape) + np.array([0 if i == axis else 1 for i in range(3)])
+    )
+    bfe[slc(slice(1, -1), slice(1, -1))] = bf[slc(slice(None, -1), slice(None, -1))]
+    if btype in "periodic":
+        bfe[slc(slice(1, -1), 0)] = bfe[slc(slice(1, -1), -2)]
+        bfe[slc(slice(1, -1), -1)] = bfe[slc(slice(1, -1), 1)]
+    elif btype in "dirichlet":
+        bfe[slc(slice(1, -1), 0)] = -bfe[slc(slice(1, -1), 1)]
+        bfe[slc(slice(1, -1), -1)] = -bfe[slc(slice(1, -1), -2)]
+    else:  # if btype in "neumann":
+        bfe[slc(slice(1, -1), 0)] = bfe[slc(slice(1, -1), 1)]
+        bfe[slc(slice(1, -1), -1)] = bfe[slc(slice(1, -1), -2)]
+
+    if btype in "periodic":
+        bfe[slc(0)] = bfe[slc(-2)]
+        bfe[slc(-1)] = bfe[slc(1)]
+    elif btype in "dirichlet":
+        bfe[slc(0)] = -bfe[slc(1)]
+        bfe[slc(-1)] = -bfe[slc(-2)]
+    else:  # if btype in "neumann":
+        bfe[slc(0)] = bfe[slc(1)]
+        bfe[slc(-1)] = bfe[slc(-2)]
+
+    rbf[:, :, :] = 0.25 * (
+        bfe[slc(slice(None, -1), slice(None, -1))]
+        + bfe[slc(slice(1, None), slice(None, -1))]
+        + bfe[slc(slice(None, -1), slice(1, None))]
+        + bfe[slc(slice(1, None), slice(1, None))]
+    )
+
+    return rbf
