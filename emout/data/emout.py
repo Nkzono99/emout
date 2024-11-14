@@ -382,8 +382,8 @@ def relocated_electric_field(
         ref[slc(0)] = 0
         ref[slc(-1)] = 0
     else:
-        ref[slc(0)] = ef[slc(0)]
-        ref[slc(-1)] = ef[slc(-1)]
+        ref[slc(0)] = ef[slc(1)]
+        ref[slc(-1)] = ef[slc(-2)]
 
     return ref
 
