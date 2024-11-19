@@ -299,6 +299,35 @@ class Emout:
         """
         return self._inp
 
+    def is_valid(self) -> bool:
+        """シミュレーションが正常に終了しているか判定する.
+
+        Note:
+            icurが最終ステップまで出力されているかで判定しており、hdf5ファイルだけが壊れている場合など判定が間違う場合がある。
+        
+        Returns
+        -------
+        bool
+            シミュレーションが正常に終了している場合True
+        """
+        def read_last_line(file_name):
+            with open(file_name, 'rb') as f:
+                f.seek(-2, 2)
+                while f.read(1) != b'\n':
+                    f.seek(-2, 1)
+                return f.readline().decode('utf-8')
+
+        if len(self.append_directories) > 0:
+            dirpath = self.append_directories[-1]
+        else:
+            dirpath = self.directory
+
+        last_line = read_last_line(dirpath/'icur')
+
+        inp = InpFile(dirpath / 'plasma.inp')
+
+        return int(last_line.split()[0]) == int(inp.nstep)
+
     @property
     def unit(self) -> Union[Units, None]:
         """単位変換オブジェクトを返す.
