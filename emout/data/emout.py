@@ -1,3 +1,4 @@
+import logging
 import re
 import warnings
 from pathlib import Path
@@ -7,11 +8,35 @@ import h5py
 import numpy as np
 import pandas as pd
 import scipy.constants as cn
+from tqdm import tqdm
+from tqdm.notebook import tqdm as notebook_tqdm
 
 from emout.utils import InpFile, RegexDict, UnitConversionKey, Units, UnitTranslator
 
 from .griddata_series import GridDataSeries
 from .vector_data import VectorData2d
+
+logger = logging.getLogger(__name__)
+
+
+def get_tqdm():
+    """Function to determine the appropriate tqdm version."""
+    try:
+        # Check if the environment is Jupyter Notebook
+        shell = get_ipython().__class__.__name__  # type: ignore
+        if shell == "ZMQInteractiveShell":  # Jupyter Notebook environment
+            logger.debug("Jupyter Notebook environment detected.")
+            return notebook_tqdm
+        else:  # IPython environment, but not Jupyter Notebook
+            logger.debug("IPython environment detected (not Jupyter).")
+            return tqdm
+    except NameError:  # IPython is not available = standard Python environment
+        logger.debug("Standard Python environment detected.")
+        return tqdm
+
+
+# Get the appropriate tqdm
+tqdm = get_tqdm()
 
 
 def t_unit(out: "Emout") -> UnitTranslator:
@@ -152,6 +177,9 @@ class Emout:
         if not isinstance(directory, Path):
             directory = Path(directory)
         self.directory = directory
+        logger.info(
+            f"Initializing Emout object for directory: {self.directory.resolve()}"
+        )
 
         append_directories = append_directories or ad
 
@@ -169,15 +197,10 @@ class Emout:
             self.append_directories.append(append_directory)
 
         # パラメータファイルの読み取りと単位変換器の初期化
-        self._inp = None
-        self._unit = None
-        if inpfilename is not None and (directory / inpfilename).exists():
-            self._inp = InpFile(directory / inpfilename)
-            convkey = UnitConversionKey.load(directory / inpfilename)
-            if convkey is not None:
-                self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+        self.__load_inpfile(inpfilename)
 
     def __fetch_append_directories(self, directory: Path):
+        logger.info(f"Fetching append directories for: {directory}")
         append_directories = []
 
         i = 2
@@ -186,19 +209,13 @@ class Emout:
             directory_next = Path(path_next)
 
             if not directory_next.exists():
+                logger.debug(f"Append directory does not exist: {directory_next}")
                 break
 
-            try:
-                with h5py.File(directory_next / "phisp00_0000.h5") as f:
-                    pass
-            except OSError:
-                warnings.warn(
-                    f"{directory_next.resolve()} exists, but the h5 file cannot be opened."
-                )
-                break
-            except FileNotFoundError:
-                warnings.warn(
-                    f"{directory_next.resolve()} exists, but the h5 file cannot be found."
+            next_data = Emout(directory_next)
+            if not next_data.is_valid():
+                logger.warning(
+                    f"{directory_next.resolve()} exists, but it is not valid directory."
                 )
                 break
 
@@ -208,13 +225,36 @@ class Emout:
 
         return append_directories
 
+    def __load_inpfile(self, inpfilename: str):
+        self._inp: Union[InpFile, None] = None
+        self._unit: Union[Units, None] = None
+
+        if inpfilename is None:
+            return
+
+        inpfilepath = self.directory / inpfilename
+
+        if not inpfilepath.exists():
+            return
+
+        logger.info(f"Loading parameter file: {inpfilepath.resolve()}")
+        self._inp = InpFile(inpfilepath)
+
+        convkey = UnitConversionKey.load(inpfilepath)
+        if convkey is not None:
+            self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+
     def __getattr__(self, __name: str) -> "GridDataSeries":
+        logger.debug(f"Accessing attribute: {__name}")
+
         m = re.match(r"^r([eb][xyz])$", __name)
         if m:
+            logger.debug(f"Relocated field requested: {m.group(1)}")
             self.__create_relocated_field_hdf5(m.group(1))
 
         m = re.match(r"(.+)([xyz])([xyz])$", __name)
         if m:
+            logger.debug(f"Creating VectorData2d for: {__name}")
             dname = m.group(1)
             axis1 = m.group(2)
             axis2 = m.group(3)
@@ -228,6 +268,7 @@ class Emout:
             return vector_data
 
         filepath = self.__fetch_filepath(self.directory, f"{__name}00_0000.h5")
+        logger.info(f"Loading grid data from file: {filepath.resolve()}")
         griddata = self.__load_griddata(filepath)
 
         for append_directory in self.append_directories:
@@ -304,27 +345,28 @@ class Emout:
 
         Note:
             icurが最終ステップまで出力されているかで判定しており、hdf5ファイルだけが壊れている場合など判定が間違う場合がある。
-        
+
         Returns
         -------
         bool
             シミュレーションが正常に終了している場合True
         """
+
         def read_last_line(file_name):
-            with open(file_name, 'rb') as f:
+            with open(file_name, "rb") as f:
                 f.seek(-2, 2)
-                while f.read(1) != b'\n':
+                while f.read(1) != b"\n":
                     f.seek(-2, 1)
-                return f.readline().decode('utf-8')
+                return f.readline().decode("utf-8")
 
         if len(self.append_directories) > 0:
             dirpath = self.append_directories[-1]
         else:
             dirpath = self.directory
 
-        last_line = read_last_line(dirpath/'icur')
+        last_line = read_last_line(dirpath / "icur")
 
-        inp = InpFile(dirpath / 'plasma.inp')
+        inp = InpFile(dirpath / "plasma.inp")
 
         return int(last_line.split()[0]) == int(inp.nstep)
 
@@ -373,21 +415,31 @@ def _create_relocated_field_hdf5(
     elif name.startswith("e"):
         relocated = relocated_electric_field
 
-    if (directory / f"r{name}00_0000.h5").exists():
+    input_filepath = directory / f"{name}00_0000.h5"
+    output_filepath = directory / f"r{name}00_0000.h5"
+
+    if output_filepath.exists():
+        logger.info(f"File already exists: {output_filepath.resolve()}")
         return
 
-    with h5py.File(directory / f"{name}00_0000.h5", "r") as h5_field:
+    logger.info(
+        f"Relocated field file not found. Creating a new file.: {output_filepath.resolve()}"
+    )
+
+    with h5py.File(input_filepath, "r") as h5_field:
         field = h5_field[name]
 
-        with h5py.File(directory / f"r{name}00_0000.h5", "w") as h5_relocated:
+        with h5py.File(output_filepath, "w") as h5_relocated:
             rfield = h5_relocated.create_group(f"r{name}")
 
-            for key in field.keys():
+            for key in tqdm(field.keys(), desc=f"Relocating {name}"):
                 rfield[key] = relocated(
                     np.array(field[key]),
                     axis=axis,
                     btype=btype,
                 )
+
+    logger.info(f"File creation completed: {output_filepath.resolve()}")
 
 
 def relocated_electric_field(
