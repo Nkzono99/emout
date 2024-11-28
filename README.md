@@ -136,12 +136,14 @@ pip install emout
 ### 継続したシミュレーション結果を扱う
 ``` python
 >>> import emout
->>> data = emout.Emout('output_dir', append_directories=['output_dir2', 'output_dir3'])
+>>> data = emout.Emout('output_dir', append_directories=['output_dir_2', 'output_dir_3'])
+>>>
+>>> data = emout.Emout('output_dir', ad='auto') # = emout.Emout('output_dir', append_directories=['output_dir_2', 'output_dir_3'])
 ```
 
 ### データマスクを適用する
 ``` python
->>> # mask below average values
+>>> # masking below average values
 >>> data.phisp[1].masked(lambda phi: phi < phi.mean())
 >>>
 >>> # above code does the same as this code
