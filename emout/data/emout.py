@@ -364,7 +364,13 @@ class Emout:
         else:
             dirpath = self.directory
 
-        last_line = read_last_line(dirpath / "icur")
+        if not (dirpath / "icur").exists():
+            return False
+
+        try:
+            last_line = read_last_line(dirpath / "icur")
+        except OSError:
+            return False
 
         inp = InpFile(dirpath / "plasma.inp")
 
