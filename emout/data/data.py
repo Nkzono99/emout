@@ -425,6 +425,7 @@ class Data(np.ndarray):
         self,
         fig: Union[plt.Figure, None] = None,
         axis: int = 0,
+        mode: str = None,
         action: ANIMATER_PLOT_MODE = "to_html",
         filename: PathLike = None,
         show: bool = False,
@@ -548,9 +549,14 @@ class Data(np.ndarray):
             )
             action = "frames"
 
-        updater = self.build_frame_updater(
-            axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
-        )
+        if mode is None:
+            updater = self.build_frame_updater(
+                axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+            )
+        else:
+            updater = self.build_frame_updater(
+                axis, title, notitle, offsets, use_si, vmin, vmax, mode=mode, **kwargs
+            )
 
         if action == "frames":
             return updater
