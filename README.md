@@ -166,6 +166,47 @@ j1z_A_per_m2 = data.j1z[-1, :, :, :].val_si       # Current density [A/m^2]
 nd1p_per_cc = data.nd1p[-1, :, :, :].val_si       # Number density [1/cm^3]
 ```
 
+
+```unit name list```
+
+```
+B = Magnetic flux density [T]
+C = Capacitance [F]
+E = Electric field [V/m]
+F = Force [N]
+G = Conductance [S]
+J = Current density [A/m^2]
+L = Inductance [H]
+N = Flux [/m^2s]
+P = Power [W]
+T = Temperature [K]
+W = Energy [J]
+a = Acceleration [m/s^2]
+c = Light Speed [m/s]
+e = Napiers constant []
+e0 = FS-Permttivity [F/m]
+eps = Permittivity  [F/m]
+f = Frequency [Hz]
+i = Current [A]
+kB = Boltzmann constant [J/K]
+length = Sim-to-Real length ratio [m]
+m = Mass [kg]
+m0 = FS-Permeablity [N/A^2]
+mu = Permiability [H/m]
+n = Number density [/m^3]
+phi = Potential [V]
+pi = Circular constant []
+q = Charge [C]
+q_m = Charge-to-mass ratio [C/kg]
+qe = Elementary charge [C]
+qe_me = Electron charge-to-mass ratio [C/kg]
+rho = Charge density [C/m^3]
+t = Time [s]
+v = Velocity [m/s]
+w = Energy density [J/m^3]
+```
+
+
 ---
 
 ### Handling Appended Simulation Outputs
