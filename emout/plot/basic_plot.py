@@ -80,7 +80,7 @@ def plot_2dmap(
     colorbar_label="",
     cbargs={},
     add_colorbar=True,
-    **kwargs
+    **kwargs,
 ):
     """2次元カラーマップをプロットする.
 
@@ -142,7 +142,7 @@ def plot_2dmap(
         vmax=vmax,
         extent=extent,
         aspect="auto",
-        **kwargs
+        **kwargs,
     )
     if add_colorbar:
         if "cb" in cbargs:
@@ -185,7 +185,7 @@ def plot_2d_contour(
     dpi=10,
     fmt="%1.1f",
     fontsize=12,
-    **kwargs
+    **kwargs,
 ):
     """2次元等高線をプロットする.
 
@@ -286,6 +286,7 @@ def plot_surface(
     function="linear",
     dpi=10,
     colorbar_label="",
+    **kwargs,
 ):
     """3次元表面プロットをする.
 
@@ -338,7 +339,7 @@ def plot_surface(
         fig = plt.gcf()
 
     if ax3d is None:
-        ax3d = fig.gca(projection="3d")
+        ax3d = plt.gcf().add_subplot(projection="3d")
 
     if cmap is not None:
         if isinstance(cmap, str):
@@ -364,7 +365,14 @@ def plot_surface(
     value_colors = mappable.to_rgba(value)
 
     surf = ax3d.plot_surface(
-        x, y, z, facecolors=value_colors, vmin=vmin, vmax=vmax, shade=False
+        x,
+        y,
+        z,
+        facecolors=value_colors,
+        vmin=vmin,
+        vmax=vmax,
+        shade=False,
+        **kwargs,
     )
     if add_colorbar:
         plt.colorbar(mappable, ax=ax3d, label=colorbar_label)
@@ -397,7 +405,7 @@ def plot_line(
     ylabel=None,
     label=None,
     title=None,
-    **kwargs
+    **kwargs,
 ):
     """1次元データをプロットする.
 
@@ -461,7 +469,6 @@ def plot_2d_vector(
     y_data2d,
     mesh=None,
     savefilename=None,
-    color=None,
     scale=1,
     scaler="standard",
     skip=1,
@@ -472,6 +479,7 @@ def plot_2d_vector(
     title=None,
     dpi=10,
     cmap=None,
+    **kwargs,
 ):
     """2次元ベクトル図をプロットする.
 
@@ -567,6 +575,7 @@ def plot_2d_vector(
             angles="xy",
             scale_units="xy",
             scale=1,
+            **kwargs,
         )
     else:
         img = plt.quiver(
@@ -579,6 +588,7 @@ def plot_2d_vector(
             scale_units="xy",
             scale=1,
             cmap=cmap,
+            **kwargs,
         )
 
     if title is not None:
@@ -613,6 +623,7 @@ def plot_2d_streamline(
     vmin=None,
     vmax=None,
     density=1,
+    **kwargs,
 ):
     """2次元ベクトル図をプロットする.
 
@@ -699,6 +710,7 @@ def plot_2d_streamline(
             cmap=cmap,
             norm=norm,
             density=density,
+            **kwargs,
         )
     else:
         img = plt.streamplot(
@@ -708,6 +720,7 @@ def plot_2d_streamline(
             V,
             color=color,
             density=density,
+            **kwargs,
         )
 
     if title is not None:
@@ -732,7 +745,6 @@ def plot_3d_quiver(
     ax3d=None,
     mesh=None,
     savefilename=None,
-    color=None,
     scale=1,
     scaler="standard",
     skip=1,
@@ -743,6 +755,7 @@ def plot_3d_quiver(
     title=None,
     dpi=10,
     cmap=None,
+    **kwargs,
 ):
     """2次元ベクトル図をプロットする.
 
@@ -853,6 +866,7 @@ def plot_3d_quiver(
             angles="xy",
             scale_units="xy",
             scale=1,
+            **kwargs,
         )
     else:
         img = ax3d.quiver(
@@ -867,6 +881,7 @@ def plot_3d_quiver(
             scale_units="xy",
             scale=1,
             cmap=cmap,
+            **kwargs,
         )
 
     if title is not None:

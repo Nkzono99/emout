@@ -194,7 +194,9 @@ def plot_surface_with_hole_half(
     lenmax = max(max(xlen, ylen), zlen)
     box_aspect = (xlen / lenmax, ylen / lenmax, zlen / lenmax)
 
-    plt.gca(projection="3d").set_box_aspect(box_aspect)
+    ax = plt.gcf().add_subplot(projection='3d')
+    plt.sca(ax)
+    ax.set_box_aspect(box_aspect)
 
     xc = (xl + xu) // 2
     yc = (xl + xu) // 2
@@ -215,6 +217,8 @@ def plot_surface_with_hole_half(
 
     kwargs["vmax"] = kwargs.get("vmax", None) or vmax
     kwargs["vmin"] = kwargs.get("vmin", None) or vmin
+    
+    kwargs["ax3d"] = ax
 
     # plot top surface
     data_xyz[zu, yl - off : yl + 1, xl - off : xc + 1].plot(mode="surf", **kwargs)
