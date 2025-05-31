@@ -26,6 +26,7 @@ When you run EMSES simulations, the results (e.g., potentials, densities, curren
 6. **Combine multi-run outputs** for continued or appended simulations.
 7. **Apply data masking** to filter data regions of interest.
 8. **(Experimental) Solve Poisson’s equation** directly from charge distributions for 3D potentials.
+9. **(Experimental) Compute backtraces and probabilities** for particle trajectories (via data.backtrace).
 
 Below, you will find usage examples that assume the following directory structure:
 
@@ -235,6 +236,126 @@ data.phisp[1].masked(lambda phi: phi < phi.mean())
 phi = data.phisp[1].copy()
 phi[phi < phi.mean()] = float('nan')
 ```
+
+---
+
+### Backtrace Usage Examples (Experimental)
+
+Below are three example workflows demonstrating how to use the `data.backtrace` interface. All examples assume you have already created an `Emout` object named `data`.
+
+---
+
+#### 1. Perform a batch backtrace and plot sampled trajectories
+
+In this example, we generate 10 particles with varying initial positions and velocities, compute their backtraces, randomly sample all 10 backtrace trajectories, and then plot the $x$–$y$ projection of each sampled trajectory.
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 1) Prepare 10 initial positions and velocities
+#    Positions: (128, 128, 60 + i*2) for i = 0, 1, …, 9
+#    Velocities: (0, 0, -10*i) for i = 0, 1, …, 9
+positions = np.array([[128, 128, 60 + 2 * i] for i in range(10)])
+velocities = np.array([[0, 0, -10 * i] for i in range(10)])
+
+# 2) Compute backtraces for all 10 particles
+#    This returns a MultiBacktraceResult object
+backtrace_result = data.backtrace.get_backtraces(positions, velocities)
+
+# 3) Sample 5 trajectories. Then plot the x vs y projection.
+sampled_result = backtrace_result.sample(5)
+ax = sampled_result.xy.plot()
+ax.set_title("Backtrace: Sampled 10 Trajectories (x vs y)")
+plt.show()
+```
+
+---
+
+#### 2. Compute a velocity–space probability distribution and plot $v_x$ vs $v_z$
+
+Here, we call `get_probabilities(...)` to generate a 6D phase grid $(x, y, z, vx, vy, vz)$, invoke the backend solver to compute the probability for each $(x,y,z,v_x,v_y,v_z)$ cell, and then plot the 2D slice in $(v_x, v_z)$ space.
+
+```python
+# 1) Call get_probabilities on a 1×1×1 (x,y,z) cell at (128,128,60),
+#    with vx in [-3*dx, +3*dx] sampled over 10 points,
+#    vy fixed at 0, and vz in [-3*dx, 0] sampled over 10 points.
+#    ispec=0 indicates electron species.
+probability_result = data.backtrace.get_probabilities(
+    128,                       # x = constant 128 (single cell)
+    128,                       # y = constant 128
+    60,                        # z = constant 60
+    (-data.inp.path[0] * 3,    # vx from –3*dx
+     +data.inp.path[0] * 3, 10),  #    to +3*dx in 10 steps
+    0,                         # vy = 0
+    (-data.inp.path[0] * 3,    # vz from –3*dx
+     0, 10),                   #    to 0 in 10 steps
+    ispec=0,                   # electron species
+)
+
+# 2) Plot the resulting probability on the vx–vz plane
+ax = probability_result.vxvz.plot(shading="auto", cmap="plasma")
+ax.set_title("Probability Distribution: vx vs vz (ispec=0)")
+plt.show()
+```
+
+---
+
+#### 3. Backtrace using the particles from a previous probability calculation, then plot $x$–$z$ trajectories with probability as transparency
+
+In this final example, we take the `particles` array produced internally by `get_probabilities(...)`, run backtraces on each of those particles, and then plot the $x$–$z$ projections of all backtraced trajectories.
+
+ We normalize each trajectory’s probability to the maximum probability across all phase‐grid cells, and pass that normalized array to `alpha`, so that high‐probability trajectories appear more opaque and low‐probability trajectories more transparent.
+
+```python
+# 1) Reuse the ProbabilityResult from Example 2:
+probability_result = data.backtrace.get_probabilities(
+    128,
+    128,
+    60,
+    (-data.inp.path[0] * 3, data.inp.path[0] * 3, 10),
+    0,
+    (-data.inp.path[0] * 3, 0, 10),
+    ispec=0,
+)
+
+# 2) Extract the `particles` array and their associated `probabilities`
+particles = probability_result.particles        # Sequence of Particle objects
+prob_flat  = probability_result.probabilities    # 2D array of shape (nvz, nvx)
+
+# 3) Flatten the 2D probability grid back into the 1D array matching `particles` order
+prob_1d = prob_flat.ravel()
+
+# 4) Normalize probabilities to [0,1] by dividing by the global maximum
+alpha_values = prob_1d / prob_1d.max()
+
+# 5) Compute backtraces for all particles
+backtrace_result = data.backtrace.get_backtraces_from_particles(
+    particles,
+    ispec=0,
+)
+
+# 6) Plot x vs z for every trajectory, using the normalized probabilities as alpha
+ax = backtrace_result.xz.plot(alpha=alpha_values)
+ax.set_title("Backtrace Trajectories (x vs z) with Probability Transparency")
+plt.show()
+```
+
+---
+
+**Notes on the above examples:**
+
+* In Example 1, `get_backtraces(positions, velocities)` returns a `MultiBacktraceResult` whose `xy` property is a `MultiXYData` object. You can sample, reorder, or subset the trajectories and then call `.plot()` on `.xy`, `.vxvy`, `.xz`, etc.
+
+* In Example 2, `get_probabilities(...)` returns a `ProbabilityResult` whose `.vxvz`, `.xy`, `.xz`, etc. are all `HeatmapData` objects. Calling `.plot()` on any of these displays a 2D probability heatmap for the chosen pair of axes.
+
+* In Example 3, `probability_result.particles` is the list of `Particle` objects used internally to compute the 6D probability grid. We pass that list to `get_backtraces_from_particles(...)` to compute backtraced trajectories for exactly those same particles. Normalizing their probabilities to `[0,1]` and passing that array into `alpha` makes high‐probability trajectories draw more opaquely.
+
+These three patterns demonstrate the flexibility of the `data.backtrace` facade for:
+
+1. **Direct backtracing** from arbitrary $(\mathbf{r}, \mathbf{v})$ arrays,
+2. **Probability‐space calculations** on a structured phase grid, and
+3. **Combining the two** so that you can visualize backtraced trajectories with opacity weighted by their computed probabilities.
 
 ---
 
