@@ -182,14 +182,14 @@ class MultiBacktraceResult:
 
                 u = self.unit.length if self.unit else None
 
-                return self.positions_list[:, :, idx], u.unit
+                return self.positions_list[:, :, idx], u
 
             elif key in {"vx", "vy", "vz"}:
                 idx = {"vx": 0, "vy": 1, "vz": 2}[key]
 
                 u = self.unit.v if self.unit else None
 
-                return self.velocities_list[:, :, idx], u.unit
+                return self.velocities_list[:, :, idx], u
 
             else:
                 raise KeyError(f"Unexpected key: {key}")
