@@ -53,6 +53,7 @@ class HeatmapData:
         Y = self.Y
         
         xlabel = self.xlabel
+        ylabel = self.ylabel
 
         if self.units and use_si:
             X = self.units[0].reverse(X)
