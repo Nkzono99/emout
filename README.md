@@ -270,7 +270,7 @@ Below are three example workflows demonstrating how to use the `data.backtrace` 
 
 #### 1. Perform a batch backtrace and plot sampled trajectories
 
-In this example, we generate 10 particles with varying initial positions and velocities, compute their backtraces, randomly sample all 10 backtrace trajectories, and then plot the $x$–$y$ projection of each sampled trajectory.
+In this example, we generate 10 particles with varying initial positions and velocities, compute their backtraces, randomly sample 5 backtrace trajectories, and then plot the $x–y$ projection of each sampled trajectory.
 
 ```python
 import numpy as np
