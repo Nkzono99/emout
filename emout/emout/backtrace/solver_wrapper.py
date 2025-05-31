@@ -74,21 +74,27 @@ class BacktraceWrapper:
             for pos_vec, vel_vec in zip(positions, velocities)
         ]
 
-        ts_list, probabilities, positions_list, velocities_list = _backend(
-            self.directory,
-            ispec=ispec,
-            istep=istep,
-            particles=particles,
-            dt=dt or self.inp.dt,
-            max_step=max_step,
-            output_interval=output_interval,
-            use_adaptive_dt=use_adaptive_dt,
-            n_threads=n_threads,
-            **kwargs,
+        ts_list, probabilities, positions_list, velocities_list, last_indexes = (
+            _backend(
+                self.directory,
+                ispec=ispec,
+                istep=istep,
+                particles=particles,
+                dt=dt or self.inp.dt,
+                max_step=max_step,
+                output_interval=output_interval,
+                use_adaptive_dt=use_adaptive_dt,
+                n_threads=n_threads,
+                **kwargs,
+            )
         )
 
         return MultiBacktraceResult(
-            ts_list, probabilities, positions_list, velocities_list
+            ts_list,
+            probabilities,
+            positions_list,
+            velocities_list,
+            last_indexes,
         )
 
     def get_backtraces_from_particles(
@@ -105,21 +111,27 @@ class BacktraceWrapper:
     ) -> Any:
         from vdsolverf.emses import get_backtraces as _backend
 
-        ts_list, probabilities, positions_list, velocities_list = _backend(
-            self.directory,
-            ispec=ispec,
-            istep=istep,
-            particles=particles,
-            dt=dt or self.inp.dt,
-            max_step=max_step,
-            output_interval=output_interval,
-            use_adaptive_dt=use_adaptive_dt,
-            n_threads=n_threads,
-            **kwargs,
+        ts_list, probabilities, positions_list, velocities_list, last_indexes = (
+            _backend(
+                self.directory,
+                ispec=ispec,
+                istep=istep,
+                particles=particles,
+                dt=dt or self.inp.dt,
+                max_step=max_step,
+                output_interval=output_interval,
+                use_adaptive_dt=use_adaptive_dt,
+                n_threads=n_threads,
+                **kwargs,
+            )
         )
 
         return MultiBacktraceResult(
-            ts_list, probabilities, positions_list, velocities_list
+            ts_list,
+            probabilities,
+            positions_list,
+            velocities_list,
+            last_indexes,
         )
 
     def get_probabilities(
@@ -143,12 +155,13 @@ class BacktraceWrapper:
 
         phase_grid = PhaseGrid(x, y, z, vx, vy, vz)
         phases = phase_grid.create_grid()  # shape = (N_points, 6)
+        particles = phase_grid.create_particles()
 
         prob_flat, ret_particles = _backend(
             directory=self.directory,
             ispec=ispec,
             istep=istep,
-            particles=phase_grid.create_particles(),
+            particles=particles,
             dt=dt or self.inp.dt,
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
@@ -171,7 +184,7 @@ class BacktraceWrapper:
         nvz = _size(vz)
         dims = (nz, ny, nx, nvz, nvy, nvx)
 
-        return ProbabilityResult(phases, prob_flat, dims, ret_particles)
+        return ProbabilityResult(phases, prob_flat, dims, ret_particles, particles)
 
     def get_probabilities_from_array(
         self,

@@ -73,6 +73,7 @@ class ProbabilityResult:
         probabilities: np.ndarray,
         dims: Sequence[int],
         ret_particles,
+        particles,
     ):
         """
         Parameters
@@ -93,6 +94,7 @@ class ProbabilityResult:
         self.phases = phases
         self.probabilities = probabilities
         self.ret_particles = ret_particles
+        self.particles = particles
 
     def __iter__(self) -> Iterator[Any]:
         """

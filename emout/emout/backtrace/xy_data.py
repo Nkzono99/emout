@@ -62,6 +62,7 @@ class MultiXYData:
         self,
         x: np.ndarray,
         y: np.ndarray,
+        last_indexes: np.ndarray,
         xlabel: str = "x",
         ylabel: str = "y",
         title: Optional[str] = None,
@@ -75,6 +76,7 @@ class MultiXYData:
 
         self.x = x
         self.y = y
+        self.last_indexes = last_indexes
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title or f"{xlabel} vs {ylabel}"
@@ -104,6 +106,8 @@ class MultiXYData:
         alpha_arr = plot_kwargs.get("alpha", None)
 
         for i in range(n_series):
+            iend = self.last_indexes[i]
+
             if (
                 alpha_arr is not None
                 and hasattr(alpha_arr, "__len__")
@@ -111,11 +115,13 @@ class MultiXYData:
             ):
                 alpha_i = float(alpha_arr[i])
                 kw = {**plot_kwargs, "alpha": alpha_i}
-                ax.plot(self.x[i, :], self.y[i, :], **kw)
+                ax.plot(self.x[i, :iend], self.y[i, :iend], **kw)
+
             else:
-                ax.plot(self.x[i, :], self.y[i, :], **plot_kwargs)
+                ax.plot(self.x[i, :iend], self.y[i, :iend], **plot_kwargs)
 
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
+
         return ax

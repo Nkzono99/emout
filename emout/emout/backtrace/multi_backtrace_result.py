@@ -10,9 +10,10 @@ class MultiBacktraceResult:
     get_backtraces の返り値をまとめて管理するクラス。
 
     - ts_list         : shape = (N_traj, N_steps)
-    - probabilities   : shape = (N_traj, N_steps)
+    - probabilities   : shape = (N_traj,)
     - positions_list  : shape = (N_traj, N_steps, 3)
     - velocities_list : shape = (N_traj, N_steps, 3)
+    - last_indexes    : shape = (N_traj,)
 
     以下の方法でアクセス・可視化できます：
 
@@ -40,14 +41,16 @@ class MultiBacktraceResult:
         probabilities: np.ndarray,
         positions_list: np.ndarray,
         velocities_list: np.ndarray,
+        last_indexes: np.ndarray,
     ):
         """
         Parameters
         ----------
         ts_list : numpy.ndarray, shape = (N_traj, N_steps)
-        probabilities : numpy.ndarray, shape = (N_traj, N_steps)
+        probabilities : numpy.ndarray, shape = (N_traj,)
         positions_list : numpy.ndarray, shape = (N_traj, N_steps, 3)
         velocities_list : numpy.ndarray, shape = (N_traj, N_steps, 3)
+        last_indexes : numpy.ndarray, shape = (N_traj,)
         """
         if ts_list.ndim != 2:
             raise ValueError(
@@ -72,16 +75,18 @@ class MultiBacktraceResult:
         self.probabilities = probabilities
         self.positions_list = positions_list
         self.velocities_list = velocities_list
+        self.last_indexes = last_indexes
 
     def __iter__(self) -> Iterator[Any]:
         """
         タプルアンパック対応:
-          ts_list, probs, pos_list, vel_list = result
+          ts_list, probabilities, positions_list, velocities_list, last_indexes = result
         """
         yield self.ts_list
         yield self.probabilities
         yield self.positions_list
         yield self.velocities_list
+        yield self.last_indexes
 
     def __repr__(self) -> str:
         N, T = self.ts_list.shape
@@ -136,11 +141,12 @@ class MultiBacktraceResult:
             raise IndexError("sample() で指定されたインデックスが範囲外です")
 
         ts_sub = self.ts_list[chosen, :]
-        prob_sub = self.probabilities[chosen, :]
+        prob_sub = self.probabilities[chosen]
         pos_sub = self.positions_list[chosen, :, :]
         vel_sub = self.velocities_list[chosen, :, :]
+        last_indexes_sub = self.last_indexes[chosen]
 
-        return MultiBacktraceResult(ts_sub, prob_sub, pos_sub, vel_sub)
+        return MultiBacktraceResult(ts_sub, prob_sub, pos_sub, vel_sub, last_indexes_sub)
 
     def pair(self, var1: str, var2: str) -> MultiXYData:
         """
@@ -179,7 +185,7 @@ class MultiBacktraceResult:
         ylabel = var2
         title = f"{var1} vs {var2} (multiple trajectories)"
 
-        return MultiXYData(arr1, arr2, xlabel=xlabel, ylabel=ylabel, title=title)
+        return MultiXYData(arr1, arr2, self.last_indexes, xlabel=xlabel, ylabel=ylabel, title=title)
 
     def __getattr__(self, name: str) -> Any:
         """
