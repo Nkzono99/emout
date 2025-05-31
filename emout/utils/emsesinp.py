@@ -53,7 +53,7 @@ class UnitConversionKey:
         if not line.startswith("!!key"):
             return None
 
-        # !!key dx=[1.0],to_c=[10000.0]
+        # "!!key dx=[1.0],to_c=[10000.0]"
         text = line[6:].strip()
         pattern = r"dx=\[([+-]?\d+(?:\.\d+)?)\],to_c=\[([+-]?\d+(?:\.\d+)?)\]"
         m = re.match(pattern, text)
