@@ -8,7 +8,7 @@ from .probability_result import ProbabilityResult
 
 
 class BacktraceWrapper:
-    def __init__(self, directory: Any, inp: Any):
+    def __init__(self, directory: Any, inp: Any, unit: Any):
         """
         Parameters
         ----------
@@ -19,6 +19,7 @@ class BacktraceWrapper:
         """
         self.directory = directory
         self.inp = inp
+        self.unit = unit
 
     def get_backtrace(
         self,
@@ -48,7 +49,7 @@ class BacktraceWrapper:
             use_adaptive_dt=use_adaptive_dt,
             **kwargs,
         )
-        return BacktraceResult(ts, probability, positions, velocities)
+        return BacktraceResult(ts, probability, positions, velocities, unit=self.unit)
 
     def get_backtraces(
         self,
@@ -184,7 +185,7 @@ class BacktraceWrapper:
         nvz = _size(vz)
         dims = (nz, ny, nx, nvz, nvy, nvx)
 
-        return ProbabilityResult(phases, prob_flat, dims, ret_particles, particles)
+        return ProbabilityResult(phases, prob_flat, dims, ret_particles, particles, self.unit)
 
     def get_probabilities_from_array(
         self,

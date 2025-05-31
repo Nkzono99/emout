@@ -91,4 +91,5 @@ class Emout:
         return BacktraceWrapper(
             directory=self._dir_inspector.main_directory,
             inp=self._dir_inspector.inp,
+            unit=self.unit,
         )

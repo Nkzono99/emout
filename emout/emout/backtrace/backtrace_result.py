@@ -40,6 +40,7 @@ class BacktraceResult:
         probability: np.ndarray,
         positions: np.ndarray,
         velocities: np.ndarray,
+        unit=None,
     ):
         """
         Parameters
@@ -63,6 +64,8 @@ class BacktraceResult:
         self.probability = probability
         self.positions = positions
         self.velocities = velocities
+
+        self.unit = unit
 
     def __iter__(self) -> Iterator[Any]:
         """
@@ -102,23 +105,41 @@ class BacktraceResult:
 
         def _get_array(key: str) -> np.ndarray:
             if key == "t":
-                return self.ts
+                u = self.unit.t if self.unit else None
+
+                return self.ts, u
+
             elif key in {"x", "y", "z"}:
                 idx = {"x": 0, "y": 1, "z": 2}[key]
-                return self.positions[:, idx]
+
+                u = self.unit.length if self.unit else None
+
+                return self.positions[:, idx], u
+
             elif key in {"vx", "vy", "vz"}:
                 idx = {"vx": 0, "vy": 1, "vz": 2}[key]
-                return self.velocities[:, idx]
+
+                u = self.unit.v if self.unit else None
+
+                return self.velocities[:, idx], u
+
             else:
                 raise KeyError(f"Unexpected key: {key}")
 
-        arr1 = _get_array(var1)
-        arr2 = _get_array(var2)
+        arr1, u1 = _get_array(var1)
+        arr2, u2 = _get_array(var2)
         xlabel = var1
         ylabel = var2
         title = f"{var1} vs {var2}"
 
-        return XYData(arr1, arr2, xlabel=xlabel, ylabel=ylabel, title=title)
+        return XYData(
+            arr1,
+            arr2,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            title=title,
+            units=(u1, u2) if u1 else None,
+        )
 
     def __getattr__(self, name: str) -> Any:
         """

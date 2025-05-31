@@ -16,6 +16,7 @@ class XYData:
         xlabel: str = "x",
         ylabel: str = "y",
         title: Optional[str] = None,
+        units=None,
     ):
         if x.ndim != 1 or y.ndim != 1:
             raise ValueError("XYData: x, y はいずれも一次元配列である必要があります")
@@ -27,6 +28,7 @@ class XYData:
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title or f"{xlabel} vs {ylabel}"
+        self.units = units
 
     def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
         yield self.x
@@ -37,7 +39,7 @@ class XYData:
             f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
 
-    def plot(self, ax: Any = None, **plot_kwargs) -> Any:
+    def plot(self, ax: Any = None, use_si=True, **plot_kwargs) -> Any:
         """
         折れ線プロット: x vs y
         - ax: matplotlib.axes.Axes を渡すとその上にプロット
@@ -46,10 +48,25 @@ class XYData:
         if ax is None:
             ax = plt.gca()
 
-        ax.plot(self.x, self.y, **plot_kwargs)
-        ax.set_xlabel(self.xlabel)
-        ax.set_ylabel(self.ylabel)
+        xs = self.x
+        ys = self.y
+
+        xlabel = self.xlabel
+        ylabel = self.ylabel
+
+        if self.units and use_si:
+            xs = self.units[0].reverse(xs)
+            ys = self.units[1].reverse(ys)
+            xlabel = f"{xlabel} [{self.units[0].unit}]"
+            ylabel = f"{ylabel} [{self.units[1].unit}]"
+
+        ax.plot(xs, ys, **plot_kwargs)
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
         ax.set_title(self.title)
+
         return ax
 
 
@@ -66,6 +83,7 @@ class MultiXYData:
         xlabel: str = "x",
         ylabel: str = "y",
         title: Optional[str] = None,
+        units=None,
     ):
         if x.ndim != 2 or y.ndim != 2:
             raise ValueError(
@@ -80,6 +98,7 @@ class MultiXYData:
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title or f"{xlabel} vs {ylabel}"
+        self.units = units
 
     def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
         yield self.x
@@ -91,7 +110,7 @@ class MultiXYData:
             f"xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
 
-    def plot(self, ax: Any = None, **plot_kwargs) -> Any:
+    def plot(self, ax: Any = None, use_si=True, **plot_kwargs) -> Any:
         """
         複数シリーズを重ねて折れ線プロットする。
         - ax: matplotlib.axes.Axes を渡すとその上にプロット
@@ -107,6 +126,12 @@ class MultiXYData:
 
         for i in range(n_series):
             iend = self.last_indexes[i]
+            xs = self.x[i, :iend]
+            ys = self.y[i, :iend]
+
+            if self.units and use_si:
+                xs = self.units[0].reverse(xs)
+                ys = self.units[1].reverse(ys)
 
             if (
                 alpha_arr is not None
@@ -115,13 +140,20 @@ class MultiXYData:
             ):
                 alpha_i = float(alpha_arr[i])
                 kw = {**plot_kwargs, "alpha": alpha_i}
-                ax.plot(self.x[i, :iend], self.y[i, :iend], **kw)
+                ax.plot(xs, ys, **kw)
 
             else:
-                ax.plot(self.x[i, :iend], self.y[i, :iend], **plot_kwargs)
+                ax.plot(xs, ys, **plot_kwargs)
 
-        ax.set_xlabel(self.xlabel)
-        ax.set_ylabel(self.ylabel)
+        xlabel = self.xlabel
+        ylabel = self.ylabel
+
+        if self.units and use_si:
+            xlabel = f"{xlabel} [{self.units[0].unit}]"
+            ylabel = f"{ylabel} [{self.units[1].unit}]"
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
         ax.set_title(self.title)
 
         return ax

@@ -18,6 +18,7 @@ class HeatmapData:
         xlabel: str = "X",
         ylabel: str = "Y",
         title: str = "Heatmap",
+        units=None,
     ):
         if X.ndim != 2 or Y.ndim != 2 or Z.ndim != 2:
             raise ValueError(
@@ -33,11 +34,12 @@ class HeatmapData:
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
+        self.units = units
 
     def __repr__(self):
         return f"<HeatmapData: shape={self.Z.shape}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
 
-    def plot(self, ax=None, cmap="viridis", **plot_kwargs):
+    def plot(self, ax=None, cmap="viridis", use_si=True, **plot_kwargs):
         """
         pcolormesh によるヒートマップを描画する。
         - ax: matplotlib.axes.Axes を渡すか、None の場合は新規 Figure/Axes を作成
@@ -47,12 +49,24 @@ class HeatmapData:
         if ax is None:
             ax = plt.gca()
 
-        mesh = ax.pcolormesh(self.X, self.Y, self.Z, cmap=cmap, **plot_kwargs)
+        X = self.X
+        Y = self.Y
+        
+        xlabel = self.xlabel
+
+        if self.units and use_si:
+            X = self.units[0].reverse(X)
+            Y = self.units[1].reverse(Y)
+            
+            xlabel = f"{xlabel} [{self.units[0].unit}]"
+            ylabel = f"{ylabel} [{self.units[1].unit}]"
+
+        mesh = ax.pcolormesh(X, Y, self.Z, cmap=cmap, **plot_kwargs)
 
         plt.colorbar(mesh, ax=ax)
 
-        ax.set_xlabel(self.xlabel)
-        ax.set_ylabel(self.ylabel)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
         ax.set_title(self.title)
 
         return ax
@@ -74,6 +88,7 @@ class ProbabilityResult:
         dims: Sequence[int],
         ret_particles,
         particles,
+        unit=None,
     ):
         """
         Parameters
@@ -95,6 +110,7 @@ class ProbabilityResult:
         self.probabilities = probabilities
         self.ret_particles = ret_particles
         self.particles = particles
+        self.unit = unit
 
     def __iter__(self) -> Iterator[Any]:
         """
@@ -125,15 +141,28 @@ class ProbabilityResult:
         idx1 = ProbabilityResult._AXES.index(var1)
         idx2 = ProbabilityResult._AXES.index(var2)
 
-        X = self.phases[:, :, :, :, :, :, idx1].reshape(self.dims[idx2], self.dims[idx1])
-        Y = self.phases[:, :, :, :, :, :, idx2].reshape(self.dims[idx2], self.dims[idx1])
+        if self.unit:
+            u1 = self.unit.v if var1.startswith("v") else self.unit.length
+            u2 = self.unit.v if var2.startswith("v") else self.unit.length
+            units = (u1, u2)
+        else:
+            units = None
+
+        X = self.phases[:, :, :, :, :, :, idx1].reshape(
+            self.dims[idx2], self.dims[idx1]
+        )
+        Y = self.phases[:, :, :, :, :, :, idx2].reshape(
+            self.dims[idx2], self.dims[idx1]
+        )
         Z = self.probabilities.reshape(self.dims[idx2], self.dims[idx1])
 
         xlabel = var1
         ylabel = var2
         title = f"{var1} vs {var2} Probability"
 
-        return HeatmapData(X, Y, Z, xlabel=xlabel, ylabel=ylabel, title=title)
+        return HeatmapData(
+            X, Y, Z, xlabel=xlabel, ylabel=ylabel, title=title, units=units
+        )
 
     def __getattr__(self, name: str) -> Any:
         """

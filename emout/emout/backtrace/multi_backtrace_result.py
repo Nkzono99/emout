@@ -28,7 +28,7 @@ class MultiBacktraceResult:
       # サンプリング: ランダムまたはインデックス指定
       result.sample(10)        → ランダムに 10 本だけ抽出
       result.sample([0,2,5])   → インデックス 0, 2, 5 の 3 本だけ抽出
-      
+
       # プロット
       result.yvz.plot()
     """
@@ -42,6 +42,7 @@ class MultiBacktraceResult:
         positions_list: np.ndarray,
         velocities_list: np.ndarray,
         last_indexes: np.ndarray,
+        unit=None,
     ):
         """
         Parameters
@@ -76,6 +77,8 @@ class MultiBacktraceResult:
         self.positions_list = positions_list
         self.velocities_list = velocities_list
         self.last_indexes = last_indexes
+
+        self.unit = unit
 
     def __iter__(self) -> Iterator[Any]:
         """
@@ -146,7 +149,9 @@ class MultiBacktraceResult:
         vel_sub = self.velocities_list[chosen, :, :]
         last_indexes_sub = self.last_indexes[chosen]
 
-        return MultiBacktraceResult(ts_sub, prob_sub, pos_sub, vel_sub, last_indexes_sub)
+        return MultiBacktraceResult(
+            ts_sub, prob_sub, pos_sub, vel_sub, last_indexes_sub
+        )
 
     def pair(self, var1: str, var2: str) -> MultiXYData:
         """
@@ -168,24 +173,43 @@ class MultiBacktraceResult:
 
         def _get_array_list(key: str) -> np.ndarray:
             if key == "t":
-                return self.ts_list  # shape = (N_traj, N_steps)
+                u = self.unit.t if self.unit else None
+
+                return self.ts_list, u
+
             elif key in {"x", "y", "z"}:
                 idx = {"x": 0, "y": 1, "z": 2}[key]
-                return self.positions_list[:, :, idx]  # shape = (N_traj, N_steps)
+
+                u = self.unit.length if self.unit else None
+
+                return self.positions_list[:, :, idx], u.unit
+
             elif key in {"vx", "vy", "vz"}:
                 idx = {"vx": 0, "vy": 1, "vz": 2}[key]
-                return self.velocities_list[:, :, idx]  # shape = (N_traj, N_steps)
+
+                u = self.unit.v if self.unit else None
+
+                return self.velocities_list[:, :, idx], u.unit
+
             else:
                 raise KeyError(f"Unexpected key: {key}")
 
-        arr1 = _get_array_list(var1)  # shape = (N_traj, N_steps)
-        arr2 = _get_array_list(var2)
+        arr1, u1 = _get_array_list(var1)  # shape = (N_traj, N_steps)
+        arr2, u2 = _get_array_list(var2)
 
-        xlabel = var1
-        ylabel = var2
+        xlabel = f"{var1} [m]" if self.unit else var1
+        ylabel = f"{var2} [m]" if self.unit else var2
         title = f"{var1} vs {var2} (multiple trajectories)"
 
-        return MultiXYData(arr1, arr2, self.last_indexes, xlabel=xlabel, ylabel=ylabel, title=title)
+        return MultiXYData(
+            arr1,
+            arr2,
+            self.last_indexes,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            title=title,
+            unit=(u1, u2) if u1 else None,
+        )
 
     def __getattr__(self, name: str) -> Any:
         """
