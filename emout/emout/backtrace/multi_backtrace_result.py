@@ -208,7 +208,7 @@ class MultiBacktraceResult:
             xlabel=xlabel,
             ylabel=ylabel,
             title=title,
-            unit=(u1, u2) if u1 else None,
+            units=(u1, u2) if u1 else None,
         )
 
     def __getattr__(self, name: str) -> Any:
