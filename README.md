@@ -239,6 +239,29 @@ phi[phi < phi.mean()] = float('nan')
 
 ---
 
+### Solving Poisson’s Equation (Experimental)
+
+You can solve Poisson’s equation from 3D charge distributions using `emout.poisson` (depends on `scipy`):
+
+```python
+import numpy as np
+import scipy.constants as cn
+from emout import Emout, poisson
+
+data = Emout('output_dir')
+dx = data.inp.dx  # [m] Grid spacing
+rho = data.rho[-1].val_si  # [C/m^3] Charge distribution
+btypes = ["pdn"[i] for i in data.inp.mtd_vbnd]  # Boundary conditions
+
+# Solve Poisson’s equation for potential
+phisp = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
+
+# Compare with EMSES potential
+np.allclose(phisp, data.phisp[-1])  # Should be True (within numerical tolerance)
+```
+
+---
+
 ### Backtrace Usage Examples (Experimental)
 
 Below are three example workflows demonstrating how to use the `data.backtrace` interface. All examples assume you have already created an `Emout` object named `data`.
@@ -356,29 +379,6 @@ These three patterns demonstrate the flexibility of the `data.backtrace` facade 
 1. **Direct backtracing** from arbitrary $(\mathbf{r}, \mathbf{v})$ arrays,
 2. **Probability‐space calculations** on a structured phase grid, and
 3. **Combining the two** so that you can visualize backtraced trajectories with opacity weighted by their computed probabilities.
-
----
-
-### Solving Poisson’s Equation (Experimental)
-
-You can solve Poisson’s equation from 3D charge distributions using `emout.poisson` (depends on `scipy`):
-
-```python
-import numpy as np
-import scipy.constants as cn
-from emout import Emout, poisson
-
-data = Emout('output_dir')
-dx = data.inp.dx  # [m] Grid spacing
-rho = data.rho[-1].val_si  # [C/m^3] Charge distribution
-btypes = ["pdn"[i] for i in data.inp.mtd_vbnd]  # Boundary conditions
-
-# Solve Poisson’s equation for potential
-phisp = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
-
-# Compare with EMSES potential
-np.allclose(phisp, data.phisp[-1])  # Should be True (within numerical tolerance)
-```
 
 ---
 
