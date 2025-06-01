@@ -80,7 +80,7 @@ class ProbabilityResult:
     内部では 6 次元グリッドを保存し、任意の2軸を切り出して可視化可能。
     """
 
-    _AXES = ["z", "y", "x", "vz", "vy", "vx"]
+    _AXES = ["x", "y", "z", "vx", "vy", "vz"]
 
     def __init__(
         self,
