@@ -39,7 +39,7 @@ class XYData:
             f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
 
-    def plot(self, ax: Any = None, use_si=True, **plot_kwargs) -> Any:
+    def plot(self, ax: Any = None, use_si=True, gap=None, **plot_kwargs) -> Any:
         """
         折れ線プロット: x vs y
         - ax: matplotlib.axes.Axes を渡すとその上にプロット
@@ -59,6 +59,9 @@ class XYData:
             ys = self.units[1].reverse(ys)
             xlabel = f"{xlabel} [{self.units[0].unit}]"
             ylabel = f"{ylabel} [{self.units[1].unit}]"
+
+        if gap:
+            xs, ys = _insert_nans_for_gaps(xs, ys, gap)
 
         ax.plot(xs, ys, **plot_kwargs)
 
@@ -110,7 +113,7 @@ class MultiXYData:
             f"xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
 
-    def plot(self, ax: Any = None, use_si=True, **plot_kwargs) -> Any:
+    def plot(self, ax: Any = None, use_si=True, gap=None, **plot_kwargs) -> Any:
         """
         複数シリーズを重ねて折れ線プロットする。
         - ax: matplotlib.axes.Axes を渡すとその上にプロット
@@ -132,6 +135,9 @@ class MultiXYData:
             if self.units and use_si:
                 xs = self.units[0].reverse(xs)
                 ys = self.units[1].reverse(ys)
+
+            if gap:
+                xs, ys = _insert_nans_for_gaps(xs, ys, gap)
 
             if (
                 alpha_arr is not None
@@ -157,3 +163,26 @@ class MultiXYData:
         ax.set_title(self.title)
 
         return ax
+
+
+def _insert_nans_for_gaps(x: np.ndarray, y: np.ndarray, gap: float):
+    x = np.asarray(x)
+    y = np.asarray(y)
+    N = x.shape[0]
+    if N < 2:
+        return x.copy(), y.copy()
+
+    dx = np.diff(x)
+    dy = np.diff(y)
+    dist = np.sqrt(dx**2 + dy**2)
+
+    new_x = [x[0]]
+    new_y = [y[0]]
+    for i in range(N - 1):
+        if dist[i] > gap:
+            new_x.append(np.nan)
+            new_y.append(np.nan)
+        new_x.append(x[i + 1])
+        new_y.append(y[i + 1])
+
+    return np.array(new_x), np.array(new_y)
