@@ -183,7 +183,7 @@ class BacktraceWrapper:
         nvx = _size(vx)
         nvy = _size(vy)
         nvz = _size(vz)
-        dims = (nz, ny, nx, nvz, nvy, nvx)
+        dims = (nx, ny, nz, nvx, nvy, nvz)
 
         return ProbabilityResult(phases, prob_flat, dims, ret_particles, particles, self.unit)
 
