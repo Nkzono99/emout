@@ -127,19 +127,15 @@ class GridDataLoader:
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:
         axis = "zyx".index(field_name[-1])
-        if field_name.startswith("b"):
-            relocated_fn = relocated_magnetic_field
-        else:
-            relocated_fn = relocated_electric_field
 
         main_dir = self.dir_inspector.main_directory
-        self._create_one_relocated(main_dir, field_name, axis, relocated_fn)
+        self._create_one_relocated(main_dir, field_name, axis)
 
         for ad in self.dir_inspector.append_directories:
-            self._create_one_relocated(ad, field_name, axis, relocated_fn)
+            self._create_one_relocated(ad, field_name, axis)
 
     def _create_one_relocated(
-        self, directory: Path, name: str, axis: int, relocated_fn: Callable
+        self, directory: Path, name: str, axis: int
     ) -> None:
         input_fp = directory / f"{name}00_0000.h5"
         output_fp = directory / f"r{name}00_0000.h5"
@@ -158,11 +154,22 @@ class GridDataLoader:
                 for key in tqdm(field.keys(), desc=f"Relocating {name}"):
                     arr = np.array(field[key])
 
-                    rgrp[key] = relocated_fn(
-                        arr, axis=axis, btype=self._get_btype(name, directory)
-                    )
+                    if name.startswith("b"):
+                        if name[-1] == "x":
+                            axs = "yz"
+                        elif name[-1] == "y":
+                            axs = "zx"
+                        else:
+                            axs = "xy"
+                        btypes = [self._get_btype(ax) for ax in axs]
 
-    def _get_btype(self, name: str, directory: Path) -> str:
+                        rgrp[key] = relocated_magnetic_field(arr, axis=axis, btypes=btypes)
+                    else:
+                        rgrp[key] = relocated_electric_field(
+                            arr, axis=axis, btype=self._get_btype(name)
+                        )
+
+    def _get_btype(self, name: str) -> str:
         axis = "zyx".index(name[-1])
         btype_list = ["periodic", "dirichlet", "neumann"]
 
