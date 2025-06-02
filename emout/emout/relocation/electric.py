@@ -17,10 +17,10 @@ def relocated_electric_field(
 
     ref[slc(1, -1)] = 0.5 * (ef[slc(None, -2)] + ef[slc(1, -1)])
 
-    if btype in "periodic":
+    if btype == "periodic":
         ref[slc(0)] = 0.5 * (ef[slc(-2)] + ef[slc(1)])
         ref[slc(-1)] = 0.5 * (ef[slc(-2)] + ef[slc(1)])
-    elif btype in "neumann":
+    elif btype == "neumann":
         ref[slc(0)] = 0
         ref[slc(-1)] = 0
     else:
