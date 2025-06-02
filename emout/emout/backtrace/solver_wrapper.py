@@ -96,6 +96,7 @@ class BacktraceWrapper:
             positions_list,
             velocities_list,
             last_indexes,
+            unit=self.unit,
         )
 
     def get_backtraces_from_particles(
@@ -133,6 +134,7 @@ class BacktraceWrapper:
             positions_list,
             velocities_list,
             last_indexes,
+            unit=self.unit,
         )
 
     def get_probabilities(
