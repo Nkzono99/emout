@@ -19,7 +19,7 @@ maintainers = [{ name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp" }]
 
 license = { file = "LICENSE" }
 
-dependencies = ["numpy", "matplotlib", "h5py", "f90nml", "scipy", "pandas", "tqdm"]
+dependencies = ["numpy", "matplotlib", "h5py", "f90nml", "scipy", "pandas", "tqdm", "dask"]
 
 classifiers = [
     "Programming Language :: Python :: 3",
