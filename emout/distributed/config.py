@@ -1,12 +1,13 @@
 # emout/distributed/config.py
 import os
-import socket
 from pathlib import Path
+
+import psutil
 
 
 def _get_local_ip():
     try:
-        return socket.gethostbyname(socket.gethostname())
+        return psutil.net_if_addrs()["ib0"][0].address
     except Exception:
         return "127.0.0.1"
 
