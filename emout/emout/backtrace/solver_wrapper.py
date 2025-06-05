@@ -1,10 +1,14 @@
 from typing import Any, List, Sequence, Tuple, Union
 
 import numpy as np
+from dask import delayed
+from dask.distributed import default_client
 
 from .backtrace_result import BacktraceResult
 from .multi_backtrace_result import MultiBacktraceResult
 from .probability_result import ProbabilityResult
+
+from emout.distributed.utils import run_backend
 
 
 class BacktraceWrapper:
@@ -38,7 +42,8 @@ class BacktraceWrapper:
 
         particle = Particle(position, velocity)
 
-        ts, probability, positions, velocities = _backend(
+        ts, probability, positions, velocities = run_backend(
+            _backend,
             directory=self.directory,
             ispec=ispec,
             istep=istep,
@@ -76,7 +81,8 @@ class BacktraceWrapper:
         ]
 
         ts_list, probabilities, positions_list, velocities_list, last_indexes = (
-            _backend(
+            run_backend(
+                _backend,
                 self.directory,
                 ispec=ispec,
                 istep=istep,
@@ -114,7 +120,8 @@ class BacktraceWrapper:
         from vdsolverf.emses import get_backtraces as _backend
 
         ts_list, probabilities, positions_list, velocities_list, last_indexes = (
-            _backend(
+            run_backend(
+                _backend,
                 self.directory,
                 ispec=ispec,
                 istep=istep,
@@ -160,7 +167,8 @@ class BacktraceWrapper:
         phases = phase_grid.create_grid()  # shape = (N_points, 6)
         particles = phase_grid.create_particles()
 
-        prob_flat, ret_particles = _backend(
+        prob_flat, ret_particles = run_backend(
+            _backend,
             directory=self.directory,
             ispec=ispec,
             istep=istep,
@@ -187,7 +195,9 @@ class BacktraceWrapper:
         nvz = _size(vz)
         dims = (nx, ny, nz, nvx, nvy, nvz)
 
-        return ProbabilityResult(phases, prob_flat, dims, ret_particles, particles, self.unit)
+        return ProbabilityResult(
+            phases, prob_flat, dims, ret_particles, particles, self.unit
+        )
 
     def get_probabilities_from_array(
         self,
@@ -209,7 +219,8 @@ class BacktraceWrapper:
 
         particles = [Particle(p, v) for p, v in zip(positions, velocities)]
 
-        return _backend(
+        return run_backend(
+            _backend,
             self.directory,
             ispec=ispec,
             istep=istep,
@@ -234,7 +245,8 @@ class BacktraceWrapper:
     ) -> Any:
         from vdsolverf.emses import get_probabilities as _backend
 
-        return _backend(
+        return run_backend(
+            _backend,
             self.directory,
             ispec=ispec,
             istep=istep,
