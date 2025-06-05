@@ -1,6 +1,7 @@
 from .clusters import SimpleDaskCluster
 from .config import DaskConfig
 
+_global_cluster = None
 
 def start_cluster(
     scheduler_ip: str | None = None,
@@ -14,6 +15,9 @@ def start_cluster(
     env_mods: list[str] | None = None,
     logdir: str | None = None,
 ):
+    if _global_cluster is not None:
+        return _global_cluster.get_client()
+
     cfg = DaskConfig()
   
     # ── config の内容を取得。引数が None でなければ上書きする ──
@@ -43,10 +47,12 @@ def start_cluster(
     cluster.start_scheduler()
     job_ids = cluster.submit_worker(jobs=1)
     print("Submitted worker job IDs:", job_ids)
+    
+    _global_cluster = cluster
 
-    return cluster
+    return _global_cluster.get_client()
 
 
-def stop_cluster(cluster):
-    cluster.close_client()
-    cluster.stop_scheduler()
+def stop_cluster():
+    _global_cluster.close_client()
+    _global_cluster.stop_scheduler()
