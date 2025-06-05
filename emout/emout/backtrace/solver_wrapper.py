@@ -8,6 +8,8 @@ from .backtrace_result import BacktraceResult
 from .multi_backtrace_result import MultiBacktraceResult
 from .probability_result import ProbabilityResult
 
+from emout.distributed.utils import run_backend
+
 
 class BacktraceWrapper:
     def __init__(self, directory: Any, inp: Any, unit: Any):
@@ -33,7 +35,6 @@ class BacktraceWrapper:
         max_step: int = 30000,
         output_interval: int = 1,
         use_adaptive_dt: bool = False,
-        use_dask: bool | None = None,
         **kwargs,
     ) -> Tuple[Any, Any, Any, Any]:
         from vdsolverf.core import Particle
@@ -41,7 +42,7 @@ class BacktraceWrapper:
 
         particle = Particle(position, velocity)
 
-        ts, probability, positions, velocities = self._run_backend(
+        ts, probability, positions, velocities = run_backend(
             _backend,
             directory=self.directory,
             ispec=ispec,
@@ -51,7 +52,6 @@ class BacktraceWrapper:
             max_step=max_step,
             output_interval=output_interval,
             use_adaptive_dt=use_adaptive_dt,
-            use_dask=use_dask,
             **kwargs,
         )
         return BacktraceResult(ts, probability, positions, velocities, unit=self.unit)
@@ -67,7 +67,6 @@ class BacktraceWrapper:
         output_interval: int = 1,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
-        use_dask: bool | None = None,
         **kwargs,
     ) -> Any:
         from vdsolverf.core import Particle
@@ -82,7 +81,7 @@ class BacktraceWrapper:
         ]
 
         ts_list, probabilities, positions_list, velocities_list, last_indexes = (
-            self._run_backend(
+            run_backend(
                 _backend,
                 self.directory,
                 ispec=ispec,
@@ -93,7 +92,6 @@ class BacktraceWrapper:
                 output_interval=output_interval,
                 use_adaptive_dt=use_adaptive_dt,
                 n_threads=n_threads,
-                use_dask=use_dask,
                 **kwargs,
             )
         )
@@ -117,13 +115,12 @@ class BacktraceWrapper:
         output_interval: int = 1,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
-        use_dask: bool | None = None,
         **kwargs,
     ) -> Any:
         from vdsolverf.emses import get_backtraces as _backend
 
         ts_list, probabilities, positions_list, velocities_list, last_indexes = (
-            self._run_backend(
+            run_backend(
                 _backend,
                 self.directory,
                 ispec=ispec,
@@ -134,7 +131,6 @@ class BacktraceWrapper:
                 output_interval=output_interval,
                 use_adaptive_dt=use_adaptive_dt,
                 n_threads=n_threads,
-                use_dask=use_dask,
                 **kwargs,
             )
         )
@@ -162,7 +158,6 @@ class BacktraceWrapper:
         max_step: int = 10000,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
-        use_dask: bool | None = None,
         **kwargs,
     ) -> ProbabilityResult:
         from vdsolverf.core import PhaseGrid
@@ -172,7 +167,7 @@ class BacktraceWrapper:
         phases = phase_grid.create_grid()  # shape = (N_points, 6)
         particles = phase_grid.create_particles()
 
-        prob_flat, ret_particles = self._run_backend(
+        prob_flat, ret_particles = run_backend(
             _backend,
             directory=self.directory,
             ispec=ispec,
@@ -182,7 +177,6 @@ class BacktraceWrapper:
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,
-            use_dask=use_dask,
             **kwargs,
         )
 
@@ -215,7 +209,6 @@ class BacktraceWrapper:
         max_step: int = 10000,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
-        use_dask: bool | None = None,
         **kwargs,
     ) -> Any:
         from vdsolverf.core import Particle
@@ -226,7 +219,7 @@ class BacktraceWrapper:
 
         particles = [Particle(p, v) for p, v in zip(positions, velocities)]
 
-        return self._run_backend(
+        return run_backend(
             _backend,
             self.directory,
             ispec=ispec,
@@ -236,7 +229,6 @@ class BacktraceWrapper:
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,
-            use_dask=use_dask,
             **kwargs,
         )
 
@@ -249,12 +241,11 @@ class BacktraceWrapper:
         max_step: int = 10000,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
-        use_dask: bool | None = None,
         **kwargs,
     ) -> Any:
         from vdsolverf.emses import get_probabilities as _backend
 
-        return self._run_backend(
+        return run_backend(
             _backend,
             self.directory,
             ispec=ispec,
@@ -264,30 +255,5 @@ class BacktraceWrapper:
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,
-            use_dask=use_dask**kwargs,
+            **kwargs,
         )
-
-    def _run_backend(self, func, *args, use_dask=None, **kwargs):
-        """
-        `func(*args, **kwargs)` を
-          • Dask Client があれば delayed → client.compute
-          • 無ければシリアル呼び出し
-        で実行して結果を返す共通ユーティリティ
-        """
-        # 明示切替フラグの解釈
-        if use_dask is False:
-            client = None
-        elif use_dask is True:
-            client = default_client()  # 無い場合は ValueError が飛ぶ
-        else:  # use_dask is None → 自動判定
-            try:
-                client = default_client()
-            except ValueError:
-                client = None
-
-        if client is None:
-            return func(*args, **kwargs)  # シリアル
-
-        future = client.compute(delayed(func)(*args, **kwargs))
-
-        return future.result()
