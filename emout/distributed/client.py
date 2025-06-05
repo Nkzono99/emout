@@ -15,6 +15,7 @@ def start_cluster(
     env_mods: list[str] | None = None,
     logdir: str | None = None,
 ):
+    global _global_cluster
     if _global_cluster is not None:
         return _global_cluster.get_client()
 
@@ -54,5 +55,6 @@ def start_cluster(
 
 
 def stop_cluster():
+    global _global_cluster
     _global_cluster.close_client()
     _global_cluster.stop_scheduler()
