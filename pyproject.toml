@@ -4,7 +4,7 @@ requires = ["setuptools"]
 
 [project]
 name = "emout"
-version = "2.1.0"
+version = "2.2.0"
 
 requires-python = ">=3.7"
 
@@ -19,16 +19,27 @@ maintainers = [{ name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp" }]
 
 license = { file = "LICENSE" }
 
-dependencies = ["numpy", "matplotlib", "h5py", "f90nml", "scipy", "pandas", "tqdm", "dask"]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "h5py",
+    "f90nml",
+    "scipy",
+    "pandas",
+    "tqdm",
+    "dask",
+    "distributed",
+]
 
 classifiers = [
-    "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [project.urls]
