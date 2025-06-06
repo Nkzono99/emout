@@ -150,7 +150,7 @@ class MultiBacktraceResult:
         last_indexes_sub = self.last_indexes[chosen]
 
         return MultiBacktraceResult(
-            ts_sub, prob_sub, pos_sub, vel_sub, last_indexes_sub
+            ts_sub, prob_sub, pos_sub, vel_sub, last_indexes_sub, unit=self.unit,
         )
 
     def pair(self, var1: str, var2: str) -> MultiXYData:
