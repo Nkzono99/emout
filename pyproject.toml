@@ -13,33 +13,35 @@ readme = "README.md"
 
 keywords = ["Visualization", "Simulation", "EMSES"]
 
-authors = [{ name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp" }]
+authors = [{name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp"}]
 
-maintainers = [{ name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp" }]
+maintainers = [{name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp"}]
 
-license = { file = "LICENSE" }
+license = {file = "LICENSE"}
 
 dependencies = [
-    "numpy",
-    "matplotlib",
-    "h5py",
-    "f90nml",
-    "scipy",
-    "pandas",
-    "tqdm",
-    "dask",
-    "distributed",
+  "numpy",
+  "matplotlib",
+  "h5py",
+  "f90nml",
+  "scipy",
+  "pandas",
+  "tqdm",
+  "dask; python_version >= \"3.10\"",
+  "distributed; python_version >= \"3.10\"",
 ]
 
 classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
 
 [project.urls]
