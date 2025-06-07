@@ -264,6 +264,48 @@ np.allclose(phisp, data.phisp[-1])  # Should be True (within numerical tolerance
 
 ### Backtrace Usage Examples (Experimental)
 
+
+#### Running backtrace on HPC computational nodes with Dask (>= Python3.10)
+
+If you’ve set up a Dask cluster via `emout.distributed`, all of the `data.backtrace` calls below will actually run on your computational nodes instead of your login node.
+
+```python
+from emout.distributed import start_cluster, stop_cluster
+import emout
+
+# ① Dask クラスタを起動（SLURM ジョブを一時的に作成して Worker を常駐させる）
+client = start_cluster(
+    partition="gr20001a",   # 使用するキュー
+    processes=1,            # プロセス数
+    cores=112,              # コア数
+    memory="60G",           # メモリ
+    walltime="03:00:00",    # 最大実行時間
+    scheduler_ip="10.10.64.1",  # ログインノード上の Scheduler IP
+    scheduler_port=32332,       # Scheduler ポート
+)
+
+# ② 通常の data.backtrace API を呼び出すだけで、
+#    図のようにバックトレース関数群が計算ノード上で実行されます
+data = emout.Emout("output_dir")
+result = data.backtrace.get_probabilities(
+    128, 128, 200,
+    (-data.inp.path[0]*3, data.inp.path[0]*3, 500),
+    1,
+    (-data.inp.path[0]*4, data.inp.path[0]*3, 500),
+    ispec=0,
+    istep=-1,
+    dt=data.inp.dt,
+    max_step=100000,
+    n_threads=60,
+)
+result.vxvz.plot()
+
+# ③ 終了後はクライアントを閉じて Scheduler を停止
+stop_cluster()
+````
+
+---
+
 Below are three example workflows demonstrating how to use the `data.backtrace` interface. All examples assume you have already created an `Emout` object named `data`.
 
 ---
