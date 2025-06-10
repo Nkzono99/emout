@@ -304,11 +304,9 @@ result.vxvz.plot()
 stop_cluster()
 ````
 
----
 
 Below are three example workflows demonstrating how to use the `data.backtrace` interface. All examples assume you have already created an `Emout` object named `data`.
 
----
 
 #### 1. Perform a batch backtrace and plot sampled trajectories
 
@@ -335,7 +333,6 @@ ax.set_title("Backtrace: Sampled 10 Trajectories (x vs y)")
 plt.show()
 ```
 
----
 
 #### 2. Compute a velocity–space probability distribution and plot $v_x$ vs $v_z$
 
@@ -364,7 +361,6 @@ ax.set_title("Probability Distribution: vx vs vz (ispec=0)")
 plt.show()
 ```
 
----
 
 #### 3. Backtrace using the particles from a previous probability calculation, then plot $x$–$z$ trajectories with probability as transparency
 
@@ -406,7 +402,6 @@ ax.set_title("Backtrace Trajectories (x vs z) with Probability Transparency")
 plt.show()
 ```
 
----
 
 **Notes on the above examples:**
 
