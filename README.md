@@ -20,13 +20,13 @@ When you run EMSES simulations, the results (e.g., potentials, densities, curren
 
 1. [**Load and handle** these outputs easily in Python.](#loading-data)
 2. [**Access simulation parameters** from `plasma.inp`](#retrieving-the-parameter-file-plasmainp).
-3. **Plot scalar/vector fields** for quick data visualization.
-4. **Create animations** to see how data evolve over time.
-5. **Convert units** between EMSES internal units and SI units.
-6. **Combine multi-run outputs** for continued or appended simulations.
-7. **Apply data masking** to filter data regions of interest.
-8. **(Experimental) Solve Poisson’s equation** directly from charge distributions for 3D potentials.
-9. **(Experimental) Compute backtraces and probabilities** for particle trajectories (via data.backtrace).
+3. [**Plot scalar/vector fields** for quick data visualization.](#plotting-data)
+4. [**Convert units** between EMSES internal units and SI units.](#working-with-units)
+5. [**Combine multi-run outputs** for continued or appended simulations.](#handling-appended-simulation-outputs)
+6. [**Apply data masking** to filter data regions of interest.](#data-masking)
+7. [**Create animations** to see how data evolve over time.](#creating-animations)
+8. [**(Experimental) Solve Poisson’s equation** directly from charge distributions for 3D potentials.](#solving-poissons-equation-experimental)
+9. [**(Experimental) Compute backtraces and probabilities** for particle trajectories (via data.backtrace)](#backtrace-usage-examples-experimental).
 
 Below, you will find usage examples that assume the following directory structure:
 
