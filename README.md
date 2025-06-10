@@ -18,8 +18,8 @@ pip install emout
 
 When you run EMSES simulations, the results (e.g., potentials, densities, currents) are output in `.h5` files, and a parameter file (`plasma.inp`) contains the simulation settings. **emout** helps you:
 
-1. **Load and handle** these outputs easily in Python.
-2. **Access simulation parameters** from `plasma.inp`.
+1. [**Load and handle** these outputs easily in Python.](#loading-data)
+2. [**Access simulation parameters** from `plasma.inp`](#retrieving-the-parameter-file-plasmainp).
 3. **Plot scalar/vector fields** for quick data visualization.
 4. **Create animations** to see how data evolve over time.
 5. **Convert units** between EMSES internal units and SI units.
