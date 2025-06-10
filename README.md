@@ -111,42 +111,6 @@ data.j1xy[-1, z, :, :].plot()
 
 ---
 
-### Creating Animations
-
-```python
-# Create a time-series animation along the first axis (time = 0)
-x, y, z = 32, 32, 100
-data.phisp[:, z, :, :].gifplot()
-
-# Specify a different axis (default is axis=0)
-data.phisp[:, z, :, :].gifplot(axis=0)
-
-# Save animation as a GIF
-data.phisp[:, z, :, :].gifplot(action='save', filename='phisp.gif')
-
-# Display the animation inline in a Jupyter notebook
-data.phisp[:, z, :, :].gifplot(action='to_html')
-
-# Combining multiple frames for a single animation
-updater0 = data.phisp[:, z, :, :].gifplot(action='frames', mode='cmap')
-updater1 = data.phisp[:, z, :, :].build_frame_updater(mode='cont')
-updater2 = data.nd1p[:, z, :, :].build_frame_updater(mode='cmap', vmin=1e-3, vmax=20, norm='log')
-updater3 = data.nd2p[:, z, :, :].build_frame_updater(mode='cmap', vmin=1e-3, vmax=20, norm='log')
-updater4 = data.j2xy[:, z, :, :].build_frame_updater(mode='stream')
-
-layout = [
-    [
-        [updater0, updater1],
-        [updater2],
-        [updater3, updater4]
-    ]
-]
-animator = updater0.to_animator(layout=layout)
-animator.plot(action='to_html')  # or 'save', 'show', etc.
-```
-
----
-
 ### Working with Units
 
 > **Note**  
@@ -168,7 +132,9 @@ nd1p_per_cc = data.nd1p[-1, :, :, :].val_si       # Number density [1/cm^3]
 ```
 
 
-```unit name list```
+<details>
+    
+<summary>Unit Name List</summary>
 
 ```
 B = Magnetic flux density [T]
@@ -207,10 +173,15 @@ v = Velocity [m/s]
 w = Energy density [J/m^3]
 ```
 
+</details>
 
 ---
 
 ### Handling Appended Simulation Outputs
+
+<details>
+
+<summary>Examples</summary>
 
 If your simulation continues and creates new directories:
 
@@ -224,9 +195,15 @@ data = emout.Emout('output_dir', append_directories=['output_dir_2', 'output_dir
 data = emout.Emout('output_dir', ad='auto')
 ```
 
+</details>
+
 ---
 
 ### Data Masking
+
+<details>
+
+<summary>Examples</summary>
 
 ```python
 # Mask values below the average
@@ -236,6 +213,50 @@ data.phisp[1].masked(lambda phi: phi < phi.mean())
 phi = data.phisp[1].copy()
 phi[phi < phi.mean()] = float('nan')
 ```
+    
+</details>
+
+---
+
+### Creating Animations
+
+<details>
+
+<summary>Examples</summary>
+
+```python
+# Create a time-series animation along the first axis (time = 0)
+x, y, z = 32, 32, 100
+data.phisp[:, z, :, :].gifplot()
+
+# Specify a different axis (default is axis=0)
+data.phisp[:, z, :, :].gifplot(axis=0)
+
+# Save animation as a GIF
+data.phisp[:, z, :, :].gifplot(action='save', filename='phisp.gif')
+
+# Display the animation inline in a Jupyter notebook
+data.phisp[:, z, :, :].gifplot(action='to_html')
+
+# Combining multiple frames for a single animation
+updater0 = data.phisp[:, z, :, :].gifplot(action='frames', mode='cmap')
+updater1 = data.phisp[:, z, :, :].build_frame_updater(mode='cont')
+updater2 = data.nd1p[:, z, :, :].build_frame_updater(mode='cmap', vmin=1e-3, vmax=20, norm='log')
+updater3 = data.nd2p[:, z, :, :].build_frame_updater(mode='cmap', vmin=1e-3, vmax=20, norm='log')
+updater4 = data.j2xy[:, z, :, :].build_frame_updater(mode='stream')
+
+layout = [
+    [
+        [updater0, updater1],
+        [updater2],
+        [updater3, updater4]
+    ]
+]
+animator = updater0.to_animator(layout=layout)
+animator.plot(action='to_html')  # or 'save', 'show', etc.
+```
+
+</details>
 
 ---
 
@@ -243,6 +264,10 @@ phi[phi < phi.mean()] = float('nan')
 
 You can solve Poisson’s equation from 3D charge distributions using `emout.poisson` (depends on `scipy`):
 
+<details>
+
+<summary>Examples</summary>
+    
 ```python
 import numpy as np
 import scipy.constants as cn
@@ -260,10 +285,15 @@ phisp = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
 np.allclose(phisp, data.phisp[-1])  # Should be True (within numerical tolerance)
 ```
 
+</details>
+
 ---
 
 ### Backtrace Usage Examples (Experimental)
 
+<details>
+    
+<summary>Examples</summary>
 
 #### Running backtrace on HPC computational nodes with Dask (>= Python3.10)
 
@@ -416,6 +446,8 @@ These three patterns demonstrate the flexibility of the `data.backtrace` facade 
 1. **Direct backtracing** from arbitrary $(\mathbf{r}, \mathbf{v})$ arrays,
 2. **Probability‐space calculations** on a structured phase grid, and
 3. **Combining the two** so that you can visualize backtraced trajectories with opacity weighted by their computed probabilities.
+
+</details>
 
 ---
 
