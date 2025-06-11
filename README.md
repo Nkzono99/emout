@@ -326,7 +326,7 @@ result = data.backtrace.get_probabilities(
     istep=-1,
     dt=data.inp.dt,
     max_step=100000,
-    n_threads=60,
+    n_threads=112,
 )
 result.vxvz.plot()
 
