@@ -310,7 +310,7 @@ client = start_cluster(
     cores=112,              # コア数
     memory="60G",           # メモリ
     walltime="03:00:00",    # 最大実行時間
-    scheduler_ip="10.10.64.1",  # ログインノード上の Scheduler IP
+    scheduler_ip=None,  # ログインノード上の Scheduler IP (e.g. "10.10.64.1", Noneで自動検索)
     scheduler_port=32332,       # Scheduler ポート
 )
 
