@@ -27,6 +27,7 @@ dependencies = [
   "scipy",
   "pandas",
   "tqdm",
+  "hdfdict",
   "dask; python_version >= \"3.10\"",
   "distributed; python_version >= \"3.10\"",
 ]

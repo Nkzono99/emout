@@ -93,3 +93,4 @@ class Emout:
             inp=self._dir_inspector.inp,
             unit=self.unit,
         )
+
