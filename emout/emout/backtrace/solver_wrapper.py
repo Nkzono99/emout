@@ -1,8 +1,6 @@
 from typing import Any, List, Sequence, Tuple, Union
 
 import numpy as np
-from dask import delayed
-from dask.distributed import default_client
 
 from .backtrace_result import BacktraceResult
 from .multi_backtrace_result import MultiBacktraceResult
