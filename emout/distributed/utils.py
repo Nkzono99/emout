@@ -1,8 +1,14 @@
+import sys
+
+
 def run_backend(func, *args, **kwargs):
     """
     • compute=True: 即 execute(func) して結果を返す
     • compute=False: Dask Future を返す (Client が無ければ即時実行して返す)
     """
+    if sys.version_info.minor < 10:
+        return func(*args, **kwargs)
+
     from dask import delayed
     from dask.distributed import default_client
 
