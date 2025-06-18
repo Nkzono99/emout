@@ -18,15 +18,25 @@ pip install emout
 
 When you run EMSES simulations, the results (e.g., potentials, densities, currents) are output in `.h5` files, and a parameter file (`plasma.inp`) contains the simulation settings. **emout** helps you:
 
-1. [**Load and handle** these outputs easily in Python.](#loading-data)
-2. [**Access simulation parameters** from `plasma.inp`](#retrieving-the-parameter-file-plasmainp).
-3. [**Plot scalar/vector fields** for quick data visualization.](#plotting-data)
-4. [**Convert units** between EMSES internal units and SI units.](#working-with-units)
-5. [**Combine multi-run outputs** for continued or appended simulations.](#handling-appended-simulation-outputs)
-6. [**Apply data masking** to filter data regions of interest.](#data-masking)
-7. [**Create animations** to see how data evolve over time.](#creating-animations)
-8. [**(Experimental) Solve Poisson’s equation** directly from charge distributions for 3D potentials.](#solving-poissons-equation-experimental)
-9. [**(Experimental) Compute backtraces and probabilities** for particle trajectories (via data.backtrace)](#backtrace-usage-examples-experimental).
+- [emout](#emout)
+  - [Installation](#installation)
+  - [Example](#example)
+  - [Overview](#overview)
+  - [Usage](#usage)
+    - [Loading Data](#loading-data)
+    - [Retrieving the Parameter File (plasma.inp)](#retrieving-the-parameter-file-plasmainp)
+    - [Plotting Data](#plotting-data)
+    - [Working with Units](#working-with-units)
+    - [Handling Appended Simulation Outputs](#handling-appended-simulation-outputs)
+    - [Data Masking](#data-masking)
+    - [Creating Animations](#creating-animations)
+    - [Solving Poisson’s Equation (Experimental)](#solving-poissons-equation-experimental)
+    - [Backtrace Usage Examples (Experimental)](#backtrace-usage-examples-experimental)
+      - [Install vdist-solver-fortran](#install-vdist-solver-fortran)
+      - [Running backtrace on HPC computational nodes with Dask (\>= Python3.10)](#running-backtrace-on-hpc-computational-nodes-with-dask--python310)
+      - [1. Perform a batch backtrace and plot sampled trajectories](#1-perform-a-batch-backtrace-and-plot-sampled-trajectories)
+      - [2. Compute a velocity–space probability distribution and plot $v\_x$ vs $v\_z$](#2-compute-a-velocityspace-probability-distribution-and-plot-v_x-vs-v_z)
+      - [3. Backtrace using the particles from a previous probability calculation, then plot $x$–$z$ trajectories with probability as transparency](#3-backtrace-using-the-particles-from-a-previous-probability-calculation-then-plot-xz-trajectories-with-probability-as-transparency)
 
 Below, you will find usage examples that assume the following directory structure:
 
@@ -295,6 +305,19 @@ np.allclose(phisp, data.phisp[-1])  # Should be True (within numerical tolerance
     
 <summary>Examples</summary>
 
+#### Install vdist-solver-fortran
+
+```bash
+pip install git+https://github.com/Nkzono99/vdist-solver-fortran.git
+```
+
+Below are three example workflows demonstrating how to use the `data.backtrace` interface. All examples assume you have already created an `Emout` object named `data`.
+
+
+<details>
+
+<summary>with Dask</summary>
+
 #### Running backtrace on HPC computational nodes with Dask (>= Python3.10)
 
 If you’ve set up a Dask cluster via `emout.distributed`, all of the `data.backtrace` calls below will actually run on your computational nodes instead of your login node.
@@ -332,11 +355,9 @@ result.vxvz.plot()
 
 # ③ 終了後はクライアントを閉じて Scheduler を停止
 stop_cluster()
-````
+```
 
-
-Below are three example workflows demonstrating how to use the `data.backtrace` interface. All examples assume you have already created an `Emout` object named `data`.
-
+</details>
 
 #### 1. Perform a batch backtrace and plot sampled trajectories
 
