@@ -74,6 +74,34 @@ def get_indices_in_pitch_range(
     return idx
 
 
+def compute_energy_flux_histogram(
+    velocities: np.ndarray,
+    probs: np.ndarray,
+    mass: float,
+    energy_bins: int | np.ndarray,
+):
+    speeds = np.linalg.norm(velocities, axis=1)
+    energies_J = 0.5 * mass * speeds**2
+    energies_eV = energies_J / e_charge
+
+    if energy_bins is None:
+        energy_bins = 30
+
+    if isinstance(energy_bins, int):
+        _, bin_edges = np.histogram(energies_eV, bins=energy_bins)
+        bins = bin_edges
+    else:
+        bins = energy_bins.copy()
+
+    energy_flux = energies_eV * speeds * probs
+
+    E_cls = energies_eV
+    w_cls = energy_flux
+    hist, bin_edges = np.histogram(E_cls, bins=bins, weights=w_cls)
+    
+    return hist, bin_edges
+
+
 def compute_energy_flux_histograms(
     velocities: np.ndarray,
     probs: np.ndarray,

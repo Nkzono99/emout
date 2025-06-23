@@ -2,6 +2,9 @@ from typing import Any, Iterator, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.constants as cn
+
+from emout.utils.eflux import compute_energy_flux_histogram
 
 
 class HeatmapData:
@@ -51,14 +54,14 @@ class HeatmapData:
 
         X = self.X
         Y = self.Y
-        
+
         xlabel = self.xlabel
         ylabel = self.ylabel
 
         if self.units and use_si:
             X = self.units[0].reverse(X)
             Y = self.units[1].reverse(Y)
-            
+
             xlabel = f"{xlabel} [{self.units[0].unit}]"
             ylabel = f"{ylabel} [{self.units[1].unit}]"
 
@@ -89,6 +92,8 @@ class ProbabilityResult:
         dims: Sequence[int],
         ret_particles,
         particles,
+        ispec: int,
+        inp,
         unit=None,
     ):
         """
@@ -111,6 +116,8 @@ class ProbabilityResult:
         self.probabilities = probabilities
         self.ret_particles = ret_particles
         self.particles = particles
+        self.ispec = ispec
+        self.inp = inp
         self.unit = unit
 
     def __iter__(self) -> Iterator[Any]:
@@ -182,3 +189,41 @@ class ProbabilityResult:
         raise AttributeError(
             f"'{type(self).__name__}' object has no attribute '{name}'"
         )
+
+    def energy_spectrum(self, energy_bins=None):
+        phases = self.phases
+        velocities = phases[:, :, :, :, :, :, 3:6].reshape(-1, 3)
+        velocities = self.unit.v.reverse(velocities)
+
+        mass = abs(self.unit.m.reverse(cn.e / self.inp.qm[self.ispec]))
+
+        if self.inp.nflag_emit[self.ispec] == 2:  # PE
+            J0 = self.unit.J.reverse(self.inp.curf[0])
+            a = self.unit.v.reverse(self.inp.path[2])
+            n0 = J0 / (2 * a) * np.sqrt(np.pi / 2) / cn.e
+        else:
+            wp = self.unit.f.reverse(self.inp.wp[self.ispec])
+            n0 = wp**2 * mass * cn.epsilon_0 / cn.e**2
+
+        probabilities = self.probabilities * n0
+
+        hist, bin_edges = compute_energy_flux_histogram(
+            velocities,
+            np.nan_to_num(probabilities, 0),
+            mass=mass,
+            energy_bins=energy_bins,
+        )
+
+        return hist, bin_edges
+
+    def plot_energy_spectrum(self, energy_bins=None, scale="log"):
+        hist, bin_edges = self.energy_spectrum(energy_bins=energy_bins)
+
+        centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+        plt.step(centers, hist, color="black", linestyle="solid")
+        
+        plt.xlabel('Energy [eV]')
+        plt.ylabel('Energy flux [$eV m^{-2} s^{-1}$]')
+
+        plt.xscale(scale)

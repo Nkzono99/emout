@@ -194,7 +194,7 @@ class BacktraceWrapper:
         dims = (nx, ny, nz, nvx, nvy, nvz)
 
         return ProbabilityResult(
-            phases, prob_flat, dims, ret_particles, particles, self.unit
+            phases, prob_flat, dims, ret_particles, particles, ispec, self.inp, self.unit
         )
 
     def get_probabilities_from_array(
