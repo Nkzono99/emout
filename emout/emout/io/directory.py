@@ -52,6 +52,7 @@ class DirectoryInspector:
     def _fetch_append_directories(self, directory: Path) -> List[Path]:
         logger.info(f"Fetching append directories for: {directory}")
         result: List[Path] = []
+        directory = directory.resolve()
         i = 2
         while True:
             candidate = directory.parent / f"{directory.name}_{i}"
