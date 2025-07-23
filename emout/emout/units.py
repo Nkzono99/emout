@@ -21,11 +21,8 @@ def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
         r"t": t_unit,
         r"axis": lambda out: out.unit.length,
         r"rhobksp[1-9]": lambda out: out.unit.rho,
+        r"nd[1-9]p": ndp_unit
     }
-
-    for i in range(max_ndp):
-        key = rf"nd{i+1}p"
-        mapping[key] = ndp_unit(i)
 
     return RegexDict(mapping)
 
@@ -96,14 +93,11 @@ def none_unit(out: "Emout") -> UnitTranslator:
     return UnitTranslator(1, 1, name="", unit="")
 
 
-def ndp_unit(ispec: int) -> Callable[["Emout"], UnitTranslator]:
-    def ndp_unit(out: "Emout") -> UnitTranslator:
-        wp = out.unit.f.reverse(out.inp.wp[ispec])
-        mp = abs(cn.m_e / out.inp.qm[ispec])
-        np = wp**2 * mp * cn.epsilon_0 / cn.e**2
-        return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")
-
-    return ndp_unit
+def ndp_unit(out: "Emout") -> UnitTranslator:
+    wp = out.unit.f.reverse(out.inp.wp[0])
+    mp = abs(cn.m_e / out.inp.qm[0])
+    np = wp**2 * mp * cn.epsilon_0 / cn.e**2
+    return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")
 
 
 def nd3p_unit(out: "Emout") -> UnitTranslator:
