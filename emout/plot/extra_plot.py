@@ -1,9 +1,11 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from emout import Emout
+if TYPE_CHECKING:
+    from emout import Emout
+
 from emout.utils.emsesinp import InpFile
 from emout.utils.units import Units
 
@@ -56,7 +58,7 @@ def plot_surface_with_hole(
 
 
 def plot_hole_line(
-    inp_or_data: Union[InpFile, Emout],
+    inp_or_data: Union[InpFile, "Emout"],
     unit: Units = None,
     use_si: bool = True,
     offsets: Tuple[int, int] = (0, 0),
@@ -68,7 +70,7 @@ def plot_hole_line(
     if isinstance(inp_or_data, InpFile):
         inp: InpFile = inp_or_data
     else:
-        data: Emout = inp_or_data
+        data = inp_or_data
         inp = data.inp
         unit = data.unit
 

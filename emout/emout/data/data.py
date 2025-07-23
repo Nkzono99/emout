@@ -1,4 +1,5 @@
 import re
+import warnings
 from os import PathLike
 from pathlib import Path
 from typing import Callable, List, Literal, Tuple, Union
@@ -6,11 +7,9 @@ from typing import Callable, List, Literal, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
-import emout.plot.basic_plot as emplt
 import emout.utils as utils
-from emout.plot.animation_plot import FrameUpdater, ANIMATER_PLOT_MODE
+from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo
-import warnings
 
 
 class Data(np.ndarray):
@@ -513,7 +512,7 @@ class Data(np.ndarray):
 
                This parameter is deprecated and will be removed in version 2.0.0.
                Use the 'action'='frames' instead for equivalent functionality.
-               
+
         Returns
         -------
         Depending on the selected action:
@@ -721,6 +720,8 @@ class Data2d(Data):
         Exception
             データの次元が2でない場合の例外
         """
+        import emout.plot.basic_plot as emplt
+
         if self.valunit is None:
             use_si = False
 
@@ -900,6 +901,8 @@ class Data1d(Data):
         Exception
             データの次元が1でない場合の例外
         """
+        import emout.plot.basic_plot as emplt
+
         if self.valunit is None:
             use_si = False
 
