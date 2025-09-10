@@ -3,6 +3,8 @@
 エネルギーは eV 単位で扱う。
 """
 
+from typing import Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm
@@ -78,7 +80,7 @@ def compute_energy_flux_histogram(
     velocities: np.ndarray,
     probs: np.ndarray,
     mass: float,
-    energy_bins: int | np.ndarray,
+    energy_bins: Union[int, np.ndarray],
 ):
     speeds = np.linalg.norm(velocities, axis=1)
     energies_J = 0.5 * mass * speeds**2
@@ -107,8 +109,8 @@ def compute_energy_flux_histograms(
     probs: np.ndarray,
     B: np.ndarray,
     mass: float,
-    energy_bins: int | np.ndarray,
-    pitch_ranges: list[tuple[float, float, str]] | None = None,
+    energy_bins: Union[int, np.ndarray],
+    pitch_ranges: Union[list[tuple[float, float, str]], None] = None,
 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     """
     速度ベクトル群と存在確率配列から、ユーザーが指定するピッチ角区間および方向ごとに
@@ -200,7 +202,7 @@ def plot_energy_fluxes(
     velocities_list: list[np.ndarray],
     x: np.ndarray,
     mass: float,
-    energy_bins: int | np.ndarray,
+    energy_bins: Union[int, np.ndarray],
     use_probs: bool = False,
     probs_list: list[np.ndarray] | None = None,
     cmap: str = 'viridis',
@@ -302,7 +304,7 @@ def plot_energy_flux(
     probs: np.ndarray,
     B: np.ndarray,
     mass: float,
-    energy_bins: int | np.ndarray,
+    energy_bins: Union[int, np.ndarray],
     pitch_ranges: list[tuple[float, float, str]] | None = None,
     cmap: str = 'plasma',
 ) -> tuple[plt.Figure, plt.Axes]:
