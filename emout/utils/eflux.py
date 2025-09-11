@@ -204,7 +204,7 @@ def plot_energy_fluxes(
     mass: float,
     energy_bins: Union[int, np.ndarray],
     use_probs: bool = False,
-    probs_list: list[np.ndarray] | None = None,
+    probs_list: Union[list[np.ndarray], None] = None,
     cmap: str = 'viridis',
 ) -> tuple[plt.Figure, plt.Axes]:
     """
@@ -305,7 +305,7 @@ def plot_energy_flux(
     B: np.ndarray,
     mass: float,
     energy_bins: Union[int, np.ndarray],
-    pitch_ranges: list[tuple[float, float, str]] | None = None,
+    pitch_ranges: Union[list[tuple[float, float, str]], None] = None,
     cmap: str = 'plasma',
 ) -> tuple[plt.Figure, plt.Axes]:
     """
