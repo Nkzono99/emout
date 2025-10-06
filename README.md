@@ -371,9 +371,13 @@ import numpy as np
 import emout
 
 data = emout.Emout()
+```
 
+```python
 ispec = 0 # e.g. 0: electron, 1: ion, 2: photoelectron
+```
 
+```python
 # 1) Create ProbabilityResult
 probability_result = data.backtrace.get_probabilities(
     128,
