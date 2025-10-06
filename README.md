@@ -361,7 +361,7 @@ stop_cluster()
 
 #### Backtrace using the particles from a previous probability calculation, then plot $x$–$z$ trajectories with probability as transparency
 
-We take the `particles` array produced internally by `get_probabilities(...)`, run backtraces on each of those particles, and then plot the $x$–$z$ projections of all backtraced trajectories.
+We take the `particles` array produced internally by `get_probabilities(...)`, run backtraces on each of those particles, and then plot the $x–z$ projections of all backtraced trajectories.
 
  We normalize each trajectory’s probability to the maximum probability across all phase‐grid cells, and pass that normalized array to `alpha`, so that high‐probability trajectories appear more opaque and low‐probability trajectories more transparent.
 
