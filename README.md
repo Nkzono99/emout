@@ -34,9 +34,7 @@ When you run EMSES simulations, the results (e.g., potentials, densities, curren
     - [Backtrace Usage Examples (Experimental)](#backtrace-usage-examples-experimental)
       - [Install vdist-solver-fortran](#install-vdist-solver-fortran)
       - [Running backtrace on HPC computational nodes with Dask (\>= Python3.10)](#running-backtrace-on-hpc-computational-nodes-with-dask--python310)
-      - [1. Perform a batch backtrace and plot sampled trajectories](#1-perform-a-batch-backtrace-and-plot-sampled-trajectories)
-      - [2. Compute a velocity–space probability distribution and plot $v\_x$ vs $v\_z$](#2-compute-a-velocityspace-probability-distribution-and-plot-v_x-vs-v_z)
-      - [3. Backtrace using the particles from a previous probability calculation, then plot $x$–$z$ trajectories with probability as transparency](#3-backtrace-using-the-particles-from-a-previous-probability-calculation-then-plot-xz-trajectories-with-probability-as-transparency)
+      - [Backtrace using the particles from a previous probability calculation, then plot $x$–$z$ trajectories with probability as transparency](#backtrace-using-the-particles-from-a-previous-probability-calculation-then-plot-xz-trajectories-with-probability-as-transparency)
 
 Below, you will find usage examples that assume the following directory structure:
 
@@ -281,7 +279,8 @@ You can solve Poisson’s equation from 3D charge distributions using `emout.poi
 ```python
 import numpy as np
 import scipy.constants as cn
-from emout import Emout, poisson
+from emout import Emout
+from emout.utils import poisson
 
 data = Emout('output_dir')
 dx = data.inp.dx  # [m] Grid spacing
