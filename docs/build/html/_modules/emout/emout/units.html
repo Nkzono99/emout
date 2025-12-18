@@ -1,0 +1,231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.emout.units &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/emout.html">emout package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">emout.emout.units</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for emout.emout.units</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Callable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.constants</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">emout.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegexDict</span><span class="p">,</span> <span class="n">UnitTranslator</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">emout.facade</span><span class="w"> </span><span class="kn">import</span> <span class="n">Emout</span>
+
+
+
+<div class="viewcode-block" id="build_name2unit_mapping">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.build_name2unit_mapping">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_name2unit_mapping</span><span class="p">(</span><span class="n">max_ndp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegexDict</span><span class="p">:</span>
+    <span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">UnitTranslator</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">r</span><span class="s2">&quot;phisp&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;rhobk&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;j.*&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">J</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;b[xyz]&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">H</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;rb[xyz]&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">H</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;e[xyz]&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">E</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;re[xyz]&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">E</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_unit</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;axis&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;rhobksp[1-9]&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;nd[1-9]p&quot;</span><span class="p">:</span> <span class="n">ndp_unit</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">RegexDict</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="t_unit">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.t_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t_unit</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">Emout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnitTranslator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;tの単位変換器を生成する.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out : Emout</span>
+<span class="sd">        Emoutオブジェクト</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    UnitTranslator</span>
+<span class="sd">        tの単位変換器</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">t</span> <span class="o">*</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">ifdiag</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span>
+        <span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="wpet_unit">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.wpet_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wpet_unit</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">Emout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnitTranslator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;wpe * tの単位変換器を生成する.</span>
+
+<span class="sd">    以下のコードを実行することで、データのt軸をwpe*tで規格化できる.</span>
+
+<span class="sd">    &gt;&gt;&gt; Emout.name2unit[&#39;t&#39;] = wpet_unit</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out : Emout</span>
+<span class="sd">        Emoutオブジェクト</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    UnitTranslator</span>
+<span class="sd">        wpe * tの単位変換器</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">wp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">ifdiag</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;wpe * t&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="wpit_unit">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.wpit_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wpit_unit</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">Emout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnitTranslator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;wpi * tの単位変換器を生成する.</span>
+
+<span class="sd">    以下のコードを実行することで、データのt軸をwpe*tで規格化できる.</span>
+
+<span class="sd">    &gt;&gt;&gt; Emout.name2unit[&#39;t&#39;] = wpit_unit</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out : Emout</span>
+<span class="sd">        Emoutオブジェクト</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    UnitTranslator</span>
+<span class="sd">        wpi * tの単位変換器</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">wp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">ifdiag</span> <span class="o">*</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;wpi * t&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="none_unit">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.none_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">none_unit</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">Emout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnitTranslator</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ndp_unit">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.ndp_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ndp_unit</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">Emout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnitTranslator</span><span class="p">:</span>
+    <span class="n">wp</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">wp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">mp</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">cn</span><span class="o">.</span><span class="n">m_e</span> <span class="o">/</span> <span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">qm</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">np</span> <span class="o">=</span> <span class="n">wp</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">mp</span> <span class="o">*</span> <span class="n">cn</span><span class="o">.</span><span class="n">epsilon_0</span> <span class="o">/</span> <span class="n">cn</span><span class="o">.</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">np</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;number density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;/cc&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="nd3p_unit">
+<a class="viewcode-back" href="../../../api/emout.emout.html#emout.emout.units.nd3p_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nd3p_unit</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">Emout</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnitTranslator</span><span class="p">:</span>
+    <span class="n">wpp</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">wp</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">np</span> <span class="o">=</span> <span class="n">wpp</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cn</span><span class="o">.</span><span class="n">m_e</span> <span class="o">*</span> <span class="n">cn</span><span class="o">.</span><span class="n">epsilon_0</span> <span class="o">/</span> <span class="n">cn</span><span class="o">.</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">UnitTranslator</span><span class="p">(</span><span class="n">np</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;number density&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;/cc&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

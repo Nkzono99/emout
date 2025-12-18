@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.distributed package &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="emout.emout package" href="emout.emout.html" />
+    <link rel="prev" title="emout package" href="emout.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="emout.html">emout package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="emout.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">emout.distributed package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.distributed.client">emout.distributed.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.distributed.clusters">emout.distributed.clusters module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.distributed.config">emout.distributed.config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.distributed.utils">emout.distributed.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.distributed">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.html">emout.emout package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="emout.plot.html">emout.plot package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="emout.utils.html">emout.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.html#module-emout">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="emout.html">emout package</a></li>
+      <li class="breadcrumb-item active">emout.distributed package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/emout.distributed.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="emout-distributed-package">
+<h1>emout.distributed package<a class="headerlink" href="#emout-distributed-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-emout.distributed.client">
+<span id="emout-distributed-client-module"></span><h2>emout.distributed.client module<a class="headerlink" href="#module-emout.distributed.client" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.distributed.client.start_cluster">
+<span class="sig-prename descclassname"><span class="pre">emout.distributed.client.</span></span><span class="sig-name descname"><span class="pre">start_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scheduler_ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">walltime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_mods</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/client.html#start_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.client.start_cluster" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.distributed.client.stop_cluster">
+<span class="sig-prename descclassname"><span class="pre">emout.distributed.client.</span></span><span class="sig-name descname"><span class="pre">stop_cluster</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/client.html#stop_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.client.stop_cluster" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-emout.distributed.clusters">
+<span id="emout-distributed-clusters-module"></span><h2>emout.distributed.clusters module<a class="headerlink" href="#module-emout.distributed.clusters" title="Link to this heading"></a></h2>
+<p>simple_dask_cluster.py</p>
+<p>京大スパコン(SLURM)向けに、Python コードから
+- Dask Scheduler の起動
+- Dask Worker の sbatch 投入
+- Client 接続
+をすべて自動的に行えるようにするミニマルなラッパーライブラリです。</p>
+<p>使い方(例):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">simple_dask_cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleDaskCluster</span>
+
+<span class="c1"># クラスを生成</span>
+<span class="n">cluster</span> <span class="o">=</span> <span class="n">SimpleDaskCluster</span><span class="p">(</span>
+    <span class="n">scheduler_ip</span><span class="o">=</span><span class="s2">&quot;10.10.64.1&quot;</span><span class="p">,</span>
+    <span class="n">scheduler_port</span><span class="o">=</span><span class="mi">8786</span><span class="p">,</span>
+    <span class="n">partition</span><span class="o">=</span><span class="s2">&quot;gr20001a&quot;</span><span class="p">,</span>
+    <span class="n">processes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">memory</span><span class="o">=</span><span class="s2">&quot;4G&quot;</span><span class="p">,</span>
+    <span class="n">walltime</span><span class="o">=</span><span class="s2">&quot;01:00:00&quot;</span><span class="p">,</span>
+    <span class="n">env_mods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;module load Anaconda3&quot;</span><span class="p">,</span> <span class="s2">&quot;conda activate dask_env&quot;</span><span class="p">],</span>
+    <span class="n">logdir</span><span class="o">=</span><span class="s2">&quot;/home/b/b36291/large0/exp_dipole/logs&quot;</span><span class="p">,</span>
+    <span class="n">sbatch_extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># 追加 sbatch オプションがあればリストで渡す</span>
+<span class="p">)</span>
+
+<span class="c1"># Scheduler をバックグラウンドで起動</span>
+<span class="n">cluster</span><span class="o">.</span><span class="n">start_scheduler</span><span class="p">()</span>
+<span class="c1"># Worker を複数投入(ここでは 2 台)</span>
+<span class="n">cluster</span><span class="o">.</span><span class="n">submit_worker</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Client を取得して分散計算を実行</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">get_client</span><span class="p">()</span>
+<span class="c1"># ⇒ たとえば dask.array を使った処理を client.compute() で呼べる</span>
+
+<span class="c1"># 最後に後始末</span>
+<span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">cluster</span><span class="o">.</span><span class="n">stop_scheduler</span><span class="p">()</span>
+<span class="c1"># (SLURM ジョブ自体は SLURM の期限(walltime)が来るか、scancel で落とす)</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.distributed.clusters.SimpleDaskCluster">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.distributed.clusters.</span></span><span class="sig-name descname"><span class="pre">SimpleDaskCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scheduler_ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8786</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gr20001a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'4G'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">walltime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'01:00:00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_mods</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sbatch_extra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/clusters.html#SimpleDaskCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.clusters.SimpleDaskCluster" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Dask Scheduler と Worker(sbatch)を Python でまとめて管理するクラス。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.distributed.clusters.SimpleDaskCluster.close_client">
+<span class="sig-name descname"><span class="pre">close_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/clusters.html#SimpleDaskCluster.close_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.clusters.SimpleDaskCluster.close_client" title="Link to this definition"></a></dt>
+<dd><p>もし Client が生きていれば close する。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.distributed.clusters.SimpleDaskCluster.get_client">
+<span class="sig-name descname"><span class="pre">get_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/clusters.html#SimpleDaskCluster.get_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.clusters.SimpleDaskCluster.get_client" title="Link to this definition"></a></dt>
+<dd><p>dask.distributed.Client を返す。初回呼び出し時に実際に接続を試みる。
+Scheduler にワーカーがまだつながっていなくても、
+Client が自動的にリトライしてくれる設計です。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Client</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.distributed.clusters.SimpleDaskCluster.start_scheduler">
+<span class="sig-name descname"><span class="pre">start_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_dashboard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/clusters.html#SimpleDaskCluster.start_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.clusters.SimpleDaskCluster.start_scheduler" title="Link to this definition"></a></dt>
+<dd><p>バックグラウンドで dask-scheduler を立ち上げる。
+<cite>self._sched_proc</cite> に Popen オブジェクトを保持する。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.distributed.clusters.SimpleDaskCluster.stop_scheduler">
+<span class="sig-name descname"><span class="pre">stop_scheduler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/clusters.html#SimpleDaskCluster.stop_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.clusters.SimpleDaskCluster.stop_scheduler" title="Link to this definition"></a></dt>
+<dd><p>起動中の Scheduler を停止する (kill)。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.distributed.clusters.SimpleDaskCluster.submit_worker">
+<span class="sig-name descname"><span class="pre">submit_worker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/clusters.html#SimpleDaskCluster.submit_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.clusters.SimpleDaskCluster.submit_worker" title="Link to this definition"></a></dt>
+<dd><p>Worker (dask-worker) を sbatch で投げる。
+<cite>jobs</cite> の数だけ SLURM ジョブを投入し、それぞれの JOBID を返す。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.distributed.config">
+<span id="emout-distributed-config-module"></span><h2>emout.distributed.config module<a class="headerlink" href="#module-emout.distributed.config" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.distributed.config.</span></span><span class="sig-name descname"><span class="pre">DaskConfig</span></span><a class="reference internal" href="../_modules/emout/distributed/config.html#DaskConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.config.DaskConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.cores">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cores</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.cores" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.env_mods">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">env_mods</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.env_mods" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.logdir">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logdir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.logdir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.memory">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">memory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.memory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.partition">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">partition</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.partition" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.processes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">processes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.processes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.scheduler_ip">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scheduler_ip</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.scheduler_ip" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.scheduler_port">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scheduler_port</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.scheduler_port" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.threads">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">threads</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.threads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.distributed.config.DaskConfig.walltime">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">walltime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#emout.distributed.config.DaskConfig.walltime" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.distributed.utils">
+<span id="emout-distributed-utils-module"></span><h2>emout.distributed.utils module<a class="headerlink" href="#module-emout.distributed.utils" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.distributed.utils.run_backend">
+<span class="sig-prename descclassname"><span class="pre">emout.distributed.utils.</span></span><span class="sig-name descname"><span class="pre">run_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/distributed/utils.html#run_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.distributed.utils.run_backend" title="Link to this definition"></a></dt>
+<dd><ul class="simple">
+<li><p>compute=True: 即 execute(func) して結果を返す</p></li>
+<li><p>compute=False: Dask Future を返す (Client が無ければ即時実行して返す)</p></li>
+</ul>
+</dd></dl>
+
+</section>
+<section id="module-emout.distributed">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.distributed" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="emout.html" class="btn btn-neutral float-left" title="emout package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="emout.emout.html" class="btn btn-neutral float-right" title="emout.emout package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
