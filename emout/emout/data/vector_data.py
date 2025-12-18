@@ -71,8 +71,6 @@ class VectorData(utils.Group):
             Tuple[Union[float, str], Union[float, str], Union[float, str]], None
         ] = None,
         use_si: bool = True,
-        vmin: float = None,
-        vmax: float = None,
         **kwargs,
     ):
         """アニメーション描画処理を構築する.
@@ -89,18 +87,9 @@ class VectorData(utils.Group):
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         use_si : bool
             SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
-        vmin : float, optional
-            最小値, by default None
-        vmax : float, optional
-            最大値, by default None
         """
-        if vmin is None:
-            vmin = min(self.objs[0].min(), self.objs[1].min())
-        if vmax is None:
-            vmax = max(self.objs[0].max(), self.objs[1].max())
-
         updater = FrameUpdater(
-            self, axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+            self, axis, title, notitle, offsets, use_si, **kwargs
         )
 
         return updater
@@ -119,8 +108,6 @@ class VectorData(utils.Group):
             Tuple[Union[float, str], Union[float, str], Union[float, str]], None
         ] = None,
         use_si: bool = True,
-        vmin: float = None,
-        vmax: float = None,
         show: bool = False,
         savefilename: PathLike = None,
         to_html: bool = False,
@@ -229,7 +216,7 @@ class VectorData(utils.Group):
             action = "frames"
 
         updater = self.build_frame_updater(
-            axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+            axis, title, notitle, offsets, use_si, **kwargs
         )
 
         if action == "frames":

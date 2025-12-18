@@ -213,8 +213,6 @@ class FrameUpdater:
             Tuple[Union[float, str], Union[float, str], Union[float, str]], None
         ] = None,
         use_si: bool = True,
-        vmin: float = None,
-        vmax: float = None,
         **kwargs,
     ):
         if data.valunit is None:
@@ -223,21 +221,12 @@ class FrameUpdater:
         if title is None:
             title = data.name
 
-        if use_si:
-            vmin = vmin or data.valunit.reverse(data.min())
-            vmax = vmax or data.valunit.reverse(data.max())
-        else:
-            vmin = vmin or data.min()
-            vmax = vmax or data.max()
-
         self.data = data
         self.axis = axis
         self.title = title
         self.notitle = notitle
         self.offsets = offsets
         self.use_si = use_si
-        self.vmin = vmin
-        self.vmax = vmax
         self.kwargs = kwargs
 
     def __call__(self, i: int):
@@ -250,8 +239,6 @@ class FrameUpdater:
         notitle = self.notitle
         offsets = self.offsets
         use_si = self.use_si
-        vmin = self.vmin
-        vmax = self.vmax
         kwargs = self.kwargs
 
         # 指定した軸でスライス
@@ -287,8 +274,6 @@ class FrameUpdater:
             offsets2d = None
 
         val.plot(
-            vmin=vmin,
-            vmax=vmax,
             title=_title,
             use_si=use_si,
             offsets=offsets2d,
