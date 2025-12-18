@@ -246,7 +246,6 @@ class VectorData(utils.Group):
             interval=interval,
             repeat=repeat,
             to_html=to_html,
-            **kwargs,
         )
 
     def plot(
