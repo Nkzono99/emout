@@ -571,7 +571,6 @@ class Data(np.ndarray):
             interval=interval,
             repeat=repeat,
             to_html=to_html,
-            **kwargs,
         )
 
 

@@ -228,8 +228,6 @@ class VectorData(utils.Group):
             )
             action = "frames"
 
-        print(f"vector: {action}")
-
         updater = self.build_frame_updater(
             axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
         )
