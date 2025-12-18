@@ -414,8 +414,15 @@ class Data(np.ndarray):
         vmax : float, optional
             最大値, by default None
         """
+        if use_si:
+            vmin = vmin or self.valunit.reverse(self.min())
+            vmax = vmax or self.valunit.reverse(self.max())
+        else:
+            vmin = vmin or self.min()
+            vmax = vmax or self.max()
+        
         updater = FrameUpdater(
-            self, axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
+            self, axis, title, notitle, offsets, use_si, vmin=vmin, vmax=vmax, **kwargs
         )
 
         return updater
