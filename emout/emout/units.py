@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Callable
 
 import scipy.constants as cn
@@ -6,6 +8,7 @@ from emout.utils import RegexDict, UnitTranslator
 
 if TYPE_CHECKING:
     from emout.facade import Emout
+
 
 
 def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
@@ -27,7 +30,7 @@ def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
     return RegexDict(mapping)
 
 
-def t_unit(out: "Emout") -> UnitTranslator:
+def t_unit(out: Emout) -> UnitTranslator:
     """tの単位変換器を生成する.
 
     Parameters
@@ -45,7 +48,7 @@ def t_unit(out: "Emout") -> UnitTranslator:
     )
 
 
-def wpet_unit(out: "Emout") -> UnitTranslator:
+def wpet_unit(out: Emout) -> UnitTranslator:
     """wpe * tの単位変換器を生成する.
 
     以下のコードを実行することで、データのt軸をwpe*tで規格化できる.
@@ -67,7 +70,7 @@ def wpet_unit(out: "Emout") -> UnitTranslator:
     )
 
 
-def wpit_unit(out: "Emout") -> UnitTranslator:
+def wpit_unit(out: Emout) -> UnitTranslator:
     """wpi * tの単位変換器を生成する.
 
     以下のコードを実行することで、データのt軸をwpe*tで規格化できる.
@@ -89,18 +92,18 @@ def wpit_unit(out: "Emout") -> UnitTranslator:
     )
 
 
-def none_unit(out: "Emout") -> UnitTranslator:
+def none_unit(out: Emout) -> UnitTranslator:
     return UnitTranslator(1, 1, name="", unit="")
 
 
-def ndp_unit(out: "Emout") -> UnitTranslator:
+def ndp_unit(out: Emout) -> UnitTranslator:
     wp = out.unit.f.reverse(out.inp.wp[0])
     mp = abs(cn.m_e / out.inp.qm[0])
     np = wp**2 * mp * cn.epsilon_0 / cn.e**2
     return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")
 
 
-def nd3p_unit(out: "Emout") -> UnitTranslator:
+def nd3p_unit(out: Emout) -> UnitTranslator:
     wpp = out.unit.f.reverse(out.inp.wp[2])
     np = wpp**2 * cn.m_e * cn.epsilon_0 / cn.e**2
     return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")
