@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.plot.plot_cross_sections &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/emout.html">emout package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">emout.plot.plot_cross_sections</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for emout.plot.plot_cross_sections</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="plot_cross_sections">
+<a class="viewcode-back" href="../../../api/emout.plot.html#emout.plot.plot_cross_sections.plot_cross_sections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_cross_sections</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="n">coord</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_si</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot boundaries (spheres, flat surfaces, rectangle holes) sliced by plane axis=coord.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : object</span>
+<span class="sd">        Must have `inp.boundary_type`, `inp.boundary_types`, and relevant params.</span>
+<span class="sd">    axis : {&#39;x&#39;,&#39;y&#39;,&#39;z&#39;}</span>
+<span class="sd">        Normal of slicing plane.</span>
+<span class="sd">    coord : float</span>
+<span class="sd">        Coordinate along `axis` of the slicing plane.</span>
+<span class="sd">    ax : matplotlib.axes.Axes, optional</span>
+<span class="sd">        Axes to draw on.</span>
+<span class="sd">    kwargs</span>
+<span class="sd">        Passed to individual plot functions for styling.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax : matplotlib.axes.Axes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Early exit if no complex boundaries</span>
+    <span class="n">inp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;inp&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inp</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="s2">&quot;boundary_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;complex&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ax</span> <span class="ow">or</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="c1"># Prepare axes</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span> <span class="ow">or</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+        <span class="n">coord</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+
+    <span class="c1"># Dispatch table for boundary types</span>
+    <span class="n">handlers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;sphere&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">ib</span><span class="p">:</span> <span class="n">_handle_sphere</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">ib</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">use_si</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;flat-surface&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">ib</span><span class="p">:</span> <span class="n">_handle_flat</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">use_si</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;rectangle-hole&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">ib</span><span class="p">:</span> <span class="n">_handle_rect</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">use_si</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">ib</span><span class="p">,</span> <span class="n">btype</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">boundary_types</span> <span class="ow">or</span> <span class="p">[]):</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">btype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">handler</span><span class="p">:</span>
+            <span class="n">handler</span><span class="p">(</span><span class="n">ib</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_handle_sphere</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">ib</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coord</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">use_si</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot sphere cross-section.&quot;&quot;&quot;</span>
+    <span class="n">nml</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">nml</span><span class="p">[</span><span class="s2">&quot;ptcond&quot;</span><span class="p">]</span>
+    <span class="n">si</span> <span class="o">=</span> <span class="n">nml</span><span class="o">.</span><span class="n">start_index</span><span class="p">[</span><span class="s2">&quot;sphere_origin&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">ib</span> <span class="o">-</span> <span class="p">(</span><span class="n">si</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># fetch and convert</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">sphere_origin</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+    <span class="n">radius</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">sphere_radius</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+    <span class="c1"># unit conversion</span>
+    <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">center</span><span class="p">)</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+    <span class="c1"># delegate to generic sphere plotter</span>
+    <span class="n">_plot_spheres</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(([</span><span class="n">center</span><span class="p">],</span> <span class="p">[</span><span class="n">radius</span><span class="p">])),</span> <span class="n">axis</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_handle_flat</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coord</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">use_si</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot flat-surface boundary (horizontal).&quot;&quot;&quot;</span>
+    <span class="n">zs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">inp</span><span class="o">.</span><span class="n">zssurf</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
+        <span class="k">return</span>  <span class="c1"># no-op for z plane</span>
+    <span class="c1"># For x/y slice, draw horizontal line in 2D plot coords</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span> <span class="ow">or</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_handle_rect</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coord</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">use_si</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a rectangular hole cross-section.&quot;&quot;&quot;</span>
+    <span class="n">inp</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">inp</span>
+    <span class="c1"># bounds in model units</span>
+    <span class="n">xl</span><span class="p">,</span> <span class="n">xu</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">xlrechole</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">inp</span><span class="o">.</span><span class="n">xurechole</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">yl</span><span class="p">,</span> <span class="n">yu</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">ylrechole</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">inp</span><span class="o">.</span><span class="n">yurechole</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">zl</span><span class="p">,</span> <span class="n">zu</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">zlrechole</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">inp</span><span class="o">.</span><span class="n">zurechole</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="n">inp</span><span class="o">.</span><span class="n">ny</span>
+
+    <span class="c1"># convert to physical units</span>
+    <span class="k">if</span> <span class="n">use_si</span><span class="p">:</span>
+        <span class="n">to_phys</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">reverse</span>
+        <span class="n">xl</span><span class="p">,</span> <span class="n">xu</span><span class="p">,</span> <span class="n">yl</span><span class="p">,</span> <span class="n">yu</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">to_phys</span><span class="p">,</span> <span class="p">(</span><span class="n">xl</span><span class="p">,</span> <span class="n">xu</span><span class="p">,</span> <span class="n">yl</span><span class="p">,</span> <span class="n">yu</span><span class="p">))</span>
+        <span class="n">zl</span><span class="p">,</span> <span class="n">zu</span> <span class="o">=</span> <span class="n">to_phys</span><span class="p">(</span><span class="n">zl</span><span class="p">),</span> <span class="n">to_phys</span><span class="p">(</span><span class="n">zu</span><span class="p">)</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">to_phys</span><span class="p">(</span><span class="n">nx</span><span class="p">),</span> <span class="n">to_phys</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span>
+
+    <span class="c1"># prepare coords</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span> <span class="ow">and</span> <span class="n">xl</span> <span class="o">&lt;=</span> <span class="n">coord</span> <span class="o">&lt;=</span> <span class="n">xu</span><span class="p">:</span>
+        <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">yl</span><span class="p">,</span> <span class="n">yl</span><span class="p">,</span> <span class="n">yu</span><span class="p">,</span> <span class="n">yu</span><span class="p">,</span> <span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">zu</span><span class="p">,</span> <span class="n">zu</span><span class="p">,</span> <span class="n">zl</span><span class="p">,</span> <span class="n">zl</span><span class="p">,</span> <span class="n">zu</span><span class="p">,</span> <span class="n">zu</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span> <span class="ow">and</span> <span class="n">yl</span> <span class="o">&lt;=</span> <span class="n">coord</span> <span class="o">&lt;=</span> <span class="n">yu</span><span class="p">:</span>
+        <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">xl</span><span class="p">,</span> <span class="n">xl</span><span class="p">,</span> <span class="n">xu</span><span class="p">,</span> <span class="n">xu</span><span class="p">,</span> <span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">zu</span><span class="p">,</span> <span class="n">zu</span><span class="p">,</span> <span class="n">zl</span><span class="p">,</span> <span class="n">zl</span><span class="p">,</span> <span class="n">zu</span><span class="p">,</span> <span class="n">zu</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span> <span class="ow">and</span> <span class="n">zl</span> <span class="o">&lt;=</span> <span class="n">coord</span> <span class="o">&lt;=</span> <span class="n">zu</span><span class="p">:</span>
+        <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xl</span><span class="p">,</span> <span class="n">xl</span><span class="p">,</span> <span class="n">xu</span><span class="p">,</span> <span class="n">xu</span><span class="p">,</span> <span class="n">xl</span><span class="p">])</span>
+        <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">yl</span><span class="p">,</span> <span class="n">yu</span><span class="p">,</span> <span class="n">yu</span><span class="p">,</span> <span class="n">yl</span><span class="p">,</span> <span class="n">yl</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_spheres</span><span class="p">(</span>
+    <span class="n">spheres</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="n">coord</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generic sphere cross-section plotter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spheres : sequence of (xc, yc, zc, r)</span>
+<span class="sd">    axis : {&#39;x&#39;,&#39;y&#39;,&#39;z&#39;}</span>
+<span class="sd">    coord : float</span>
+<span class="sd">    ax : Axes, optional</span>
+<span class="sd">    kwargs : passed to Circle patch</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax : Axes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span> <span class="ow">or</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="c1"># map axis to index and remaining axes</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}[</span><span class="n">axis</span><span class="p">]</span>
+    <span class="n">other</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">xc</span><span class="p">,</span> <span class="n">yc</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">spheres</span><span class="p">):</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">xc</span><span class="p">,</span> <span class="n">yc</span><span class="p">,</span> <span class="n">zc</span><span class="p">),</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">center</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">coord</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">r</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">rr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">d</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">cxy</span> <span class="o">=</span> <span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="n">other</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">center</span><span class="p">[</span><span class="n">other</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">circle</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">(</span><span class="n">cxy</span><span class="p">,</span> <span class="n">rr</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">circle</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,421 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.emout.backtrace package &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="emout.emout.data package" href="emout.emout.data.html" />
+    <link rel="prev" title="emout.emout package" href="emout.emout.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="emout.html">emout package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="emout.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="emout.distributed.html">emout.distributed package</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="emout.emout.html">emout.emout package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="emout.emout.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.html#module-emout.emout.extraction">emout.emout.extraction module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.html#module-emout.emout.facade">emout.emout.facade module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.html#module-emout.emout.units">emout.emout.units module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.html#module-emout.emout">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.plot.html">emout.plot package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="emout.utils.html">emout.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.html#module-emout">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="emout.html">emout package</a></li>
+          <li class="breadcrumb-item"><a href="emout.emout.html">emout.emout package</a></li>
+      <li class="breadcrumb-item active">emout.emout.backtrace package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/emout.emout.backtrace.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="emout-emout-backtrace-package">
+<h1>emout.emout.backtrace package<a class="headerlink" href="#emout-emout-backtrace-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-emout.emout.backtrace.backtrace_result">
+<span id="emout-emout-backtrace-backtrace-result-module"></span><h2>emout.emout.backtrace.backtrace_result module<a class="headerlink" href="#module-emout.emout.backtrace.backtrace_result" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.backtrace_result.BacktraceResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.backtrace_result.</span></span><span class="sig-name descname"><span class="pre">BacktraceResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probability</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/backtrace_result.html#BacktraceResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.backtrace_result.BacktraceResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>get_backtrace の返り値をまとめて管理するクラス。
+- ts           : shape = (N_steps,)
+- probability  : shape = (N_steps,)
+- positions    : shape = (N_steps, 3)  # (x, y, z)
+- velocities   : shape = (N_steps, 3)  # (vx, vy, vz)</p>
+<p>以下の方法でアクセス・可視化できます：</p>
+<blockquote>
+<div><dl class="simple">
+<dt>ts, prob, pos, vel = result</dt><dd><p>→ タプルアンパック</p>
+</dd>
+<dt>result.pair(“x”, “y”).plot()</dt><dd><p>→ x vs y</p>
+</dd>
+<dt>result.pair(“t”, “x”).plot()</dt><dd><p>→ t vs x</p>
+</dd>
+<dt>result.tx.plot()</dt><dd><p>→ x軸に t, y軸に x (= pair(“t”,”x”) と同義)</p>
+</dd>
+<dt>result.yvz.plot()</dt><dd><p>→ y vs vz (= pair(“y”,”vz”))</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.backtrace_result.BacktraceResult.pair">
+<span class="sig-name descname"><span class="pre">pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/backtrace_result.html#BacktraceResult.pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.backtrace_result.BacktraceResult.pair" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#emout.emout.backtrace.xy_data.XYData" title="emout.emout.backtrace.xy_data.XYData"><code class="xref py py-class docutils literal notranslate"><span class="pre">XYData</span></code></a></span></p>
+</dd>
+</dl>
+<p>任意 2 変数を取り出し、XYData を返す。
+var1, var2 は以下のいずれか：</p>
+<blockquote>
+<div><p>‘t’, ‘x’, ‘y’, ‘z’, ‘vx’, ‘vy’, ‘vz’</p>
+</div></blockquote>
+<dl class="simple">
+<dt>例:</dt><dd><p>result.pair(“x”, “y”)     → x vs y
+result.pair(“t”, “x”)     → t vs x
+result.pair(“z”, “vy”)    → z vs vy</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.backtrace.multi_backtrace_result">
+<span id="emout-emout-backtrace-multi-backtrace-result-module"></span><h2>emout.emout.backtrace.multi_backtrace_result module<a class="headerlink" href="#module-emout.emout.backtrace.multi_backtrace_result" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.multi_backtrace_result.</span></span><span class="sig-name descname"><span class="pre">MultiBacktraceResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probabilities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocities_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_indexes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/multi_backtrace_result.html#MultiBacktraceResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>get_backtraces の返り値をまとめて管理するクラス。</p>
+<ul class="simple">
+<li><p>ts_list         : shape = (N_traj, N_steps)</p></li>
+<li><p>probabilities   : shape = (N_traj,)</p></li>
+<li><p>positions_list  : shape = (N_traj, N_steps, 3)</p></li>
+<li><p>velocities_list : shape = (N_traj, N_steps, 3)</p></li>
+<li><p>last_indexes    : shape = (N_traj,)</p></li>
+</ul>
+<p>以下の方法でアクセス・可視化できます：</p>
+<blockquote>
+<div><p>ts_list, probs, pos_list, vel_list = result   # タプルアンパック</p>
+<p># 任意の 2 変数ペア (var1, var2) を MultiXYData で取得
+result.pair(“x”, “y”)    → 各 trajectory の x vs y
+result.pair(“t”, “x”)    → 各 trajectory の t vs x
+result.tvx               → pair(“t”,”vx”) 省略形
+result.yvz               → pair(“y”,”vz”)</p>
+<p># サンプリング: ランダムまたはインデックス指定
+result.sample(10)        → ランダムに 10 本だけ抽出
+result.sample([0,2,5])   → インデックス 0, 2, 5 の 3 本だけ抽出</p>
+<p># プロット
+result.yvz.plot()</p>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult.pair">
+<span class="sig-name descname"><span class="pre">pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/multi_backtrace_result.html#MultiBacktraceResult.pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult.pair" title="Link to this definition"></a></dt>
+<dd><p>任意の 2 変数を取り出し、MultiXYData を返す。
+var1, var2 は ‘t’,’x’,’y’,’z’,’vx’,’vy’,’vz’ のいずれか。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#emout.emout.backtrace.xy_data.MultiXYData" title="emout.emout.backtrace.xy_data.MultiXYData"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiXYData</span></code></a></span></p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>例:</dt><dd><p>result.pair(“x”,”y”)     → 各 trajectory の x vs y
+result.pair(“t”,”x”)     → 各 trajectory の t vs x
+result.tvy               → pair(“t”,”vy”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/multi_backtrace_result.html#MultiBacktraceResult.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult.sample" title="Link to this definition"></a></dt>
+<dd><p>ランダム／インデックス指定で一部トラジェクトリを抽出し、新しい MultiBacktraceResult を返す。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indices</strong> (<em>Sequence</em><em>[</em><em>int</em><em>]</em><em>, </em><em>range</em><em>, </em><em>slice</em>) – 正の整数 k を渡すと「全 N_traj 本からランダムに k 本抽出」。</p></li>
+<li><p><strong>indices</strong> – int のリスト／range／slice を渡すと「指定されたインデックス群だけ抽出」。</p></li>
+<li><p><strong>random_state</strong> (<em>int</em><em>, </em><em>optional</em>) – ランダムサンプリングのシード</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult" title="emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiBacktraceResult</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.backtrace.probability_result">
+<span id="emout-emout-backtrace-probability-result-module"></span><h2>emout.emout.backtrace.probability_result module<a class="headerlink" href="#module-emout.emout.backtrace.probability_result" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.probability_result.HeatmapData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.probability_result.</span></span><span class="sig-name descname"><span class="pre">HeatmapData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Heatmap'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/probability_result.html#HeatmapData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.probability_result.HeatmapData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>2D グリッド上の値を保持し、pcolormesh で描画するヘルパークラス。
+X, Y, Z はすべて 2D numpy.ndarray で同じ形状である必要があります。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.probability_result.HeatmapData.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">plot_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/probability_result.html#HeatmapData.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.probability_result.HeatmapData.plot" title="Link to this definition"></a></dt>
+<dd><p>pcolormesh によるヒートマップを描画する。
+- ax: matplotlib.axes.Axes を渡すか、None の場合は新規 Figure/Axes を作成
+- cmap: カラーマップ（例：’viridis’, ‘plasma’, etc.）
+- plot_kwargs: pcolormesh に渡す追加キーワード (例：shading=”auto”)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.probability_result.ProbabilityResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.probability_result.</span></span><span class="sig-name descname"><span class="pre">ProbabilityResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phases</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probabilities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/probability_result.html#ProbabilityResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.probability_result.ProbabilityResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>get_probabilities が返す結果をまとめるクラス。
+任意の 2 変数平面 (var1, var2) に対して HeatmapData を返す。
+内部では 6 次元グリッドを保存し、任意の2軸を切り出して可視化可能。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.probability_result.ProbabilityResult.energy_spectrum">
+<span class="sig-name descname"><span class="pre">energy_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">energy_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/probability_result.html#ProbabilityResult.energy_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.probability_result.ProbabilityResult.energy_spectrum" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.probability_result.ProbabilityResult.pair">
+<span class="sig-name descname"><span class="pre">pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/probability_result.html#ProbabilityResult.pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.probability_result.ProbabilityResult.pair" title="Link to this definition"></a></dt>
+<dd><p>任意の 2 変数 (var1, var2) を取り出し、HeatmapData を返す。
+var1, var2 は ‘x’,’y’,’z’,’vx’,’vy’,’vz’ のいずれか。</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#emout.emout.backtrace.probability_result.HeatmapData" title="emout.emout.backtrace.probability_result.HeatmapData"><code class="xref py py-class docutils literal notranslate"><span class="pre">HeatmapData</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.probability_result.ProbabilityResult.plot_energy_spectrum">
+<span class="sig-name descname"><span class="pre">plot_energy_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">energy_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/probability_result.html#ProbabilityResult.plot_energy_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.probability_result.ProbabilityResult.plot_energy_spectrum" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.backtrace.solver_wrapper">
+<span id="emout-emout-backtrace-solver-wrapper-module"></span><h2>emout.emout.backtrace.solver_wrapper module<a class="headerlink" href="#module-emout.emout.backtrace.solver_wrapper" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.solver_wrapper.</span></span><span class="sig-name descname"><span class="pre">BacktraceWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtrace">
+<span class="sig-name descname"><span class="pre">get_backtrace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">istep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adaptive_dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper.get_backtrace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtrace" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtraces">
+<span class="sig-name descname"><span class="pre">get_backtraces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">istep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adaptive_dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper.get_backtraces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtraces" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtraces_from_particles">
+<span class="sig-name descname"><span class="pre">get_backtraces_from_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">istep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adaptive_dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper.get_backtraces_from_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtraces_from_particles" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities">
+<span class="sig-name descname"><span class="pre">get_probabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">istep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adaptive_dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper.get_probabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#emout.emout.backtrace.probability_result.ProbabilityResult" title="emout.emout.backtrace.probability_result.ProbabilityResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProbabilityResult</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities_from_array">
+<span class="sig-name descname"><span class="pre">get_probabilities_from_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">istep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adaptive_dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper.get_probabilities_from_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities_from_array" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities_from_particles">
+<span class="sig-name descname"><span class="pre">get_probabilities_from_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">istep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adaptive_dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/solver_wrapper.html#BacktraceWrapper.get_probabilities_from_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities_from_particles" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.backtrace.xy_data">
+<span id="emout-emout-backtrace-xy-data-module"></span><h2>emout.emout.backtrace.xy_data module<a class="headerlink" href="#module-emout.emout.backtrace.xy_data" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.xy_data.MultiXYData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.xy_data.</span></span><span class="sig-name descname"><span class="pre">MultiXYData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_indexes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/xy_data.html#MultiXYData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.xy_data.MultiXYData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>複数シリーズ (x[i,:], y[i,:]) を保持し、plot() で全シリーズをプロットするヘルパークラス。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.xy_data.MultiXYData.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">plot_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/xy_data.html#MultiXYData.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.xy_data.MultiXYData.plot" title="Link to this definition"></a></dt>
+<dd><p>複数シリーズを重ねて折れ線プロットする。
+- ax: matplotlib.axes.Axes を渡すとその上にプロット
+- plot_kwargs: matplotlib.pyplot.plot に渡す追加キーワード</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>color, linestyle, label, etc.</p></li>
+<li><p>alpha: スカラー値 OR 各系列ごと (長さ N_series の 1D array)</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.backtrace.xy_data.XYData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.backtrace.xy_data.</span></span><span class="sig-name descname"><span class="pre">XYData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/xy_data.html#XYData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.xy_data.XYData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>単一シリーズ (x, y) を保持し、plot() で x vs y を描くヘルパークラス。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.backtrace.xy_data.XYData.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">plot_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/backtrace/xy_data.html#XYData.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.backtrace.xy_data.XYData.plot" title="Link to this definition"></a></dt>
+<dd><p>折れ線プロット: x vs y
+- ax: matplotlib.axes.Axes を渡すとその上にプロット
+- plot_kwargs: matplotlib.pyplot.plot に渡すキーワード (例: color, linestyle, label, alpha, など)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.backtrace">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.emout.backtrace" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="emout.emout.html" class="btn btn-neutral float-left" title="emout.emout package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="emout.emout.data.html" class="btn btn-neutral float-right" title="emout.emout.data package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

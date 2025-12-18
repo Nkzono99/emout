@@ -1,0 +1,455 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.distributed.clusters &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/emout.html">emout package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">emout.distributed.clusters</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for emout.distributed.clusters</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">simple_dask_cluster.py</span>
+
+<span class="sd">京大スパコン(SLURM)向けに、Python コードから</span>
+<span class="sd">- Dask Scheduler の起動</span>
+<span class="sd">- Dask Worker の sbatch 投入</span>
+<span class="sd">- Client 接続</span>
+<span class="sd">をすべて自動的に行えるようにするミニマルなラッパーライブラリです。</span>
+
+<span class="sd">使い方(例):</span>
+
+<span class="sd">.. code-block:: python</span>
+
+<span class="sd">    from simple_dask_cluster import SimpleDaskCluster</span>
+
+<span class="sd">    # クラスを生成</span>
+<span class="sd">    cluster = SimpleDaskCluster(</span>
+<span class="sd">        scheduler_ip=&quot;10.10.64.1&quot;,</span>
+<span class="sd">        scheduler_port=8786,</span>
+<span class="sd">        partition=&quot;gr20001a&quot;,</span>
+<span class="sd">        processes=1,</span>
+<span class="sd">        threads=1,</span>
+<span class="sd">        cores=1,</span>
+<span class="sd">        memory=&quot;4G&quot;,</span>
+<span class="sd">        walltime=&quot;01:00:00&quot;,</span>
+<span class="sd">        env_mods=[&quot;module load Anaconda3&quot;, &quot;conda activate dask_env&quot;],</span>
+<span class="sd">        logdir=&quot;/home/b/b36291/large0/exp_dipole/logs&quot;,</span>
+<span class="sd">        sbatch_extra=None,  # 追加 sbatch オプションがあればリストで渡す</span>
+<span class="sd">    )</span>
+
+<span class="sd">    # Scheduler をバックグラウンドで起動</span>
+<span class="sd">    cluster.start_scheduler()</span>
+<span class="sd">    # Worker を複数投入(ここでは 2 台)</span>
+<span class="sd">    cluster.submit_worker(jobs=2)</span>
+<span class="sd">    # Client を取得して分散計算を実行</span>
+<span class="sd">    client = cluster.get_client()</span>
+<span class="sd">    # ⇒ たとえば dask.array を使った処理を client.compute() で呼べる</span>
+
+<span class="sd">    # 最後に後始末</span>
+<span class="sd">    client.close()</span>
+<span class="sd">    cluster.stop_scheduler()</span>
+<span class="sd">    # (SLURM ジョブ自体は SLURM の期限(walltime)が来るか、scancel で落とす)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dask.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span>
+
+
+<div class="viewcode-block" id="SimpleDaskCluster">
+<a class="viewcode-back" href="../../../api/emout.distributed.html#emout.distributed.clusters.SimpleDaskCluster">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleDaskCluster</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dask Scheduler と Worker(sbatch)を Python でまとめて管理するクラス。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">scheduler_ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">scheduler_port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8786</span><span class="p">,</span>
+        <span class="n">partition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gr20001a&quot;</span><span class="p">,</span>
+        <span class="n">processes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">memory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;4G&quot;</span><span class="p">,</span>
+        <span class="n">walltime</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;01:00:00&quot;</span><span class="p">,</span>
+        <span class="n">env_mods</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">logdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sbatch_extra</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scheduler_ip : str</span>
+<span class="sd">            Dask Scheduler を bind する計算ノードの IP アドレス</span>
+<span class="sd">        scheduler_port : int, default=8786</span>
+<span class="sd">            Dask Scheduler が待ち受ける TCP ポート番号</span>
+<span class="sd">        partition : str, default=&quot;gr20001a&quot;</span>
+<span class="sd">            SLURM のパーティション名(例: &quot;gr20001a&quot; など)</span>
+<span class="sd">        processes : int, default=1</span>
+<span class="sd">            sbatch で投げる dask-worker の「プロセス数」(p=… に対応)</span>
+<span class="sd">        threads : int, default=1</span>
+<span class="sd">            dask-worker の --nthreads に対応</span>
+<span class="sd">        cores : int, default=1</span>
+<span class="sd">            sbatch のリソース指定 c=… に対応</span>
+<span class="sd">        memory : str, default=&quot;4G&quot;</span>
+<span class="sd">            sbatch のリソース指定 m=… に対応 (例: &quot;4G&quot;, &quot;8000M&quot; など)</span>
+<span class="sd">        walltime : str, default=&quot;01:00:00&quot;</span>
+<span class="sd">            sbatch の実行時間 (hh:mm:ss)</span>
+<span class="sd">        env_mods : list[str] | None, default=None</span>
+<span class="sd">            ジョブ実行時に実行するシェルコマンド(例: [&quot;module load Anaconda3&quot;, &quot;conda activate dask_env&quot;])</span>
+<span class="sd">        logdir : str | Path | None, default=None</span>
+<span class="sd">            SLURM ジョブの標準出力・標準エラーを置くディレクトリ。</span>
+<span class="sd">            None の場合はカレントディレクトリ</span>
+<span class="sd">        sbatch_extra : list[str] | None, default=None</span>
+<span class="sd">            sbatch に追加で渡したいオプション (例: [&quot;--mem-per-cpu=2000M&quot;])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_ip</span> <span class="o">=</span> <span class="n">scheduler_ip</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_port</span> <span class="o">=</span> <span class="n">scheduler_port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">partition</span> <span class="o">=</span> <span class="n">partition</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processes</span> <span class="o">=</span> <span class="n">processes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threads</span> <span class="o">=</span> <span class="n">threads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cores</span> <span class="o">=</span> <span class="n">cores</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">walltime</span> <span class="o">=</span> <span class="n">walltime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_mods</span> <span class="o">=</span> <span class="n">env_mods</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sbatch_extra</span> <span class="o">=</span> <span class="n">sbatch_extra</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="c1"># ログディレクトリ</span>
+        <span class="k">if</span> <span class="n">logdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logdir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;dask_logs&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logdir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">logdir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logdir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Scheduler プロセス (subprocess.Popen)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="p">:</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># 現在投入した Worker ジョブの JOB ID を保持</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_job_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Client オブジェクト (後で生成)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="p">:</span> <span class="n">Client</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SimpleDaskCluster.start_scheduler">
+<a class="viewcode-back" href="../../../api/emout.distributed.html#emout.distributed.clusters.SimpleDaskCluster.start_scheduler">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">no_dashboard</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        バックグラウンドで dask-scheduler を立ち上げる。</span>
+<span class="sd">        `self._sched_proc` に Popen オブジェクトを保持する。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># すでに起動中</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Scheduler is already running.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;dask&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;scheduler&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;--host&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_ip</span><span class="p">,</span>
+            <span class="s2">&quot;--port&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_port</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">no_dashboard</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--no-dashboard&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 出力をログファイルに書き出す</span>
+        <span class="n">sched_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logdir</span> <span class="o">/</span> <span class="s2">&quot;scheduler.out&quot;</span>
+        <span class="n">sched_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logdir</span> <span class="o">/</span> <span class="s2">&quot;scheduler.err&quot;</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[SimpleDaskCluster] Starting scheduler: </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sched_out</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">sched_err</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fe</span><span class="p">:</span>
+            <span class="c1"># Popen でバックグラウンド起動</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+                <span class="n">cmd</span><span class="p">,</span>
+                <span class="n">stdout</span><span class="o">=</span><span class="n">fo</span><span class="p">,</span>
+                <span class="n">stderr</span><span class="o">=</span><span class="n">fe</span><span class="p">,</span>
+                <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">bufsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># 少し待って、起動できたかチェック</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Scheduler failed to start. See </span><span class="si">{</span><span class="n">sched_err</span><span class="si">}</span><span class="s2"> for details.&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Scheduler started successfully.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleDaskCluster.stop_scheduler">
+<a class="viewcode-back" href="../../../api/emout.distributed.html#emout.distributed.clusters.SimpleDaskCluster.stop_scheduler">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        起動中の Scheduler を停止する (kill)。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] No scheduler process to stop.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Scheduler is not running.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[SimpleDaskCluster] Terminating scheduler (pid=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2">) ...&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Scheduler terminated.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Scheduler did not exit; killing ...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Scheduler killed.&quot;</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="SimpleDaskCluster.submit_worker">
+<a class="viewcode-back" href="../../../api/emout.distributed.html#emout.distributed.clusters.SimpleDaskCluster.submit_worker">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Worker (dask-worker) を sbatch で投げる。</span>
+<span class="sd">        `jobs` の数だけ SLURM ジョブを投入し、それぞれの JOBID を返す。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Scheduler is not running. Call start_scheduler() first.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">new_job_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">jobs</span><span class="p">):</span>
+            <span class="c1"># sbatch 用スクリプトを一時ディレクトリに書き出す</span>
+            <span class="n">sbatch_script</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_worker_script</span><span class="p">()</span>
+            <span class="n">job_submit_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sbatch&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">sbatch_script</span><span class="p">)]</span>
+            <span class="c1"># 環境変数 DASK_SCHED_IP を与えて sbatch する</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">env</span><span class="p">[</span><span class="s2">&quot;DASK_SCHED_IP&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_ip</span>
+
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[SimpleDaskCluster] Submitting worker job: </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">job_submit_cmd</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">completed</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="n">job_submit_cmd</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">completed</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sbatch failed: </span><span class="si">{</span><span class="n">completed</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># sbatch から返ってくる標準出力例: &quot;Submitted batch job 123456&quot;</span>
+            <span class="n">stdout</span> <span class="o">=</span> <span class="n">completed</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">stdout</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">job_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Could not parse job ID from sbatch output: </span><span class="si">{</span><span class="n">stdout</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[SimpleDaskCluster] Worker job submitted; JOBID=</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">new_job_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_job_ids</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_job_ids</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_job_ids</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_worker_script</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Worker 用の sbatch スクリプトをテンポラリファイルとして書き出す。</span>
+<span class="sd">        返り値はスクリプトファイルのパス (Path)。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">script_lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># ヘッダー</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;#!/bin/bash&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#SBATCH -p </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">partition</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;#SBATCH --rsc p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">processes</span><span class="si">}</span><span class="s2">:t=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="si">}</span><span class="s2">:c=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cores</span><span class="si">}</span><span class="s2">:m=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#SBATCH -t </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">walltime</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#SBATCH -J dask-worker&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#SBATCH -o </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">logdir</span><span class="si">}</span><span class="s2">/worker_%J.out&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;#SBATCH -e </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">logdir</span><span class="si">}</span><span class="s2">/worker_%J.err&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 追加 sbatch オプションがあれば</span>
+        <span class="k">for</span> <span class="n">extra</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sbatch_extra</span><span class="p">:</span>
+            <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">extra</span><span class="p">)</span>
+
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># 空行</span>
+
+        <span class="c1"># 環境モジュールや conda activate</span>
+        <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_mods</span><span class="p">:</span>
+            <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># 空行</span>
+
+        <span class="c1"># Scheduler の IP は環境変数 DASK_SCHED_IP から読む</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;HOST=$</span><span class="si">{DASK_SCHED_IP}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PORT=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># dask-worker コマンド本体</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;dask worker tcp://$</span><span class="si">{HOST}</span><span class="s2">:$</span><span class="si">{PORT}</span><span class="s2"> </span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    --nthreads </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">threads</span><span class="si">}</span><span class="s2"> </span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    --no-dashboard --memory-limit </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 最後に日付表示しておく</span>
+        <span class="n">script_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">)</span>
+
+        <span class="c1"># ファイルに書き出し</span>
+        <span class="n">tmpdir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/tmp/simple_dask_workers&quot;</span><span class="p">)</span>
+        <span class="n">tmpdir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># 一意のファイル名を作成</span>
+        <span class="n">script_path</span> <span class="o">=</span> <span class="n">tmpdir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;worker_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span><span class="si">}</span><span class="s2">.sh&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">script_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_lines</span><span class="p">))</span>
+
+        <span class="c1"># sbatch で実行できるように実行権限を付与</span>
+        <span class="n">script_path</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="mo">0o744</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">script_path</span>
+
+<div class="viewcode-block" id="SimpleDaskCluster.get_client">
+<a class="viewcode-back" href="../../../api/emout.distributed.html#emout.distributed.clusters.SimpleDaskCluster.get_client">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">30.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Client</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        dask.distributed.Client を返す。初回呼び出し時に実際に接続を試みる。</span>
+<span class="sd">        Scheduler にワーカーがまだつながっていなくても、</span>
+<span class="sd">        Client が自動的にリトライしてくれる設計です。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_proc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Scheduler is not running.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span>
+
+        <span class="n">sched_addr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;tcp://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_port</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[SimpleDaskCluster] Connecting Dask Client to </span><span class="si">{</span><span class="n">sched_addr</span><span class="si">}</span><span class="s2"> ...&quot;</span><span class="p">)</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">sched_addr</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+                <span class="k">if</span> <span class="n">elapsed</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Could not connect to scheduler at </span><span class="si">{</span><span class="n">sched_addr</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="s2">&quot;[SimpleDaskCluster] Waiting for scheduler to accept connections ...&quot;</span>
+                <span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SimpleDaskCluster] Dask Client connected.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span></div>
+
+
+<div class="viewcode-block" id="SimpleDaskCluster.close_client">
+<a class="viewcode-back" href="../../../api/emout.distributed.html#emout.distributed.clusters.SimpleDaskCluster.close_client">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        もし Client が生きていれば close する。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="kc">None</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

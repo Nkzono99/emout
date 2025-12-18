@@ -1,0 +1,560 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.emout package &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="emout.emout.backtrace package" href="emout.emout.backtrace.html" />
+    <link rel="prev" title="emout.distributed package" href="emout.distributed.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="emout.html">emout package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="emout.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="emout.distributed.html">emout.distributed package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">emout.emout package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.emout.extraction">emout.emout.extraction module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.emout.facade">emout.emout.facade module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.emout.units">emout.emout.units module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.emout">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.plot.html">emout.plot package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="emout.utils.html">emout.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.html#module-emout">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="emout.html">emout package</a></li>
+      <li class="breadcrumb-item active">emout.emout package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/emout.emout.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="emout-emout-package">
+<h1>emout.emout package<a class="headerlink" href="#emout-emout-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="emout.emout.backtrace.html">emout.emout.backtrace package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#module-emout.emout.backtrace.backtrace_result">emout.emout.backtrace.backtrace_result module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.backtrace_result.BacktraceResult"><code class="docutils literal notranslate"><span class="pre">BacktraceResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.backtrace_result.BacktraceResult.pair"><code class="docutils literal notranslate"><span class="pre">BacktraceResult.pair()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#module-emout.emout.backtrace.multi_backtrace_result">emout.emout.backtrace.multi_backtrace_result module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult"><code class="docutils literal notranslate"><span class="pre">MultiBacktraceResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult.pair"><code class="docutils literal notranslate"><span class="pre">MultiBacktraceResult.pair()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.multi_backtrace_result.MultiBacktraceResult.sample"><code class="docutils literal notranslate"><span class="pre">MultiBacktraceResult.sample()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#module-emout.emout.backtrace.probability_result">emout.emout.backtrace.probability_result module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.probability_result.HeatmapData"><code class="docutils literal notranslate"><span class="pre">HeatmapData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.probability_result.HeatmapData.plot"><code class="docutils literal notranslate"><span class="pre">HeatmapData.plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.probability_result.ProbabilityResult"><code class="docutils literal notranslate"><span class="pre">ProbabilityResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.probability_result.ProbabilityResult.energy_spectrum"><code class="docutils literal notranslate"><span class="pre">ProbabilityResult.energy_spectrum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.probability_result.ProbabilityResult.pair"><code class="docutils literal notranslate"><span class="pre">ProbabilityResult.pair()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.probability_result.ProbabilityResult.plot_energy_spectrum"><code class="docutils literal notranslate"><span class="pre">ProbabilityResult.plot_energy_spectrum()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#module-emout.emout.backtrace.solver_wrapper">emout.emout.backtrace.solver_wrapper module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtrace"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper.get_backtrace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtraces"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper.get_backtraces()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_backtraces_from_particles"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper.get_backtraces_from_particles()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper.get_probabilities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities_from_array"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper.get_probabilities_from_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper.get_probabilities_from_particles"><code class="docutils literal notranslate"><span class="pre">BacktraceWrapper.get_probabilities_from_particles()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#module-emout.emout.backtrace.xy_data">emout.emout.backtrace.xy_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.xy_data.MultiXYData"><code class="docutils literal notranslate"><span class="pre">MultiXYData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.xy_data.MultiXYData.plot"><code class="docutils literal notranslate"><span class="pre">MultiXYData.plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.xy_data.XYData"><code class="docutils literal notranslate"><span class="pre">XYData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.xy_data.XYData.plot"><code class="docutils literal notranslate"><span class="pre">XYData.plot()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.backtrace.html#module-emout.emout.backtrace">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="emout.emout.data.html">emout.emout.data package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.data.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.data.html#module-emout.emout.data.data">emout.emout.data.data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.datafile"><code class="docutils literal notranslate"><span class="pre">Data.datafile</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.name"><code class="docutils literal notranslate"><span class="pre">Data.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.slices"><code class="docutils literal notranslate"><span class="pre">Data.slices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.slice_axes"><code class="docutils literal notranslate"><span class="pre">Data.slice_axes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.axisunits"><code class="docutils literal notranslate"><span class="pre">Data.axisunits</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.valunit"><code class="docutils literal notranslate"><span class="pre">Data.valunit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.axis"><code class="docutils literal notranslate"><span class="pre">Data.axis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.build_frame_updater"><code class="docutils literal notranslate"><span class="pre">Data.build_frame_updater()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.directory"><code class="docutils literal notranslate"><span class="pre">Data.directory</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.filename"><code class="docutils literal notranslate"><span class="pre">Data.filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.gifplot"><code class="docutils literal notranslate"><span class="pre">Data.gifplot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.masked"><code class="docutils literal notranslate"><span class="pre">Data.masked()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.plot"><code class="docutils literal notranslate"><span class="pre">Data.plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.t"><code class="docutils literal notranslate"><span class="pre">Data.t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.t_si"><code class="docutils literal notranslate"><span class="pre">Data.t_si</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.to_numpy"><code class="docutils literal notranslate"><span class="pre">Data.to_numpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.tslice"><code class="docutils literal notranslate"><span class="pre">Data.tslice</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.use_axes"><code class="docutils literal notranslate"><span class="pre">Data.use_axes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.val_si"><code class="docutils literal notranslate"><span class="pre">Data.val_si</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.x"><code class="docutils literal notranslate"><span class="pre">Data.x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.x_si"><code class="docutils literal notranslate"><span class="pre">Data.x_si</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.xslice"><code class="docutils literal notranslate"><span class="pre">Data.xslice</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.y"><code class="docutils literal notranslate"><span class="pre">Data.y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.y_si"><code class="docutils literal notranslate"><span class="pre">Data.y_si</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.yslice"><code class="docutils literal notranslate"><span class="pre">Data.yslice</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.z"><code class="docutils literal notranslate"><span class="pre">Data.z</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.z_si"><code class="docutils literal notranslate"><span class="pre">Data.z_si</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data.zslice"><code class="docutils literal notranslate"><span class="pre">Data.zslice</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data1d"><code class="docutils literal notranslate"><span class="pre">Data1d</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data1d.plot"><code class="docutils literal notranslate"><span class="pre">Data1d.plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data2d"><code class="docutils literal notranslate"><span class="pre">Data2d</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data2d.plot"><code class="docutils literal notranslate"><span class="pre">Data2d.plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data3d"><code class="docutils literal notranslate"><span class="pre">Data3d</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data3d.plot"><code class="docutils literal notranslate"><span class="pre">Data3d.plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data4d"><code class="docutils literal notranslate"><span class="pre">Data4d</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.data.Data4d.plot"><code class="docutils literal notranslate"><span class="pre">Data4d.plot()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.data.html#module-emout.emout.data.griddata_series">emout.emout.data.griddata_series module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries"><code class="docutils literal notranslate"><span class="pre">GridDataSeries</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.datafile"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.datafile</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.h5"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.h5</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.group"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.group</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.name"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.chain"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.chain()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.close"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.directory"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.directory</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.filename"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.GridDataSeries.time_series"><code class="docutils literal notranslate"><span class="pre">GridDataSeries.time_series()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.datafile"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.datafile</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.name"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.tunit"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.tunit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.axisunit"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.axisunit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.valunit"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.valunit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.close"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.directories"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.directories</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.directory"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.directory</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.filename"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.filenames"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.filenames</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.griddata_series.MultiGridDataSeries.time_series"><code class="docutils literal notranslate"><span class="pre">MultiGridDataSeries.time_series()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.data.html#module-emout.emout.data.vector_data">emout.emout.data.vector_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData"><code class="docutils literal notranslate"><span class="pre">VectorData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.axisunits"><code class="docutils literal notranslate"><span class="pre">VectorData.axisunits</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.build_frame_updater"><code class="docutils literal notranslate"><span class="pre">VectorData.build_frame_updater()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.gifplot"><code class="docutils literal notranslate"><span class="pre">VectorData.gifplot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.name"><code class="docutils literal notranslate"><span class="pre">VectorData.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.plot"><code class="docutils literal notranslate"><span class="pre">VectorData.plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.plot2d"><code class="docutils literal notranslate"><span class="pre">VectorData.plot2d()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.shape"><code class="docutils literal notranslate"><span class="pre">VectorData.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.slice_axes"><code class="docutils literal notranslate"><span class="pre">VectorData.slice_axes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.slices"><code class="docutils literal notranslate"><span class="pre">VectorData.slices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData.valunit"><code class="docutils literal notranslate"><span class="pre">VectorData.valunit</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.data.html#emout.emout.data.vector_data.VectorData2d"><code class="docutils literal notranslate"><span class="pre">VectorData2d</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.data.html#module-emout.emout.data">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="emout.emout.io.html">emout.emout.io package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.io.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.io.html#module-emout.emout.io.directory">emout.emout.io.directory module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.directory.DirectoryInspector"><code class="docutils literal notranslate"><span class="pre">DirectoryInspector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.directory.DirectoryInspector.inp"><code class="docutils literal notranslate"><span class="pre">DirectoryInspector.inp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.directory.DirectoryInspector.is_valid"><code class="docutils literal notranslate"><span class="pre">DirectoryInspector.is_valid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.directory.DirectoryInspector.read_icur_as_dataframe"><code class="docutils literal notranslate"><span class="pre">DirectoryInspector.read_icur_as_dataframe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.directory.DirectoryInspector.read_pbody_as_dataframe"><code class="docutils literal notranslate"><span class="pre">DirectoryInspector.read_pbody_as_dataframe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.directory.DirectoryInspector.unit"><code class="docutils literal notranslate"><span class="pre">DirectoryInspector.unit</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.io.html#module-emout.emout.io.grid">emout.emout.io.grid module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.grid.GridDataLoader"><code class="docutils literal notranslate"><span class="pre">GridDataLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.grid.GridDataLoader.load"><code class="docutils literal notranslate"><span class="pre">GridDataLoader.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.io.html#emout.emout.io.grid.get_tqdm"><code class="docutils literal notranslate"><span class="pre">get_tqdm()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.io.html#module-emout.emout.io">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="emout.emout.relocation.html">emout.emout.relocation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.relocation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.relocation.html#module-emout.emout.relocation.electric">emout.emout.relocation.electric module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.relocation.html#emout.emout.relocation.electric.relocated_electric_field"><code class="docutils literal notranslate"><span class="pre">relocated_electric_field()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.relocation.html#module-emout.emout.relocation.magnetic">emout.emout.relocation.magnetic module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.relocation.html#emout.emout.relocation.magnetic.relocated_magnetic_field"><code class="docutils literal notranslate"><span class="pre">relocated_magnetic_field()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.emout.relocation.html#module-emout.emout.relocation">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-emout.emout.extraction">
+<span id="emout-emout-extraction-module"></span><h2>emout.emout.extraction module<a class="headerlink" href="#module-emout.emout.extraction" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.extraction.</span></span><span class="sig-name descname"><span class="pre">EmoutDataExtraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/extraction.html#EmoutDataExtraction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.backtrace">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backtrace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper" title="emout.emout.backtrace.solver_wrapper.BacktraceWrapper"><span class="pre">BacktraceWrapper</span></a></em><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.backtrace" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.directory">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">directory</span></span><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.directory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.extract_dir">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">extract_dir</span></span><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.extract_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.icur">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">icur</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.icur" title="Link to this definition"></a></dt>
+<dd><p>‘icur’ を DataFrame で返す</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.inp">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inp</span></span><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.inp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.is_valid">
+<span class="sig-name descname"><span class="pre">is_valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/extraction.html#EmoutDataExtraction.is_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.is_valid" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.pbody">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbody</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.pbody" title="Link to this definition"></a></dt>
+<dd><p>‘pbody’ を DataFrame で返す</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.save_hdf5">
+<span class="sig-name descname"><span class="pre">save_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/extraction.html#EmoutDataExtraction.save_hdf5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.save_hdf5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.extraction.EmoutDataExtraction.unit">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unit</span></span><a class="headerlink" href="#emout.emout.extraction.EmoutDataExtraction.unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.facade">
+<span id="emout-emout-facade-module"></span><h2>emout.emout.facade module<a class="headerlink" href="#module-emout.emout.facade" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.emout.facade.</span></span><span class="sig-name descname"><span class="pre">Emout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append_directories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inpfilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plasma.inp'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/facade.html#Emout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.facade.Emout" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>EMSES 出力／.inp ファイルをまとめて扱う Facade クラス。</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.append_directories">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">append_directories</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#emout.emout.facade.Emout.append_directories" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.backtrace">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backtrace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="emout.emout.backtrace.html#emout.emout.backtrace.solver_wrapper.BacktraceWrapper" title="emout.emout.backtrace.solver_wrapper.BacktraceWrapper"><span class="pre">BacktraceWrapper</span></a></em><a class="headerlink" href="#emout.emout.facade.Emout.backtrace" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.directory">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">directory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#emout.emout.facade.Emout.directory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.icur">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">icur</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#emout.emout.facade.Emout.icur" title="Link to this definition"></a></dt>
+<dd><p>‘icur’ を DataFrame で返す</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.inp">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="emout.utils.html#emout.utils.emsesinp.InpFile" title="emout.utils.emsesinp.InpFile"><span class="pre">InpFile</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#emout.emout.facade.Emout.inp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.is_valid">
+<span class="sig-name descname"><span class="pre">is_valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/facade.html#Emout.is_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.facade.Emout.is_valid" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.name2unit">
+<span class="sig-name descname"><span class="pre">name2unit</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'axis':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'b[xyz]':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'e[xyz]':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'j.*':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'nd[1-9]p':</span> <span class="pre">&lt;function</span> <span class="pre">ndp_unit&gt;,</span> <span class="pre">'phisp':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'rb[xyz]':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'re[xyz]':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'rho':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'rhobk':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'rhobksp[1-9]':</span> <span class="pre">&lt;function</span> <span class="pre">build_name2unit_mapping.&lt;locals&gt;.&lt;lambda&gt;&gt;,</span> <span class="pre">'t':</span> <span class="pre">&lt;function</span> <span class="pre">t_unit&gt;}</span></em><a class="headerlink" href="#emout.emout.facade.Emout.name2unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.pbody">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbody</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#emout.emout.facade.Emout.pbody" title="Link to this definition"></a></dt>
+<dd><p>‘pbody’ を DataFrame で返す</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.emout.facade.Emout.unit">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="emout.utils.html#emout.utils.units.Units" title="emout.utils.units.Units"><span class="pre">Units</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#emout.emout.facade.Emout.unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-emout.emout.units">
+<span id="emout-emout-units-module"></span><h2>emout.emout.units module<a class="headerlink" href="#module-emout.emout.units" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.build_name2unit_mapping">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">build_name2unit_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_ndp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#build_name2unit_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.build_name2unit_mapping" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="emout.utils.html#emout.utils.util.RegexDict" title="emout.utils.util.RegexDict"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegexDict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.nd3p_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">nd3p_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#nd3p_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.nd3p_unit" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type">UnitTranslator</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.ndp_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">ndp_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#ndp_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.ndp_unit" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type">UnitTranslator</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.none_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">none_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#none_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.none_unit" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type">UnitTranslator</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.t_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">t_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#t_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.t_unit" title="Link to this definition"></a></dt>
+<dd><p>tの単位変換器を生成する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.emout.facade.Emout" title="emout.emout.facade.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.wpet_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">wpet_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#wpet_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.wpet_unit" title="Link to this definition"></a></dt>
+<dd><p>wpe * tの単位変換器を生成する.</p>
+<p>以下のコードを実行することで、データのt軸をwpe*tで規格化できる.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wpet_unit</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.emout.facade.Emout" title="emout.emout.facade.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>wpe * tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.emout.units.wpit_unit">
+<span class="sig-prename descclassname"><span class="pre">emout.emout.units.</span></span><span class="sig-name descname"><span class="pre">wpit_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/emout/units.html#wpit_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.emout.units.wpit_unit" title="Link to this definition"></a></dt>
+<dd><p>wpi * tの単位変換器を生成する.</p>
+<p>以下のコードを実行することで、データのt軸をwpe*tで規格化できる.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Emout</span><span class="o">.</span><span class="n">name2unit</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wpit_unit</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> (<a class="reference internal" href="#emout.emout.facade.Emout" title="emout.emout.facade.Emout"><em>Emout</em></a>) – Emoutオブジェクト</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>wpi * tの単位変換器</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="emout.utils.html#emout.utils.units.UnitTranslator" title="emout.utils.units.UnitTranslator">UnitTranslator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-emout.emout">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.emout" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="emout.distributed.html" class="btn btn-neutral float-left" title="emout.distributed package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="emout.emout.backtrace.html" class="btn btn-neutral float-right" title="emout.emout.backtrace package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

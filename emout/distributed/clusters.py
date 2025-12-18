@@ -10,6 +10,9 @@ simple_dask_cluster.py
 をすべて自動的に行えるようにするミニマルなラッパーライブラリです。
 
 使い方(例):
+
+.. code-block:: python
+
     from simple_dask_cluster import SimpleDaskCluster
 
     # クラスを生成

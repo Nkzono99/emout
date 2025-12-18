@@ -1,0 +1,547 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>emout.plot package &mdash; emout 2020 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=939ec2ff"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="emout.utils package" href="emout.utils.html" />
+    <link rel="prev" title="emout.emout.relocation package" href="emout.emout.relocation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            emout
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="emout.html">emout package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="emout.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="emout.distributed.html">emout.distributed package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="emout.emout.html">emout.emout package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">emout.plot package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.plot.animation_plot">emout.plot.animation_plot module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.plot.basic_plot">emout.plot.basic_plot module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.plot.extra_plot">emout.plot.extra_plot module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.plot.plot_cross_sections">emout.plot.plot_cross_sections module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-emout.plot">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="emout.utils.html">emout.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="emout.html#module-emout">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">emout</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="emout.html">emout package</a></li>
+      <li class="breadcrumb-item active">emout.plot package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/emout.plot.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="emout-plot-package">
+<h1>emout.plot package<a class="headerlink" href="#emout-plot-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-emout.plot.animation_plot">
+<span id="emout-plot-animation-plot-module"></span><h2>emout.plot.animation_plot module<a class="headerlink" href="#module-emout.plot.animation_plot" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.Animator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.plot.animation_plot.</span></span><span class="sig-name descname"><span class="pre">Animator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/animation_plot.html#Animator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.animation_plot.Animator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.Animator.frames">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frames</span></span><a class="headerlink" href="#emout.plot.animation_plot.Animator.frames" title="Link to this definition"></a></dt>
+<dd><p>管理いているFrameUpdaterの最小フレーム数.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.Animator.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'to_html'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_html</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/animation_plot.html#Animator.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.animation_plot.Animator.plot" title="Link to this definition"></a></dt>
+<dd><p>gifアニメーションを作成する</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fig</strong> (<em>Figure</em>) – アニメーションを描画するFigure(Noneの場合新しく作成する), by default None</p></li>
+<li><p><strong>action</strong> (<em>{'return'</em><em>, </em><em>'show'</em><em>, </em><em>'to_html'</em><em>, </em><em>'save'}</em><em>, </em><em>optional</em><em>, </em><em>by default 'to_html'</em>) – <p>Determines the behavior of the function:</p>
+<ul>
+<li><p>’return’: The plot object (fig, ani) is returned without rendering it.</p></li>
+<li><p>’show’: The plot is displayed immediately.</p></li>
+<li><p>’to_html’: The plot is converted to an Ipython.display.HTML object and returned.</p></li>
+<li><p>’save’: The plot is saved to a file specified by ‘filename’ argument.</p></li>
+</ul>
+</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(actionが’save’以外の場合やNoneの場合保存されない), by default None</p></li>
+<li><p><strong>interval</strong> (<em>int</em><em>, </em><em>optional</em>) – フレーム間のインターバル(ミリ秒), by default 400</p></li>
+<li><p><strong>repeat</strong> (<em>bool</em>) – アニメーションをループするならTrue, by default True</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>プロットを表示する場合True(ファイルに保存する場合は非表示), by default</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.2.1: </span>This parameter is deprecated and will be removed in version 2.0.0.
+Use the ‘action’=’show’ instead for equivalent functionality.</p>
+</div>
+</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – <p>保存するファイル名(Noneの場合保存しない), by default None</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.2.1: </span>This parameter is deprecated and will be removed in version 2.0.0.
+Use the plot(‘action’=’save’, filename=’example.gif’) instead for equivalent functionality.</p>
+</div>
+</p></li>
+<li><p><strong>to_html</strong> (<em>bool</em>) – <p>アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.2.1: </span>This parameter is deprecated and will be removed in version 2.0.0.
+Use the ‘action’=’to_html’ instead for equivalent functionality.</p>
+</div>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>Depending on the selected action</em></p></li>
+<li><p><strong>- If ‘return’</strong> (<em>Returns the tuple of the plot object (fig, animation).</em>)</p></li>
+<li><p><strong>- If ‘show’</strong> (<em>Does not return anything, displays the plot.</em>)</p></li>
+<li><p><strong>- If ‘to_html’</strong> (<em>Returns an Ipython.display.HTML object of the plot (for Jupyter).</em>)</p></li>
+<li><p><strong>- If ‘save’</strong> (<em>Does not return anything, saves the plot to a file.</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="p">,</span> <span class="n">ani</span> <span class="o">=</span> <span class="n">plot</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;return&quot;</span><span class="p">)</span>
+<span class="go">Returns the tuple of the plot object.</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">plot</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;show&quot;</span><span class="p">)</span>
+<span class="go">Displays the plot.</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">html</span> <span class="o">=</span> <span class="n">plot</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;to_html&quot;</span><span class="p">)</span>
+<span class="go">Returns the HTML representation of the plot.</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">plot</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;save&quot;</span><span class="p">,</span> <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;example.gif&quot;</span><span class="p">)</span>
+<span class="go">Saves the plot to a file.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.Animator.shape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#emout.plot.animation_plot.Animator.shape" title="Link to this definition"></a></dt>
+<dd><p>レイアウトの形状.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.FrameUpdater">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">emout.plot.animation_plot.</span></span><span class="sig-name descname"><span class="pre">FrameUpdater</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/animation_plot.html#FrameUpdater"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.animation_plot.FrameUpdater" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.FrameUpdater.to_animator">
+<span class="sig-name descname"><span class="pre">to_animator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/animation_plot.html#FrameUpdater.to_animator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.animation_plot.FrameUpdater.to_animator" title="Link to this definition"></a></dt>
+<dd><p>アニメーターに変換する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>layout</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#emout.plot.animation_plot.FrameUpdater" title="emout.plot.animation_plot.FrameUpdater"><em>FrameUpdater</em></a><em>]</em><em>]</em><em>]</em>) – アニメーションプロットのレイアウト</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.FrameUpdater.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/animation_plot.html#FrameUpdater.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.animation_plot.FrameUpdater.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.animation_plot.flatten_list">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.animation_plot.</span></span><span class="sig-name descname"><span class="pre">flatten_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/animation_plot.html#flatten_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.animation_plot.flatten_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-emout.plot.basic_plot">
+<span id="emout-plot-basic-plot-module"></span><h2>emout.plot.basic_plot module<a class="headerlink" href="#module-emout.plot.basic_plot" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.figsize_with_2d">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">figsize_with_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#figsize_with_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.figsize_with_2d" title="Link to this definition"></a></dt>
+<dd><p>2次元データから図のサイズを計算する.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 1データを何pixelで表すか, by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>図のサイズ</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_2d_contour">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_2d_contour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['black']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%1.1f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_2d_contour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2d_contour" title="Link to this definition"></a></dt>
+<dd><p>2次元等高線をプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>levels</strong> (<em>int</em>) – 等高線数, by default None</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – 透明度(0.0~1.0), by default 1</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default None</p></li>
+<li><p><strong>mask_color</strong> (<em>str</em>) – マスクされた位置の色, by default ‘gray’</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+<li><p><strong>fmt</strong> (<em>str</em>) – clabelの形式, by default ‘%1.1f’</p></li>
+<li><p><strong>fontsize</strong> (<em>str</em>) – clabelのフォントサイズ, by default 12</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_2d_streamline">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_2d_streamline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_2d_streamline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2d_streamline" title="Link to this definition"></a></dt>
+<dd><p>2次元ベクトル図をプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>y_data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – ベクトルの色, by default None</p></li>
+<li><p><strong>scale</strong> (<em>float</em>) – ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1</p></li>
+<li><p><strong>skip</strong> (<em>int</em>) – プロットするデータ間隔, by default 1</p></li>
+<li><p><strong>easy_to_read</strong> (<em>bool</em>) – ベクトルを見やすい大きさにスケーリングするならTrue, by default True</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_2d_vector">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_2d_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">easy_to_read</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_2d_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2d_vector" title="Link to this definition"></a></dt>
+<dd><p>2次元ベクトル図をプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>y_data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – ベクトルの色, by default None</p></li>
+<li><p><strong>scale</strong> (<em>float</em>) – ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1</p></li>
+<li><p><strong>skip</strong> (<em>int</em>) – プロットするデータ間隔, by default 1</p></li>
+<li><p><strong>easy_to_read</strong> (<em>bool</em>) – ベクトルを見やすい大きさにスケーリングするならTrue, by default True</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_2dmap">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_2dmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_color='gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation='bilinear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorbar_label=''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbargs={}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_colorbar=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_2dmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_2dmap" title="Link to this definition"></a></dt>
+<dd><p>2次元カラーマップをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>mask_color</strong> (<em>str</em>) – マスクされた位置の色, by default ‘gray’</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+<li><p><strong>add_colorbar</strong> (<em>bool</em><em>, </em><em>optional</em>) – カラーバーを追加する場合True, by default True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_3d_quiver">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_3d_quiver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_data3d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_data3d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_data3d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax3d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">easy_to_read</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_3d_quiver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_3d_quiver" title="Link to this definition"></a></dt>
+<dd><p>2次元ベクトル図をプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>y_data2d</strong> (<em>numpy.ndarray</em>) – 2次元データ</p></li>
+<li><p><strong>mesh</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – メッシュ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – ベクトルの色, by default None</p></li>
+<li><p><strong>scale</strong> (<em>float</em>) – ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1</p></li>
+<li><p><strong>skip</strong> (<em>int</em>) – プロットするデータ間隔, by default 1</p></li>
+<li><p><strong>easy_to_read</strong> (<em>bool</em>) – ベクトルを見やすい大きさにスケーリングするならTrue, by default True</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>interpolation</strong> (<em>str</em><em>, </em><em>optional</em>) – 用いる補間方法, by default ‘bilinear’</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_line">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data1d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_line" title="Link to this definition"></a></dt>
+<dd><p>1次元データをプロットする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data1d</strong> (<em>array-like</em><em> or </em><em>scalar</em>) – プロットする1次元データ</p></li>
+<li><p><strong>x</strong> (<em>array-like</em><em> or </em><em>scalar</em>) – 横軸となる1次元データ, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名, by default None</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – 横軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – 縦軸のラベル, by default None</p></li>
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – ラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットデータを表す線オブジェクト(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Line2D or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.basic_plot.plot_surface">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.basic_plot.</span></span><span class="sig-name descname"><span class="pre">plot_surface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax3d=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_colorbar=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savefilename=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_color='gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zlabel=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ninterp=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function='linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorbar_label=''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/basic_plot.html#plot_surface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.basic_plot.plot_surface" title="Link to this definition"></a></dt>
+<dd><p>3次元表面プロットをする.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – x座標のメッシュ</p></li>
+<li><p><strong>y</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – y座標のメッシュ</p></li>
+<li><p><strong>z</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – z座標のメッシュ</p></li>
+<li><p><strong>val</strong> (<em>(</em><em>numpy.ndarray</em><em>, </em><em>numpy.ndarray</em><em>)</em><em>, </em><em>optional</em>) – 値のメッシュ</p></li>
+<li><p><strong>ax3d</strong> (<em>Axes3D</em>) – Axes3Dオブジェクト, by default None</p></li>
+<li><p><strong>savefilename</strong> (<em>str</em><em>, </em><em>optional</em>) – 保存するファイル名(Noneの場合保存しない), by default None</p></li>
+<li><p><strong>cmap</strong> (<em>matplotlib.Colormap</em><em> or </em><em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – カラーマップ, by default cm.coolwarm</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – 最小値, by default None</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – 最大値, by default None</p></li>
+<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – 図のサイズ, by default None</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x軸のラベル, by default None</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – y軸のラベル, by default None</p></li>
+<li><p><strong>zlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – z軸のラベル, by default None</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – タイトル, by default None</p></li>
+<li><p><strong>dpi</strong> (<em>int</em><em>, </em><em>optional</em>) – 解像度(figsizeが指定された場合は無視される), by default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>プロットしたimageデータ(保存した場合None)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AxesImage or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-emout.plot.extra_plot">
+<span id="emout-plot-extra-plot-module"></span><h2>emout.plot.extra_plot module<a class="headerlink" href="#module-emout.plot.extra_plot" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.extra_plot.plot_hole_line">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.extra_plot.</span></span><span class="sig-name descname"><span class="pre">plot_hole_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp_or_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_lims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/extra_plot.html#plot_hole_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.extra_plot.plot_hole_line" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.extra_plot.plot_line_of_hole_half">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.extra_plot.</span></span><span class="sig-name descname"><span class="pre">plot_line_of_hole_half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">off</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/extra_plot.html#plot_line_of_hole_half"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.extra_plot.plot_line_of_hole_half" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.extra_plot.plot_surface_with_hole">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.extra_plot.</span></span><span class="sig-name descname"><span class="pre">plot_surface_with_hole</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_xyz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_colorbar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vrange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'minmax'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/extra_plot.html#plot_surface_with_hole"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.extra_plot.plot_surface_with_hole" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.extra_plot.plot_surface_with_hole_half">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.extra_plot.</span></span><span class="sig-name descname"><span class="pre">plot_surface_with_hole_half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_xyz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">off</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_colorbar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vrange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'minmax'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/extra_plot.html#plot_surface_with_hole_half"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.extra_plot.plot_surface_with_hole_half" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-emout.plot.plot_cross_sections">
+<span id="emout-plot-plot-cross-sections-module"></span><h2>emout.plot.plot_cross_sections module<a class="headerlink" href="#module-emout.plot.plot_cross_sections" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="emout.plot.plot_cross_sections.plot_cross_sections">
+<span class="sig-prename descclassname"><span class="pre">emout.plot.plot_cross_sections.</span></span><span class="sig-name descname"><span class="pre">plot_cross_sections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/emout/plot/plot_cross_sections.html#plot_cross_sections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#emout.plot.plot_cross_sections.plot_cross_sections" title="Link to this definition"></a></dt>
+<dd><p>Plot boundaries (spheres, flat surfaces, rectangle holes) sliced by plane axis=coord.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>object</em>) – Must have <cite>inp.boundary_type</cite>, <cite>inp.boundary_types</cite>, and relevant params.</p></li>
+<li><p><strong>axis</strong> (<em>{'x'</em><em>,</em><em>'y'</em><em>,</em><em>'z'}</em>) – Normal of slicing plane.</p></li>
+<li><p><strong>coord</strong> (<em>float</em>) – Coordinate along <cite>axis</cite> of the slicing plane.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em><em>, </em><em>optional</em>) – Axes to draw on.</p></li>
+<li><p><strong>kwargs</strong> – Passed to individual plot functions for styling.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ax</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.axes.Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-emout.plot">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-emout.plot" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="emout.emout.relocation.html" class="btn btn-neutral float-left" title="emout.emout.relocation package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="emout.utils.html" class="btn btn-neutral float-right" title="emout.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Jin Nakazono.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
