@@ -15,6 +15,7 @@ class ParticleData:
 
     def __post_init__(self):
         self.values = np.asarray(self.values, dtype=float)
+        self.values[self.values == -9999] = np.nan
         if self.values.ndim != 1:
             raise ValueError("ParticleData must be a 1D float array.")
 
@@ -27,16 +28,14 @@ class ParticleData:
             raise ValueError("valunit is not set.")
 
         new_values = self.valunit.reverse(self.values)
-        return ParticleData(new_values, valunit=self.valunit.si, name=self.name)
+        return ParticleData(new_values, valunit=self.valunit, name=self.name)
 
     # --- pandas bridge -----------------
 
-    def to_series(self, index=None, replace_to_nan=True) -> pd.Series:
+    def to_series(self, index=None) -> pd.Series:
         """
         pandas.Series に変換（plotなどが使える）
         """
-        if replace_to_nan:
-            return pd.Series(self.values, index=index, name=self.name).replace(-9999, np.nan)
 
         return pd.Series(self.values, index=index, name=self.name)
 
