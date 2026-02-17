@@ -31,10 +31,13 @@ class ParticleData:
 
     # --- pandas bridge -----------------
 
-    def to_series(self, index=None) -> pd.Series:
+    def to_series(self, index=None, replace_to_nan=True) -> pd.Series:
         """
         pandas.Series に変換（plotなどが使える）
         """
+        if replace_to_nan:
+            return pd.Series(self.values, index=index, name=self.name).replace(-9999, np.nan)
+
         return pd.Series(self.values, index=index, name=self.name)
 
     def plot(self, *args, **kwargs):
