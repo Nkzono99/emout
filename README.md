@@ -27,6 +27,8 @@ When you run EMSES simulations, the results (e.g., potentials, densities, curren
     - [Retrieving the Parameter File (plasma.inp)](#retrieving-the-parameter-file-plasmainp)
     - [Plotting Data](#plotting-data)
     - [Working with Units](#working-with-units)
+    - [Working with Particle Data](#working-with-particle-data)
+      - [Convert particle data to pandas Series](#convert-particle-data-to-pandas-series)
     - [Handling Appended Simulation Outputs](#handling-appended-simulation-outputs)
     - [Data Masking](#data-masking)
     - [Creating Animations](#creating-animations)
@@ -182,6 +184,46 @@ w = Energy density [J/m^3]
 ```
 
 </details>
+
+---
+
+### Working with Particle Data
+
+EMSES particle outputs are stored in component-wise `.h5` files (e.g., `p4xe00_0000.h5`, `p4vxe00_0000.h5`, `p4tid00_0000.h5`).
+**emout** automatically groups them by species and component, and provides a time-series interface similar to grid variables.
+
+```python
+import emout
+
+data = emout.Emout("output_dir")
+
+# Particle species accessor (example: species=4)
+p4 = data.p4
+
+# Component-wise time series (each returns a particle time series object)
+# p4.x, p4.y, p4.z, p4.vx, p4.vy, p4.vz, p4.tid
+````
+
+#### Convert particle data to pandas Series
+
+Indexing a component by timestep returns a 1D particle array object.
+You can convert it to `pandas.Series` for quick visualization (histograms, KDE, etc.).
+
+```python
+# Raw EMSES unit
+data.p4.vx[0].to_series().hist(bins=100)
+
+# SI unit (recommended for physical interpretation)
+data.p4.vx[0].val_si.to_series().hist(bins=100)
+
+# You can also directly work with the Series object
+vx_si = data.p4.vx[0].val_si.to_series()
+ax = vx_si.hist(bins=200)
+ax.set_title("vx distribution (SI)")
+```
+
+> **Note**
+> `tid` is an integer identifier and is not unit-converted.
 
 ---
 
