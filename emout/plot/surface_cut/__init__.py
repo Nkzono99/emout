@@ -65,9 +65,9 @@ __all__ = [
 
 # Optional viz (depends on scikit-image)
 try:
-    from .viz import Bounds3D, plot_surfaces, add_colorbar
+    from .viz import Bounds3D, RenderItem, plot_surfaces, add_colorbar
 
-    __all__ += ["Bounds3D", "plot_surfaces", "add_colorbar"]
+    __all__ += ["Bounds3D", "RenderItem", "plot_surfaces", "add_colorbar"]
 except Exception:
     # Keep the package importable without viz deps.
     pass

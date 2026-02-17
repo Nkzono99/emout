@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import Normalize
+from matplotlib.colors import to_rgba
 from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
 
 try:
@@ -18,6 +19,29 @@ except ImportError as e:
 
 
 Mode = Literal["cmap", "cont", "cmap+cont"]
+
+
+@dataclass(frozen=True)
+class RenderItem:
+    """Rendering specification for a surface.
+
+    style:
+      - 'field': color by sampled field values (colormap)
+      - 'solid': constant face color (e.g., gray cut faces)
+
+    mask:
+      Optional solid/region used to *keep* only triangles whose centroid is inside (sdf<=0).
+      This is useful to show cut-faces only where they are exposed by a cut-away.
+    """
+
+    surface: object
+    style: Literal["field", "solid"] = "field"
+    solid_color: Union[str, Tuple[float, float, float], Tuple[float, float, float, float]] = "0.6"
+    alpha: Optional[float] = None
+    mask: Optional[object] = None
+    draw_contours: bool = True
+    edge_color: Optional[str] = None
+    edge_lw: float = 0.4
 
 
 @dataclass(frozen=True)
@@ -34,10 +58,20 @@ class Bounds3D:
         return Bounds3D(ex(*self.x), ex(*self.y), ex(*self.z))
 
 
-def _as_list(surfaces) -> list:
+def _as_list(surfaces) -> list[RenderItem]:
+    """Normalize inputs into a list[RenderItem]."""
     if isinstance(surfaces, (list, tuple)):
-        return list(surfaces)
-    return [surfaces]
+        items = list(surfaces)
+    else:
+        items = [surfaces]
+
+    out: list[RenderItem] = []
+    for it in items:
+        if isinstance(it, RenderItem):
+            out.append(it)
+        else:
+            out.append(RenderItem(surface=it))
+    return out
 
 
 def _make_norm(
@@ -116,6 +150,36 @@ def _poly_collection(
     return poly
 
 
+def _solid_poly_collection(
+    V: np.ndarray,
+    F: np.ndarray,
+    *,
+    color,
+    alpha: float = 1.0,
+    edge_color: Optional[str] = None,
+    edge_lw: float = 0.4,
+) -> Poly3DCollection:
+    tris = V[F]
+    rgba = list(to_rgba(color))
+    rgba[3] = float(alpha)
+    poly = Poly3DCollection(
+        tris,
+        facecolors=[tuple(rgba)],
+        edgecolors=("none" if edge_color is None else edge_color),
+        linewidths=edge_lw,
+    )
+    return poly
+
+
+def _filter_faces_by_mask(V: np.ndarray, F: np.ndarray, mask) -> np.ndarray:
+    """Return faces to keep based on mask.sdf(centroid)<=0."""
+    tris = V[F]
+    c = tris.mean(axis=1)  # (nF,3)
+    m = mask.sdf(c[:, 0], c[:, 1], c[:, 2])
+    keep = np.asarray(m <= 0.0)
+    return F[keep]
+
+
 def _contour_segments_on_mesh(
     V: np.ndarray, F: np.ndarray, vval: np.ndarray, levels: Sequence[float]
 ) -> list[np.ndarray]:
@@ -188,17 +252,37 @@ def plot_surfaces(
         levels = np.asarray(list(contour_levels), dtype=float)
 
     for srf in _as_list(surfaces):
-        xs, ys, zs, sdf = _sample_sdf_on_grid(srf, bounds, grid_shape)
+        surface = srf.surface
+        xs, ys, zs, sdf = _sample_sdf_on_grid(surface, bounds, grid_shape)
         V, F = _mesh_from_sdf(xs, ys, zs, sdf, level=sdf_level)
+
+        if srf.mask is not None:
+            F = _filter_faces_by_mask(V, F, srf.mask)
+            if F.size == 0:
+                continue
+
+        item_alpha = alpha if srf.alpha is None else float(srf.alpha)
+
+        if srf.style == "solid":
+            poly = _solid_poly_collection(
+                V,
+                F,
+                color=srf.solid_color,
+                alpha=item_alpha,
+                edge_color=srf.edge_color,
+                edge_lw=srf.edge_lw,
+            )
+            ax.add_collection3d(poly)
+            continue
 
         vval = field.sample(V[:, 0], V[:, 1], V[:, 2])
 
         if mode in ("cmap", "cmap+cont"):
             face_val = _face_values_from_vertex_values(F, vval)
-            poly = _poly_collection(V, F, face_val, cmap=cmap, norm=norm, alpha=alpha)
+            poly = _poly_collection(V, F, face_val, cmap=cmap, norm=norm, alpha=item_alpha)
             ax.add_collection3d(poly)
 
-        if mode in ("cont", "cmap+cont"):
+        if srf.draw_contours and mode in ("cont", "cmap+cont"):
             segs = _contour_segments_on_mesh(V, F, vval, levels)
             if segs:
                 lc = Line3DCollection(segs, colors=contour_color, linewidths=contour_lw)
