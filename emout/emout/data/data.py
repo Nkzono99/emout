@@ -420,7 +420,7 @@ class Data(np.ndarray):
         else:
             vmin = vmin or self.min()
             vmax = vmax or self.max()
-        
+
         updater = FrameUpdater(
             self, axis, title, notitle, offsets, use_si, vmin=vmin, vmax=vmax, **kwargs
         )
@@ -632,7 +632,16 @@ class Data3d(Data):
 
         return super().__new__(cls, input_array, **kwargs)
 
-    def plot(self, mode: Literal["auto"] = "auto", **kwargs):
+    def plot(
+        self,
+        mode: Literal["auto"] = "auto",
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        *args,
+        **kwargs,
+    ):
         """3次元データをプロットする.(未実装)
 
         Parameters
@@ -641,8 +650,41 @@ class Data3d(Data):
             [description], by default 'auto'
         """
         if mode == "auto":
-            mode = "".join(sorted(self.use_axes))
-        pass
+            mode = "cont"
+
+        def _offseted(line, offset):
+            if offset == "left":
+                line -= line.ravel()[0]
+            elif offset == "center":
+                line -= line.ravel()[line.size // 2]
+            elif offset == "right":
+                line -= line.ravel()[-1]
+            else:
+                line += offset
+            return line
+
+        if mode == "cont":
+            from emout.plot.contour3d import contour3d
+
+            if use_si:
+                data3d = self.val_si
+                dx = self.axisunits[-1].reverse(1.0)
+            else:
+                data3d = self
+                dx = 1.0
+
+            if offsets is not None:
+                origin_xyz = (
+                    _offseted(0.0, offsets[0]),
+                    _offseted(0.0, offsets[1]),
+                    _offseted(0.0, offsets[2]),
+                )
+            else:
+                origin_xyz = (0.0, 0.0, 0.0)
+
+            fig, ax = contour3d(data3d, dx, origin_xyz=origin_xyz, *args, **kwargs)
+
+            return fig, ax
 
 
 class Data2d(Data):

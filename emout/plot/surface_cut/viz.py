@@ -111,22 +111,40 @@ def _sample_sdf_on_grid(surface, bounds: Bounds3D, grid_shape: Tuple[int, int, i
 
 
 def _mesh_from_sdf(xs, ys, zs, sdf_zyx, level: float = 0.0):
-    """Marching cubes on sdf (z,y,x). Returns V (x,y,z) and F."""
+    """Marching cubes on sdf (z,y,x).
+
+    Returns
+    -------
+    V : (nV,3) float64
+        Vertices in world (x,y,z).
+    F : (nF,3) int64
+        Triangle indices.
+    N : (nV,3) float64
+        Vertex normals in world (x,y,z). Normal direction follows scikit-image
+        convention: points toward increasing sdf values (for a true SDF, this is
+        "outward").
+    """
     dx = float(xs[1] - xs[0]) if xs.size > 1 else 1.0
     dy = float(ys[1] - ys[0]) if ys.size > 1 else 1.0
     dz = float(zs[1] - zs[0]) if zs.size > 1 else 1.0
 
-    verts_zyx, faces, _, _ = marching_cubes(sdf_zyx, level=level, spacing=(dz, dy, dx))
+    verts_zyx, faces, normals_zyx, _ = marching_cubes(
+        sdf_zyx, level=level, spacing=(dz, dy, dx)
+    )
 
     verts_zyx[:, 0] += zs[0]
     verts_zyx[:, 1] += ys[0]
     verts_zyx[:, 2] += xs[0]
 
-    V = np.column_stack([verts_zyx[:, 2], verts_zyx[:, 1], verts_zyx[:, 0]]).astype(
-        np.float64
-    )
+    V = np.column_stack([verts_zyx[:, 2], verts_zyx[:, 1], verts_zyx[:, 0]]).astype(np.float64)
+
+    # normals_zyx are in (z,y,x) order -> convert to (x,y,z)
+    N = np.column_stack([normals_zyx[:, 2], normals_zyx[:, 1], normals_zyx[:, 0]]).astype(np.float64)
+    nrm = np.linalg.norm(N, axis=1)
+    good = nrm > 0
+    N[good] /= nrm[good][:, None]
     F = faces.astype(np.int64)
-    return V, F
+    return V, F, N
 
 
 def _face_values_from_vertex_values(F: np.ndarray, vval: np.ndarray) -> np.ndarray:
@@ -180,8 +198,27 @@ def _filter_faces_by_mask(V: np.ndarray, F: np.ndarray, mask) -> np.ndarray:
     return F[keep]
 
 
+
+
+def _view_dir_from_axes(ax) -> np.ndarray:
+    """Approximate view direction (from data toward the camera) in data coordinates.
+
+    Uses mplot3d's azim/elev convention. This is only used for back-face culling
+    of contour segments; it is evaluated at draw time (static view).
+    """
+
+    az = np.deg2rad(getattr(ax, "azim", -60.0) or -60.0)
+    el = np.deg2rad(getattr(ax, "elev", 30.0) or 30.0)
+    return np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)], dtype=np.float64)
+
 def _contour_segments_on_mesh(
-    V: np.ndarray, F: np.ndarray, vval: np.ndarray, levels: Sequence[float]
+    V: np.ndarray,
+    F: np.ndarray,
+    vval: np.ndarray,
+    levels: Sequence[float],
+    *,
+    face_normals: Optional[np.ndarray] = None,
+    offset: float = 0.0,
 ) -> list[np.ndarray]:
     """Generate contour line segments for scalar values on a triangular mesh."""
     segs: list[np.ndarray] = []
@@ -197,6 +234,17 @@ def _contour_segments_on_mesh(
     s0, s1, s2 = s[:, 0], s[:, 1], s[:, 2]
 
     edges = [(p0, s0, p1, s1), (p1, s1, p2, s2), (p2, s2, p0, s0)]
+
+    # Optional tiny offset to pull the contour above the surface.
+    # This reduces "z-fighting" and (more importantly in mplot3d)
+    # helps the painter's algorithm draw the contour on top.
+    fn = None
+    if face_normals is not None and offset != 0.0:
+        fn = np.asarray(face_normals, dtype=np.float64)
+        if fn.shape[0] == F.shape[0]:
+            fn = fn[valid_face]
+        else:
+            fn = None
 
     for L in levels:
         inter_pts = []
@@ -214,7 +262,10 @@ def _contour_segments_on_mesh(
                 if cross[fi]:
                     pts.append(ip[fi])
             if len(pts) == 2:
-                segs.append(np.stack([pts[0], pts[1]], axis=0))
+                seg = np.stack([pts[0], pts[1]], axis=0)
+                if fn is not None:
+                    seg = seg + float(offset) * fn[fi][None, :]
+                segs.append(seg)
 
     return segs
 
@@ -235,6 +286,9 @@ def plot_surfaces(
     contour_color: str = "k",
     contour_lw: float = 0.8,
     sdf_level: float = 0.0,
+    contour_on_top: bool = True,
+    contour_offset: float = 0.0,
+    contour_side: str = "front"
 ):
     """Render implicit surfaces (including boolean composites) with colormap and contours."""
 
@@ -251,10 +305,10 @@ def plot_surfaces(
     else:
         levels = np.asarray(list(contour_levels), dtype=float)
 
-    for srf in _as_list(surfaces):
+    for i, srf in enumerate(_as_list(surfaces)):
         surface = srf.surface
         xs, ys, zs, sdf = _sample_sdf_on_grid(surface, bounds, grid_shape)
-        V, F = _mesh_from_sdf(xs, ys, zs, sdf, level=sdf_level)
+        V, F, N = _mesh_from_sdf(xs, ys, zs, sdf, level=sdf_level)
 
         if srf.mask is not None:
             F = _filter_faces_by_mask(V, F, srf.mask)
@@ -272,6 +326,8 @@ def plot_surfaces(
                 edge_color=srf.edge_color,
                 edge_lw=srf.edge_lw,
             )
+            # poly.set_sort_zpos(bounds.z[0] - 1.0e9 + i*1e3)
+            poly.set_sort_zpos(bounds.z[0] - 1.0e9 + i*1e3)
             ax.add_collection3d(poly)
             continue
 
@@ -280,12 +336,47 @@ def plot_surfaces(
         if mode in ("cmap", "cmap+cont"):
             face_val = _face_values_from_vertex_values(F, vval)
             poly = _poly_collection(V, F, face_val, cmap=cmap, norm=norm, alpha=item_alpha)
+            if contour_on_top and hasattr(poly, "set_sort_zpos"):
+                # Push filled polygons slightly "behind" so contours can win in painter sort.
+                poly.set_sort_zpos(bounds.z[0] - 1.0e9 + i*1e3)
             ax.add_collection3d(poly)
 
         if srf.draw_contours and mode in ("cont", "cmap+cont"):
-            segs = _contour_segments_on_mesh(V, F, vval, levels)
+            # Face normals from vertex normals.
+            fn = N[F].mean(axis=1)
+            nrm = np.linalg.norm(fn, axis=1)
+            good = nrm > 0
+            fn[good] /= nrm[good][:, None]
+
+            # Optional back-face culling for contours (avoid seeing lines from the back side).
+            if contour_side not in ("both", "front", "back"):
+                raise ValueError('contour_side must be "both", "front", or "back"')
+            if contour_side != "both" and len(F) > 0:
+                vdir = _view_dir_from_axes(ax)
+                d = (fn[:, 0] * vdir[0] + fn[:, 1] * vdir[1] + fn[:, 2] * vdir[2])
+                keep = d > 0.0 if contour_side == "front" else d < 0.0
+                # If orientation is flipped, keep may become almost empty; auto-flip in that case.
+                if keep.mean() < 0.05:
+                    keep = ~keep
+                F = F[keep]
+                fn = fn[keep]
+
+            segs = _contour_segments_on_mesh(
+                V,
+                F,
+                vval,
+                levels,
+                face_normals=fn,
+                offset=contour_offset,
+            )
             if segs:
                 lc = Line3DCollection(segs, colors=contour_color, linewidths=contour_lw)
+                if contour_on_top and hasattr(lc, "set_sort_zpos"):
+                    lc.set_sort_zpos(bounds.z[1] + 1.0e9 + i*1e3)
+                try:
+                    lc.set_zorder(10)
+                except Exception:
+                    pass
                 ax.add_collection3d(lc)
 
     ax.set_xlim(*bounds.x)
