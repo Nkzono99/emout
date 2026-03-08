@@ -24,6 +24,7 @@ def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
         r"t": t_unit,
         r"axis": lambda out: out.unit.length,
         r"rhobksp[1-9]": lambda out: out.unit.rho,
+        r"rhobkac[1-9]": lambda out: out.unit.rho,
         r"nd[1-9]p": ndp_unit,
         r"p[1-9]v[xyz]": lambda out: out.unit.v,
         r"p[1-9][xyz]": lambda out: out.unit.length,
