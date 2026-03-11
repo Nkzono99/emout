@@ -92,6 +92,13 @@ class MultiBacktraceResult:
         yield self.last_indexes
 
     def __repr__(self) -> str:
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         N, T = self.ts_list.shape
         return (
             f"<MultiBacktraceResult: n_traj={N}, n_steps={T}, keys={list(MultiBacktraceResult._VALID_KEYS)}> "
@@ -172,6 +179,17 @@ class MultiBacktraceResult:
             )
 
         def _get_array_list(key: str) -> np.ndarray:
+            """array list を取得する。
+            
+            Parameters
+            ----------
+            key : str
+                取得・設定対象のキーです。
+            Returns
+            -------
+            np.ndarray
+                処理結果です。
+            """
             if key == "t":
                 u = self.unit.t if self.unit else None
 

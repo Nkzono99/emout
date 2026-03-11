@@ -4,10 +4,34 @@ import pytest
 
 @pytest.fixture
 def phisp(data):
+    """テスト用の `phisp` データを返す。
+    
+    Parameters
+    ----------
+    data : object
+        処理対象のデータ。
+    
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     return data.phisp
 
 
 def test_open_data(data):
+    """open data のテストを行う。
+    
+    Parameters
+    ----------
+    data : object
+        処理対象のデータ。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert type(data.phisp) == emout.data.data.GridDataSeries
     assert type(data.ex) == emout.data.data.GridDataSeries
 
@@ -16,6 +40,18 @@ def test_open_data(data):
 
 
 def test_data_type(data):
+    """data type のテストを行う。
+    
+    Parameters
+    ----------
+    data : object
+        処理対象のデータ。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert type(data.phisp) == emout.data.GridDataSeries
 
     assert type(data.phisp[:]) == emout.data.Data4d
@@ -36,6 +72,21 @@ def test_data_type(data):
     ([1, 2, 4], list('tzyx'))
 ])
 def test_tslice(phisp, tslice, expected):
+    """tslice のテストを行う。
+    
+    Parameters
+    ----------
+    phisp : object
+        テスト対象の電位データです。
+    tslice : object
+        時間方向スライスです。
+    expected : object
+        期待値です。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert phisp[tslice].use_axes == expected
 
 @pytest.mark.parametrize('tslice, expected', [
@@ -46,10 +97,36 @@ def test_tslice(phisp, tslice, expected):
     ([1, 2, 4], (3, 100, 30, 30))
 ])
 def test_tslice_with_shape(phisp, tslice, expected):
+    """tslice with shape のテストを行う。
+    
+    Parameters
+    ----------
+    phisp : object
+        テスト対象の電位データです。
+    tslice : object
+        時間方向スライスです。
+    expected : object
+        期待値です。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert phisp[tslice].shape == expected
 
 
 def test_2dslice(phisp):
+    """2dslice のテストを行う。
+    
+    Parameters
+    ----------
+    phisp : object
+        テスト対象の電位データです。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert phisp[1][1, :, :].use_axes == list('yx')
     assert phisp[1][:, :, 1].use_axes == list('zy')
     assert phisp[1][:, 1, :].use_axes == list('zx')
@@ -85,10 +162,38 @@ def test_2dslice(phisp):
     (None, slice(None), (slice(None), 1, 1, 1), list('t')),
 ], indirect=['phisp'])
 def test_1dslice(phisp, tslice, slices, expected):
+    """1dslice のテストを行う。
+    
+    Parameters
+    ----------
+    phisp : object
+        テスト対象の電位データです。
+    tslice : object
+        時間方向スライスです。
+    slices : object
+        空間・時間方向に適用するスライス指定です。
+    expected : object
+        期待値です。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert phisp[tslice][slices].use_axes == expected
 
 
 def test_shape(phisp):
+    """shape のテストを行う。
+    
+    Parameters
+    ----------
+    phisp : object
+        テスト対象の電位データです。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert phisp[1].shape == (100, 30, 30)
     assert phisp[1][:10, :, :].shape == (10, 30, 30)
     assert phisp[1][1, :, :].shape == (30, 30)
@@ -116,5 +221,16 @@ def test_shape(phisp):
     ('rhobk')
 ])
 def test_name2unit(name):
+    """name2unit のテストを行う。
+    
+    Parameters
+    ----------
+    name : object
+        対象データ名またはキー名です。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     name2unit = emout.Emout.name2unit
     assert name2unit.get(name) is not None

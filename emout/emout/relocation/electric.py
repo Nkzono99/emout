@@ -6,7 +6,35 @@ import numpy as np
 def relocated_electric_field(
     ef: np.ndarray, axis: int, btype: Literal["periodic", "dirichlet", "neumann"]
 ):
+    """電場をセル中心位置へ再配置する。
+    
+    Parameters
+    ----------
+    ef : np.ndarray
+        電場配列です。
+    axis : int
+        対象軸。
+    btype : Literal["periodic", "dirichlet", "neumann"]
+        境界条件タイプです。
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     def slc(a, b=None):
+        """対象軸に応じたスライスを構築する。
+        
+        Parameters
+        ----------
+        a : object
+            始点側の値です。
+        b : object, optional
+            終点側の値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         s = slice(a, b) if b else a
         slices = tuple(s if i == axis else slice(None, None) for i in range(3))
 

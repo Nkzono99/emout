@@ -15,6 +15,13 @@ class SurfaceCutter:
     """Clip or sample Field3D using a Surface3D."""
 
     def __init__(self, field: Field3D):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        field : Field3D
+            切り出し・補間対象となる 3D スカラー場です。
+        """
         self.field = field
         self.grid = field.grid
 

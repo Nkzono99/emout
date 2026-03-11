@@ -44,6 +44,36 @@ class Data(np.ndarray):
         axisunits=None,
         valunit=None,
     ):
+        """インスタンスを生成する。
+        
+        Parameters
+        ----------
+        input_array : object
+            元となる NumPy 配列です。
+        filename : object, optional
+            保存先または読み込み対象のファイル名です。
+        name : object, optional
+            対象データ名またはキー名です。
+        xslice : object, optional
+            x 軸スライスです。
+        yslice : object, optional
+            y 軸スライスです。
+        zslice : object, optional
+            z 軸スライスです。
+        tslice : object, optional
+            時間方向スライスです。
+        slice_axes : object, optional
+            配列軸が元データのどの軸に対応するかを示す index リストです
+            （`0:t, 1:z, 2:y, 3:x`）。
+        axisunits : object, optional
+            各軸（`t,z,y,x`）に対応する単位変換器のリストです。
+        valunit : object, optional
+            値の単位変換器です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         obj = np.asarray(input_array).view(cls)
         obj.datafile = DataFileInfo(filename)
         obj.name = name
@@ -68,6 +98,17 @@ class Data(np.ndarray):
         return obj
 
     def __getitem__(self, item):
+        """要素を取得する。
+        
+        Parameters
+        ----------
+        item : object
+            代入または更新する値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         if not isinstance(item, tuple):
             item = (item,)
 
@@ -159,6 +200,17 @@ class Data(np.ndarray):
         setattr(new_obj, "slice_axes", axes)
 
     def __array_finalize__(self, obj):
+        """NumPy 配列のメタ情報を引き継ぐ。
+        
+        Parameters
+        ----------
+        obj : object
+            対象オブジェクトです。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         if obj is None:
             return
         self.datafile = getattr(obj, "datafile", None)
@@ -235,6 +287,18 @@ class Data(np.ndarray):
         return self.slices[0]
 
     def axis(self, ax: int) -> np.ndarray:
+        """対象軸の情報を返す。
+        
+        Parameters
+        ----------
+        ax : int
+            描画先の Axes。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         index = self.slice_axes[ax]
         axis_slice = self.slices[index]
         return np.array(*utils.slice2tuple(axis_slice))
@@ -450,102 +514,53 @@ class Data(np.ndarray):
         return_updater: bool = False,
         **kwargs,
     ):
-        """gifアニメーションを作成する.
-
+        """アニメーション描画を実行する。
+        
         Parameters
         ----------
-        fig : Figure
-            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
+        fig : Union[plt.Figure, None], optional
+            描画先の Figure。
         axis : int, optional
-            アニメーションする軸, by default 0
-
-        action : {'return', 'show', 'to_html', 'save', 'frames'}, optional, by default 'to_html'
-            Determines the behavior of the function:
-
-            - 'return': The plot object is returned without rendering it.
-            - 'show': The plot is displayed immediately.
-            - 'to_html': The plot is converted to an Ipython.display.HTML object and returned.
-            - 'save': The plot is saved to a file specified by 'filename' argument.
-            - 'frames': FrameUpdater object is returned without rendering it.
-
-        filename : str, optional
-            保存するファイル名(actionが'save'以外の場合やNoneの場合保存されない), by default None
-
-        interval : int, optional
-            フレーム間のインターバル(ミリ秒), by default 400
-        repeat : bool
-            アニメーションをループするならTrue, by default True
-        title : str, optional
-            タイトル(Noneの場合データ名(phisp等)), by default None
-        notitle : bool, optional
-            タイトルを付けない場合True, by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
-        vmin : float, optional
-            最小値, by default None
-        vmax : float, optional
-            最大値, by default None
-        use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
-
+            対象軸。
+        mode : str, optional
+            処理モード。
+        action : ANIMATER_PLOT_MODE, optional
+            出力アクション種別です。
+        filename : PathLike, optional
+            保存先または読み込み対象のファイル名です。
         show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='show' instead for equivalent functionality.
-
-        savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the plot('action'='save', filename='example.gif') instead for equivalent functionality.
-
-        to_html : bool
-            アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='to_html' instead for equivalent functionality.
-
-        return_updater : bool
-            FrameUpdaterを返す場合True, by default False
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='frames' instead for equivalent functionality.
-
+            True の場合は描画を表示。
+        savefilename : PathLike, optional
+            保存先ファイル名です。
+        interval : int, optional
+            フレーム間隔 [ms] です。
+        repeat : bool, optional
+            `True` の場合、アニメーションをループ再生します。
+        title : Union[str, None], optional
+            タイトル文字列。
+        notitle : bool, optional
+            `True` の場合、フレーム番号由来の自動タイトル追記を行いません。
+        offsets : Union[, optional
+                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+                ], optional
+            軸方向のオフセット。
+        use_si : bool, optional
+            True の場合は SI 単位系を使用。
+        vmin : float, optional
+            表示範囲の最小値。
+        vmax : float, optional
+            表示範囲の最大値。
+        to_html : bool, optional
+            非推奨オプションです。`True` の場合 `action='to_html'` と同等です。
+        return_updater : bool, optional
+            非推奨オプションです。`True` の場合 `action='frames'` と同等です。
+        **kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
         Returns
         -------
-        Depending on the selected action:
-
-        - If 'return': Returns the tuple of the plot object (fig, animation).
-        - If 'show': Does not return anything, displays the plot.
-        - If 'to_html': Returns an Ipython.display.HTML object of the plot (for Jupyter).
-        - If 'save': Does not return anything, saves the plot to a file.
-        - If 'frames': Returns FrameUpdater object.
-
-        Examples
-        --------
-        >>> fig, ani = gifplot(action="return")
-        Returns the tuple of the plot object.
-
-        >>> gifplot(action="show")
-        Displays the plot.
-
-        >>> html = gifplot(action="to_html")
-        Returns the HTML representation of the plot.
-
-        >>> gifplot(action="save", filename = "example.gif")
-        Saves the plot to a file.
-
-        >>> updater = gifplot(action="frames")
-        Returns FrameUpdater object.
+        object
+            処理結果です。
         """
         if return_updater:
             warnings.warn(
@@ -585,6 +600,20 @@ class Data4d(Data):
     """4次元データを管理する."""
 
     def __new__(cls, input_array, **kwargs):
+        """インスタンスを生成する。
+        
+        Parameters
+        ----------
+        input_array : object
+            元となる NumPy 配列です。
+        **kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         obj = np.asarray(input_array).view(cls)
 
         if "xslice" not in kwargs:
@@ -601,12 +630,19 @@ class Data4d(Data):
         return super().__new__(cls, input_array, **kwargs)
 
     def plot(self, mode: Literal["auto"] = "auto", **kwargs):
-        """4次元データをプロットする.(未実装)
+        """4 次元データをプロットする（未実装）。
 
         Parameters
         ----------
-        mode : str, optional
-            [description], by default 'auto'
+        mode : {'auto'}, optional
+            プロットモードです。現在は未実装のため `'auto'` のみ受け付けます。
+        **kwargs : dict
+            将来拡張のためのキーワード引数です。現在は使用しません。
+
+        Returns
+        -------
+        None
+            戻り値はありません。
         """
         if mode == "auto":
             mode = "".join(sorted(self.use_axes))
@@ -617,6 +653,20 @@ class Data3d(Data):
     """3次元データを管理する."""
 
     def __new__(cls, input_array, **kwargs):
+        """インスタンスを生成する。
+        
+        Parameters
+        ----------
+        input_array : object
+            元となる NumPy 配列です。
+        **kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         obj = np.asarray(input_array).view(cls)
 
         if "xslice" not in kwargs:
@@ -642,17 +692,57 @@ class Data3d(Data):
         *args,
         **kwargs,
     ):
-        """3次元データをプロットする.(未実装)
+        """3 次元データをプロットする。
+
+        現在は `mode='cont'` のみ実装されており、内部で
+        :func:`emout.plot.contour3d.contour3d` を呼び出します。
 
         Parameters
         ----------
-        mode : str, optional
-            [description], by default 'auto'
+        mode : {'auto', 'cont'}, optional
+            プロットモードです。`'auto'` の場合は `'cont'` が選択されます。
+        use_si : bool, optional
+            `True` の場合は SI 単位系へ変換して描画します。
+        offsets : Union[
+                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+                ], optional
+            描画原点のオフセット `(x, y, z)` です。
+            文字列 `'left'`, `'center'`, `'right'` も指定できます。
+        *args : tuple
+            `contour3d` へ渡す追加の位置引数です。
+            先頭要素として等値面レベル `levels`（`Sequence[float]`）を指定します。
+        **kwargs : dict
+            `contour3d` へ渡すキーワード引数です。
+            主な引数は `ax`, `bounds_xyz`, `roi_zyx`, `opacity`, `step`,
+            `title`, `save`, `show`, `xlabel`, `ylabel`, `zlabel`,
+            `clabel`, `clabel_fmt`, `clabel_fontsize`, `clabel_sigfigs`,
+            `clabel_shared_exponent`, `clabel_text_kwargs`,
+            `clabel_exponent_pos`, `clabel_exponent_text`,
+            `clabel_exponent_kwargs` です。
+
+        Returns
+        -------
+        tuple(matplotlib.figure.Figure, matplotlib.axes.Axes) or None
+            `mode='cont'` の場合は `(fig, ax)` を返します。
+            未対応モードでは `None` を返します。
         """
         if mode == "auto":
             mode = "cont"
 
         def _offseted(line, offset):
+            """位置指定を実座標オフセットへ変換する。
+            
+            Parameters
+            ----------
+            line : object
+                オフセット適用対象の座標列です。
+            offset : object
+                適用するオフセット値またはキーワードです。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             if offset == "left":
                 line -= line.ravel()[0]
             elif offset == "center":
@@ -691,6 +781,20 @@ class Data2d(Data):
     """2次元データの2次元面を管理する."""
 
     def __new__(cls, input_array, **kwargs):
+        """インスタンスを生成する。
+        
+        Parameters
+        ----------
+        input_array : object
+            元となる NumPy 配列です。
+        **kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         obj = np.asarray(input_array).view(cls)
 
         if "xslice" not in kwargs:
@@ -731,6 +835,11 @@ class Data2d(Data):
             プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
         mode : str
             プロットの種類('cm': カラーマップ, 'cont': 等高線プロット, 'surf': サーフェースプロット)
+        **kwargs : dict
+            低レベル描画関数へ渡す追加引数です。
+            `mode='cm'` / `mode='cm+cont'` では `plot_2dmap`、
+            `mode='cont'` では `plot_2d_contour`、
+            `mode='surf'` では `plot_surface` の引数を指定できます。
         mesh : (numpy.ndarray, numpy.ndarray), optional
             メッシュ, by default None
         savefilename : str, optional
@@ -818,6 +927,19 @@ class Data2d(Data):
             _title = self.name
 
         def _offseted(line, offset):
+            """位置指定を実座標オフセットへ変換する。
+            
+            Parameters
+            ----------
+            line : object
+                オフセット適用対象の座標列です。
+            offset : object
+                適用するオフセット値またはキーワードです。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             if offset == "left":
                 line -= line.ravel()[0]
             elif offset == "center":
@@ -890,6 +1012,20 @@ class Data1d(Data):
     """3次元データの1次元直線を管理する."""
 
     def __new__(cls, input_array, **kwargs):
+        """インスタンスを生成する。
+        
+        Parameters
+        ----------
+        input_array : object
+            元となる NumPy 配列です。
+        **kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         obj = np.asarray(input_array).view(cls)
 
         if "xslice" not in kwargs:
@@ -975,6 +1111,19 @@ class Data1d(Data):
             _ylabel = self.name
 
         def _offseted(line, offset):
+            """位置指定を実座標オフセットへ変換する。
+            
+            Parameters
+            ----------
+            line : object
+                オフセット適用対象の座標列です。
+            offset : object
+                適用するオフセット値またはキーワードです。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             if offset == "left":
                 line -= line[0]
             elif offset == "center":

@@ -2,6 +2,13 @@ from emout.utils import RegexDict
 
 
 def test_regexdict():
+    """regexdict のテストを行う。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     name2unit = RegexDict({
         r'a': 0,
         r'a[0-9]+': 5,

@@ -90,32 +90,101 @@ class UnitTranslator:
         return self.trans(value, reverse=True)
 
     def __mul__(self, other):
+        """乗算演算を適用する。
+        
+        Parameters
+        ----------
+        other : object
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         from_unit = self.from_unit * other.from_unit
         to_unit = self.to_unit * other.to_unit
         return UnitTranslator(from_unit, to_unit)
 
     def __rmul__(self, other):
+        """右辺乗算演算を適用する。
+        
+        Parameters
+        ----------
+        other : object
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         other = UnitTranslator(other, other)
         return other * self
 
     def __truediv__(self, other):
+        """除算演算を適用する。
+        
+        Parameters
+        ----------
+        other : object
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         from_unit = self.from_unit / other.from_unit
         to_unit = self.to_unit / other.to_unit
         return UnitTranslator(from_unit, to_unit)
 
     def __rtruediv__(self, other):
+        """右辺除算演算を適用する。
+        
+        Parameters
+        ----------
+        other : object
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         other = UnitTranslator(other, other)
         return other / self
 
     def __pow__(self, other):
+        """べき乗演算を適用する。
+        
+        Parameters
+        ----------
+        other : object
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         from_unit = self.from_unit**other
         to_unit = self.to_unit**other
         return UnitTranslator(from_unit, to_unit)
 
     def __str__(self):
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現です。
+        """
         return "{}({:.4}, [{}])".format(self.name, self.ratio, self.unit)
 
     def __repr__(self):
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         return self.__str__()
 
 
@@ -316,12 +385,12 @@ class Units:
         """Unit translator for Electric conductivity [S/m]"""
 
     def translators(self):
-        """変換器のリストを返す.
+        """変換器一覧を返す（現状は未実装）。
 
         Returns
         -------
-        list(UnitTranslator)
-            変換器のリスト
+        None
+            現在の実装では `None` を返します。
         """
         return
         # translators = inspect.getmembers(

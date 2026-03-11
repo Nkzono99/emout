@@ -23,6 +23,25 @@ class HeatmapData:
         title: str = "Heatmap",
         units=None,
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        X : np.ndarray
+            x 軸格子配列です。
+        Y : np.ndarray
+            y 軸格子配列です。
+        Z : np.ndarray
+            z 軸格子配列です。
+        xlabel : str, optional
+            x 軸ラベル。
+        ylabel : str, optional
+            y 軸ラベル。
+        title : str, optional
+            タイトル文字列。
+        units : object, optional
+            単位変換情報です。
+        """
         if X.ndim != 2 or Y.ndim != 2 or Z.ndim != 2:
             raise ValueError(
                 "HeatmapData: X, Y, Z はすべて 2D 配列である必要があります"
@@ -40,6 +59,13 @@ class HeatmapData:
         self.units = units
 
     def __repr__(self):
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         return f"<HeatmapData: shape={self.Z.shape}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
 
     def plot(self, ax=None, cmap="viridis", use_si=True, **plot_kwargs):
@@ -129,6 +155,13 @@ class ProbabilityResult:
         yield self.ret_particles
 
     def __repr__(self) -> str:
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         return (
             f"<ProbabilityResult: grid_dims={self.dims}, "
             f"axes={ProbabilityResult._AXES}>"
@@ -191,6 +224,18 @@ class ProbabilityResult:
         )
 
     def energy_spectrum(self, energy_bins=None):
+        """エネルギースペクトルを計算する。
+        
+        Parameters
+        ----------
+        energy_bins : object, optional
+            エネルギーヒストグラムのビン設定です。
+            整数ならビン数、配列ならビン境界を指定します。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         phases = self.phases
         velocities = phases[:, :, :, :, :, :, 3:6].reshape(-1, 3)
         velocities = self.unit.v.reverse(velocities)
@@ -217,6 +262,20 @@ class ProbabilityResult:
         return hist, bin_edges
 
     def plot_energy_spectrum(self, energy_bins=None, scale="log"):
+        """プロット処理を行う。
+        
+        Parameters
+        ----------
+        energy_bins : object, optional
+            エネルギーヒストグラムのビン設定です。
+            整数ならビン数、配列ならビン境界を指定します。
+        scale : str, optional
+            表示スケール係数です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         hist, bin_edges = self.energy_spectrum(energy_bins=energy_bins)
 
         centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])

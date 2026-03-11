@@ -254,11 +254,25 @@ class GridDataSeries:
         return self.chain(other_series)
 
     def __iter__(self):
+        """イテレータを返します。
+
+        Returns
+        -------
+        Iterator[Data3d]
+            時系列順に `Data3d` を返すイテレータです。
+        """
         indexes = sorted(self._index2key.keys())
         for index in indexes:
             yield self[index]
 
     def __len__(self):
+        """要素数を返す。
+        
+        Returns
+        -------
+        int
+            要素数。
+        """
         return len(self._index2key)
 
 
@@ -280,6 +294,13 @@ class MultiGridDataSeries(GridDataSeries):
     """
 
     def __init__(self, *series):
+        """インスタンスを初期化します。
+        
+        Parameters
+        ----------
+        *series : tuple
+            追加の位置引数です。委譲先の関数へそのまま渡されます。
+        """
         self.series = []
         for data in series:
             self.series += self.__expand(data)
@@ -429,6 +450,13 @@ class MultiGridDataSeries(GridDataSeries):
         raise IndexError()
 
     def __iter__(self):
+        """イテレータを返す。
+        
+        Returns
+        -------
+        Iterator
+            イテレータ。
+        """
         iters = [iter(self.series[0])]
         for data in self.series[1:]:
             it = iter(data)
@@ -438,4 +466,11 @@ class MultiGridDataSeries(GridDataSeries):
 
     def __len__(self) -> int:
         # 先頭データは前のデータの最後尾と重複しているためカウントしない
+        """要素数を返す。
+        
+        Returns
+        -------
+        int
+            要素数。
+        """
         return np.sum([len(data) for data in self.series]) - (len(self.series) - 1)

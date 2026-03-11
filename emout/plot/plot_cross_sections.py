@@ -12,25 +12,28 @@ def plot_cross_sections(
     use_si: bool = True,
     **kwargs,
 ) -> plt.Axes:
-    """
-    Plot boundaries (spheres, flat surfaces, rectangle holes) sliced by plane axis=coord.
-
+    """プロット処理を行う。
+    
     Parameters
     ----------
     data : object
-        Must have `inp.boundary_type`, `inp.boundary_types`, and relevant params.
-    axis : {'x','y','z'}
-        Normal of slicing plane.
-    coord : float
-        Coordinate along `axis` of the slicing plane.
-    ax : matplotlib.axes.Axes, optional
-        Axes to draw on.
-    kwargs
-        Passed to individual plot functions for styling.
-
+        処理対象のデータ。
+    axis : str, optional
+        対象軸。
+    coord : float, optional
+        断面を取る位置です。`axis='z'` なら z 座標、
+        `axis='x'`/`'y'` なら対応する x/y 座標を指定します。
+    ax : Optional[plt.Axes], optional
+        描画先の Axes。
+    use_si : bool, optional
+        True の場合は SI 単位系を使用。
+    **kwargs : dict
+        追加のキーワード引数。内部で呼び出す関数へ渡されます。
+    
     Returns
     -------
-    ax : matplotlib.axes.Axes
+    plt.Axes
+        描画オブジェクト。
     """
     # Early exit if no complex boundaries
     inp = getattr(data, "inp", None)

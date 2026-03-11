@@ -7,6 +7,22 @@ from matplotlib.animation import PillowWriter, writers
 
 
 def interp2d(mesh, n, **kwargs):
+    """2 次元配列上で双線形補間を行う。
+    
+    Parameters
+    ----------
+    mesh : object
+        描画メッシュ。
+    n : object
+        サンプル数または格子点数です。
+    **kwargs : dict
+        追加のキーワード引数。内部で呼び出す関数へ渡されます。
+    
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     ny, nx = mesh.shape
 
     if (mesh == mesh[0, 0]).all():
@@ -80,6 +96,17 @@ class RegexDict(dict):
     """正規表現をキーとする辞書クラス."""
 
     def __getitem__(self, key):
+        """要素を取得する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         if super().__contains__(key):
             return super().__getitem__(key)
 
@@ -90,6 +117,17 @@ class RegexDict(dict):
         raise KeyError()
 
     def __contains__(self, key):
+        """要素の包含判定を行う。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         if super().__contains__(key):
             return True
 
@@ -100,6 +138,19 @@ class RegexDict(dict):
         return False
 
     def get(self, key, default=None):
+        """キーに対応する値を取得する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        default : object, optional
+            キー未存在時に返す既定値です。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         try:
             return self[key]
         except Exception:
@@ -155,6 +206,13 @@ class DataFileInfo:
         return self._filename.resolve()
 
     def __str__(self):
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現です。
+        """
         return str(self._filename)
 
 
@@ -163,11 +221,36 @@ class QuantizedPillowWriter(PillowWriter):
     """色数を256としたPillowWriterラッパークラス."""
 
     def grab_frame(self, **savefig_kwargs):
+        """フレームを取得して 256 色へ量子化する。
+        
+        Parameters
+        ----------
+        **savefig_kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         super().grab_frame(**savefig_kwargs)
         self._frames[-1] = self._frames[-1].convert("RGB").quantize()
 
 
 def hole_mask(inp, reverse=False):
+    """矩形ホール領域のマスク配列を生成する。
+    
+    Parameters
+    ----------
+    inp : object
+        入力パラメータオブジェクトです。
+    reverse : bool, optional
+        `True` の場合、生成したマスクを反転して返します。
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     shape = (inp.nz + 1, inp.ny + 1, inp.nx + 1)
     xl = int(inp.xlrechole[0])
     xu = int(inp.xurechole[0])

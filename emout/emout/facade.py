@@ -33,6 +33,19 @@ class Emout:
         ad: Union[List[Union[Path, str]], None] = None,
         inpfilename: Union[Path, str] = "plasma.inp",
     ):
+        """Emout ファサードを初期化する。
+
+        Parameters
+        ----------
+        directory : Union[Path, str], optional
+            処理対象ディレクトリのパスです。
+        append_directories : Union[List[Union[Path, str]], None], optional
+            追加で参照するディレクトリまたはそのリストです。
+        ad : Union[List[Union[Path, str]], None], optional
+            `append_directories` の短縮エイリアスです。両方指定した場合は `append_directories` が優先されます。
+        inpfilename : Union[Path, str], optional
+            入力パラメータファイル名です。通常は `plasma.inp` を指定します。
+        """
         self._dir_inspector = DirectoryInspector(
             directory=directory,
             append_directories=append_directories or ad,
@@ -46,21 +59,56 @@ class Emout:
 
     @property
     def directory(self) -> Path:
+        """メインディレクトリを返す。
+
+        Returns
+        -------
+        Path
+            EMSES 出力の基準ディレクトリです。
+        """
         return self._dir_inspector.main_directory
 
     @property
     def append_directories(self) -> List[Path]:
+        """追加チェーンディレクトリ一覧を返す。
+
+        Returns
+        -------
+        List[Path]
+            読み込み時に後段として連結されるディレクトリ一覧です。
+        """
         return self._dir_inspector.append_directories
 
     @property
     def inp(self) -> Union[InpFile, None]:
+        """読み込まれた `.inp` 情報を返す。
+
+        Returns
+        -------
+        Union[InpFile, None]
+            `.inp` の読み込み結果です。未読込時は `None`。
+        """
         return self._dir_inspector.inp
 
     @property
     def unit(self) -> Union[Units, None]:
+        """単位変換情報を返す。
+
+        Returns
+        -------
+        Union[Units, None]
+            `UnitConversionKey` が取得できた場合は `Units`、未設定なら `None`。
+        """
         return self._dir_inspector.unit
 
     def is_valid(self) -> bool:
+        """シミュレーション出力が正常終了しているか判定する。
+
+        Returns
+        -------
+        bool
+            条件判定結果です。
+        """
         return self._dir_inspector.is_valid()
 
     @property
@@ -78,6 +126,18 @@ class Emout:
         return self._dir_inspector.read_pbody_as_dataframe()
 
     def particle(self, species: int):
+        """粒子時系列データを読み込む `ParticlesSeries` を返す。
+
+        Parameters
+        ----------
+        species : int
+            粒子種別番号（1 始まり）です。
+
+        Returns
+        -------
+        object
+            指定種別の粒子データ系列オブジェクトです。
+        """
         x_unit = self.unit.length
         v_unit = self.unit.v
 
@@ -111,6 +171,13 @@ class Emout:
 
     @property
     def backtrace(self) -> BacktraceWrapper:
+        """バックトレース計算用ラッパーを返す。
+
+        Returns
+        -------
+        BacktraceWrapper
+            現在のディレクトリ/入力条件に紐づいたバックトレース API です。
+        """
         return BacktraceWrapper(
             directory=self._dir_inspector.main_directory,
             inp=self._dir_inspector.inp,

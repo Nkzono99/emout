@@ -46,12 +46,38 @@ class RenderItem:
 
 @dataclass(frozen=True)
 class Bounds3D:
+    """Bounds3D クラス。
+    """
     x: Tuple[float, float]
     y: Tuple[float, float]
     z: Tuple[float, float]
 
     def expanded(self, frac: float = 0.05) -> "Bounds3D":
+        """境界を指定割合だけ拡張した Bounds を返す。
+        
+        Parameters
+        ----------
+        frac : float, optional
+            区間内補間係数です。
+        Returns
+        -------
+        "Bounds3D"
+            処理結果です。
+        """
         def ex(a, b):
+            """1 次元区間を指定割合で拡張する。
+            
+            Parameters
+            ----------
+            a : object
+                始点側の値です。
+            b : object
+                終点側の値です。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             w = b - a
             return (a - frac * w, b + frac * w)
 
@@ -77,6 +103,21 @@ def _as_list(surfaces) -> list[RenderItem]:
 def _make_norm(
     vmin=None, vmax=None, *, robust_data: Optional[np.ndarray] = None
 ) -> Normalize:
+    """カラーマップ用の正規化オブジェクトを作成する。
+    
+    Parameters
+    ----------
+    vmin : object, optional
+        表示範囲の最小値。
+    vmax : object, optional
+        表示範囲の最大値。
+    robust_data : Optional[np.ndarray], optional
+        外れ値除去に使う参照データです。
+    Returns
+    -------
+    Normalize
+        処理結果です。
+    """
     if vmin is None or vmax is None:
         if robust_data is None:
             vmin0, vmax0 = -1.0, 1.0
@@ -148,6 +189,19 @@ def _mesh_from_sdf(xs, ys, zs, sdf_zyx, level: float = 0.0):
 
 
 def _face_values_from_vertex_values(F: np.ndarray, vval: np.ndarray) -> np.ndarray:
+    """頂点値から各面の代表値を計算する。
+    
+    Parameters
+    ----------
+    F : np.ndarray
+        三角形面インデックス配列です。
+    vval : np.ndarray
+        頂点ごとのスカラー値です（`V` と同じ頂点順）。
+    Returns
+    -------
+    np.ndarray
+        各三角形面の平均スカラー値です。
+    """
     return np.nanmean(vval[F], axis=1)
 
 
@@ -160,6 +214,27 @@ def _poly_collection(
     norm: Normalize,
     alpha: float = 1.0,
 ) -> Poly3DCollection:
+    """面値で着色したポリゴンコレクションを生成する。
+    
+    Parameters
+    ----------
+    V : np.ndarray
+        頂点座標配列です。
+    F : np.ndarray
+        三角形面インデックス配列です。
+    face_values : np.ndarray
+        面ごとのスカラー値です。`F` の行順と対応します。
+    cmap : object
+        カラーマップ。
+    norm : Normalize
+        色正規化設定です。
+    alpha : float, optional
+        透過率です。
+    Returns
+    -------
+    Poly3DCollection
+        カラーマップを適用した三角形ポリゴンコレクションです。
+    """
     tris = V[F]
     fc = cmap(norm(face_values))
     fc[:, 3] = np.where(np.isfinite(face_values), alpha, 0.0)
@@ -177,6 +252,27 @@ def _solid_poly_collection(
     edge_color: Optional[str] = None,
     edge_lw: float = 0.4,
 ) -> Poly3DCollection:
+    """単色のポリゴンコレクションを生成する。
+    
+    Parameters
+    ----------
+    V : np.ndarray
+        頂点座標配列です。
+    F : np.ndarray
+        三角形面インデックス配列です。
+    color : object
+        面色です。Matplotlib の色指定形式（名前、RGB(A)、HEX など）を受け付けます。
+    alpha : float, optional
+        透過率です。
+    edge_color : Optional[str], optional
+        輪郭線の色です。`None` の場合は輪郭線を描画しません。
+    edge_lw : float, optional
+        輪郭線の線幅です。
+    Returns
+    -------
+    Poly3DCollection
+        描画に使う三角形ポリゴンコレクションです。
+    """
     tris = V[F]
     rgba = list(to_rgba(color))
     rgba[3] = float(alpha)
@@ -387,6 +483,29 @@ def plot_surfaces(
 
 
 def add_colorbar(fig, ax, *, cmap, norm, label=r"$\phi$ (V)", fraction=0.03, pad=0.08):
+    """描画に対応するカラーバーを追加する。
+    
+    Parameters
+    ----------
+    fig : object
+        描画先の Figure。
+    ax : object
+        描画先の Axes。
+    cmap : object
+        カラーマップ。
+    norm : object
+        色正規化設定です。
+    label : str, optional
+        カラーバーのラベル文字列です。
+    fraction : float, optional
+        カラーバーの幅比率です（`Figure.colorbar` の `fraction`）。
+    pad : float, optional
+        プロット本体とカラーバーの間隔です（`Figure.colorbar` の `pad`）。
+    Returns
+    -------
+    object
+        追加したカラーバーオブジェクトです。
+    """
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array([])
     cbar = fig.colorbar(m, ax=ax, fraction=fraction, pad=pad)

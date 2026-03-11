@@ -74,10 +74,32 @@ class UnitConversionKey:
 
 
 class AttrDict(dict):
+    """AttrDict クラス。
+    """
     def __init__(self, *args, **kwargs):
+        """インスタンスを初期化します。
+        
+        Parameters
+        ----------
+        *args : tuple
+            追加の位置引数です。委譲先の関数へそのまま渡されます。
+        **kwargs : dict
+            追加のキーワード引数です。委譲先の関数へそのまま渡されます。
+        """
         super().__init__(*args, **kwargs)
 
     def __getattr__(self, key):
+        """属性アクセスを解決する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return self[key]
 
 
@@ -89,6 +111,16 @@ class InpFile:
     """
 
     def __init__(self, filename=None, convkey=None):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        filename : object, optional
+            保存先または読み込み対象のファイル名です。
+        convkey : object, optional
+            単位変換に使う `UnitConversionKey` です。
+            `filename` から `!!key` を読み取れた場合はそちらを優先します。
+        """
         if filename:
             self.nml = f90nml.read(filename)
             self.convkey = UnitConversionKey.load(filename) or convkey
@@ -97,6 +129,17 @@ class InpFile:
             self.convkey = convkey
 
     def __contains__(self, key):
+        """要素の包含判定を行う。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         if key in self.nml.keys():
             return True
         else:
@@ -106,6 +149,17 @@ class InpFile:
         return False
 
     def __getitem__(self, key):
+        """要素を取得する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         if key in self.nml.keys():
             return self.nml[key]
         else:
@@ -115,6 +169,19 @@ class InpFile:
         raise KeyError()
 
     def __setitem__(self, key, item):
+        """要素を設定する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        item : object
+            代入または更新する値です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         if key in self.nml.keys():
             self.nml[key] = item
             return
@@ -126,12 +193,36 @@ class InpFile:
         raise KeyError()
 
     def __getattr__(self, key):
+        """属性アクセスを解決する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         item = self[key]
         if isinstance(item, dict):
             return AttrDict(item)
         return item
 
     def __setattr__(self, key, item):
+        """属性を設定する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        item : object
+            代入または更新する値です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         if key in ["nml", "convkey"]:
             super().__setattr__(key, item)
             return
@@ -235,13 +326,55 @@ class InpFile:
             f90nml.write(self.nml, f, force=True)
 
     def __str__(self):
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現です。
+        """
         return str(self.nml)
 
     def __repr__(self):
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         return str(self)
 
     def conversion(self, unit_from: Units, unit_to: Units):
+        """単位変換を適用する。
+        
+        Parameters
+        ----------
+        unit_from : Units
+            変換元単位です。
+        unit_to : Units
+            変換先単位です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         def conv(group, name, unit_name):
+            """指定パラメータを単位変換して更新する。
+            
+            Parameters
+            ----------
+            group : object
+                対象の namelist グループ名です。
+            name : object
+                対象データ名またはキー名です。
+            unit_name : object
+                参照する単位名です。
+            Returns
+            -------
+            None
+                戻り値はありません。
+            """
             value_from = self[group][name]
 
             value = getattr(unit_from, unit_name).reverse(value_from)
@@ -250,6 +383,21 @@ class InpFile:
             self[group][name] = value_to
 
         def conv1d(group, name, unit_name):
+            """1 次元配列パラメータを単位変換して更新する。
+            
+            Parameters
+            ----------
+            group : object
+                対象の namelist グループ名です。
+            name : object
+                対象データ名またはキー名です。
+            unit_name : object
+                参照する単位名です。
+            Returns
+            -------
+            None
+                戻り値はありません。
+            """
             if group not in self:
                 return
             if name not in self[group]:
@@ -281,8 +429,22 @@ class InpFile:
 
     @property
     def dx(self) -> float:
+        """変換キー `dx` を返す。
+        
+        Returns
+        -------
+        float
+            処理結果です。
+        """
         return self.convkey.dx
 
     @property
     def to_c(self) -> float:
+        """変換キー `to_c` を返す。
+        
+        Returns
+        -------
+        float
+            処理結果です。
+        """
         return self.convkey.to_c

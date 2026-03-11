@@ -8,10 +8,38 @@ Btype = Literal["periodic", "dirichlet", "neumann"]
 def relocated_magnetic_field(
     bf: np.array, axis: int, btypes: Tuple[Btype, Btype] 
 ):
+    """磁場をセル中心位置へ再配置する。
+    
+    Parameters
+    ----------
+    bf : np.array
+        磁場配列です。
+    axis : int
+        対象軸。
+    btypes : Tuple[Btype, Btype]
+        対象軸に直交する 2 方向の境界条件です（`periodic`/`dirichlet`/`neumann`）。
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     axis1 = (axis + 1) % 3
     axis2 = (axis + 2) % 3
 
     def slc(s1, s2=slice(None, None)):
+        """対象軸に応じたスライスを構築する。
+        
+        Parameters
+        ----------
+        s1 : object
+            開始インデックスです。
+        s2 : object, optional
+            終了インデックスです。
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         slices = [None, None, None]
 
         slices[axis] = slice(None, None)

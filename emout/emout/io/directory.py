@@ -26,6 +26,17 @@ class DirectoryInspector:
         inpfilename: Union[Path, str] = "plasma.inp",
     ):
         # 1. メインディレクトリを Path に変換
+        """DirectoryInspector を初期化する。
+
+        Parameters
+        ----------
+        directory : Union[Path, str]
+            EMSES 出力を格納したメインディレクトリです。文字列指定時は `Path` に変換されます。
+        append_directories : Union[List[Union[Path, str]], str, None], optional
+            追加で参照するディレクトリ群です。`'auto'` では連番サフィックス付きディレクトリを自動探索します。
+        inpfilename : Union[Path, str], optional
+            読み込む入力ファイル名です。`None` を指定すると `.inp` の読み込みをスキップします。
+        """
         if not isinstance(directory, Path):
             directory = Path(directory)
         self.main_directory: Path = directory
@@ -50,6 +61,21 @@ class DirectoryInspector:
         self._load_inpfile(inpfilename)
 
     def _fetch_append_directories(self, directory: Path) -> List[Path]:
+        """連番サフィックス付き追加ディレクトリを探索する。
+
+        `<directory>_2`, `<directory>_3`, ... を順に確認し、
+        `is_valid()` が `False` になった時点で探索を終了します。
+
+        Parameters
+        ----------
+        directory : Path
+            探索起点となるメインディレクトリです。
+
+        Returns
+        -------
+        List[Path]
+            有効と判定された追加ディレクトリ一覧です。
+        """
         logger.info(f"Fetching append directories for: {directory}")
         result: List[Path] = []
         directory = directory.resolve()
@@ -75,6 +101,18 @@ class DirectoryInspector:
         return result
 
     def _load_inpfile(self, inpfilename: Union[Path, str]) -> None:
+        """`.inp` ファイルを読み込み、単位変換情報を初期化する。
+
+        Parameters
+        ----------
+        inpfilename : Union[Path, str]
+            `main_directory` からの相対ファイル名です。`None` の場合は読み込みません。
+
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         if inpfilename is None:
             return
         inp_path = self.main_directory / inpfilename
@@ -89,10 +127,24 @@ class DirectoryInspector:
 
     @property
     def inp(self) -> Optional[InpFile]:
+        """読み込まれた `InpFile` を返す。
+
+        Returns
+        -------
+        Optional[InpFile]
+            `.inp` 読み込み済みなら `InpFile`、未読込なら `None`。
+        """
         return self._inp
 
     @property
     def unit(self) -> Optional[Units]:
+        """読み込まれた単位変換情報を返す。
+
+        Returns
+        -------
+        Optional[Units]
+            変換キーが取得できた場合は `Units`、未設定なら `None`。
+        """
         return self._unit
 
     def is_valid(self) -> bool:
@@ -111,6 +163,18 @@ class DirectoryInspector:
             return False
 
         def read_last_line(fname: Path) -> str:
+            """ファイル末尾行を読み込む。
+
+            Parameters
+            ----------
+            fname : Path
+                対象ファイルパス。
+
+            Returns
+            -------
+            str
+                末尾行（UTF-8 デコード済み文字列）。
+            """
             with open(fname, "rb") as f:
                 f.seek(-2, 2)
                 while f.read(1) != b"\n":
@@ -128,9 +192,12 @@ class DirectoryInspector:
         return int(last_line.split()[0]) == int(self._inp.nstep)
 
     def read_icur_as_dataframe(self) -> pd.DataFrame:
-        """
-        'icur' ファイルを DataFrame にして返す。
-        Emout クラス時代のプロパティ icur に相当する機能をここへ移行。
+        """`icur` ファイルを `DataFrame` として読み込む。
+
+        Returns
+        -------
+        pandas.DataFrame
+            ステップ列と各粒子種/ボディ電流列を持つテーブルです。
         """
         if self._inp is None:
             raise RuntimeError("read_icur: .inp が読み込まれていません")
@@ -149,9 +216,12 @@ class DirectoryInspector:
         return pd.read_csv(icur_path, sep=r"\s+", header=None, names=names)
 
     def read_pbody_as_dataframe(self) -> pd.DataFrame:
-        """
-        'pbody' ファイルを DataFrame にして返す。
-        Emout クラス時代のプロパティ pbody に相当する機能をここへ移行。
+        """`pbody` ファイルを `DataFrame` として読み込む。
+
+        Returns
+        -------
+        pandas.DataFrame
+            `step` と各ボディ列からなるテーブルです。
         """
         if self._inp is None:
             raise RuntimeError("read_pbody: .inp が読み込まれていません")

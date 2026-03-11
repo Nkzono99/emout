@@ -116,15 +116,38 @@ def poisson(
 
 
 class FFT3d:
+    """FFT3d クラス。
+    """
     def __init__(
         self,
         forwards: List[Callable[[np.ndarray], np.ndarray]],
         backwards: List[Callable[[np.ndarray], np.ndarray]],
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        forwards : List[Callable[[np.ndarray], np.ndarray]]
+            コールバック関数です。
+        backwards : List[Callable[[np.ndarray], np.ndarray]]
+            コールバック関数です。
+        """
         self.__forwards = forwards
         self.__backwards = backwards
 
     def forward(self, data3d: np.ndarray) -> np.ndarray:
+        """順変換を適用する。
+        
+        Parameters
+        ----------
+        data3d : np.ndarray
+            3 次元データ。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         result3d = data3d
 
         result3d = self.__forwards[2](result3d, axis=0, norm="ortho")
@@ -134,6 +157,18 @@ class FFT3d:
         return result3d
 
     def backward(self, data3d: np.ndarray) -> np.ndarray:
+        """逆変換を適用する。
+        
+        Parameters
+        ----------
+        data3d : np.ndarray
+            3 次元データ。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         result3d = data3d
 
         result3d = self.__backwards[2](result3d, axis=0, norm="ortho")
@@ -144,61 +179,191 @@ class FFT3d:
 
 
 class PoissonBoundary(metaclass=ABCMeta):
+    """PoissonBoundary クラス。
+    """
     def __init__(self, axis: int, boundary_values: Tuple[float] = (0.0, 0.0)):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        axis : int
+            対象軸。
+        boundary_values : Tuple[float], optional
+            対象軸の両端境界値 `(lower, upper)` です。
+        """
         self.__axis = axis
         self.__boundary_values = boundary_values
 
     @property
     def axis(self) -> int:
+        """対象軸の情報を返す。
+        
+        Returns
+        -------
+        int
+            件数または index を返します。
+        """
         return self.__axis
 
     @property
     def boundary_values(self) -> Tuple[float]:
+        """境界値 `(lower, upper)` を返す。
+        
+        Returns
+        -------
+        Tuple[float]
+            処理結果です。
+        """
         return self.__boundary_values
 
     @property
     @abstractmethod
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した順方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         pass
 
     @property
     @abstractmethod
     def fft_backward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した逆方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         pass
 
     @abstractmethod
     def get_target_slice(self) -> slice:
+        """値を取得する。
+
+        Returns
+        -------
+        slice
+            解く対象軸に対応するスライスです。
+        """
         pass
 
     @abstractmethod
     def modified_wave_number(self, k: int, n: int) -> float:
+        """境界条件に応じた修正波数を計算する。
+        
+        Parameters
+        ----------
+        k : int
+            波数 index です。
+        n : int
+            サンプル数または格子点数です。
+        Returns
+        -------
+        float
+            処理結果です。
+        """
         pass
 
     @abstractmethod
     def transpose_boundary_values(self, rho_target: np.ndarray, dx: float) -> None:
+        """boundary values を転置処理を行う。
+        
+        Parameters
+        ----------
+        rho_target : np.ndarray
+            解く対象の電荷密度配列です。
+        dx : float
+            x 方向の格子間隔です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         pass
 
     @abstractmethod
     def correct_boundary_values(self, phi: np.ndarray) -> None:
+        """boundary values を補正する。
+        
+        Parameters
+        ----------
+        phi : np.ndarray
+            電位配列です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         pass
 
     def _get_slices_at(self, index_axis) -> Tuple[slice]:
+        """slices at を取得する。
+        
+        Parameters
+        ----------
+        index_axis : object
+            `self.axis` に対応する固定 index（例: `0`, `-1`）です。
+        Returns
+        -------
+        Tuple[slice]
+            処理結果です。
+        """
         return tuple(index_axis if i == self.axis else slice(None) for i in range(3))
 
 
 class PeriodicPoissonBoundary(PoissonBoundary):
+    """PeriodicPoissonBoundary クラス。
+    """
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した順方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         return scipy.fft.fft
 
     @property
     def fft_backward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した逆方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         return scipy.fft.ifft
 
     def get_target_slice(self) -> slice:
+        """値を取得する。
+        
+        Returns
+        -------
+        slice
+            処理結果です。
+        """
         return slice(0, -1)
 
     def modified_wave_number(self, k: int, n: int) -> float:
+        """境界条件に応じた修正波数を計算する。
+        
+        Parameters
+        ----------
+        k : int
+            波数 index です。
+        n : int
+            サンプル数または格子点数です。
+        Returns
+        -------
+        float
+            処理結果です。
+        """
         if k <= int(n / 2):
             wn = 2.0 * np.sin(np.pi * k / float(n))
         else:
@@ -208,30 +373,103 @@ class PeriodicPoissonBoundary(PoissonBoundary):
         return wn
 
     def transpose_boundary_values(self, rho_target: np.ndarray, dx: float) -> None:
+        """boundary values を転置処理を行う。
+        
+        Parameters
+        ----------
+        rho_target : np.ndarray
+            解く対象の電荷密度配列です。
+        dx : float
+            x 方向の格子間隔です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         pass
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
+        """boundary values を補正する。
+        
+        Parameters
+        ----------
+        phi : np.ndarray
+            電位配列です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         phi[self._get_slices_at(-1)] = phi[self._get_slices_at(0)]
 
 
 class DirichletPoissonBoundary(PoissonBoundary):
+    """DirichletPoissonBoundary クラス。
+    """
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した順方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         return partial(scipy.fft.dst, type=1)
 
     @property
     def fft_backward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した逆方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         return partial(scipy.fft.idst, type=1)
 
     def get_target_slice(self) -> slice:
+        """値を取得する。
+        
+        Returns
+        -------
+        slice
+            処理結果です。
+        """
         return slice(1, -1)
 
     def modified_wave_number(self, k: int, n: int) -> float:
+        """境界条件に応じた修正波数を計算する。
+        
+        Parameters
+        ----------
+        k : int
+            波数 index です。
+        n : int
+            サンプル数または格子点数です。
+        Returns
+        -------
+        float
+            処理結果です。
+        """
         wn = 2.0 * (np.cos(np.pi * (k + 1) / float(n + 1)) - 1.0)
 
         return wn
 
     def transpose_boundary_values(self, rho_target: np.ndarray, dx: float) -> None:
+        """boundary values を転置処理を行う。
+        
+        Parameters
+        ----------
+        rho_target : np.ndarray
+            解く対象の電荷密度配列です。
+        dx : float
+            x 方向の格子間隔です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         rho_target[self._get_slices_at(0)] = (
             rho_target[self._get_slices_at(0)] - self.boundary_values[0]
         )
@@ -240,27 +478,87 @@ class DirichletPoissonBoundary(PoissonBoundary):
         )
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
+        """boundary values を補正する。
+        
+        Parameters
+        ----------
+        phi : np.ndarray
+            電位配列です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         phi[self._get_slices_at(0)] = self.boundary_values[0]
         phi[self._get_slices_at(-1)] = self.boundary_values[1]
 
 
 class NeumannPoissonBoundary(PoissonBoundary):
+    """NeumannPoissonBoundary クラス。
+    """
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した順方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         return partial(scipy.fft.dct, type=1, orthogonalize=False)
 
     @property
     def fft_backward(self) -> Callable[[np.ndarray], np.ndarray]:
+        """境界条件に対応した逆方向 FFT 関数を返す。
+        
+        Returns
+        -------
+        Callable[[np.ndarray], np.ndarray]
+            処理結果です。
+        """
         return partial(scipy.fft.idct, type=1, orthogonalize=False)
 
     def get_target_slice(self) -> slice:
+        """値を取得する。
+        
+        Returns
+        -------
+        slice
+            処理結果です。
+        """
         return slice(None, None)
 
     def modified_wave_number(self, k: int, n: int) -> float:
+        """境界条件に応じた修正波数を計算する。
+        
+        Parameters
+        ----------
+        k : int
+            波数 index です。
+        n : int
+            サンプル数または格子点数です。
+        Returns
+        -------
+        float
+            処理結果です。
+        """
         wn = 2.0 * (np.cos(np.pi * (k) / float(n)) - 1.0)
         return wn
 
     def transpose_boundary_values(self, rho_target: np.ndarray, dx: float) -> None:
+        """boundary values を転置処理を行う。
+        
+        Parameters
+        ----------
+        rho_target : np.ndarray
+            解く対象の電荷密度配列です。
+        dx : float
+            x 方向の格子間隔です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         rho_target[self._get_slices_at(0)] = (
             rho_target[self._get_slices_at(0)] - self.boundary_values[0] * dx
         )
@@ -269,4 +567,15 @@ class NeumannPoissonBoundary(PoissonBoundary):
         )
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
+        """boundary values を補正する。
+        
+        Parameters
+        ----------
+        phi : np.ndarray
+            電位配列です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         pass

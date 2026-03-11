@@ -13,6 +13,35 @@ from emout.utils.units import Units
 def plot_surface_with_hole(
     data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", **kwargs
 ):
+    """矩形ホール付きの 3D サーフェスを描画する。
+
+    内部では `data_xyz[...].plot(mode="surf", **kwargs)` を複数回呼び出して
+    上面・側面・底面を描画します。
+
+    Parameters
+    ----------
+    data_xyz : Data3d
+        描画対象の 3 次元データです。
+    inp : InpFile
+        ホール形状（`xlrechole` など）を含む入力パラメータです。
+    add_colorbar : bool, optional
+        最後の底面描画時にカラーバーを追加するかどうか。
+    show : bool, optional
+        `True` の場合は最後に `plt.show()` を呼び出します。
+    vrange : {'minmax', 'center'}, optional
+        カラースケール範囲の決定方法です。
+        `'center'` の場合は 0 中心の対称レンジにします。
+    **kwargs : dict
+        `Data2d.plot(mode="surf")` へ渡す引数です。
+        主に `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`, `ylabel`,
+        `zlabel`, `title`, `ninterp`, `function`, `figsize`, `dpi`,
+        および `mpl_toolkits.mplot3d.Axes3D.plot_surface` の追加引数を指定できます。
+
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
     yl = int(inp.ylrechole[1])
@@ -67,6 +96,32 @@ def plot_hole_line(
     linewidth=None,
     fix_lims=True,
 ):
+    """矩形ホール輪郭線を 2D 平面上に描画する。
+
+    Parameters
+    ----------
+    inp_or_data : Union[InpFile, "Emout"]
+        `InpFile` または `Emout` オブジェクト。
+    unit : Units, optional
+        単位変換オブジェクト。`inp_or_data` が `Emout` の場合は自動取得します。
+    use_si : bool, optional
+        `True` の場合は SI 単位系で描画します。
+    offsets : Tuple[int, int], optional
+        `(x, y)` 方向の表示オフセット。
+    axis : str, optional
+        描画する断面軸。現在は `"xz"` のみ対応しています。
+    color : str, optional
+        線色。
+    linewidth : float, optional
+        線幅。
+    fix_lims : bool, optional
+        `True` の場合は描画前の軸範囲を固定します。
+
+    Returns
+    -------
+    list[matplotlib.lines.Line2D]
+        `plt.plot` が返す線オブジェクト。
+    """
     if isinstance(inp_or_data, InpFile):
         inp: InpFile = inp_or_data
     else:
@@ -102,6 +157,22 @@ def plot_hole_line(
 
 
 def plot_line_of_hole_half(inp, off, unit):
+    """半断面ホール形状の補助線を 3D 軸に描画する。
+
+    Parameters
+    ----------
+    inp : InpFile
+        ホール定義を含む入力パラメータ。
+    off : int
+        拡張表示に使うオフセット幅。
+    unit : UnitTranslator
+        単位変換オブジェクト。
+
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
     yl = int(inp.ylrechole[1])
@@ -165,6 +236,20 @@ def plot_line_of_hole_half(inp, off, unit):
     lines = unit.reverse(lines)
 
     def parse(points, offsets):
+        """点群にオフセットを適用して x, y, z を返す。
+        
+        Parameters
+        ----------
+        points : object
+            `(N, 3)` 形式の座標配列です。
+        offsets : object
+            軸方向のオフセット。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         x = points[:, 0] + offsets[0]
         y = points[:, 1] + offsets[1]
         z = points[:, 2] + offsets[2]
@@ -182,6 +267,38 @@ def plot_line_of_hole_half(inp, off, unit):
 def plot_surface_with_hole_half(
     data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", **kwargs
 ):
+    """矩形ホールの半断面サーフェスを描画する。
+
+    Parameters
+    ----------
+    data_xyz : Data3d
+        描画対象の 3 次元データです。
+    inp : InpFile
+        ホール形状（`xlrechole` など）を含む入力パラメータです。
+    off : int, optional
+        断面のオフセット幅です。
+    add_colorbar : bool, optional
+        最後の底面描画時にカラーバーを追加するかどうか。
+    show : bool, optional
+        `True` の場合は最後に `plt.show()` を呼び出します。
+    vrange : {'minmax', 'center'}, optional
+        カラースケール範囲の決定方法です。
+    **kwargs : dict
+        `Data2d.plot(mode="surf")` へ渡す引数です。
+        主に `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`, `ylabel`,
+        `zlabel`, `title`, `ninterp`, `function`, `figsize`, `dpi`,
+        および `mpl_toolkits.mplot3d.Axes3D.plot_surface` の追加引数を指定できます。
+
+    Returns
+    -------
+    None
+        戻り値はありません。
+
+    Notes
+    -----
+    本関数内で `ax3d` は自動生成され、`kwargs["ax3d"]` に設定されます。
+    そのため、呼び出し側で `ax3d` を渡した場合は上書きされます。
+    """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
     yl = int(inp.ylrechole[1])
@@ -234,6 +351,18 @@ def plot_surface_with_hole_half(
 
     # innner wall
     def alltrue(x):
+        """有限値をそのまま通すマスク関数を返す。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return x == x
 
     masked = data_xyz.masked(alltrue)

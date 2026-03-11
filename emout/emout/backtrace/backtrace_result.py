@@ -78,6 +78,13 @@ class BacktraceResult:
         yield self.velocities
 
     def __repr__(self) -> str:
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         N = len(self.ts)
         return (
             f"<BacktraceResult: n_steps={N}, keys={list(BacktraceResult._VALID_KEYS)}> "
@@ -104,6 +111,17 @@ class BacktraceResult:
             )
 
         def _get_array(key: str) -> np.ndarray:
+            """array を取得する。
+            
+            Parameters
+            ----------
+            key : str
+                取得・設定対象のキーです。
+            Returns
+            -------
+            np.ndarray
+                処理結果です。
+            """
             if key == "t":
                 u = self.unit.t if self.unit else None
 

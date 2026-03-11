@@ -14,6 +14,15 @@ class Field3D:
     """
 
     def __init__(self, grid: UniformCellCenteredGrid, data_zyx: np.ndarray):
+        """インスタンスを初期化する。
+
+        Parameters
+        ----------
+        grid : UniformCellCenteredGrid
+            対象格子定義。`data_zyx` と同じ `(z, y, x)` 形状を持つ必要があります。
+        data_zyx : np.ndarray
+            セル中心値。形状は `(grid.nz, grid.ny, grid.nx)`。
+        """
         if data_zyx.shape != (grid.nz, grid.ny, grid.nx):
             raise ValueError(
                 f"data shape must be (nz,ny,nx)=({grid.nz},{grid.ny},{grid.nx}), got {data_zyx.shape}"
@@ -33,7 +42,22 @@ class Field3D:
         )
 
     def sample(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray:
-        """Sample field at world coords (x,y,z). Returns array of broadcasted shape."""
+        """指定座標で 3D フィールドを補間サンプリングする。
+
+        Parameters
+        ----------
+        x : np.ndarray
+            x 座標配列。
+        y : np.ndarray
+            y 座標配列。
+        z : np.ndarray
+            z 座標配列。
+
+        Returns
+        -------
+        np.ndarray
+            `x`, `y`, `z` をブロードキャストした形状の補間値配列。
+        """
         x = np.asarray(x)
         y = np.asarray(y)
         z = np.asarray(z)

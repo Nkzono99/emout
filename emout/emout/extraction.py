@@ -16,7 +16,20 @@ logger = logging.getLogger(__name__)
 
 
 class EmoutDataExtraction:
+    """EmoutDataExtraction クラス。
+    """
     def __init__(self, root: Union[Path, str], data: Emout, nparent=1):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        root : Union[Path, str]
+            ファイルまたはディレクトリのパスです。
+        data : Emout
+            処理対象のデータ。
+        nparent : int, optional
+            再帰抽出時に遡る親階層数です。
+        """
         self._root = Path(root)
         self._data = data
         self._nparent = nparent
@@ -28,17 +41,45 @@ class EmoutDataExtraction:
 
     @property
     def directory(self):
+        """対象ディレクトリを返す。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return self._data.directory
 
     @property
     def inp(self):
+        """入力パラメータを返す。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return self._data.inp
 
     @property
     def unit(self):
+        """単位変換オブジェクトを返す。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return self._data.unit
 
     def is_valid(self) -> bool:
+        """データセットの妥当性を検証する。
+        
+        Returns
+        -------
+        bool
+            条件判定結果です。
+        """
         return self._data.is_valid()
 
     @property
@@ -76,6 +117,17 @@ class EmoutDataExtraction:
         return data
 
     def save_hdf5(self, name):
+        """データを保存する。
+        
+        Parameters
+        ----------
+        name : object
+            対象データ名またはキー名です。
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         path = self.extract_dir / f"{name}00_0000.h5"
         if path.exists():
             return
@@ -89,10 +141,24 @@ class EmoutDataExtraction:
 
     @property
     def backtrace(self) -> BacktraceWrapper:
+        """バックトレースソルバを返す。
+        
+        Returns
+        -------
+        BacktraceWrapper
+            処理結果です。
+        """
         return self._data.backtrace
 
     @property
     def extract_dir(self):
+        """dir を抽出する。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         p = self.directory
         d = ""
         for _ in range(self._nparent):

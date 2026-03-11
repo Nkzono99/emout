@@ -12,17 +12,38 @@ matplotlib.use("Agg")
 
 
 def test_format_level_value():
+    """format level value のテストを行う。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert _format_level_value(1.2345, fmt="%1.2f") == "1.23"
     assert _format_level_value(1.2345, fmt="{:.3g}") == "1.23"
     assert _format_level_value(1.2345, sigfigs=2) == "1.2"
 
 
 def test_format_level_value_invalid_sigfigs():
+    """format level value invalid sigfigs のテストを行う。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     with pytest.raises(ValueError):
         _format_level_value(1.0, sigfigs=0)
 
 
 def test_resolve_shared_exponent_auto():
+    """resolve shared exponent auto のテストを行う。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     assert _resolve_shared_exponent([1.2e-20, -2.0e-20], "auto") == -20
     assert _resolve_shared_exponent([0.0, 0.0], "auto") == 0
     assert _resolve_shared_exponent([1.0], None) == 0
@@ -30,6 +51,13 @@ def test_resolve_shared_exponent_auto():
 
 
 def test_contour3d_clabel_shared_exponent():
+    """contour3d clabel shared exponent のテストを行う。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     z, y, x = np.mgrid[0:8, 0:8, 0:8]
     vol = (x + y + z).astype(np.float64) * 1e-20
 

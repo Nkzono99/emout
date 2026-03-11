@@ -12,6 +12,17 @@ if TYPE_CHECKING:
 
 
 def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
+    """必要なオブジェクトを構築する。
+    
+    Parameters
+    ----------
+    max_ndp : int, optional
+        密度種別の最大番号です。
+    Returns
+    -------
+    RegexDict
+        処理結果です。
+    """
     mapping: dict[str, Callable[..., UnitTranslator]] = {
         r"phisp": lambda out: out.unit.phi,
         r"rho": lambda out: out.unit.rho,
@@ -97,10 +108,32 @@ def wpit_unit(out: Emout) -> UnitTranslator:
 
 
 def none_unit(out: Emout) -> UnitTranslator:
+    """無次元の単位変換器を返す。
+    
+    Parameters
+    ----------
+    out : Emout
+        単位変換の参照元 `Emout` オブジェクトです。
+    Returns
+    -------
+    UnitTranslator
+        処理結果です。
+    """
     return UnitTranslator(1, 1, name="", unit="")
 
 
 def ndp_unit(out: Emout) -> UnitTranslator:
+    """`ndp` の単位変換器を返す。
+    
+    Parameters
+    ----------
+    out : Emout
+        単位変換の参照元 `Emout` オブジェクトです。
+    Returns
+    -------
+    UnitTranslator
+        処理結果です。
+    """
     wp = out.unit.f.reverse(out.inp.wp[0])
     mp = abs(cn.m_e / out.inp.qm[0])
     np = wp**2 * mp * cn.epsilon_0 / cn.e**2
@@ -108,6 +141,17 @@ def ndp_unit(out: Emout) -> UnitTranslator:
 
 
 def nd3p_unit(out: Emout) -> UnitTranslator:
+    """`nd3p` の単位変換器を返す。
+    
+    Parameters
+    ----------
+    out : Emout
+        単位変換の参照元 `Emout` オブジェクトです。
+    Returns
+    -------
+    UnitTranslator
+        処理結果です。
+    """
     wpp = out.unit.f.reverse(out.inp.wp[2])
     np = wpp**2 * cn.m_e * cn.epsilon_0 / cn.e**2
     return UnitTranslator(np * 1e-6, 1.0, name="number density", unit="/cc")

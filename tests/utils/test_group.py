@@ -2,6 +2,13 @@ import pytest
 from emout.utils import Group
 import numpy as np
 def test_getitem():
+    """getitem のテストを行う。
+    
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     group = Group([
         [1, 2], 
         [3, 4, 5]
@@ -20,6 +27,21 @@ def test_getitem():
     (Group([1, 2]), -1, [[1, -1], [3, 4, -1]]),
 ])
 def test_setitem(key, value, expected):
+    """setitem のテストを行う。
+    
+    Parameters
+    ----------
+    key : object
+        取得・設定対象のキーです。
+    value : object
+        値。
+    expected : object
+        期待値です。
+    Returns
+    -------
+    None
+        戻り値はありません。
+    """
     group = Group([
         [1, 2],
         [3, 4, 5]

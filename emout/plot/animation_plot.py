@@ -11,6 +11,19 @@ import emout.utils as utils
 
 
 def flatten_list(l):
+    """入れ子のイテラブルを 1 次元に平坦化して順に返す。
+
+    Parameters
+    ----------
+    l : object
+        任意に入れ子になったイテラブルです。
+        文字列と bytes は 1 要素として扱います。
+
+    Returns
+    -------
+    Iterator
+        平坦化された要素を順に返すイテレータです。
+    """
     for el in l:
         if isinstance(el, collections.abc.Iterable) and not isinstance(
             el, (str, bytes)
@@ -24,10 +37,19 @@ ANIMATER_PLOT_MODE = Literal["return", "show", "to_html", "save"]
 
 
 class Animator:
+    """複数の FrameUpdater を束ねてアニメーション描画を行うクラス。"""
     def __init__(
         self,
         layout: List[List[List[Union["FrameUpdater", Callable[[int], None], None]]]],
     ):
+        """インスタンスを初期化する。
+
+        Parameters
+        ----------
+        layout : List[List[List[Union["FrameUpdater", Callable[[int], None], None]]]]
+            3 重リストで定義したレイアウトです。
+            `layout[row][col]` に複数 updater を配置できます。
+        """
         self._layout = layout
 
     def plot(
@@ -41,75 +63,35 @@ class Animator:
         savefilename: PathLike = None,
         to_html: bool = False,
     ):
-        """gifアニメーションを作成する
+        """GIF アニメーションを作成する。
 
         Parameters
         ----------
-        fig : Figure
-            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
-
-        action : {'return', 'show', 'to_html', 'save'}, optional, by default 'to_html'
-            Determines the behavior of the function:
-
-            - 'return': The plot object (fig, ani) is returned without rendering it.
-            - 'show': The plot is displayed immediately.
-            - 'to_html': The plot is converted to an Ipython.display.HTML object and returned.
-            - 'save': The plot is saved to a file specified by 'filename' argument.
-
-        filename : str, optional
-            保存するファイル名(actionが'save'以外の場合やNoneの場合保存されない), by default None
-
+        fig : Union[plt.Figure, None], optional
+            描画に使用する Figure。`None` の場合は現在の Figure を使います。
+        action : ANIMATER_PLOT_MODE, optional
+            アニメーション生成後の処理モードです。
+            `'return'` は `(fig, animation)` を返し、
+            `'show'` は表示、
+            `'to_html'` は HTML を返し、
+            `'save'` は `filename` に保存します。
+        filename : PathLike, optional
+            `action='save'` のときの保存先ファイル名です。
         interval : int, optional
-            フレーム間のインターバル(ミリ秒), by default 400
-        repeat : bool
-            アニメーションをループするならTrue, by default True
-
+            フレーム間隔 [ms]。
+        repeat : bool, optional
+            ループ再生するかどうか。
         show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='show' instead for equivalent functionality.
-
-        savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the plot('action'='save', filename='example.gif') instead for equivalent functionality.
-
-        to_html : bool
-            アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='to_html' instead for equivalent functionality.
+            非推奨。`True` の場合は `action='show'` と同等に扱います。
+        savefilename : PathLike, optional
+            非推奨。指定時は `action='save'` として扱います。
+        to_html : bool, optional
+            非推奨。`True` の場合は `action='to_html'` と同等に扱います。
 
         Returns
         -------
-        Depending on the selected action:
-
-        - If 'return': Returns the tuple of the plot object (fig, animation).
-        - If 'show': Does not return anything, displays the plot.
-        - If 'to_html': Returns an Ipython.display.HTML object of the plot (for Jupyter).
-        - If 'save': Does not return anything, saves the plot to a file.
-
-        Examples
-        --------
-        >>> fig, ani = plot(action="return")
-        Returns the tuple of the plot object.
-
-        >>> plot(action="show")
-        Displays the plot.
-
-        >>> html = plot(action="to_html")
-        Returns the HTML representation of the plot.
-
-        >>> plot(action="save", filename = "example.gif")
-        Saves the plot to a file.
+        object
+            `action` に応じた描画結果を返します。
         """
         if show:
             warnings.warn(
@@ -140,6 +122,17 @@ class Animator:
             fig = plt.gcf()
 
         def _update_all(i):
+            """全 updater を 1 フレーム分更新する。
+            
+            Parameters
+            ----------
+            i : object
+                反復 index です。
+            Returns
+            -------
+            None
+                戻り値はありません。
+            """
             plt.clf()
             j = 0
             shape = self.shape
@@ -203,6 +196,8 @@ class Animator:
 
 
 class FrameUpdater:
+    """FrameUpdater クラス。
+    """
     def __init__(
         self,
         data,
@@ -215,6 +210,27 @@ class FrameUpdater:
         use_si: bool = True,
         **kwargs,
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        data : object
+            フレームごとにスライスして描画するデータ。
+        axis : int, optional
+            アニメーションさせる軸 index。
+        title : Union[str, None], optional
+            タイトルのプレフィックス。
+        notitle : bool, optional
+            `True` の場合、フレーム位置をタイトルに追記しません。
+        offsets : Union[, optional
+                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+                ], optional
+            座標オフセット。`'left'` / `'center'` / `'right'` も指定できます。
+        use_si : bool, optional
+            `True` の場合は SI 単位系で表示します。
+        **kwargs : dict
+            `val.plot(...)` に渡す追加引数です。
+        """
         if data.valunit is None:
             use_si = False
 
@@ -230,9 +246,33 @@ class FrameUpdater:
         self.kwargs = kwargs
 
     def __call__(self, i: int):
+        """呼び出し可能オブジェクトとして実行する。
+        
+        Parameters
+        ----------
+        i : int
+            フレーム番号。
+        
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         self.update(i)
 
     def update(self, i: int):
+        """指定フレームのスライスを描画する。
+
+        Parameters
+        ----------
+        i : int
+            フレーム番号。
+        
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         data = self.data
         axis = self.axis
         title = self.title
@@ -281,6 +321,20 @@ class FrameUpdater:
         )
 
     def _offseted(self, line: List, offset: Union[str, float]):
+        """配列にオフセットを適用した結果を返す。
+
+        Parameters
+        ----------
+        line : List
+            座標配列。
+        offset : Union[str, float]
+            オフセット指定。`'left'` / `'center'` / `'right'` または数値。
+
+        Returns
+        -------
+        object
+            オフセット適用後の配列。
+        """
         if offset == "left":
             line -= line[0]
         elif offset == "center":
@@ -305,4 +359,11 @@ class FrameUpdater:
         return Animator(layout=layout)
 
     def __len__(self):
+        """要素数を返す。
+        
+        Returns
+        -------
+        int
+            要素数。
+        """
         return self.data.shape[self.axis]

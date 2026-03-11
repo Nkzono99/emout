@@ -13,6 +13,18 @@ LevelFormatter = Union[str, Callable[[float], str]]
 
 
 def _as_spacing_xyz(dx: DxLike) -> Tuple[float, float, float]:
+    """格子間隔を `(dx, dy, dz)` 形式へ正規化する。
+    
+    Parameters
+    ----------
+    dx : DxLike
+        格子間隔です。スカラーなら `(dx, dx, dx)`、3 要素なら
+        `(dx, dy, dz)` として解釈します。
+    Returns
+    -------
+    Tuple[float, float, float]
+        `(dx, dy, dz)` の 3 要素タプルです。
+    """
     if np.isscalar(dx):
         d = float(dx)
         return (d, d, d)
@@ -23,6 +35,17 @@ def _as_spacing_xyz(dx: DxLike) -> Tuple[float, float, float]:
 
 
 def _sanitize_volume(vol: np.ndarray) -> np.ndarray:
+    """3 次元ボリューム配列を描画可能な値へ正規化する。
+    
+    Parameters
+    ----------
+    vol : np.ndarray
+        3 次元ボリューム配列です。
+    Returns
+    -------
+    np.ndarray
+        NaN/Inf を処理した浮動小数型の `(nz, ny, nx)` 配列です。
+    """
     vol = np.asarray(vol)
     if vol.ndim != 3:
         raise ValueError(f"data3d must be 3D array (nz, ny, nx). Got ndim={vol.ndim}.")
@@ -41,6 +64,21 @@ def _format_level_value(
     fmt: Optional[LevelFormatter] = None,
     sigfigs: Optional[int] = None,
 ) -> str:
+    """等値面レベル値を表示文字列に整形する。
+    
+    Parameters
+    ----------
+    value : float
+        値。
+    fmt : Optional[LevelFormatter], optional
+        フォーマット指定文字列です。
+    sigfigs : Optional[int], optional
+        `fmt` 未指定時に使う有効桁数です。
+    Returns
+    -------
+    str
+        文字列表現です。
+    """
     if callable(fmt):
         return str(fmt(value))
 
@@ -70,6 +108,19 @@ def _format_level_value(
 
 
 def _resolve_shared_exponent(levels: Sequence[float], shared_exponent: Union[str, int, None]) -> int:
+    """ラベル表示用の共通指数を決定する。
+    
+    Parameters
+    ----------
+    levels : Sequence[float]
+        等値面ラベルに使うレベル値の配列です。
+    shared_exponent : Union[str, int, None]
+        共通指数の設定値です。
+    Returns
+    -------
+    int
+        使用する共通指数です。
+    """
     if shared_exponent is None:
         return 0
     if isinstance(shared_exponent, int):
@@ -96,6 +147,27 @@ def _slice_from_bounds_1d(
     n: int,
     axis_name: str,
 ) -> Tuple[slice, float]:
+    """1 次元境界指定からインデックス範囲を計算する。
+    
+    Parameters
+    ----------
+    vmin : Optional[float]
+        表示範囲の最小値。
+    vmax : Optional[float]
+        表示範囲の最大値。
+    origin : float
+        回転・平行移動の基準点です。
+    d : float
+        格子間隔です。
+    n : int
+        サンプル数または格子点数です。
+    axis_name : str
+        軸名（`x`/`y`/`z`）です。
+    Returns
+    -------
+    Tuple[slice, float]
+        `(インデックススライス, 新しい軸原点)` を返します。
+    """
     if (vmin is not None) and (vmax is not None) and (vmax < vmin):
         raise ValueError(f"{axis_name} bounds invalid: max < min")
 
@@ -122,6 +194,27 @@ def _apply_roi(
     bounds_xyz: Optional[Bounds],
     roi_zyx: Optional[Tuple[slice, slice, slice]],
 ) -> Tuple[np.ndarray, Tuple[float, float, float], Tuple[float, float, float]]:
+    """ROI 指定に基づいて配列と原点を切り出す。
+    
+    Parameters
+    ----------
+    vol_zyx : np.ndarray
+        (z, y, x) 順のボリューム配列です。
+    dx_xyz : Tuple[float, float, float]
+        (x, y, z) 順の格子間隔です。
+    origin_xyz : Tuple[float, float, float]
+        (x, y, z) 順の原点座標です。
+    bounds_xyz : Optional[Bounds]
+        `((xmin, xmax), (ymin, ymax), (zmin, zmax))` 形式の切り出し範囲です。
+        各要素に `None` を指定するとその軸方向は全範囲を使用します。
+    roi_zyx : Optional[Tuple[slice, slice, slice]]
+        配列 index で直接指定する `(z, y, x)` 順のスライスです。
+        指定した場合は `bounds_xyz` より優先されます。
+    Returns
+    -------
+    Tuple[np.ndarray, Tuple[float, float, float], Tuple[float, float, float]]
+        `(切り出し後のボリューム, 格子間隔 dx_xyz, 更新後の原点 origin_xyz)` を返します。
+    """
     nz, ny, nx = vol_zyx.shape
     dx, dy, dz = dx_xyz
     x0, y0, z0 = origin_xyz
@@ -180,9 +273,66 @@ def contour3d(
     clabel_exponent_text: Optional[str] = None,
     clabel_exponent_kwargs: Optional[Dict[str, Any]] = None,
 ):
-    """
-    Matplotlib isosurface plot for (nz, ny, nx) volume.
-    ROI can be specified by bounds_xyz (physical) or roi_zyx (index slices).
+    """3 次元ボリュームの等値面を Matplotlib で描画する。
+
+    入力配列の軸順序は `(z, y, x)` を想定します。`bounds_xyz`（物理座標）または
+    `roi_zyx`（インデックススライス）で描画範囲を切り出せます。
+
+    Parameters
+    ----------
+    data3d : np.ndarray
+        描画対象の 3 次元配列。形状は `(nz, ny, nx)`。
+    dx : DxLike
+        格子間隔。スカラー指定時は `(dx, dy, dz)` として扱います。
+    levels : Sequence[float]
+        描画する等値面レベルの配列です。
+    ax : object, optional
+        描画先の 3D Axes。`None` の場合は新規作成します。
+    origin_xyz : Tuple[float, float, float], optional
+        物理座標系での原点オフセット `(x0, y0, z0)`。
+    bounds_xyz : Optional[Bounds], optional
+        物理座標での ROI。`((xmin, xmax), (ymin, ymax), (zmin, zmax))`。
+    roi_zyx : Optional[Tuple[slice, slice, slice]], optional
+        インデックスでの ROI。`(slice_z, slice_y, slice_x)`。
+    opacity : float, optional
+        等値面の透過率（0.0〜1.0）。
+    step : int, optional
+        ROI 後の間引きステップ。`step=2` なら各軸 2 点ごとにサンプリングします。
+    title : Optional[str], optional
+        グラフタイトル。
+    save : Optional[str], optional
+        保存先ファイルパス。指定時は `fig.savefig` を実行します。
+    show : bool, optional
+        `True` の場合は `plt.show()` を呼び出します。
+    xlabel : str, optional
+        x 軸ラベル。
+    ylabel : str, optional
+        y 軸ラベル。
+    zlabel : str, optional
+        z 軸ラベル。
+    clabel : bool, optional
+        `True` の場合は等値面近傍にレベル値ラベルを描画します。
+    clabel_fmt : Optional[LevelFormatter], optional
+        ラベル文字列のフォーマット指定。
+    clabel_fontsize : float, optional
+        等値面ラベルのフォントサイズ。
+    clabel_sigfigs : Optional[int], optional
+        ラベル表示の有効桁数（`clabel_fmt` 未指定時）。
+    clabel_shared_exponent : Union[str, int, None], optional
+        ラベルで共通指数を使う指定。`'auto'` で自動決定します。
+    clabel_text_kwargs : Optional[Dict[str, Any]], optional
+        各等値面ラベル文字の `ax.text` 追加引数。
+    clabel_exponent_pos : Tuple[float, float], optional
+        共通指数テキストの 2D 軸座標位置 `(x, y)`。
+    clabel_exponent_text : Optional[str], optional
+        共通指数表示のテキスト。`None` の場合は自動生成します。
+    clabel_exponent_kwargs : Optional[Dict[str, Any]], optional
+        共通指数テキスト描画時の `ax.text2D` 追加引数。
+
+    Returns
+    -------
+    tuple(matplotlib.figure.Figure, matplotlib.axes.Axes)
+        描画に使用した `(fig, ax)` を返します。
     """
     if not levels:
         raise ValueError("levels must be non-empty.")

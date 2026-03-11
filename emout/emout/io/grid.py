@@ -47,6 +47,15 @@ class GridDataLoader:
     def __init__(
         self, dir_inspector: DirectoryInspector, name2unit_map: dict[str, Any]
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        dir_inspector : DirectoryInspector
+            ディレクトリ情報を提供する `DirectoryInspector` インスタンスです。
+        name2unit_map : dict[str, Any]
+            データ名から単位変換器を取得するマッピングです。
+        """
         self.dir_inspector = dir_inspector
         self.name2unit_map = name2unit_map
 
@@ -90,6 +99,20 @@ class GridDataLoader:
         return gd
 
     def _find_h5file(self, directory: Path, name: str) -> Path:
+        """指定データ名に対応する HDF5 ファイルを 1 件だけ探索する。
+
+        Parameters
+        ----------
+        directory : Path
+            処理対象ディレクトリのパスです。
+        name : str
+            対象データ名またはキー名です。
+
+        Returns
+        -------
+        Path
+            見つかった HDF5 ファイルパスです。
+        """
         pattern = f"{name}00_0000.h5"
         matches = list(directory.glob(pattern))
         if not matches:
@@ -100,6 +123,18 @@ class GridDataLoader:
 
     def _load_griddata(self, h5file_path: Path) -> GridDataSeries:
         # unit が定義されていれば name2unit から拾う
+        """HDF5 ファイルから `GridDataSeries` を構築する。
+
+        Parameters
+        ----------
+        h5file_path : Path
+            読み込む `{name}00_0000.h5` ファイルパスです。
+        
+        Returns
+        -------
+        GridDataSeries
+            単位情報付きで初期化されたグリッド時系列データです。
+        """
         unit = self.dir_inspector.unit
         if unit is None:
             tunit = None
@@ -126,6 +161,18 @@ class GridDataLoader:
         )
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:
+        """補間済み（relocated）場データ HDF5 を全対象ディレクトリに生成する。
+
+        Parameters
+        ----------
+        field_name : str
+            元場データ名です（例: `ex`, `by`）。
+
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         axis = "zyx".index(field_name[-1])
 
         main_dir = self.dir_inspector.main_directory
@@ -137,6 +184,22 @@ class GridDataLoader:
     def _create_one_relocated(
         self, directory: Path, name: str, axis: int
     ) -> None:
+        """単一ディレクトリに relocated HDF5 を生成する。
+
+        Parameters
+        ----------
+        directory : Path
+            処理対象ディレクトリのパスです。
+        name : str
+            対象データ名またはキー名です。
+        axis : int
+            補間方向を表す軸 index（`x=2`, `y=1`, `z=0`）。
+        
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         input_fp = directory / f"{name}00_0000.h5"
         output_fp = directory / f"r{name}00_0000.h5"
 
@@ -170,6 +233,18 @@ class GridDataLoader:
                         )
 
     def _get_btype(self, name: str) -> str:
+        """境界条件コード（`periodic/dirichlet/neumann`）を取得する。
+
+        Parameters
+        ----------
+        name : str
+            対象データ名またはキー名です。
+
+        Returns
+        -------
+        str
+            `name` に対応する境界条件名です。
+        """
         axis = "zyx".index(name[-1])
         btype_list = ["periodic", "dirichlet", "neumann"]
 

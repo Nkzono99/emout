@@ -18,6 +18,23 @@ class XYData:
         title: Optional[str] = None,
         units=None,
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            x 座標または x 成分。
+        y : np.ndarray
+            y 座標または y 成分。
+        xlabel : str, optional
+            x 軸ラベル。
+        ylabel : str, optional
+            y 軸ラベル。
+        title : Optional[str], optional
+            タイトル文字列。
+        units : object, optional
+            単位変換情報です。
+        """
         if x.ndim != 1 or y.ndim != 1:
             raise ValueError("XYData: x, y はいずれも一次元配列である必要があります")
         if len(x) != len(y):
@@ -31,10 +48,24 @@ class XYData:
         self.units = units
 
     def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
+        """イテレータを返す。
+        
+        Returns
+        -------
+        Iterator[Tuple[np.ndarray, np.ndarray]]
+            要素を順に返すイテレータです。
+        """
         yield self.x
         yield self.y
 
     def __repr__(self) -> str:
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         return (
             f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
@@ -88,6 +119,25 @@ class MultiXYData:
         title: Optional[str] = None,
         units=None,
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            x 座標または x 成分。
+        y : np.ndarray
+            y 座標または y 成分。
+        last_indexes : np.ndarray
+            各系列の有効データ終端 index（終端は含まない）です。
+        xlabel : str, optional
+            x 軸ラベル。
+        ylabel : str, optional
+            y 軸ラベル。
+        title : Optional[str], optional
+            タイトル文字列。
+        units : object, optional
+            単位変換情報です。
+        """
         if x.ndim != 2 or y.ndim != 2:
             raise ValueError(
                 "MultiXYData: x, y は 2D 配列 (N_series, N_points) である必要があります"
@@ -104,10 +154,24 @@ class MultiXYData:
         self.units = units
 
     def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
+        """イテレータを返す。
+        
+        Returns
+        -------
+        Iterator[Tuple[np.ndarray, np.ndarray]]
+            要素を順に返すイテレータです。
+        """
         yield self.x
         yield self.y
 
     def __repr__(self) -> str:
+        """文字列表現を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現。
+        """
         return (
             f"<MultiXYData: n_series={self.x.shape[0]}, n_points={self.x.shape[1]}, "
             f"xlabel={self.xlabel}, ylabel={self.ylabel}>"
@@ -166,6 +230,21 @@ class MultiXYData:
 
 
 def _insert_nans_for_gaps(x: np.ndarray, y: np.ndarray, gap: float):
+    """ギャップ閾値を超える区間に NaN を挿入する。
+    
+    Parameters
+    ----------
+    x : np.ndarray
+        x 座標または x 成分。
+    y : np.ndarray
+        y 座標または y 成分。
+    gap : float
+        軌跡の不連続とみなす閾値です。
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     x = np.asarray(x)
     y = np.asarray(y)
     N = x.shape[0]

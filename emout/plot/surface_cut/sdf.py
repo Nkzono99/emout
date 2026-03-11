@@ -25,22 +25,89 @@ class Surface3D(ABC):
 
     @abstractmethod
     def sdf(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray:
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            x 座標または x 成分。
+        y : np.ndarray
+            y 座標または y 成分。
+        z : np.ndarray
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         raise NotImplementedError
 
     # ---- composition operators ----
     def __or__(self, other: "Surface3D") -> "Surface3D":
+        """ビット和演算を適用する。
+        
+        Parameters
+        ----------
+        other : "Surface3D"
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return UnionSurface(self, other)
 
     def __and__(self, other: "Surface3D") -> "Surface3D":
+        """ビット積演算を適用する。
+        
+        Parameters
+        ----------
+        other : "Surface3D"
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return IntersectionSurface(self, other)
 
     def __sub__(self, other: "Surface3D") -> "Surface3D":
+        """減算演算を適用する。
+        
+        Parameters
+        ----------
+        other : "Surface3D"
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return DifferenceSurface(self, other)
 
     def __invert__(self) -> "Surface3D":
+        """ビット反転演算を適用する。
+        
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return ComplementSurface(self)
 
     def __xor__(self, other: "Surface3D") -> "Surface3D":
+        """排他的論理和演算を適用する。
+        
+        Parameters
+        ----------
+        other : "Surface3D"
+            演算または比較の相手となる値です。
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return XorSurface(self, other)
 
     # ---- convenience transforms ----
@@ -49,6 +116,21 @@ class Surface3D(ABC):
         return OffsetSurface(self, delta)
 
     def translated(self, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0) -> "Surface3D":
+        """平行移動した曲面オブジェクトを返す。
+        
+        Parameters
+        ----------
+        dx : float, optional
+            x 方向の格子間隔です。
+        dy : float, optional
+            y 方向の格子間隔です。
+        dz : float, optional
+            z 方向の格子間隔です。
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return ShiftSurface(self, dx=dx, dy=dy, dz=dz)
 
     def rotated(
@@ -61,6 +143,27 @@ class Surface3D(ABC):
         order: str = "xyz",
         origin: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     ) -> "Surface3D":
+        """回転変換した曲面オブジェクトを返す。
+        
+        Parameters
+        ----------
+        rx : float, optional
+            x 軸周りの回転角です。
+        ry : float, optional
+            y 軸周りの回転角です。
+        rz : float, optional
+            z 軸周りの回転角です。
+        degrees : bool, optional
+            `True` なら角度を度数法、`False` ならラジアンとして解釈します。
+        order : str, optional
+            回転適用順序（例: `xyz`）です。
+        origin : Tuple[float, float, float], optional
+            回転・平行移動の基準点です。
+        Returns
+        -------
+        "Surface3D"
+            処理結果です。
+        """
         return RotateSurface(self, rx, ry, rz, degrees=degrees, order=order, origin=origin)
 
 
@@ -76,9 +179,32 @@ class HeightFieldSurface(Surface3D):
     """
 
     def __init__(self, z_of_xy: Callable[[np.ndarray, np.ndarray], np.ndarray]):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        z_of_xy : Callable[[np.ndarray, np.ndarray], np.ndarray]
+            コールバック関数です。
+        """
         self.z_of_xy = z_of_xy
 
     def sdf(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray:
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            x 座標または x 成分。
+        y : np.ndarray
+            y 座標または y 成分。
+        z : np.ndarray
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         return np.asarray(z) - np.asarray(self.z_of_xy(x, y))
 
 
@@ -98,6 +224,23 @@ class DEMHeightFieldSurface(HeightFieldSurface):
         fill_value: float = np.nan,
         method: str = "linear",
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        x_dem : np.ndarray
+            DEM の x 座標軸（昇順 1 次元配列）です。
+        y_dem : np.ndarray
+            DEM の y 座標軸（昇順 1 次元配列）です。
+        dem_z_yx : np.ndarray
+            標高値配列です。形状は `(len(y_dem), len(x_dem))` を想定します。
+        bounds_error : bool, optional
+            `True` の場合、補間点が DEM 範囲外だと例外を送出します。
+        fill_value : float, optional
+            範囲外補間時に返す値です（`bounds_error=False` の場合）。
+        method : str, optional
+            補間方法です。`scipy.interpolate.RegularGridInterpolator` に渡します。
+        """
         x_dem = np.asarray(x_dem, dtype=np.float64)
         y_dem = np.asarray(y_dem, dtype=np.float64)
         dem_z_yx = np.asarray(dem_z_yx, dtype=np.float64)
@@ -113,6 +256,20 @@ class DEMHeightFieldSurface(HeightFieldSurface):
         )
 
         def z_of_xy(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+            """`(x, y)` 座標での高さを補間して返す。
+            
+            Parameters
+            ----------
+            x : np.ndarray
+                x 座標または x 成分。
+            y : np.ndarray
+                y 座標または y 成分。
+            
+            Returns
+            -------
+            np.ndarray
+                処理結果です。
+            """
             x = np.asarray(x)
             y = np.asarray(y)
             pts = np.stack([y.ravel(), x.ravel()], axis=-1)
@@ -133,6 +290,15 @@ class PlaneSurface(Surface3D):
     """
 
     def __init__(self, normal: Tuple[float, float, float], point: Tuple[float, float, float]):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        normal : Tuple[float, float, float]
+            平面の法線ベクトルです。ゼロベクトルは指定できません。
+        point : Tuple[float, float, float]
+            平面が通る 1 点 `(x0, y0, z0)` です。
+        """
         n = np.asarray(normal, dtype=np.float64)
         if np.linalg.norm(n) == 0:
             raise ValueError("normal must be non-zero")
@@ -140,6 +306,22 @@ class PlaneSurface(Surface3D):
         self.p0 = np.asarray(point, dtype=np.float64)
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         p = np.stack([np.asarray(x), np.asarray(y), np.asarray(z)], axis=0)
         return (
             self.n[0] * (p[0] - self.p0[0])
@@ -157,6 +339,23 @@ class BoxSurface(Surface3D):
     """
 
     def __init__(self, xmin: float, xmax: float, ymin: float, ymax: float, zmin: float, zmax: float):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        xmin : float
+            x 方向最小座標です。
+        xmax : float
+            x 方向最大座標です。
+        ymin : float
+            y 方向最小座標です。
+        ymax : float
+            y 方向最大座標です。
+        zmin : float
+            z 方向最小座標です。
+        zmax : float
+            z 方向最大座標です。
+        """
         self.xmin = float(xmin)
         self.xmax = float(xmax)
         self.ymin = float(ymin)
@@ -167,6 +366,22 @@ class BoxSurface(Surface3D):
             raise ValueError("Require xmin<=xmax, ymin<=ymax, zmin<=zmax")
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         x = np.asarray(x, dtype=np.float64)
         y = np.asarray(y, dtype=np.float64)
         z = np.asarray(z, dtype=np.float64)
@@ -200,6 +415,23 @@ class PlaneBoxSurface(Surface3D):
     """
 
     def __init__(self, xmin: float, xmax: float, ymin: float, ymax: float, zmin: float, zmax: float):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        xmin : float
+            x 方向最小座標です。
+        xmax : float
+            x 方向最大座標です。
+        ymin : float
+            y 方向最小座標です。
+        ymax : float
+            y 方向最大座標です。
+        zmin : float
+            z 方向最小座標です。
+        zmax : float
+            z 方向最大座標です。
+        """
         xmin, xmax, ymin, ymax, zmin, zmax = map(float, (xmin, xmax, ymin, ymax, zmin, zmax))
         if not (xmin <= xmax and ymin <= ymax and zmin <= zmax):
             raise ValueError("Require xmin<=xmax, ymin<=ymax, zmin<=zmax")
@@ -221,6 +453,22 @@ class PlaneBoxSurface(Surface3D):
 
     def sdf(self, x, y, z):
         # intersection of half-spaces => max
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         v = self._planes[0].sdf(x, y, z)
         for p in self._planes[1:]:
             v = np.maximum(v, p.sdf(x, y, z))
@@ -231,10 +479,35 @@ class SphereSurface(Surface3D):
     """Sphere solid: inside: |p-c| - r <= 0."""
 
     def __init__(self, center: Tuple[float, float, float], radius: float):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        center : Tuple[float, float, float]
+            中心座標です。
+        radius : float
+            球の半径です。`0` より大きい値を指定します。
+        """
         self.c = np.asarray(center, dtype=np.float64)
         self.r = float(radius)
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         dx = np.asarray(x) - self.c[0]
         dy = np.asarray(y) - self.c[1]
         dz = np.asarray(z) - self.c[2]
@@ -245,6 +518,19 @@ AxisSpec = Union[str, Tuple[float, float, float], np.ndarray]
 
 
 def _as_3vec(v, *, name: str) -> np.ndarray:
+    """入力を 3 要素ベクトルへ正規化する。
+    
+    Parameters
+    ----------
+    v : object
+        3 要素ベクトルとして解釈する入力値です。
+    name : str
+        対象データ名またはキー名です。
+    Returns
+    -------
+    np.ndarray
+        shape `(3,)` の `float64` ベクトルです。
+    """
     a = np.asarray(v, dtype=np.float64).reshape(-1)
     if a.size != 3:
         raise ValueError(f"{name} must be a 3-vector, got shape {a.shape}")
@@ -252,6 +538,18 @@ def _as_3vec(v, *, name: str) -> np.ndarray:
 
 
 def _axis_to_unit(axis: AxisSpec) -> np.ndarray:
+    """軸指定を正規化済み単位ベクトルへ変換する。
+    
+    Parameters
+    ----------
+    axis : AxisSpec
+        対象軸。
+    
+    Returns
+    -------
+    np.ndarray
+        処理結果です。
+    """
     if isinstance(axis, str):
         s = axis.lower().strip()
         if s == "x":
@@ -305,6 +603,24 @@ class CylinderSurface(Surface3D):
         tmin: Optional[float] = None,
         tmax: Optional[float] = None,
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        center : Union[Tuple[float, float], Tuple[float, float, float]]
+            中心座標です。
+        axis : AxisSpec
+            対象軸。
+        radius : float
+            円柱半径です。`0` より大きい値を指定します。
+        length : Optional[float], optional
+            有限円柱にする場合の軸方向長さです。
+            指定時は `[-length/2, +length/2]` を使用します。
+        tmin : Optional[float], optional
+            有限円柱の軸方向下限です。`tmax` と対で指定します。
+        tmax : Optional[float], optional
+            有限円柱の軸方向上限です。`tmin < tmax` が必要です。
+        """
         if len(center) == 2:
             cx, cy = center
             cz = 0.0
@@ -340,9 +656,32 @@ class CylinderSurface(Surface3D):
 
     @property
     def is_finite(self) -> bool:
+        """円柱が有限長かどうかを返す。
+        
+        Returns
+        -------
+        bool
+            条件判定結果です。
+        """
         return self.tmin is not None
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         x = np.asarray(x, dtype=np.float64)
         y = np.asarray(y, dtype=np.float64)
         z = np.asarray(z, dtype=np.float64)
@@ -380,20 +719,74 @@ class CylinderSurface(Surface3D):
 
 
 class UnionSurface(Surface3D):
+    """UnionSurface クラス。
+    """
     def __init__(self, a: Surface3D, b: Surface3D):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        a : Surface3D
+            始点側の値です。
+        b : Surface3D
+            終点側の値です。
+        """
         self.a = a
         self.b = b
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return np.minimum(self.a.sdf(x, y, z), self.b.sdf(x, y, z))
 
 
 class IntersectionSurface(Surface3D):
+    """IntersectionSurface クラス。
+    """
     def __init__(self, a: Surface3D, b: Surface3D):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        a : Surface3D
+            始点側の値です。
+        b : Surface3D
+            終点側の値です。
+        """
         self.a = a
         self.b = b
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return np.maximum(self.a.sdf(x, y, z), self.b.sdf(x, y, z))
 
 
@@ -405,18 +798,68 @@ class DifferenceSurface(Surface3D):
     """
 
     def __init__(self, a: Surface3D, b: Surface3D):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        a : Surface3D
+            始点側の値です。
+        b : Surface3D
+            終点側の値です。
+        """
         self.a = a
         self.b = b
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return np.maximum(self.a.sdf(x, y, z), -self.b.sdf(x, y, z))
 
 
 class ComplementSurface(Surface3D):
+    """ComplementSurface クラス。
+    """
     def __init__(self, a: Surface3D):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        a : Surface3D
+            始点側の値です。
+        """
         self.a = a
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return -self.a.sdf(x, y, z)
 
 
@@ -430,10 +873,35 @@ class XorSurface(Surface3D):
     """
 
     def __init__(self, a: Surface3D, b: Surface3D):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        a : Surface3D
+            始点側の値です。
+        b : Surface3D
+            終点側の値です。
+        """
         self.a = a
         self.b = b
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         sa = self.a.sdf(x, y, z)
         sb = self.b.sdf(x, y, z)
         u = np.minimum(sa, sb)
@@ -442,6 +910,19 @@ class XorSurface(Surface3D):
 
 
 def xor(a: Surface3D, b: Surface3D) -> Surface3D:
+    """2 つの曲面の XOR 合成曲面を生成する。
+    
+    Parameters
+    ----------
+    a : Surface3D
+        始点側の値です。
+    b : Surface3D
+        終点側の値です。
+    Returns
+    -------
+    Surface3D
+        処理結果です。
+    """
     return XorSurface(a, b)
 
 
@@ -460,10 +941,35 @@ class OffsetSurface(Surface3D):
     """
 
     def __init__(self, base: Surface3D, delta: float):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        base : Surface3D
+            基準となる値です。
+        delta : float
+            オフセット量です。`base.sdf - delta` として適用されます。
+        """
         self.base = base
         self.delta = float(delta)
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         return self.base.sdf(x, y, z) - self.delta
 
 
@@ -478,10 +984,35 @@ class TransformSurface(Surface3D):
         base: Surface3D,
         inv_transform: Callable[[np.ndarray, np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]],
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        base : Surface3D
+            基準となる値です。
+        inv_transform : Callable[[np.ndarray, np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]
+            コールバック関数です。
+        """
         self.base = base
         self.inv_transform = inv_transform
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         xp, yp, zp = self.inv_transform(np.asarray(x), np.asarray(y), np.asarray(z))
         return self.base.sdf(xp, yp, zp)
 
@@ -493,12 +1024,41 @@ class ShiftSurface(Surface3D):
     """
 
     def __init__(self, base: Surface3D, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        base : Surface3D
+            基準となる値です。
+        dx : float, optional
+            x 方向の格子間隔です。
+        dy : float, optional
+            y 方向の格子間隔です。
+        dz : float, optional
+            z 方向の格子間隔です。
+        """
         self.base = base
         self.dx = float(dx)
         self.dy = float(dy)
         self.dz = float(dz)
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         x = np.asarray(x, dtype=np.float64) - self.dx
         y = np.asarray(y, dtype=np.float64) - self.dy
         z = np.asarray(z, dtype=np.float64) - self.dz
@@ -525,6 +1085,25 @@ class RotateSurface(Surface3D):
         order: str = "xyz",
         origin: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     ):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        base : Surface3D
+            基準となる値です。
+        rx : float, optional
+            x 軸周りの回転角です。
+        ry : float, optional
+            y 軸周りの回転角です。
+        rz : float, optional
+            z 軸周りの回転角です。
+        degrees : bool, optional
+            `True` なら角度を度数法、`False` ならラジアンとして解釈します。
+        order : str, optional
+            回転適用順序（例: `xyz`）です。
+        origin : Tuple[float, float, float], optional
+            回転・平行移動の基準点です。
+        """
         self.base = base
         self.origin = np.asarray(origin, dtype=np.float64)
 
@@ -537,14 +1116,47 @@ class RotateSurface(Surface3D):
         self.order = order
 
         def Rx(a):
+            """x 軸回転行列を生成する。
+            
+            Parameters
+            ----------
+            a : object
+                始点側の値です。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             c, s = np.cos(a), np.sin(a)
             return np.array([[1, 0, 0], [0, c, -s], [0, s, c]], dtype=np.float64)
 
         def Ry(a):
+            """y 軸回転行列を生成する。
+            
+            Parameters
+            ----------
+            a : object
+                始点側の値です。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             c, s = np.cos(a), np.sin(a)
             return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float64)
 
         def Rz(a):
+            """z 軸回転行列を生成する。
+            
+            Parameters
+            ----------
+            a : object
+                始点側の値です。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             c, s = np.cos(a), np.sin(a)
             return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype=np.float64)
 
@@ -559,6 +1171,22 @@ class RotateSurface(Surface3D):
         self.Rinv = R.T
 
     def sdf(self, x, y, z):
+        """符号付き距離関数の値を計算する。
+        
+        Parameters
+        ----------
+        x : object
+            x 座標または x 成分。
+        y : object
+            y 座標または y 成分。
+        z : object
+            z 座標または z 成分。
+        
+        Returns
+        -------
+        object
+            処理結果です。
+        """
         x = np.asarray(x, dtype=np.float64)
         y = np.asarray(y, dtype=np.float64)
         z = np.asarray(z, dtype=np.float64)

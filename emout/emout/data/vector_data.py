@@ -13,7 +13,20 @@ from emout.utils import UnitTranslator
 
 
 class VectorData(utils.Group):
+    """VectorData クラス。
+    """
     def __init__(self, objs: List[Any], name=None, attrs=None):
+        """インスタンスを初期化する。
+        
+        Parameters
+        ----------
+        objs : List[Any]
+            ベクトル成分データのリストです（`[x_data, y_data]`）。
+        name : object, optional
+            対象データ名またはキー名です。
+        attrs : object, optional
+            生成される `VectorData` に引き継ぐ属性辞書です。
+        """
         x_data, y_data = objs
 
         if attrs is None:
@@ -33,6 +46,20 @@ class VectorData(utils.Group):
         self.y_data = y_data
 
     def __setattr__(self, key, value):
+        """属性を設定する。
+        
+        Parameters
+        ----------
+        key : object
+            取得・設定対象のキーです。
+        value : object
+            値。
+        
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         if key in ("x_data", "y_data"):
             super().__dict__[key] = value
             return
@@ -40,26 +67,68 @@ class VectorData(utils.Group):
 
     @property
     def name(self) -> str:
+        """データ名を返す。
+        
+        Returns
+        -------
+        str
+            文字列表現です。
+        """
         return self.attrs["name"]
 
     @property
     def valunit(self) -> UnitTranslator:
+        """値の単位変換器を返す。
+        
+        Returns
+        -------
+        UnitTranslator
+            処理結果です。
+        """
         return self.objs[0].valunit
 
     @property
     def axisunits(self) -> UnitTranslator:
+        """軸ごとの単位変換器を返す。
+        
+        Returns
+        -------
+        UnitTranslator
+            処理結果です。
+        """
         return self.objs[0].axisunits
 
     @property
     def slice_axes(self) -> np.ndarray:
+        """各配列軸に対応する元データ軸を返す。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         return self.objs[0].slice_axes
 
     @property
     def slices(self) -> np.ndarray:
+        """各軸のスライス範囲を返す。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         return self.objs[0].slices
 
     @property
     def shape(self) -> np.ndarray:
+        """ベクトル成分を除いたデータ形状を返す。
+        
+        Returns
+        -------
+        np.ndarray
+            処理結果です。
+        """
         return self.objs[0].shape
 
     def build_frame_updater(
@@ -114,98 +183,47 @@ class VectorData(utils.Group):
         return_updater: bool = False,
         **kwargs,
     ):
-        """gifアニメーションを作成する
-
+        """アニメーション描画を実行する。
+        
         Parameters
         ----------
-        fig : Figure
-            アニメーションを描画するFigure(Noneの場合新しく作成する), by default None
+        fig : Union[plt.Figure, None], optional
+            描画先の Figure。
         axis : int, optional
-            アニメーションする軸, by default 0
-
-        action : {'return', 'show', 'to_html', 'save', 'frames'}, optional, by default 'to_html'
-            Determines the behavior of the function:
-
-            - 'return': The plot object is returned without rendering it.
-            - 'show': The plot is displayed immediately.
-            - 'to_html': The plot is converted to an Ipython.display.HTML object and returned.
-            - 'save': The plot is saved to a file specified by 'filename' argument.
-            - 'frames': FrameUpdater object is returned without rendering it.
-
-        filename : str, optional
-            保存するファイル名(actionが'save'以外の場合やNoneの場合保存されない), by default None
-
+            対象軸。
+        action : ANIMATER_PLOT_MODE, optional
+            出力アクション種別です。
+        filename : PathLike, optional
+            保存先または読み込み対象のファイル名です。
         interval : int, optional
-            フレーム間のインターバル(ミリ秒), by default 400
-        repeat : bool
-            アニメーションをループするならTrue, by default True
-        title : str, optional
-            タイトル(Noneの場合データ名(phisp等)), by default None
+            フレーム間隔 [ms] です。
+        repeat : bool, optional
+            `True` の場合、アニメーションをループ再生します。
+        title : Union[str, None], optional
+            タイトル文字列。
         notitle : bool, optional
-            タイトルを付けない場合True, by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
-        use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
-
+            `True` の場合、フレーム番号由来の自動タイトル追記を行いません。
+        offsets : Union[, optional
+                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+                ], optional
+            軸方向のオフセット。
+        use_si : bool, optional
+            True の場合は SI 単位系を使用。
         show : bool, optional
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='show' instead for equivalent functionality.
-
-        savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the plot('action'='save', filename='example.gif') instead for equivalent functionality.
-
-        to_html : bool
-            アニメーションをHTMLとして返す. (使用例: Jupyter Notebook等でアニメーションを描画する際等)
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='to_html' instead for equivalent functionality.
-
-        return_updater : bool
-            FrameUpdaterを返す場合True, by default False
-
-            .. deprecated :: 1.2.1
-
-               This parameter is deprecated and will be removed in version 2.0.0.
-               Use the 'action'='frames' instead for equivalent functionality.
-
+            True の場合は描画を表示。
+        savefilename : PathLike, optional
+            保存先ファイル名です。
+        to_html : bool, optional
+            非推奨オプションです。`True` の場合 `action='to_html'` と同等です。
+        return_updater : bool, optional
+            非推奨オプションです。`True` の場合 `action='frames'` と同等です。
+        **kwargs : dict
+            追加のキーワード引数。内部で呼び出す関数へ渡されます。
+        
         Returns
         -------
-        Depending on the selected action:
-
-        - If 'return': Returns the tuple of the plot object (fig, animation).
-        - If 'show': Does not return anything, displays the plot.
-        - If 'to_html': Returns an Ipython.display.HTML object of the plot (for Jupyter).
-        - If 'save': Does not return anything, saves the plot to a file.
-        - If 'frames': Returns FrameUpdater object.
-
-        Examples
-        --------
-        >>> fig, ani = gifplot(action="return")
-        Returns the tuple of the plot object.
-
-        >>> gifplot(action="show")
-        Displays the plot.
-
-        >>> html = gifplot(action="to_html")
-        Returns the HTML representation of the plot.
-
-        >>> gifplot(action="save", filename = "example.gif")
-        Saves the plot to a file.
-
-        >>> updater = gifplot(action="frames")
-        Returns FrameUpdater object.
+        object
+            処理結果です。
         """
         if return_updater:
             warnings.warn(
@@ -240,6 +258,27 @@ class VectorData(utils.Group):
         *args,
         **kwargs,
     ):
+        """ベクトルデータをプロットする。
+
+        2 次元データの場合は :meth:`plot2d` を呼び出します。
+
+        Parameters
+        ----------
+        *args : tuple
+            :meth:`plot2d` へ渡す位置引数です。
+            利用可能な主な引数は `mode`, `axes`, `show`, `use_si`, `offsets` です。
+        **kwargs : dict
+            :meth:`plot2d` へ渡すキーワード引数です。
+            さらに内部で `plot_2d_vector` または `plot_2d_streamline` に委譲されるため、
+            `mesh`, `savefilename`, `scale`, `scaler`, `skip`, `easy_to_read`,
+            `color`, `cmap`, `norm`, `vmin`, `vmax`, `density`, `figsize`,
+            `xlabel`, `ylabel`, `title`, `dpi` などを指定できます。
+
+        Returns
+        -------
+        None
+            戻り値はありません。
+        """
         if self.x_data.ndim == 2:
             self.plot2d(
                 *args,
@@ -361,6 +400,19 @@ class VectorData(utils.Group):
             y_data = self.y_data
 
         def _offseted(line, offset):
+            """位置指定を実座標オフセットへ変換する。
+            
+            Parameters
+            ----------
+            line : object
+                オフセット適用対象の座標列です。
+            offset : object
+                適用するオフセット値またはキーワードです。
+            Returns
+            -------
+            object
+                処理結果です。
+            """
             line = line.astype(float)
             if offset == "left":
                 line -= line[0]

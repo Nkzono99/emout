@@ -82,6 +82,23 @@ def compute_energy_flux_histogram(
     mass: float,
     energy_bins: Union[int, np.ndarray],
 ):
+    """energy flux histogram を計算する。
+    
+    Parameters
+    ----------
+    velocities : np.ndarray
+        粒子速度配列です。
+    probs : np.ndarray
+        各粒子の重み（確率・寄与率）配列です。
+    mass : float
+        粒子質量 [kg] です。
+    energy_bins : Union[int, np.ndarray]
+        ヒストグラムのビン設定です。整数ならビン数、配列ならビン境界を指定します。
+    Returns
+    -------
+    object
+        処理結果です。
+    """
     speeds = np.linalg.norm(velocities, axis=1)
     energies_J = 0.5 * mass * speeds**2
     energies_eV = energies_J / e_charge
