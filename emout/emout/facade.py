@@ -8,7 +8,7 @@ from emout.utils import InpFile, Units
 
 from .backtrace.solver_wrapper import BacktraceWrapper
 from .data.griddata_series import GridDataSeries
-from .data.vector_data import VectorData2d
+from .data.vector_data import VectorData2d, VectorData3d
 from .io.directory import DirectoryInspector
 from .io.grid import GridDataLoader
 from .units import build_name2unit_mapping
@@ -152,9 +152,10 @@ class Emout:
 
         return ParticlesSeries(self.directory, species=species, vunits=vunits)
 
-    def __getattr__(self, name: str) -> Union[GridDataSeries, VectorData2d]:
+    def __getattr__(self, name: str) -> Union[GridDataSeries, VectorData2d, VectorData3d]:
         """
         - r[e/b][xyz] → relocated field の生成
+        - (dname)(axis1)(axis2)(axis3) → VectorData3d
         - (dname)(axis1)(axis2) → VectorData2d
         - それ以外 → GridDataSeries
         """

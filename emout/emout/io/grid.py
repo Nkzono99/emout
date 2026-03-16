@@ -11,7 +11,7 @@ from tqdm import tqdm
 from tqdm.notebook import tqdm as notebook_tqdm
 
 from ..data.griddata_series import GridDataSeries
-from ..data.vector_data import VectorData2d
+from ..data.vector_data import VectorData2d, VectorData3d
 from ..relocation.electric import relocated_electric_field
 from ..relocation.magnetic import relocated_magnetic_field
 from .directory import DirectoryInspector
@@ -62,6 +62,7 @@ class GridDataLoader:
     def load(self, name: str) -> Any:
         """
         - r[e/b][xyz] の形式 → relocated field を生成
+        - (dname)(axis1)(axis2)(axis3) の形式（xyz permutation）→ VectorData3d を返す
         - (dname)(axis1)(axis2) の形式 → VectorData2d を返す
         - それ以外 → GridDataSeries をチェーンして返す
         """
@@ -73,16 +74,41 @@ class GridDataLoader:
             logger.debug(f"Relocated field requested: {fld}")
             self._create_relocated_field_hdf5(fld)
 
-        m2 = re.match(r"(.+)([xyz])([xyz])$", name)
-        if m2:
-            dname, axis1, axis2 = m2.groups()
-            logger.debug(f"VectorData2d を生成: base={dname}, axes=({axis1},{axis2})")
-            arr1 = self.load(
-                f"{dname}{axis1}"
-            )  # 再帰的に GridDataSeries or relocated field
-            arr2 = self.load(f"{dname}{axis2}")
-            vd = VectorData2d([arr1, arr2], name=name)
-            return vd
+        skip_2d_vector_parse = False
+        m3 = re.match(r"^(.+?)([xyz])([xyz])([xyz])$", name)
+        if m3:
+            dname, axis1, axis2, axis3 = m3.groups()
+            axes = (axis1, axis2, axis3)
+            if len(set(axes)) == 3:
+                skip_2d_vector_parse = True
+                logger.debug(
+                    f"VectorData3d を生成: base={dname}, axes=({axis1},{axis2},{axis3})"
+                )
+                try:
+                    arr1 = self.load(f"{dname}{axis1}")
+                    arr2 = self.load(f"{dname}{axis2}")
+                    arr3 = self.load(f"{dname}{axis3}")
+                    vd = VectorData3d([arr1, arr2, arr3], name=name)
+                    return vd
+                except Exception:
+                    logger.debug(
+                        "VectorData3d 解決に失敗したため通常の GridDataSeries 読み込みへフォールバックします。",
+                        exc_info=True,
+                    )
+
+        if not skip_2d_vector_parse:
+            m2 = re.match(r"(.+)([xyz])([xyz])$", name)
+            if m2:
+                dname, axis1, axis2 = m2.groups()
+                logger.debug(
+                    f"VectorData2d を生成: base={dname}, axes=({axis1},{axis2})"
+                )
+                arr1 = self.load(
+                    f"{dname}{axis1}"
+                )  # 再帰的に GridDataSeries or relocated field
+                arr2 = self.load(f"{dname}{axis2}")
+                vd = VectorData2d([arr1, arr2], name=name)
+                return vd
 
         main_fp = self._find_h5file(self.dir_inspector.main_directory, name)
         logger.info(f"Loading grid data from: {main_fp.resolve()}")

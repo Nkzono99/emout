@@ -776,6 +776,51 @@ class Data3d(Data):
 
             return fig, ax
 
+    def plot_pyvista(
+        self,
+        mode: Literal["box", "volume", "slice", "contour"] = "box",
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        show: bool = False,
+        plotter=None,
+        cmap: str = "viridis",
+        clim: Union[Tuple[float, float], None] = None,
+        opacity: Union[float, str] = "sigmoid",
+        contour_levels: Union[int, np.ndarray] = 8,
+        add_outline: bool = True,
+        outline_color: str = "white",
+        add_scalar_bar: bool = True,
+        **kwargs,
+    ):
+        """pyvista で 3 次元データを描画する。"""
+        from emout.plot.pyvista_plot import plot_scalar_volume
+
+        if self.valunit is None:
+            use_si = False
+
+        return plot_scalar_volume(
+            self,
+            mode=mode,
+            plotter=plotter,
+            use_si=use_si,
+            offsets=offsets,
+            show=show,
+            cmap=cmap,
+            clim=clim,
+            opacity=opacity,
+            contour_levels=contour_levels,
+            add_outline=add_outline,
+            outline_color=outline_color,
+            add_scalar_bar=add_scalar_bar,
+            **kwargs,
+        )
+
+    def plot3d(self, *args, **kwargs):
+        """`plot_pyvista` のエイリアス。"""
+        return self.plot_pyvista(*args, **kwargs)
+
 
 class Data2d(Data):
     """2次元データの2次元面を管理する."""
@@ -1006,6 +1051,43 @@ class Data2d(Data):
             return None
         else:
             return imgs[0] if len(imgs) == 1 else imgs
+
+    def plot_pyvista(
+        self,
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        show: bool = False,
+        plotter=None,
+        cmap: str = "viridis",
+        clim: Union[Tuple[float, float], None] = None,
+        show_edges: bool = False,
+        add_scalar_bar: bool = True,
+        **kwargs,
+    ):
+        """pyvista で 2 次元データを 3D 空間上の平面として描画する。"""
+        from emout.plot.pyvista_plot import plot_scalar_plane
+
+        if self.valunit is None:
+            use_si = False
+
+        return plot_scalar_plane(
+            self,
+            plotter=plotter,
+            use_si=use_si,
+            offsets=offsets,
+            show=show,
+            cmap=cmap,
+            clim=clim,
+            show_edges=show_edges,
+            add_scalar_bar=add_scalar_bar,
+            **kwargs,
+        )
+
+    def plot3d(self, *args, **kwargs):
+        """`plot_pyvista` のエイリアス。"""
+        return self.plot_pyvista(*args, **kwargs)
 
 
 class Data1d(Data):

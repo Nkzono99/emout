@@ -36,6 +36,14 @@ emout.plot.plot\_cross\_sections module
    :show-inheritance:
    :undoc-members:
 
+emout.plot.pyvista\_plot module
+-------------------------------
+
+.. automodule:: emout.plot.pyvista_plot
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

@@ -117,6 +117,17 @@ data.phisp[-1, z, :, :].plot(savefilename='phisp.png')
 
 # Plot vector field as a streamline
 data.j1xy[-1, z, :, :].plot()
+
+# 3D scalar plot on PyVista
+# Install first: pip install "emout[pyvista]"
+data.phisp[-1, :, :, :].plot3d(mode='box', show=True)
+
+# 2D slice as a plane in 3D space
+data.phisp[-1, z, :, :].plot3d(show=True)
+
+# 3D vector field (requires j1x/j1y/j1z files)
+data.j1xyz[-1].plot3d(mode='stream', show=True)
+data.j1xyz[-1].plot3d(mode='quiver', show=True)
 ```
 
 ---

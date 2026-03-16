@@ -21,13 +21,17 @@ class VectorData(utils.Group):
         Parameters
         ----------
         objs : List[Any]
-            ベクトル成分データのリストです（`[x_data, y_data]`）。
+            ベクトル成分データのリストです（2成分または3成分）。
         name : object, optional
             対象データ名またはキー名です。
         attrs : object, optional
             生成される `VectorData` に引き継ぐ属性辞書です。
         """
-        x_data, y_data = objs
+        if len(objs) not in (2, 3):
+            raise ValueError("VectorData requires 2 or 3 components.")
+        x_data = objs[0]
+        y_data = objs[1]
+        z_data = objs[2] if len(objs) == 3 else None
 
         if attrs is None:
             attrs = dict()
@@ -41,9 +45,11 @@ class VectorData(utils.Group):
         else:
             attrs["name"] = ""
 
-        super().__init__([x_data, y_data], attrs=attrs)
+        super().__init__(list(objs), attrs=attrs)
         self.x_data = x_data
         self.y_data = y_data
+        if z_data is not None:
+            self.z_data = z_data
 
     def __setattr__(self, key, value):
         """属性を設定する。
@@ -60,7 +66,7 @@ class VectorData(utils.Group):
         None
             戻り値はありません。
         """
-        if key in ("x_data", "y_data"):
+        if key in ("x_data", "y_data", "z_data"):
             super().__dict__[key] = value
             return
         super().__setattr__(key, value)
@@ -130,6 +136,11 @@ class VectorData(utils.Group):
             処理結果です。
         """
         return self.objs[0].shape
+
+    @property
+    def ndim(self) -> int:
+        """ベクトル成分を除いたデータ次元数を返す。"""
+        return self.objs[0].ndim
 
     def build_frame_updater(
         self,
@@ -260,7 +271,8 @@ class VectorData(utils.Group):
     ):
         """ベクトルデータをプロットする。
 
-        2 次元データの場合は :meth:`plot2d` を呼び出します。
+        2 次元データの場合は :meth:`plot2d`、
+        3 次元データの場合は :meth:`plot3d` を呼び出します。
 
         Parameters
         ----------
@@ -276,14 +288,22 @@ class VectorData(utils.Group):
 
         Returns
         -------
-        None
-            戻り値はありません。
+        object
+            委譲先の描画メソッドが返すオブジェクトです。
         """
         if self.x_data.ndim == 2:
-            self.plot2d(
+            return self.plot2d(
                 *args,
                 **kwargs,
             )
+        if self.x_data.ndim == 3:
+            return self.plot3d(
+                *args,
+                **kwargs,
+            )
+        raise NotImplementedError(
+            f"VectorData.plot is not implemented for ndim={self.x_data.ndim}."
+        )
 
     def plot2d(
         self,
@@ -444,5 +464,68 @@ class VectorData(utils.Group):
         else:
             return img
 
+    def plot_pyvista(
+        self,
+        mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
+        show: bool = False,
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        plotter=None,
+        **kwargs,
+    ):
+        """pyvista で 3 次元ベクトル場を描画する。"""
+        if self.x_data.ndim != 3:
+            raise ValueError(
+                "plot_pyvista on VectorData requires 3D component data."
+            )
+        if len(self.objs) < 3 or not hasattr(self, "z_data"):
+            raise ValueError(
+                "plot_pyvista on VectorData requires 3 components (x, y, z)."
+            )
+
+        if self.objs[0].valunit is None:
+            use_si = False
+
+        if mode in ("vec", "quiver"):
+            from emout.plot.pyvista_plot import plot_vector_quiver3d
+
+            return plot_vector_quiver3d(
+                self.x_data,
+                self.y_data,
+                self.z_data,
+                plotter=plotter,
+                use_si=use_si,
+                offsets=offsets,
+                show=show,
+                **kwargs,
+            )
+
+        if mode in ("stream", "streamline"):
+            from emout.plot.pyvista_plot import plot_vector_streamlines3d
+
+            return plot_vector_streamlines3d(
+                self.x_data,
+                self.y_data,
+                self.z_data,
+                plotter=plotter,
+                use_si=use_si,
+                offsets=offsets,
+                show=show,
+                **kwargs,
+            )
+
+        raise ValueError(f'Unsupported mode "{mode}" for VectorData.plot_pyvista.')
+
+    def plot3d(
+        self,
+        mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
+        **kwargs,
+    ):
+        """`plot_pyvista` のエイリアス。"""
+        return self.plot_pyvista(mode=mode, **kwargs)
+
 
 VectorData2d = VectorData
+VectorData3d = VectorData

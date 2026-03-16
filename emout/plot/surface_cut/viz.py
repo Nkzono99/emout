@@ -482,7 +482,7 @@ def plot_surfaces(
     return cmap, norm
 
 
-def add_colorbar(fig, ax, *, cmap, norm, label=r"$\phi$ (V)", fraction=0.03, pad=0.08):
+def add_colorbar(fig, ax, *, cmap, norm, label=r"$\phi$ (V)", cax=None, fraction=0.03, pad=0.08):
     """描画に対応するカラーバーを追加する。
     
     Parameters
@@ -508,6 +508,6 @@ def add_colorbar(fig, ax, *, cmap, norm, label=r"$\phi$ (V)", fraction=0.03, pad
     """
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array([])
-    cbar = fig.colorbar(m, ax=ax, fraction=fraction, pad=pad)
+    cbar = fig.colorbar(m, ax=ax, fraction=fraction, pad=pad, cax=cax)
     cbar.set_label(label)
     return cbar
