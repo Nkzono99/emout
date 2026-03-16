@@ -6,6 +6,8 @@ import scipy.constants as cn
 
 from emout.utils.eflux import compute_energy_flux_histogram
 
+_TRAPEZOID = getattr(np, "trapezoid", np.trapz)
+
 
 class HeatmapData:
     """
@@ -110,6 +112,7 @@ class ProbabilityResult:
     """
 
     _AXES = ["x", "y", "z", "vx", "vy", "vz"]
+    _BACKEND_AXES = ["z", "y", "x", "vz", "vy", "vx"]
 
     def __init__(
         self,
@@ -167,10 +170,116 @@ class ProbabilityResult:
             f"axes={ProbabilityResult._AXES}>"
         )
 
+    def _phases_nd(self) -> np.ndarray:
+        """phase grid を shape=(nx, ny, nz, nvx, nvy, nvz, 6) に正規化する。"""
+        phases = np.asarray(self.phases)
+        expected_size = int(np.prod(self.dims)) * len(ProbabilityResult._AXES)
+        if phases.size != expected_size:
+            raise ValueError(
+                "phases の要素数が dims で表される 6D グリッドと一致しません"
+            )
+
+        backend_shape = tuple(
+            self.dims[ProbabilityResult._AXES.index(axis)]
+            for axis in ProbabilityResult._BACKEND_AXES
+        )
+        canonical_shape = tuple(self.dims)
+
+        if phases.ndim == 7:
+            if phases.shape == (*canonical_shape, len(ProbabilityResult._AXES)):
+                return phases
+            if phases.shape == (*backend_shape, len(ProbabilityResult._AXES)):
+                return np.transpose(
+                    phases,
+                    axes=[
+                        ProbabilityResult._BACKEND_AXES.index(axis)
+                        for axis in ProbabilityResult._AXES
+                    ]
+                    + [6],
+                )
+            raise ValueError("phases の shape が期待される 6D グリッド形状と一致しません")
+
+        phases = phases.reshape(*backend_shape, len(ProbabilityResult._AXES))
+        return np.transpose(
+            phases,
+            axes=[
+                ProbabilityResult._BACKEND_AXES.index(axis)
+                for axis in ProbabilityResult._AXES
+            ]
+            + [6],
+        )
+
+    def _probabilities_nd(self) -> np.ndarray:
+        """probability grid を shape=(nx, ny, nz, nvx, nvy, nvz) に正規化する。"""
+        probabilities = np.asarray(self.probabilities)
+        expected_size = int(np.prod(self.dims))
+        if probabilities.size != expected_size:
+            raise ValueError(
+                "probabilities の要素数が dims で表される 6D グリッドと一致しません"
+            )
+
+        backend_shape = tuple(
+            self.dims[ProbabilityResult._AXES.index(axis)]
+            for axis in ProbabilityResult._BACKEND_AXES
+        )
+        canonical_shape = tuple(self.dims)
+
+        if probabilities.ndim == 6:
+            if probabilities.shape == canonical_shape:
+                return probabilities
+            if probabilities.shape == backend_shape:
+                return np.transpose(
+                    probabilities,
+                    axes=[
+                        ProbabilityResult._BACKEND_AXES.index(axis)
+                        for axis in ProbabilityResult._AXES
+                    ],
+                )
+            raise ValueError(
+                "probabilities の shape が期待される 6D グリッド形状と一致しません"
+            )
+
+        probabilities = probabilities.reshape(*backend_shape)
+        return np.transpose(
+            probabilities,
+            axes=[
+                ProbabilityResult._BACKEND_AXES.index(axis)
+                for axis in ProbabilityResult._AXES
+            ],
+        )
+
+    def _axis_values(self, axis: str, phases=None) -> np.ndarray:
+        """指定軸の 1D 座標列を返す。"""
+        idx = ProbabilityResult._AXES.index(axis)
+        if phases is None:
+            phases = self._phases_nd()
+        return np.moveaxis(phases[..., idx], idx, 0).reshape(self.dims[idx], -1)[:, 0]
+
+    def _integrate_axis(
+        self,
+        values: np.ndarray,
+        axis_name: str,
+        current_axes: Sequence[str],
+        phases=None,
+    ) -> np.ndarray:
+        """指定軸を座標付き台形積分で潰す。単一点軸はそのまま取り出す。"""
+        axis_idx = current_axes.index(axis_name)
+        coords = self._axis_values(axis_name, phases=phases)
+
+        if coords.size <= 1:
+            return np.take(values, indices=0, axis=axis_idx)
+
+        if coords[0] > coords[-1]:
+            values = np.flip(values, axis=axis_idx)
+            coords = coords[::-1]
+
+        return _TRAPEZOID(values, x=coords, axis=axis_idx)
+
     def pair(self, var1: str, var2: str) -> HeatmapData:
         """
         任意の 2 変数 (var1, var2) を取り出し、HeatmapData を返す。
         var1, var2 は 'x','y','z','vx','vy','vz' のいずれか。
+        指定しなかった軸は座標付き台形積分で 2 次元へ射影する。
         """
         if var1 not in ProbabilityResult._AXES or var2 not in ProbabilityResult._AXES:
             raise KeyError(
@@ -189,13 +298,28 @@ class ProbabilityResult:
         else:
             units = None
 
-        X = self.phases[:, :, :, :, :, :, idx1].reshape(
-            self.dims[idx2], self.dims[idx1]
+        phases = self._phases_nd()
+        probabilities = self._probabilities_nd()
+        current_axes = list(ProbabilityResult._AXES)
+        integrated = probabilities
+
+        for axis_name in ProbabilityResult._AXES:
+            if axis_name in (var1, var2):
+                continue
+            integrated = self._integrate_axis(
+                integrated, axis_name, current_axes, phases=phases
+            )
+            current_axes.remove(axis_name)
+
+        axis1_values = self._axis_values(var1, phases=phases)
+        axis2_values = self._axis_values(var2, phases=phases)
+
+        X, Y = np.meshgrid(axis1_values, axis2_values, indexing="xy")
+        Z = np.moveaxis(
+            integrated,
+            (current_axes.index(var2), current_axes.index(var1)),
+            (0, 1),
         )
-        Y = self.phases[:, :, :, :, :, :, idx2].reshape(
-            self.dims[idx2], self.dims[idx1]
-        )
-        Z = self.probabilities.reshape(self.dims[idx2], self.dims[idx1])
 
         xlabel = var1
         ylabel = var2
@@ -236,8 +360,8 @@ class ProbabilityResult:
         object
             処理結果です。
         """
-        phases = self.phases
-        velocities = phases[:, :, :, :, :, :, 3:6].reshape(-1, 3)
+        phases = self._phases_nd()
+        velocities = phases[..., 3:6].reshape(-1, 3)
         velocities = self.unit.v.reverse(velocities)
 
         mass = abs(self.unit.m.reverse(cn.e / self.inp.qm[self.ispec]))
@@ -250,7 +374,7 @@ class ProbabilityResult:
             wp = self.unit.f.reverse(self.inp.wp[self.ispec])
             n0 = wp**2 * mass * cn.epsilon_0 / cn.e**2
 
-        probabilities = self.probabilities * n0
+        probabilities = self._probabilities_nd().reshape(-1) * n0
 
         hist, bin_edges = compute_energy_flux_histogram(
             velocities,

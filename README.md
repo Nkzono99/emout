@@ -477,7 +477,7 @@ plt.show()
 
 * `get_backtraces(positions, velocities)` returns a `MultiBacktraceResult` whose `xy` property is a `MultiXYData` object. You can sample, reorder, or subset the trajectories and then call `.plot()` on `.xy`, `.vxvy`, `.xz`, etc.
 
-* `get_probabilities(...)` returns a `ProbabilityResult` whose `.vxvz`, `.xy`, `.xz`, etc. are all `HeatmapData` objects. Calling `.plot()` on any of these displays a 2D probability heatmap for the chosen pair of axes.
+* `get_probabilities(...)` returns a `ProbabilityResult` whose `.vxvz`, `.xy`, `.xz`, etc. are all `HeatmapData` objects. Calling `.plot()` on any of these displays a 2D probability heatmap for the chosen pair of axes after integrating the unspecified phase-space axes.
 
 * `probability_result.particles` is the list of `Particle` objects used internally to compute the 6D probability grid. We pass that list to `get_backtraces_from_particles(...)` to compute backtraced trajectories for exactly those same particles. Normalizing their probabilities to `[0,1]` and passing that array into `alpha` makes high‐probability trajectories draw more opaquely.
 
