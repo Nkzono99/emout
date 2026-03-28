@@ -101,7 +101,10 @@ class DirectoryInspector:
         return result
 
     def _load_inpfile(self, inpfilename: Union[Path, str]) -> None:
-        """`.inp` ファイルを読み込み、単位変換情報を初期化する。
+        """パラメータファイルを読み込み、単位変換情報を初期化する。
+
+        ``plasma.toml`` と ``plasma.inp`` の両方に対応する。
+        デフォルト (``plasma.inp``) 指定時は ``plasma.toml`` を優先的に探索する。
 
         Parameters
         ----------
@@ -115,13 +118,47 @@ class DirectoryInspector:
         """
         if inpfilename is None:
             return
-        inp_path = self.main_directory / inpfilename
-        if not inp_path.exists():
+
+        inpfilename_str = str(inpfilename)
+
+        # デフォルト "plasma.inp" の場合、plasma.toml を優先探索
+        if inpfilename_str == "plasma.inp":
+            toml_path = self.main_directory / "plasma.toml"
+            if toml_path.exists():
+                self._load_from_toml(toml_path)
+                return
+            inp_path = self.main_directory / "plasma.inp"
+            if inp_path.exists():
+                self._load_from_inp(inp_path)
             return
 
+        # 明示指定
+        path = self.main_directory / inpfilename
+        if not path.exists():
+            return
+
+        if path.suffix == ".toml":
+            self._load_from_toml(path)
+        else:
+            self._load_from_inp(path)
+
+    def _load_from_inp(self, inp_path: Path) -> None:
+        """plasma.inp 形式のファイルを読み込む。"""
         logger.info(f"Loading parameter file: {inp_path.resolve()}")
         self._inp = InpFile(inp_path)
         convkey = UnitConversionKey.load(inp_path)
+        if convkey is not None:
+            self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+
+    def _load_from_toml(self, toml_path: Path) -> None:
+        """plasma.toml 形式のファイルを読み込み InpFile に変換する。"""
+        from emout.utils.toml_converter import load_toml_as_namelist
+
+        logger.info(f"Loading TOML parameter file: {toml_path.resolve()}")
+        nml, convkey = load_toml_as_namelist(toml_path)
+        self._inp = InpFile()
+        self._inp.nml = nml
+        self._inp.convkey = convkey
         if convkey is not None:
             self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
@@ -187,7 +224,12 @@ class DirectoryInspector:
             return False
 
         if self._inp is None:
-            self._inp = InpFile(dirpath / "plasma.inp")
+            toml_path = dirpath / "plasma.toml"
+            inp_path = dirpath / "plasma.inp"
+            if toml_path.exists():
+                self._load_from_toml(toml_path)
+            elif inp_path.exists():
+                self._inp = InpFile(inp_path)
 
         return int(last_line.split()[0]) == int(self._inp.nstep)
 
