@@ -224,3 +224,57 @@ class TestExplicitFilename:
         _setup_emdir(tmp_path)
         data = emout.Emout(tmp_path)
         assert data.inp is None
+
+
+# ---------------------------------------------------------------------------
+# data.toml アクセステスト
+# ---------------------------------------------------------------------------
+
+
+class TestTomlDataAccess:
+    def test_v1_toml_direct_access(self, tmp_path):
+        """V1 TOML の生データに直接アクセスできる。"""
+        _setup_emdir(tmp_path, V1_TOML, "plasma.toml")
+        data = emout.Emout(tmp_path)
+        assert data.toml is not None
+        assert data.toml.tmgrid.nx == 64
+        assert data.toml["tmgrid"]["nz"] == 512
+        assert data.toml.meta.unit_conversion.dx == 0.5
+
+    def test_v2_toml_species_access(self, tmp_path):
+        """V2 TOML の [[species]] に直接アクセスできる。"""
+        _setup_emdir(tmp_path, V2_TOML, "plasma.toml")
+        data = emout.Emout(tmp_path)
+        assert data.toml is not None
+        assert len(data.toml.species) == 2
+        assert data.toml.species[0].wp == 2.1
+        assert data.toml.species[0].qm == -1.0
+        assert data.toml.species[1].wp == 0.049
+        assert data.toml.species[1].qm == 0.000545
+
+    def test_toml_none_for_inp(self, tmp_path):
+        """plasma.inp のみの場合は data.toml は None。"""
+        _setup_emdir(tmp_path)
+        _create_inp(tmp_path / "plasma.inp")
+        data = emout.Emout(tmp_path)
+        assert data.toml is None
+
+    def test_toml_contains(self, tmp_path):
+        _setup_emdir(tmp_path, V1_TOML, "plasma.toml")
+        data = emout.Emout(tmp_path)
+        assert "tmgrid" in data.toml
+        assert "nonexistent" not in data.toml
+
+    def test_toml_keys(self, tmp_path):
+        _setup_emdir(tmp_path, V1_TOML, "plasma.toml")
+        data = emout.Emout(tmp_path)
+        keys = list(data.toml.keys())
+        assert "meta" in keys
+        assert "tmgrid" in keys
+
+    def test_toml_to_dict(self, tmp_path):
+        _setup_emdir(tmp_path, V1_TOML, "plasma.toml")
+        data = emout.Emout(tmp_path)
+        d = data.toml.to_dict()
+        assert isinstance(d, dict)
+        assert d["tmgrid"]["nx"] == 64

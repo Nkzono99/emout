@@ -9,6 +9,8 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 from emout.utils.toml_converter import (
+    TomlData,
+    load_toml,
     load_toml_as_namelist,
     _detect_format_version,
     _extract_unit_conversion_key,
@@ -334,3 +336,67 @@ class TestLoadTomlAsNamelist:
         nml, convkey = load_toml_as_namelist(toml_file)
         assert nml["tmgrid"]["nx"] == 32
         assert convkey is None
+
+
+# ---------------------------------------------------------------------------
+# TomlData / load_toml テスト
+# ---------------------------------------------------------------------------
+
+
+class TestTomlData:
+    def test_attribute_access(self):
+        td = TomlData({"tmgrid": {"nx": 64, "ny": 32}})
+        assert td.tmgrid.nx == 64
+        assert td.tmgrid.ny == 32
+
+    def test_dict_access(self):
+        td = TomlData({"tmgrid": {"nx": 64}})
+        assert td["tmgrid"]["nx"] == 64
+
+    def test_list_of_dicts(self):
+        td = TomlData({"species": [{"wp": 2.1}, {"wp": 0.049}]})
+        assert td.species[0].wp == 2.1
+        assert td.species[1].wp == 0.049
+
+    def test_contains(self):
+        td = TomlData({"a": 1, "b": 2})
+        assert "a" in td
+        assert "c" not in td
+
+    def test_keys(self):
+        td = TomlData({"a": 1, "b": 2})
+        assert set(td.keys()) == {"a", "b"}
+
+    def test_get_default(self):
+        td = TomlData({"a": 1})
+        assert td.get("a") == 1
+        assert td.get("missing", 42) == 42
+
+    def test_to_dict(self):
+        d = {"a": 1, "b": {"c": 3}}
+        td = TomlData(d)
+        assert td.to_dict() is d
+
+    def test_attribute_error(self):
+        td = TomlData({"a": 1})
+        with pytest.raises(AttributeError):
+            td.nonexistent
+
+    def test_repr(self):
+        td = TomlData({"x": 1})
+        assert "TomlData" in repr(td)
+
+    def test_nested_deep(self):
+        td = TomlData({"meta": {"unit_conversion": {"dx": 0.5, "to_c": 10000.0}}})
+        assert td.meta.unit_conversion.dx == 0.5
+        assert td.meta.unit_conversion.to_c == 10000.0
+
+
+class TestLoadToml:
+    def test_load_file(self, tmp_path):
+        toml_file = tmp_path / "plasma.toml"
+        toml_file.write_text(V2_TOML, encoding="utf-8")
+        td = load_toml(toml_file)
+        assert td.meta.format_version == 2
+        assert td.species[0].wp == 2.1
+        assert td.tmgrid.nx == 64

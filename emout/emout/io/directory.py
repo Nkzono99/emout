@@ -58,6 +58,7 @@ class DirectoryInspector:
         # 3. inp 読み込み + Units 初期化
         self._inp: Optional[InpFile] = None
         self._unit: Optional[Units] = None
+        self._toml_data = None  # TomlData (TOML 読み込み時のみ設定)
         self._load_inpfile(inpfilename)
 
     def _fetch_append_directories(self, directory: Path) -> List[Path]:
@@ -152,13 +153,14 @@ class DirectoryInspector:
 
     def _load_from_toml(self, toml_path: Path) -> None:
         """plasma.toml 形式のファイルを読み込み InpFile に変換する。"""
-        from emout.utils.toml_converter import load_toml_as_namelist
+        from emout.utils.toml_converter import load_toml, load_toml_as_namelist
 
         logger.info(f"Loading TOML parameter file: {toml_path.resolve()}")
         nml, convkey = load_toml_as_namelist(toml_path)
         self._inp = InpFile()
         self._inp.nml = nml
         self._inp.convkey = convkey
+        self._toml_data = load_toml(toml_path)
         if convkey is not None:
             self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
@@ -172,6 +174,21 @@ class DirectoryInspector:
             `.inp` 読み込み済みなら `InpFile`、未読込なら `None`。
         """
         return self._inp
+
+    @property
+    def toml(self):
+        """TOML の生データを返す。
+
+        ``plasma.toml`` から読み込んだ場合のみ有効。
+        ``data.toml.species[0].wp`` のように属性アクセスで
+        TOML 本来の構造に直接アクセスできる。
+
+        Returns
+        -------
+        TomlData or None
+            TOML 読み込み時は `TomlData`、それ以外は `None`。
+        """
+        return self._toml_data
 
     @property
     def unit(self) -> Optional[Units]:

@@ -91,6 +91,21 @@ class Emout:
         return self._dir_inspector.inp
 
     @property
+    def toml(self):
+        """TOML の生データを返す。
+
+        ``plasma.toml`` から読み込んだ場合のみ有効。
+        V2 の ``data.toml.species[0].wp`` のような
+        TOML 本来の構造に直接アクセスできる。
+
+        Returns
+        -------
+        TomlData or None
+            TOML 読み込み時は ``TomlData``、それ以外は ``None``。
+        """
+        return self._dir_inspector.toml
+
+    @property
     def unit(self) -> Union[Units, None]:
         """単位変換情報を返す。
 

@@ -1,7 +1,10 @@
 """plasma.toml を f90nml.Namelist に変換するモジュール.
 
 TOML V1（フラット配列）と V2（構造化 [[species]] 等）の両方に対応する。
-変換後は��存の InpFile クラスへそのまま注入できる。
+変換後は既存の InpFile クラスへそのまま注入できる。
+
+また、TOML の生データに属性アクセスで直接アクセスするための
+:class:`TomlData` ラッパーも提供する。
 """
 
 from pathlib import Path
@@ -16,8 +19,104 @@ except ModuleNotFoundError:
 
 from emout.utils.emsesinp import UnitConversionKey
 
+
 # ---------------------------------------------------------------------------
-# V2 [[species]] パラメータ → namelist グループ名の対応表
+# TomlData: TOML 辞書への属性アクセスラッパー
+# ---------------------------------------------------------------------------
+
+
+class TomlData:
+    """TOML の辞書構造に属性アクセスできるラッパー.
+
+    ``data.species[0].wp`` のようにネストした辞書・リストへ
+    ドットアクセスで到達できる。辞書としてのアクセス
+    (``data["tmgrid"]["nx"]``) も同時にサポートする。
+
+    Parameters
+    ----------
+    data : dict
+        TOML から読み込んだ辞書。
+    """
+
+    def __init__(self, data: Dict[str, Any]):
+        object.__setattr__(self, "_data", data)
+
+    # --- dict ライクアクセス ---
+
+    def __getitem__(self, key: str) -> Any:
+        return _wrap(self._data[key])
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._data
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def keys(self):
+        return self._data.keys()
+
+    def values(self):
+        return (_wrap(v) for v in self._data.values())
+
+    def items(self):
+        return ((k, _wrap(v)) for k, v in self._data.items())
+
+    def get(self, key: str, default: Any = None) -> Any:
+        val = self._data.get(key, default)
+        return _wrap(val) if val is not default else default
+
+    # --- 属性アクセス ---
+
+    def __getattr__(self, key: str) -> Any:
+        try:
+            return _wrap(self._data[key])
+        except KeyError:
+            raise AttributeError(
+                f"'{type(self).__name__}' has no attribute '{key}'"
+            )
+
+    # --- 表示 ---
+
+    def __repr__(self) -> str:
+        return f"TomlData({self._data!r})"
+
+    def __str__(self) -> str:
+        return str(self._data)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """元の辞書を返す。"""
+        return self._data
+
+
+def _wrap(value: Any) -> Any:
+    """辞書を TomlData に、辞書リストを TomlData リストに再帰的にラップする。"""
+    if isinstance(value, dict):
+        return TomlData(value)
+    if isinstance(value, list):
+        return [_wrap(v) for v in value]
+    return value
+
+
+def load_toml(toml_path: Path) -> TomlData:
+    """plasma.toml を読み込み TomlData として返す.
+
+    Parameters
+    ----------
+    toml_path : Path
+        plasma.toml のパス
+
+    Returns
+    -------
+    TomlData
+        TOML の辞書構造に属性アクセスできる��ッパー
+    """
+    with open(toml_path, "rb") as f:
+        data = tomllib.load(f)
+    return TomlData(data)
+
+
+# ---------------------------------------------------------------------------
+# V2 [[species]] パラメ��タ → namelist グループ名の対応表
 # ---------------------------------------------------------------------------
 SPECIES_KEY_TO_GROUP: Dict[str, str] = {
     # &plasma
@@ -288,7 +387,7 @@ _V2_SKIP_KEYS = {"meta", "$schema", "species"}
 def _convert_v2(data: Dict[str, Any]) -> f90nml.Namelist:
     nml = f90nml.Namelist()
 
-    # 1. 通常テーブルをコピー (ptcond 等の構造化サブテーブルは後で処理)
+    # 1. 通常テーブルをコピー (ptcond 等の構��化サブテーブルは後で処理)
     for group_name, group_data in data.items():
         if group_name in _V2_SKIP_KEYS:
             continue
