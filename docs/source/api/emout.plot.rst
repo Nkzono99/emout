@@ -44,6 +44,14 @@ emout.plot.pyvista\_plot module
    :show-inheritance:
    :undoc-members:
 
+emout.plot.surface\_cut package
+-------------------------------
+
+.. automodule:: emout.plot.surface_cut
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

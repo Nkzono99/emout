@@ -13,6 +13,12 @@ Star-import control is provided via __all__.
 from .grid import UniformCellCenteredGrid
 from .field import Field3D
 from .cutter import SurfaceCutter, KeepSide
+from .mesh import (
+    MeshSurface3D,
+    BoxMeshSurface,
+    CylinderMeshSurface,
+    HollowCylinderMeshSurface,
+)
 from .sdf import (
     Surface3D,
     HeightFieldSurface,
@@ -40,6 +46,10 @@ __all__ = [
     "Field3D",
     "SurfaceCutter",
     "KeepSide",
+    "MeshSurface3D",
+    "BoxMeshSurface",
+    "CylinderMeshSurface",
+    "HollowCylinderMeshSurface",
     # surfaces
     "Surface3D",
     "HeightFieldSurface",

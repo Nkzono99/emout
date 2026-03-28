@@ -130,6 +130,58 @@ data.j1xyz[-1].plot3d(mode='stream', show=True)
 data.j1xyz[-1].plot3d(mode='quiver', show=True)
 ```
 
+For face-oriented 3D rendering, `emout.plot.surface_cut` also provides explicit mesh
+surfaces that are easier to control than extracting faces from a volume:
+
+```python
+import matplotlib.pyplot as plt
+
+from emout.plot.surface_cut import (
+    BoxMeshSurface,
+    CylinderMeshSurface,
+    HollowCylinderMeshSurface,
+    RenderItem,
+    plot_surfaces,
+)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+
+plot_surfaces(
+    ax,
+    field=field3d,  # surface_cut.Field3D
+    surfaces=[
+        RenderItem(
+            BoxMeshSurface(0, 10, 0, 6, 0, 4, faces=("zmax", "xmax")),
+            style="field",
+        ),
+        RenderItem(
+            CylinderMeshSurface(
+                center=(5, 3, 2),
+                axis="z",
+                radius=1.5,
+                length=4.0,
+                parts=("side", "top"),
+            ),
+            style="solid",
+            solid_color="0.7",
+            alpha=0.5,
+        ),
+        RenderItem(
+            HollowCylinderMeshSurface(
+                center=(2, 2, 2),
+                axis="z",
+                outer_radius=1.2,
+                inner_radius=0.6,
+                length=4.0,
+                parts=("outer", "inner", "top"),
+            ),
+            style="field",
+        ),
+    ],
+)
+```
+
 ---
 
 ### Working with Units

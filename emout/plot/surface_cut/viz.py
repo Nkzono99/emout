@@ -188,6 +188,57 @@ def _mesh_from_sdf(xs, ys, zs, sdf_zyx, level: float = 0.0):
     return V, F, N
 
 
+def _surface_mesh(surface, bounds: Bounds3D, grid_shape: Tuple[int, int, int], *, sdf_level: float):
+    """Build a triangle mesh from either an implicit surface or an explicit mesh."""
+    mesh_fn = getattr(surface, "mesh", None)
+    if callable(mesh_fn):
+        V, F = mesh_fn()
+        V = np.asarray(V, dtype=np.float64)
+        F = np.asarray(F, dtype=np.int64)
+        return V, F
+
+    xs, ys, zs, sdf = _sample_sdf_on_grid(surface, bounds, grid_shape)
+    V, F, _ = _mesh_from_sdf(xs, ys, zs, sdf, level=sdf_level)
+    return V, F
+
+
+def _bounds_from_mesh_surfaces(surfaces) -> Optional[Bounds3D]:
+    """Infer plot bounds from explicit mesh surfaces only."""
+    mins: list[np.ndarray] = []
+    maxs: list[np.ndarray] = []
+    for item in _as_list(surfaces):
+        mesh_fn = getattr(item.surface, "mesh", None)
+        if not callable(mesh_fn):
+            return None
+        V, _ = mesh_fn()
+        V = np.asarray(V, dtype=np.float64)
+        if V.size == 0:
+            continue
+        mins.append(np.nanmin(V, axis=0))
+        maxs.append(np.nanmax(V, axis=0))
+
+    if not mins:
+        return None
+
+    xyz_min = np.min(np.vstack(mins), axis=0)
+    xyz_max = np.max(np.vstack(maxs), axis=0)
+    return Bounds3D(
+        (float(xyz_min[0]), float(xyz_max[0])),
+        (float(xyz_min[1]), float(xyz_max[1])),
+        (float(xyz_min[2]), float(xyz_max[2])),
+    ).expanded(0.05)
+
+
+def _face_normals_from_mesh(V: np.ndarray, F: np.ndarray) -> np.ndarray:
+    """Compute normalized face normals from triangle geometry."""
+    tris = V[F]
+    fn = np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0])
+    nrm = np.linalg.norm(fn, axis=1)
+    good = nrm > 0.0
+    fn[good] /= nrm[good][:, None]
+    return fn
+
+
 def _face_values_from_vertex_values(F: np.ndarray, vval: np.ndarray) -> np.ndarray:
     """頂点値から各面の代表値を計算する。
     
@@ -369,7 +420,7 @@ def _contour_segments_on_mesh(
 def plot_surfaces(
     ax,
     *,
-    field,
+    field=None,
     surfaces,
     bounds: Optional[Bounds3D] = None,
     grid_shape: Tuple[int, int, int] = (140, 140, 100),
@@ -386,25 +437,35 @@ def plot_surfaces(
     contour_offset: float = 0.0,
     contour_side: str = "front"
 ):
-    """Render implicit surfaces (including boolean composites) with colormap and contours."""
+    """Render implicit surfaces or explicit face meshes with colormap and contours."""
 
-    g = field.grid
+    items = _as_list(surfaces)
+
+    g = None if field is None else field.grid
     if bounds is None:
-        x_edges, y_edges, z_edges = g.extent_edges()
-        bounds = Bounds3D(x_edges, y_edges, z_edges).expanded(0.05)
+        if g is not None:
+            x_edges, y_edges, z_edges = g.extent_edges()
+            bounds = Bounds3D(x_edges, y_edges, z_edges).expanded(0.05)
+        else:
+            bounds = _bounds_from_mesh_surfaces(items)
+            if bounds is None:
+                raise ValueError(
+                    "bounds is required when field is None or when rendering implicit surfaces without a field grid"
+                )
 
-    cmap = cm.get_cmap(cmap_name)
-    norm = _make_norm(vmin, vmax, robust_data=field.data)
+    cmap = plt.get_cmap(cmap_name)
+    norm = _make_norm(vmin, vmax, robust_data=None if field is None else field.data)
 
     if isinstance(contour_levels, int):
         levels = np.linspace(norm.vmin, norm.vmax, contour_levels)
     else:
         levels = np.asarray(list(contour_levels), dtype=float)
 
-    for i, srf in enumerate(_as_list(surfaces)):
+    for i, srf in enumerate(items):
         surface = srf.surface
-        xs, ys, zs, sdf = _sample_sdf_on_grid(surface, bounds, grid_shape)
-        V, F, N = _mesh_from_sdf(xs, ys, zs, sdf, level=sdf_level)
+        V, F = _surface_mesh(surface, bounds, grid_shape, sdf_level=sdf_level)
+        if V.size == 0 or F.size == 0:
+            continue
 
         if srf.mask is not None:
             F = _filter_faces_by_mask(V, F, srf.mask)
@@ -427,6 +488,9 @@ def plot_surfaces(
             ax.add_collection3d(poly)
             continue
 
+        if field is None:
+            raise ValueError("field is required when style='field' or contours are requested")
+
         vval = field.sample(V[:, 0], V[:, 1], V[:, 2])
 
         if mode in ("cmap", "cmap+cont"):
@@ -438,11 +502,7 @@ def plot_surfaces(
             ax.add_collection3d(poly)
 
         if srf.draw_contours and mode in ("cont", "cmap+cont"):
-            # Face normals from vertex normals.
-            fn = N[F].mean(axis=1)
-            nrm = np.linalg.norm(fn, axis=1)
-            good = nrm > 0
-            fn[good] /= nrm[good][:, None]
+            fn = _face_normals_from_mesh(V, F)
 
             # Optional back-face culling for contours (avoid seeing lines from the back side).
             if contour_side not in ("both", "front", "back"):
