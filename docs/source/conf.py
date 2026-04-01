@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 project = 'emout'
 copyright = '2025, Jin Nakazono'
 author = 'Jin Nakazono'
-release = '2.5.3'
+release = '2.6.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

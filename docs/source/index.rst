@@ -1,8 +1,31 @@
 emout
 =====
 
-.. include:: ../../README.md
+**EMSES simulation output analysis & visualization library**
+
+.. include:: ../../README.en.md
    :parser: myst_parser.sphinx_
+   :end-before: ## Table of Contents
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide (English)
+
+   guide/quickstart
+   guide/plotting
+   guide/animation
+   guide/inp
+   guide/units
+
+.. toctree::
+   :maxdepth: 2
+   :caption: ユーザーガイド (日本語)
+
+   guide/quickstart.ja
+   guide/plotting.ja
+   guide/animation.ja
+   guide/inp.ja
+   guide/units.ja
 
 .. toctree::
    :maxdepth: 2
