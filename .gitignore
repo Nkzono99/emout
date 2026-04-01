@@ -134,3 +134,5 @@ main.py
 !docs/build
 docs/.doctrees
 ref/
+
+.claude/settings.local.json
