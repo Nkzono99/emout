@@ -1,6 +1,8 @@
 # emout/io/directory.py
 
 import logging
+import shutil
+import subprocess
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -58,7 +60,7 @@ class DirectoryInspector:
         # 3. inp 読み込み + Units 初期化
         self._inp: Optional[InpFile] = None
         self._unit: Optional[Units] = None
-        self._toml_data = None  # TomlData (TOML 読み込み時のみ設定)
+        self._toml_data = None  # TomlData (plasma.toml が存在する場合に設定)
         self._load_inpfile(inpfilename)
 
     def _fetch_append_directories(self, directory: Path) -> List[Path]:
@@ -104,8 +106,8 @@ class DirectoryInspector:
     def _load_inpfile(self, inpfilename: Union[Path, str]) -> None:
         """パラメータファイルを読み込み、単位変換情報を初期化する。
 
-        ``plasma.toml`` と ``plasma.inp`` の両方に対応する。
-        デフォルト (``plasma.inp``) 指定時は ``plasma.toml`` を優先的に探索する。
+        ``plasma.toml`` が存在する場合は ``toml2inp`` コマンドで
+        ``plasma.inp`` を生成・更新してから読み込む。
 
         Parameters
         ----------
@@ -122,24 +124,30 @@ class DirectoryInspector:
 
         inpfilename_str = str(inpfilename)
 
-        # デフォルト "plasma.inp" の場合、plasma.toml を優先探索
+        # デフォルト "plasma.inp" の場合
         if inpfilename_str == "plasma.inp":
             toml_path = self.main_directory / "plasma.toml"
-            if toml_path.exists():
-                self._load_from_toml(toml_path)
-                return
             inp_path = self.main_directory / "plasma.inp"
+
+            if toml_path.exists():
+                self._run_toml2inp(toml_path, inp_path)
+                self._store_toml_data(toml_path)
+
             if inp_path.exists():
                 self._load_from_inp(inp_path)
             return
 
-        # 明示指定
+        # 明示指定: .toml が指定された場合も toml2inp で変換
         path = self.main_directory / inpfilename
         if not path.exists():
             return
 
         if path.suffix == ".toml":
-            self._load_from_toml(path)
+            inp_path = path.with_suffix(".inp")
+            self._run_toml2inp(path, inp_path)
+            self._store_toml_data(path)
+            if inp_path.exists():
+                self._load_from_inp(inp_path)
         else:
             self._load_from_inp(path)
 
@@ -151,18 +159,38 @@ class DirectoryInspector:
         if convkey is not None:
             self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
-    def _load_from_toml(self, toml_path: Path) -> None:
-        """plasma.toml 形式のファイルを読み込み InpFile に変換する。"""
-        from emout.utils.toml_converter import load_toml, load_toml_as_namelist
+    def _store_toml_data(self, toml_path: Path) -> None:
+        """``plasma.toml`` を :class:`TomlData` として保持する。"""
+        from emout.utils.toml_converter import load_toml
 
-        logger.info(f"Loading TOML parameter file: {toml_path.resolve()}")
-        nml, convkey = load_toml_as_namelist(toml_path)
-        self._inp = InpFile()
-        self._inp.nml = nml
-        self._inp.convkey = convkey
         self._toml_data = load_toml(toml_path)
-        if convkey is not None:
-            self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+
+    @staticmethod
+    def _run_toml2inp(toml_path: Path, inp_path: Path) -> None:
+        """``toml2inp`` コマンドで plasma.toml から plasma.inp を生成する。"""
+        toml2inp = shutil.which("toml2inp")
+        if toml2inp is None:
+            logger.warning(
+                "toml2inp command not found; "
+                "skipping conversion from %s",
+                toml_path,
+            )
+            return
+
+        logger.info("Running toml2inp: %s -> %s", toml_path, inp_path)
+        try:
+            subprocess.run(
+                [toml2inp, str(toml_path), "-o", str(inp_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            logger.error(
+                "toml2inp failed (returncode=%d): %s",
+                exc.returncode,
+                exc.stderr.strip(),
+            )
 
     @property
     def inp(self) -> Optional[InpFile]:
@@ -179,7 +207,7 @@ class DirectoryInspector:
     def toml(self):
         """TOML の生データを返す。
 
-        ``plasma.toml`` から読み込んだ場合のみ有効。
+        ``plasma.toml`` が存在する場合のみ有効。
         ``data.toml.species[0].wp`` のように属性アクセスで
         TOML 本来の構造に直接アクセスできる。
 
@@ -244,8 +272,8 @@ class DirectoryInspector:
             toml_path = dirpath / "plasma.toml"
             inp_path = dirpath / "plasma.inp"
             if toml_path.exists():
-                self._load_from_toml(toml_path)
-            elif inp_path.exists():
+                self._run_toml2inp(toml_path, inp_path)
+            if inp_path.exists():
                 self._inp = InpFile(inp_path)
 
         return int(last_line.split()[0]) == int(self._inp.nstep)

@@ -94,8 +94,8 @@ class Emout:
     def toml(self):
         """TOML の生データを返す。
 
-        ``plasma.toml`` から読み込んだ場合のみ有効。
-        V2 の ``data.toml.species[0].wp`` のような
+        ``plasma.toml`` が存在する場合のみ有効。
+        ``data.toml.species[0].wp`` のように
         TOML 本来の構造に直接アクセスできる。
 
         Returns
