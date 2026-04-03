@@ -31,6 +31,7 @@ dependencies = [
   "distributed; python_version >= \"3.10\"",
   "scikit-image",
   "tomli; python_version < '3.11'",
+  "mpiemses3d-tools",
 ]
 
 classifiers = [
