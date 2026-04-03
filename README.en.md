@@ -84,6 +84,9 @@ import emout
 
 data = emout.Emout("output_dir")
 
+# Separate input file and output directory
+data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
+
 # Variable names are resolved automatically from EMSES filenames
 data.phisp          # Potential (time series)
 len(data.phisp)     # Number of timesteps
@@ -247,13 +250,16 @@ data.inp.mtd_vbnd  # Per-axis boundary type (0=periodic, 1=Dirichlet, 2=Neumann)
 
 ### TOML Format (`plasma.toml`)
 
-`plasma.toml` is transparently supported:
+When `plasma.toml` exists in the directory, it is automatically converted to `plasma.inp` via the `toml2inp` command before loading:
 
 ```python
-data = emout.Emout("output_dir")  # Prefers plasma.toml if present
+data = emout.Emout("output_dir")  # Runs toml2inp if plasma.toml exists
 data.inp.nx  # Same interface
-data.inp.toml  # Access the raw TOML dictionary
+data.toml    # Direct access to raw TOML data (TomlData)
+data.toml.species[0].wp  # Access nested structures
 ```
+
+> **Note:** The `toml2inp` command must be available on PATH (bundled with [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D)).
 
 ---
 
@@ -361,6 +367,29 @@ phi[phi < phi.mean()] = float("nan")
 ```
 
 </details>
+
+---
+
+## Separating Input and Output Directories
+
+When the input parameter file and output files are in different locations:
+
+```python
+# Specify input file path explicitly
+data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
+
+# Specify only output directory (input file is searched within it)
+data = emout.Emout("output_dir")
+
+# Traditional usage (everything in the same directory)
+data = emout.Emout("output_dir")
+```
+
+| Parameter | Description | Default |
+| --- | --- | --- |
+| `directory` | Base directory | `"./"` |
+| `input_path` | Full path to the input file (e.g., `/path/to/plasma.toml`) | `None` |
+| `output_directory` | Directory containing output files | Same as `directory` |
 
 ---
 

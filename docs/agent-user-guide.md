@@ -32,7 +32,20 @@ import emout
 data = emout.Emout("output_dir")
 # data = emout.Emout("output_dir", ad="auto")                          # auto-detect appended dirs
 # data = emout.Emout("output_dir", append_directories=["dir2", "dir3"]) # manual append
+
+# Separate input file and output directory
+# data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
 ```
+
+**Constructor parameters:**
+
+| Parameter | Description | Default |
+| --- | --- | --- |
+| `directory` | Base directory (input + output when others unset) | `"./"` |
+| `input_path` | Full path to input file (e.g. `/path/to/plasma.toml`). Overrides `directory`/`inpfilename` for input. | `None` |
+| `output_directory` | Directory for output files (h5, icur, pbody). Defaults to `directory`. | `None` |
+| `append_directories` / `ad` | Additional output directories or `"auto"` | `None` |
+| `inpfilename` | Input filename (ignored when `input_path` is set) | `"plasma.inp"` |
 
 ### Axis order
 
@@ -254,15 +267,17 @@ animator.plot(action="to_html")  # or "save", "show"
 
 ## data.toml — Parameter file (recommended for plasma.toml)
 
-When `plasma.toml` is present, **use `data.toml` instead of `data.inp`**. It provides the native TOML structure with attribute access via the `TomlData` wrapper.
+When `plasma.toml` is present, emout runs the `toml2inp` command to generate `plasma.inp`, then loads it. **Use `data.toml` for native TOML structure access** via the `TomlData` wrapper.
 
 ```python
 data.toml                        # TomlData object (None if plasma.inp only)
 data.toml.tmgrid.nx              # attribute access
 data.toml["tmgrid"]["nx"]        # dict-style access
-data.toml.plasma.species[0].wp   # nested structures (V2 format)
+data.toml.species[0].wp          # nested structures (V2 format)
 data.toml.meta.unit_conversion.dx  # unit conversion key
 ```
+
+> **Requirement:** `toml2inp` must be on PATH (bundled with [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D)). If missing, a warning is logged and only an existing `plasma.inp` is loaded.
 
 ### TomlData API
 
@@ -318,14 +333,14 @@ data.toml.meta.unit_conversion.dx  # 0.5
 
 | | `data.toml` | `data.inp` |
 | --- | --- | --- |
-| Available when | `plasma.toml` exists | Always (auto-converted from .toml too) |
+| Available when | `plasma.toml` exists | Always (`toml2inp` generates it from .toml) |
 | Structure | Native TOML (nested, lists) | Flat namelist (group → key → value) |
-| V2 species access | `data.toml.plasma.species[0].wp` | `data.inp.wp[0]` (flat list) |
+| V2 species access | `data.toml.species[0].wp` | `data.inp.wp[0]` (flat list) |
 | **Recommendation** | **Preferred when plasma.toml is used** | Fallback for plasma.inp-only projects |
 
 ### data.inp — Legacy / fallback
 
-`data.inp` is always available regardless of file format. It flattens TOML into namelist-style access:
+`data.inp` is always available. When `plasma.toml` exists, `toml2inp` auto-generates `plasma.inp`:
 
 ```python
 data.inp                     # InpFile object (dict-like)
@@ -466,6 +481,7 @@ bt.xz.plot(color="black", alpha=alpha_values)
 import emout
 
 data = emout.Emout("output_dir")
+# Or: data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
 
 # Use data.toml for parameter access
 nx = data.toml.tmgrid.nx
@@ -473,8 +489,8 @@ ny = data.toml.tmgrid.ny
 nz = data.toml.tmgrid.nz
 
 # V2 species access
-electron_wp = data.toml.plasma.species[0].wp
-ion_qm = data.toml.plasma.species[1].qm
+electron_wp = data.toml.species[0].wp
+ion_qm = data.toml.species[1].qm
 
 # Quick 2D visualization
 data.phisp[-1, :, ny // 2, :].plot()

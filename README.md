@@ -84,6 +84,9 @@ import emout
 
 data = emout.Emout("output_dir")
 
+# 入力ファイルと出力ディレクトリを分離
+data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
+
 # 変数名は EMSES のファイル名から自動解決
 data.phisp          # 電位 (時系列)
 len(data.phisp)     # タイムステップ数
@@ -247,13 +250,16 @@ data.inp.mtd_vbnd  # 各軸の境界条件 (0=periodic, 1=Dirichlet, 2=Neumann)
 
 ### TOML 形式 (`plasma.toml`)
 
-`plasma.toml` も透過的に読み込めます:
+`plasma.toml` がディレクトリに存在する場合、`toml2inp` コマンドで `plasma.inp` を自動生成してから読み込みます:
 
 ```python
-data = emout.Emout("output_dir")  # plasma.toml があればそちらを優先
+data = emout.Emout("output_dir")  # plasma.toml があれば toml2inp → plasma.inp を生成
 data.inp.nx  # 同じインターフェース
-data.inp.toml  # 元の TOML 辞書にもアクセス可能
+data.toml    # TOML の生データに直接アクセス (TomlData)
+data.toml.species[0].wp  # ネスト構造のまま参照可能
 ```
+
+> **注意:** `toml2inp` コマンドが PATH に必要です（[MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D) に同梱）。
 
 ---
 
@@ -361,6 +367,29 @@ phi[phi < phi.mean()] = float("nan")
 ```
 
 </details>
+
+---
+
+## 入力ファイルと出力ディレクトリの分離
+
+入力パラメータファイルと出力ファイルが別の場所にある場合:
+
+```python
+# 入力ファイルのフルパスを指定
+data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
+
+# 出力ディレクトリのみ指定（入力ファイルは output_dir 内を探索）
+data = emout.Emout("output_dir")
+
+# 従来通りの使い方（すべて同じディレクトリ）
+data = emout.Emout("output_dir")
+```
+
+| パラメータ | 説明 | デフォルト |
+| --- | --- | --- |
+| `directory` | 基準ディレクトリ | `"./"` |
+| `input_path` | 入力ファイルのフルパス（例: `/path/to/plasma.toml`） | `None` |
+| `output_directory` | 出力ファイルのディレクトリ | `directory` と同じ |
 
 ---
 

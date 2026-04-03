@@ -51,8 +51,10 @@
   - `directory`
   - `append_directories` または `ad`
   - `inpfilename`（既定: `plasma.inp`）
+  - `input_path`（入力ファイルのフルパス。指定時は `directory`/`inpfilename` より優先）
+  - `output_directory`（出力ファイルのディレクトリ。未指定時は `directory`）
 - プロパティ:
-  - `directory`, `append_directories`, `inp`, `unit`
+  - `directory`, `append_directories`, `inp`, `toml`, `unit`
   - `icur`, `pbody`
   - `backtrace`（実験機能）
 

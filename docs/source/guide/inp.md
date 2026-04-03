@@ -76,7 +76,8 @@ btypes = data.inp.mtd_vbnd  # e.g., [0, 2, 0] for periodic-Neumann-periodic
 
 ## TOML Format (`plasma.toml`)
 
-emout transparently supports `plasma.toml`. If both `plasma.inp` and `plasma.toml` exist in the directory, `plasma.toml` takes priority.
+When `plasma.toml` exists, emout automatically runs `toml2inp` to generate `plasma.inp`, then loads it.
+The `toml2inp` command is bundled with [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D).
 
 ```python
 data = emout.Emout("output_dir")
@@ -85,8 +86,13 @@ data.inp.nx          # Same interface regardless of file format
 
 ### Accessing Raw TOML Structure
 
+Use `data.toml` for direct access to the native TOML structure:
+
 ```python
-data.inp.toml        # Returns the raw TOML dictionary (OrderedDict)
+data.toml                        # TomlData wrapper (None if plasma.inp only)
+data.toml.tmgrid.nx              # attribute access
+data.toml["tmgrid"]["nx"]        # dict-style access
+data.toml.species[0].wp          # nested structures
 ```
 
 The TOML format uses section headers corresponding to namelist groups:
@@ -98,10 +104,19 @@ ny = 256
 nz = 512
 dt = 0.5
 
-[plasma]
-nspec = 2
-wp = [1.0, 0.05]
-qm = [-1.0, 0.001]
+[[species]]
+wp = 1.0
+qm = -1.0
+
+[[species]]
+wp = 0.05
+qm = 0.001
+```
+
+### Separating Input and Output
+
+```python
+data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
 ```
 
 ## Unit Conversion Key
