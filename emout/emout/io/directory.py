@@ -26,30 +26,55 @@ class DirectoryInspector:
         directory: Union[Path, str],
         append_directories: Union[List[Union[Path, str]], str, None] = None,
         inpfilename: Union[Path, str] = "plasma.inp",
+        input_path: Union[Path, str, None] = None,
+        output_directory: Union[Path, str, None] = None,
     ):
-        # 1. メインディレクトリを Path に変換
+        # 1. ディレクトリを Path に変換
         """DirectoryInspector を初期化する。
 
         Parameters
         ----------
         directory : Union[Path, str]
-            EMSES 出力を格納したメインディレクトリです。文字列指定時は `Path` に変換されます。
+            基準ディレクトリです。`input_path` / `output_directory` 未指定時は
+            入力ファイル・出力ファイルの両方をこのディレクトリから探索します。
         append_directories : Union[List[Union[Path, str]], str, None], optional
             追加で参照するディレクトリ群です。`'auto'` では連番サフィックス付きディレクトリを自動探索します。
         inpfilename : Union[Path, str], optional
             読み込む入力ファイル名です。`None` を指定すると `.inp` の読み込みをスキップします。
+            `input_path` が指定されている場合は無視されます。
+        input_path : Union[Path, str, None], optional
+            入力パラメータファイルへのフルパスです（例: ``/path/to/plasma.toml``）。
+            指定すると `directory` / `inpfilename` の代わりにこのパスが使われます。
+        output_directory : Union[Path, str, None], optional
+            シミュレーション出力ファイル（h5, icur, pbody 等）を格納したディレクトリです。
+            未指定時は `directory` が使われます。
         """
         if not isinstance(directory, Path):
             directory = Path(directory)
-        self.main_directory: Path = directory
+
+        # input_path が指定された場合、そこから入力ディレクトリとファイル名を決定
+        if input_path is not None:
+            input_path = Path(input_path)
+            self._input_directory: Path = input_path.parent
+            inpfilename = input_path.name
+        else:
+            self._input_directory = directory
+
+        # 出力ディレクトリ (h5, icur, pbody 等)
+        if output_directory is not None:
+            self.main_directory: Path = Path(output_directory)
+        else:
+            self.main_directory = directory
+
         logger.info(
-            f"DirectoryInspector: main directory = {self.main_directory.resolve()}"
+            f"DirectoryInspector: input directory = {self._input_directory.resolve()}, "
+            f"output directory = {self.main_directory.resolve()}"
         )
 
         # 2. append_dirs の決定
         self.append_directories: List[Path] = []
         if append_directories == "auto":
-            append_directories_list = self._fetch_append_directories(directory)
+            append_directories_list = self._fetch_append_directories(self.main_directory)
         else:
             append_directories_list = append_directories or []
 
@@ -112,7 +137,7 @@ class DirectoryInspector:
         Parameters
         ----------
         inpfilename : Union[Path, str]
-            `main_directory` からの相対ファイル名です。`None` の場合は読み込みません。
+            `_input_directory` からの相対ファイル名です。`None` の場合は読み込みません。
 
         Returns
         -------
@@ -126,8 +151,8 @@ class DirectoryInspector:
 
         # デフォルト "plasma.inp" の場合
         if inpfilename_str == "plasma.inp":
-            toml_path = self.main_directory / "plasma.toml"
-            inp_path = self.main_directory / "plasma.inp"
+            toml_path = self._input_directory / "plasma.toml"
+            inp_path = self._input_directory / "plasma.inp"
 
             if toml_path.exists():
                 self._run_toml2inp(toml_path, inp_path)
@@ -138,7 +163,7 @@ class DirectoryInspector:
             return
 
         # 明示指定: .toml が指定された場合も toml2inp で変換
-        path = self.main_directory / inpfilename
+        path = self._input_directory / inpfilename
         if not path.exists():
             return
 
@@ -269,8 +294,8 @@ class DirectoryInspector:
             return False
 
         if self._inp is None:
-            toml_path = dirpath / "plasma.toml"
-            inp_path = dirpath / "plasma.inp"
+            toml_path = self._input_directory / "plasma.toml"
+            inp_path = self._input_directory / "plasma.inp"
             if toml_path.exists():
                 self._run_toml2inp(toml_path, inp_path)
             if inp_path.exists():

@@ -32,24 +32,34 @@ class Emout:
         append_directories: Union[List[Union[Path, str]], None] = None,
         ad: Union[List[Union[Path, str]], None] = None,
         inpfilename: Union[Path, str] = "plasma.inp",
+        input_path: Union[Path, str, None] = None,
+        output_directory: Union[Path, str, None] = None,
     ):
         """Emout ファサードを初期化する。
 
         Parameters
         ----------
         directory : Union[Path, str], optional
-            処理対象ディレクトリのパスです。
+            基準ディレクトリです。`input_path` / `output_directory` 未指定時は
+            入力ファイル・出力ファイルの両方をこのディレクトリから探索します。
         append_directories : Union[List[Union[Path, str]], None], optional
             追加で参照するディレクトリまたはそのリストです。
         ad : Union[List[Union[Path, str]], None], optional
             `append_directories` の短縮エイリアスです。両方指定した場合は `append_directories` が優先されます。
         inpfilename : Union[Path, str], optional
-            入力パラメータファイル名です。通常は `plasma.inp` を指定します。
+            入力パラメータファイル名です。`input_path` が指定されている場合は無視されます。
+        input_path : Union[Path, str, None], optional
+            入力パラメータファイルへのフルパスです（例: ``/path/to/plasma.toml``）。
+        output_directory : Union[Path, str, None], optional
+            シミュレーション出力ファイルを格納したディレクトリです。
+            未指定時は `directory` が使われます。
         """
         self._dir_inspector = DirectoryInspector(
             directory=directory,
             append_directories=append_directories or ad,
             inpfilename=inpfilename,
+            input_path=input_path,
+            output_directory=output_directory,
         )
 
         self._grid_loader = GridDataLoader(
