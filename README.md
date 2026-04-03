@@ -255,11 +255,12 @@ data.inp.mtd_vbnd  # 各軸の境界条件 (0=periodic, 1=Dirichlet, 2=Neumann)
 ```python
 data = emout.Emout("output_dir")  # plasma.toml があれば toml2inp → plasma.inp を生成
 data.inp.nx  # 同じインターフェース
-data.toml    # TOML の生データに直接アクセス (TomlData)
+data.toml    # 構造化 TOML に直接アクセス (TomlData)
 data.toml.species[0].wp  # ネスト構造のまま参照可能
 ```
 
 > **注意:** `toml2inp` コマンドが PATH に必要です（[MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D) に同梱）。
+> `species_groups` などの `*_groups` は読み込み時に各 entry へ展開され、`data.toml` からは除外されます。
 
 ---
 

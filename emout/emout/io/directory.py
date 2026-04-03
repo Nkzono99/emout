@@ -185,10 +185,18 @@ class DirectoryInspector:
             self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
     def _store_toml_data(self, toml_path: Path) -> None:
-        """``plasma.toml`` を :class:`TomlData` として保持する。"""
+        """``plasma.toml`` を :class:`TomlData` として保持する。
+
+        ``group_id`` を用いる ``*_groups`` は、この時点で各 entry に展開し、
+        返却用の `data.toml` からは group table を除外する。
+        """
         from emout.utils.toml_converter import load_toml
 
-        self._toml_data = load_toml(toml_path)
+        self._toml_data = load_toml(
+            toml_path,
+            resolve_groups=True,
+            purge_groups=True,
+        )
 
     @staticmethod
     def _run_toml2inp(toml_path: Path, inp_path: Path) -> None:
@@ -230,11 +238,12 @@ class DirectoryInspector:
 
     @property
     def toml(self):
-        """TOML の生データを返す。
+        """TOML データを返す。
 
         ``plasma.toml`` が存在する場合のみ有効。
         ``data.toml.species[0].wp`` のように属性アクセスで
-        TOML 本来の構造に直接アクセスできる。
+        構造化 TOML に直接アクセスできる。
+        `group_id` ベースの group default は各 entry に展開済み。
 
         Returns
         -------

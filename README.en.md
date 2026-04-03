@@ -255,11 +255,12 @@ When `plasma.toml` exists in the directory, it is automatically converted to `pl
 ```python
 data = emout.Emout("output_dir")  # Runs toml2inp if plasma.toml exists
 data.inp.nx  # Same interface
-data.toml    # Direct access to raw TOML data (TomlData)
+data.toml    # Direct access to structured TOML data (TomlData)
 data.toml.species[0].wp  # Access nested structures
 ```
 
 > **Note:** The `toml2inp` command must be available on PATH (bundled with [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D)).
+> Group tables such as `species_groups` are expanded into each entry on load and omitted from `data.toml`.
 
 ---
 

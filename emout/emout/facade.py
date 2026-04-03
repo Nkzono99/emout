@@ -102,11 +102,13 @@ class Emout:
 
     @property
     def toml(self):
-        """TOML の生データを返す。
+        """TOML データを返す。
 
         ``plasma.toml`` が存在する場合のみ有効。
         ``data.toml.species[0].wp`` のように
-        TOML 本来の構造に直接アクセスできる。
+        構造化 TOML へ直接アクセスできる。
+        `group_id` を使う ``*_groups`` は読み込み時に各 entry へ展開され、
+        `data.toml` からは group table が取り除かれる。
 
         Returns
         -------
