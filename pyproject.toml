@@ -53,3 +53,7 @@ pyvista = [
 
 [project.urls]
 Repository = "https://github.com/Nkzono99/emout.git"
+
+[tool.setuptools.packages.find]
+include = ["emout*"]
+namespaces = false
