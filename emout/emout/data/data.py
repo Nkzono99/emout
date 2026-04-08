@@ -821,6 +821,98 @@ class Data3d(Data):
         """`plot_pyvista` のエイリアス。"""
         return self.plot_pyvista(*args, **kwargs)
 
+    def plot_surfaces(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        use_si: bool = True,
+        vmin: Union[float, None] = None,
+        vmax: Union[float, None] = None,
+        **kwargs,
+    ):
+        """3D スカラー場に明示メッシュ境界を重ねて描画する。
+
+        :func:`emout.plot.surface_cut.plot_surfaces` に ``self`` を
+        :class:`emout.plot.surface_cut.Field3D` としてラップして渡します。
+        ``data.phisp[-1].plot_surfaces(data.boundaries.mesh().render(), vmin=0, vmax=10)``
+        のような 1 行呼び出しを意図しています。
+
+        Parameters
+        ----------
+        surfaces
+            :class:`emout.plot.surface_cut.RenderItem` か
+            :class:`emout.plot.surface_cut.MeshSurface3D` 、またはそれらの
+            シーケンス。メッシュ単体が渡された場合は ``render()`` 相当の
+            デフォルトスタイルで包みます。
+        ax : matplotlib.axes.Axes, optional
+            描画先 Axes です。未指定の場合は新たに 3D 軸を作成します。
+        use_si : bool, optional
+            `True` (デフォルト) の場合、データと格子間隔を SI 単位に
+            変換してから描画します。単位変換キーが無い場合は自動で
+            `False` 扱いとなります。
+        vmin, vmax : float, optional
+            カラーマップの範囲です。
+        **kwargs : dict
+            :func:`emout.plot.surface_cut.plot_surfaces` に転送される
+            追加のキーワード引数です (`bounds`, `cmap_name`,
+            `contour_levels` など)。
+
+        Returns
+        -------
+        tuple
+            ``plot_surfaces`` が返す ``(cmap, norm)`` のタプル。
+        """
+        import matplotlib.pyplot as plt
+
+        from emout.plot.surface_cut import (
+            Field3D,
+            MeshSurface3D,
+            RenderItem,
+            UniformCellCenteredGrid,
+            plot_surfaces as _plot_surfaces,
+        )
+
+        effective_si = bool(use_si) and getattr(self, "valunit", None) is not None
+
+        if effective_si:
+            data = np.asarray(self.val_si, dtype=np.float64)
+            dx = float(self.axisunits[-1].reverse(1.0))
+            dy = float(self.axisunits[-2].reverse(1.0))
+            dz = float(self.axisunits[-3].reverse(1.0))
+        else:
+            data = np.asarray(self, dtype=np.float64)
+            dx = dy = dz = 1.0
+
+        nz, ny, nx = data.shape
+        grid = UniformCellCenteredGrid(nx=nx, ny=ny, nz=nz, dx=dx, dy=dy, dz=dz)
+        field = Field3D(grid, data)
+
+        def _wrap(item):
+            if isinstance(item, RenderItem):
+                return item
+            if isinstance(item, MeshSurface3D):
+                return item.render()
+            return item
+
+        if isinstance(surfaces, (RenderItem, MeshSurface3D)):
+            items = _wrap(surfaces)
+        else:
+            items = [_wrap(s) for s in surfaces]
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+
+        return _plot_surfaces(
+            ax,
+            field=field,
+            surfaces=items,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs,
+        )
+
 
 class Data2d(Data):
     """2次元データの2次元面を管理する."""

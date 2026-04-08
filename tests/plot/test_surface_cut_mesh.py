@@ -280,6 +280,44 @@ def test_plot_surfaces_accepts_explicit_mesh_surfaces():
     plt.close(fig)
 
 
+def test_data3d_plot_surfaces_wraps_field_and_mesh():
+    from emout.emout.data.data import Data3d
+    from emout.utils.units import UnitTranslator
+
+    nx, ny, nz = 8, 7, 6
+    data = np.arange(nx * ny * nz, dtype=np.float64).reshape(nz, ny, nx)
+
+    # Unit translators: grid→SI is divide-by-10 (dx=0.1 m equivalent).
+    length_unit = UnitTranslator(0.1, 1.0)  # from_unit=0.1 m, to_unit=1 grid
+    val_unit = UnitTranslator(1.0, 1.0)  # no scaling
+    d3 = Data3d(
+        data,
+        filename="dummy.h5",
+        axisunits=[None, length_unit, length_unit, length_unit],
+        valunit=val_unit,
+    )
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    mesh = BoxMeshSurface(
+        0.1, 0.4, 0.1, 0.4, 0.05, 0.35, faces=("zmax",)
+    )
+    # Pass a bare MeshSurface3D — plot_surfaces should wrap it in a RenderItem.
+    cmap, norm = d3.plot_surfaces(
+        mesh,
+        ax=ax,
+        use_si=True,
+        vmin=0.0,
+        vmax=10.0,
+    )
+
+    assert cmap is not None
+    assert norm.vmin == 0.0 and norm.vmax == 10.0
+    assert len(ax.collections) >= 1
+    plt.close(fig)
+
+
 def test_plot_surfaces_can_render_solid_mesh_without_field():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
