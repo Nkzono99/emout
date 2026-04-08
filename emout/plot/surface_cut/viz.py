@@ -394,7 +394,27 @@ def plot_surfaces(
     else:
         levels = np.asarray(list(contour_levels), dtype=float)
 
-    for i, srf in enumerate(items):
+    # NOTE on rendering order:
+    #   matplotlib's mplot3d uses a painter's algorithm — every collection
+    #   gets a single "depth" value (set_sort_zpos override OR average
+    #   camera-space z of its vertices) and is drawn back-to-front.
+    #
+    #   We deliberately do NOT call set_sort_zpos on the polygon collections.
+    #   Doing so pins them to a fixed depth and forces input-order sorting,
+    #   which makes multiple surfaces (e.g. a sphere + a plane) appear in the
+    #   wrong order whenever the camera angle disagrees with insertion order.
+    #   Letting mplot3d compute zpos from the actual vertex centroids gives
+    #   correct depth ordering as the user rotates the axes.
+    #
+    #   Contour lines DO get an explicit forward push: a 1-D Line3DCollection
+    #   sitting exactly on the surface it was extracted from would z-fight
+    #   with its parent polygon under any naive sort. The push is a single
+    #   constant — no per-item tiebreaker — so contours from different
+    #   surfaces stay consistently above all polygon faces but still sort
+    #   sensibly amongst themselves via their own vertex centroids.
+    contour_forward_z = bounds.z[1] + 1.0e9
+
+    for srf in items:
         surface = srf.surface
         V, F = _surface_mesh(surface)
         if V.size == 0 or F.size == 0:
@@ -411,8 +431,6 @@ def plot_surfaces(
                 edge_color=srf.edge_color,
                 edge_lw=srf.edge_lw,
             )
-            # poly.set_sort_zpos(bounds.z[0] - 1.0e9 + i*1e3)
-            poly.set_sort_zpos(bounds.z[0] - 1.0e9 + i*1e3)
             ax.add_collection3d(poly)
             continue
 
@@ -424,9 +442,6 @@ def plot_surfaces(
         if mode in ("cmap", "cmap+cont"):
             face_val = _face_values_from_vertex_values(F, vval)
             poly = _poly_collection(V, F, face_val, cmap=cmap, norm=norm, alpha=item_alpha)
-            if contour_on_top and hasattr(poly, "set_sort_zpos"):
-                # Push filled polygons slightly "behind" so contours can win in painter sort.
-                poly.set_sort_zpos(bounds.z[0] - 1.0e9 + i*1e3)
             ax.add_collection3d(poly)
 
         if srf.draw_contours and mode in ("cont", "cmap+cont"):
@@ -456,7 +471,7 @@ def plot_surfaces(
             if segs:
                 lc = Line3DCollection(segs, colors=contour_color, linewidths=contour_lw)
                 if contour_on_top and hasattr(lc, "set_sort_zpos"):
-                    lc.set_sort_zpos(bounds.z[1] + 1.0e9 + i*1e3)
+                    lc.set_sort_zpos(contour_forward_z)
                 try:
                     lc.set_zorder(10)
                 except Exception:
