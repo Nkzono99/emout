@@ -439,6 +439,69 @@ def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
     plt.close(fig2)
 
 
+def test_plot_surfaces_clabel_places_one_text_per_level():
+    """clabel=True adds one ax.text() per contour level with custom format."""
+    field = _make_field()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    box = BoxMeshSurface(
+        1.0, 7.0, 1.0, 5.0, 1.0, 3.0,
+        faces=("zmax",),
+        resolution=(6, 6),
+    )
+
+    plot_surfaces(
+        ax,
+        field=field,
+        surfaces=[RenderItem(box, style="field")],
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+        contour_levels=[15.0, 18.0, 22.0],
+        clabel=True,
+        clabel_fmt="phi={:.1f}",
+        clabel_kwargs={"fontsize": 6, "color": "tab:red"},
+    )
+
+    # mpl 3D text artists land in ax.texts (or directly as Text3D children).
+    texts = list(ax.texts)
+    # All three levels should produce a label and the format string is honoured.
+    label_strings = [t.get_text() for t in texts]
+    assert any("phi=15.0" in s for s in label_strings)
+    assert any("phi=18.0" in s for s in label_strings)
+    assert any("phi=22.0" in s for s in label_strings)
+    # User clabel_kwargs override the defaults.
+    for t in texts:
+        if t.get_text().startswith("phi="):
+            assert t.get_fontsize() == 6
+            assert t.get_color() == "tab:red"
+
+    plt.close(fig)
+
+
+def test_plot_surfaces_clabel_off_by_default():
+    """No labels when clabel is not enabled."""
+    field = _make_field()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    box = BoxMeshSurface(
+        1.0, 7.0, 1.0, 5.0, 1.0, 3.0,
+        faces=("zmax",),
+        resolution=(6, 6),
+    )
+    plot_surfaces(
+        ax,
+        field=field,
+        surfaces=[RenderItem(box, style="field")],
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+        contour_levels=[18.0],
+    )
+    # The default Axes3D may carry its own decorative texts, but none of
+    # them should be a contour label — none should match our format.
+    label_texts = [t.get_text() for t in ax.texts]
+    assert not any(t.startswith("18") for t in label_texts)
+    plt.close(fig)
+
+
 def test_plot_surfaces_contour_pinned_above_polygon_zorder():
     """Contours render above the merged polygon via explicit set_zorder.
 

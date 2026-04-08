@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -315,6 +315,24 @@ def _view_dir_from_axes(ax) -> np.ndarray:
     el = np.deg2rad(getattr(ax, "elev", 30.0) or 30.0)
     return np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)], dtype=np.float64)
 
+def _label_position_for_level(segs_array: np.ndarray) -> Optional[np.ndarray]:
+    """Pick a representative ``(x, y, z)`` for placing a contour label.
+
+    Strategy: take the midpoint of every segment, find their centroid,
+    and return the midpoint closest to that centroid. For a single
+    connected contour curve this lands on the curve roughly halfway
+    along; for disconnected curves it picks one of them. Returns
+    ``None`` for an empty input.
+    """
+    if segs_array is None or segs_array.size == 0:
+        return None
+    midpoints = segs_array.mean(axis=1)            # (n, 3)
+    centroid = midpoints.mean(axis=0)
+    distances = np.linalg.norm(midpoints - centroid, axis=1)
+    idx = int(np.argmin(distances))
+    return midpoints[idx]
+
+
 def _contour_segments_on_mesh(
     V: np.ndarray,
     F: np.ndarray,
@@ -323,25 +341,40 @@ def _contour_segments_on_mesh(
     *,
     face_normals: Optional[np.ndarray] = None,
     offset: float = 0.0,
-) -> list[np.ndarray]:
-    """Generate contour line segments for scalar values on a triangular mesh."""
-    segs: list[np.ndarray] = []
+) -> "dict[float, np.ndarray]":
+    """Generate contour line segments for scalar values on a triangular mesh.
 
-    p = V[F]
-    s = vval[F]
+    Returns a mapping ``{level: segs}`` where ``segs`` has shape
+    ``(n_segments, 2, 3)`` (each row is the two endpoints of one segment in
+    world coordinates). Empty levels map to a ``(0, 2, 3)`` array so the
+    caller can stack uniformly without per-level branching.
+
+    Implementation note: this used to be a per-face Python loop that became
+    the dominant cost at high resolution (100k+ faces × N levels). The
+    current version is fully vectorised — for each level we build a
+    ``(nF, 3)`` boolean mask of which edges crossed, gather the two
+    crossing points via :func:`numpy.argsort` + advanced indexing, and
+    return them as one stacked array.
+    """
+    out: "dict[float, np.ndarray]" = {}
+
+    if F.size == 0 or len(levels) == 0:
+        empty = np.empty((0, 2, 3), dtype=np.float64)
+        return {float(L): empty for L in levels}
+
+    p = V[F]   # (nF, 3, 3)
+    s = vval[F]  # (nF, 3)
 
     valid_face = np.all(np.isfinite(s), axis=1)
     p = p[valid_face]
     s = s[valid_face]
 
-    p0, p1, p2 = p[:, 0, :], p[:, 1, :], p[:, 2, :]
-    s0, s1, s2 = s[:, 0], s[:, 1], s[:, 2]
+    if p.shape[0] == 0:
+        empty = np.empty((0, 2, 3), dtype=np.float64)
+        return {float(L): empty for L in levels}
 
-    edges = [(p0, s0, p1, s1), (p1, s1, p2, s2), (p2, s2, p0, s0)]
-
-    # Optional tiny offset to pull the contour above the surface.
-    # This reduces "z-fighting" and (more importantly in mplot3d)
-    # helps the painter's algorithm draw the contour on top.
+    # Optional tiny offset (only safe on flat meshes — see plot_surfaces
+    # docstring for the curved-surface caveat).
     fn = None
     if face_normals is not None and offset != 0.0:
         fn = np.asarray(face_normals, dtype=np.float64)
@@ -350,28 +383,60 @@ def _contour_segments_on_mesh(
         else:
             fn = None
 
+    # Edge endpoints: edge ei of each face goes from vertex ei to vertex
+    # (ei + 1) mod 3. Roll along the vertex axis to get the "next" vertex.
+    pa_all = p                                 # (nF, 3, 3)  start positions
+    pb_all = np.roll(p, -1, axis=1)            # (nF, 3, 3)  end positions
+    sa_all = s                                 # (nF, 3)     start values
+    sb_all = np.roll(s, -1, axis=1)            # (nF, 3)     end values
+
+    den_all = sb_all - sa_all                  # (nF, 3)
+    safe_den = np.where(den_all != 0.0, den_all, 1.0)
+
+    nF = p.shape[0]
+    rows = np.arange(nF)
+
     for L in levels:
-        inter_pts = []
-        for pa, va, pb, vb in edges:
-            den = vb - va
-            cross = (den != 0.0) & ((va - L) * (vb - L) < 0.0)
-            t = np.zeros_like(va, dtype=np.float64)
-            t[cross] = (L - va[cross]) / den[cross]
-            ip = pa + t[:, None] * (pb - pa)
-            inter_pts.append((cross, ip))
+        L_f = float(L)
+        # Boolean mask: which edges of which faces cross this level.
+        cross = (den_all != 0.0) & ((sa_all - L_f) * (sb_all - L_f) < 0.0)
+        n_cross = cross.sum(axis=1)
+        face_mask = n_cross == 2  # exactly two crossings → one segment
+        if not face_mask.any():
+            out[L_f] = np.empty((0, 2, 3), dtype=np.float64)
+            continue
 
-        for fi in range(p0.shape[0]):
-            pts = []
-            for cross, ip in inter_pts:
-                if cross[fi]:
-                    pts.append(ip[fi])
-            if len(pts) == 2:
-                seg = np.stack([pts[0], pts[1]], axis=0)
-                if fn is not None:
-                    seg = seg + float(offset) * fn[fi][None, :]
-                segs.append(seg)
+        # Linear interpolation parameter per edge (only meaningful where cross
+        # is True; the others are masked away below).
+        with np.errstate(invalid="ignore"):
+            t_all = (L_f - sa_all) / safe_den   # (nF, 3)
+        # Intersection points per edge in world coords.
+        ip_all = pa_all + t_all[..., None] * (pb_all - pa_all)  # (nF, 3, 3)
 
-    return segs
+        # Restrict to faces with exactly two crossings.
+        valid_cross = cross[face_mask]            # (nv, 3)
+        valid_ip = ip_all[face_mask]              # (nv, 3, 3)
+        nv = valid_cross.shape[0]
+        valid_rows = rows[:nv]
+
+        # Stable argsort places True last (False=0 < True=1) so the final
+        # two columns of the sorted index hold the indices of the two
+        # crossing edges, in stable order.
+        order = np.argsort(valid_cross.astype(np.int8), axis=1, kind="stable")
+        edge_a = order[:, -2]
+        edge_b = order[:, -1]
+
+        seg_a = valid_ip[valid_rows, edge_a]      # (nv, 3)
+        seg_b = valid_ip[valid_rows, edge_b]      # (nv, 3)
+        segs_array = np.stack([seg_a, seg_b], axis=1).astype(np.float64)  # (nv, 2, 3)
+
+        if fn is not None:
+            valid_normals = fn[face_mask]
+            segs_array = segs_array + float(offset) * valid_normals[:, None, :]
+
+        out[L_f] = segs_array
+
+    return out
 
 
 def plot_surfaces(
@@ -391,6 +456,9 @@ def plot_surfaces(
     contour_on_top: bool = True,
     contour_offset: float = 0.0,
     contour_side: str = "front",
+    clabel: bool = False,
+    clabel_fmt: Union[str, "Callable[[float], str]"] = "{:g}",
+    clabel_kwargs: Optional["dict"] = None,
     clip_to_bounds: bool = True,
 ):
     """Render explicit triangle mesh surfaces with optional colormap + contours.
@@ -424,6 +492,16 @@ def plot_surfaces(
     offset is not needed for visibility. Pass a small positive
     ``contour_offset`` only when working with strictly flat surfaces
     where every triangle shares the same normal.
+
+    Contour labels: when ``clabel=True`` one text label per level is
+    placed at a representative midpoint along that level's segments
+    (closest segment midpoint to the level's overall centroid).
+    Format the value with ``clabel_fmt`` — either a Python format
+    string like ``"{:.1f}"`` (default ``"{:g}"``) or a callable
+    ``level -> str``. Style the text via ``clabel_kwargs`` (forwarded
+    to :meth:`matplotlib.axes.Axes.text`); useful keys include
+    ``fontsize``, ``color``, ``ha``/``va``, ``bbox``. Defaults are
+    ``color=contour_color``, ``fontsize=8``, centered alignment.
     """
 
     items = _as_list(surfaces)
@@ -485,6 +563,11 @@ def plot_surfaces(
     poly_ec_chunks: list[np.ndarray] = []
     poly_lw_chunks: list[np.ndarray] = []
     v_offset = 0
+
+    # Per-level accumulator for contour labels: {level: list of (nv, 2, 3)
+    # arrays from each surface}. Used after the loop to pick a representative
+    # midpoint per level for clabel text.
+    clabel_segs_per_level: Dict[float, list] = {}
 
     for srf in items:
         surface = srf.surface
@@ -561,7 +644,7 @@ def plot_surfaces(
                 F_contour = F_contour[keep]
                 fn = fn[keep]
 
-            segs = _contour_segments_on_mesh(
+            segs_per_level = _contour_segments_on_mesh(
                 V,
                 F_contour,
                 vval,
@@ -569,9 +652,20 @@ def plot_surfaces(
                 face_normals=fn,
                 offset=contour_offset,
             )
-            if segs:
+            # Stack every level's segments into a single (n_total, 2, 3)
+            # array for one Line3DCollection. The mpl LineCollection
+            # constructor accepts an iterable of (2, 3) arrays so we feed
+            # it via list(segs_array) which iterates the first axis.
+            flat_segs = []
+            for L_val, level_segs in segs_per_level.items():
+                if level_segs.size == 0:
+                    continue
+                flat_segs.extend(list(level_segs))
+                # Accumulate the segments for clabel positioning later.
+                clabel_segs_per_level.setdefault(L_val, []).append(level_segs)
+            if flat_segs:
                 lc = Line3DCollection(
-                    segs,
+                    flat_segs,
                     colors=contour_color,
                     linewidths=contour_lw,
                     # Round caps/joins matter a lot for thick contour
@@ -627,6 +721,30 @@ def plot_surfaces(
         # (computed_zorder is disabled at the top of this function).
         merged_poly.set_zorder(1)
         ax.add_collection3d(merged_poly)
+
+    # ---- contour labels ----
+    if clabel and clabel_segs_per_level:
+        defaults = {
+            "color": contour_color,
+            "fontsize": 8,
+            "ha": "center",
+            "va": "center",
+        }
+        if clabel_kwargs:
+            defaults.update(clabel_kwargs)
+        # zorder >= contour line collections so labels sit on top.
+        defaults.setdefault("zorder", 3)
+
+        for L_val, segs_lists in clabel_segs_per_level.items():
+            stacked = np.concatenate(segs_lists, axis=0)
+            pos = _label_position_for_level(stacked)
+            if pos is None:
+                continue
+            if callable(clabel_fmt):
+                label_text = clabel_fmt(L_val)
+            else:
+                label_text = clabel_fmt.format(L_val)
+            ax.text(float(pos[0]), float(pos[1]), float(pos[2]), label_text, **defaults)
 
     ax.set_xlim(*bounds.x)
     ax.set_ylim(*bounds.y)
