@@ -161,7 +161,7 @@ def test_collection_skips_unsupported_complex_types(tmp_path: Path, unit: Units)
 
 def test_sphere_boundary_reads_origin_and_radius(boundaries: BoundaryCollection):
     sphere = boundaries[0]
-    mesh_obj = sphere.mesh()
+    mesh_obj = sphere.mesh(use_si=False)
     assert isinstance(mesh_obj, SphereMeshSurface)
     assert np.allclose(mesh_obj.center, [10.0, 20.0, 30.0])
     assert np.isclose(mesh_obj.radius, 4.0)
@@ -181,7 +181,7 @@ def test_sphere_boundary_respects_overrides(boundaries: BoundaryCollection):
 
 
 def test_cuboid_boundary_builds_full_box(boundaries: BoundaryCollection):
-    box = boundaries[1].mesh()
+    box = boundaries[1].mesh(use_si=False)
     assert isinstance(box, BoxMeshSurface)
     assert box.xmin == 1.0 and box.xmax == 5.0
     assert box.ymin == 2.0 and box.ymax == 6.0
@@ -191,7 +191,7 @@ def test_cuboid_boundary_builds_full_box(boundaries: BoundaryCollection):
 
 
 def test_cylinder_boundary_z_closed(boundaries: BoundaryCollection):
-    cyl = boundaries[2].mesh()
+    cyl = boundaries[2].mesh(use_si=False)
     assert isinstance(cyl, CylinderMeshSurface)
     # Axis letter is the last character of the btype.
     assert np.allclose(cyl.axis, [0.0, 0.0, 1.0])
@@ -203,7 +203,7 @@ def test_cylinder_boundary_z_closed(boundaries: BoundaryCollection):
 
 
 def test_disk_boundary_reads_inner_outer(boundaries: BoundaryCollection):
-    disk = boundaries[3].mesh()
+    disk = boundaries[3].mesh(use_si=False)
     assert isinstance(disk, DiskMeshSurface)
     assert disk.outer_radius == 3.0
     assert disk.inner_radius == 1.0
@@ -212,14 +212,14 @@ def test_disk_boundary_reads_inner_outer(boundaries: BoundaryCollection):
 
 
 def test_open_cylinder_boundary_x_only_side(boundaries: BoundaryCollection):
-    open_cyl = boundaries[4].mesh()
+    open_cyl = boundaries[4].mesh(use_si=False)
     assert isinstance(open_cyl, CylinderMeshSurface)
     assert np.allclose(open_cyl.axis, [1.0, 0.0, 0.0])
     assert tuple(open_cyl.parts) == ("side",)
 
 
 def test_rectangle_boundary_flat_face_detected(boundaries: BoundaryCollection):
-    rect = boundaries[5].mesh()
+    rect = boundaries[5].mesh(use_si=False)
     assert isinstance(rect, BoxMeshSurface)
     # zmin == zmax ⇒ flat z face.
     assert rect.zmin == rect.zmax == 4.0
@@ -227,7 +227,7 @@ def test_rectangle_boundary_flat_face_detected(boundaries: BoundaryCollection):
 
 
 def test_circle_boundary_builds_disc(boundaries: BoundaryCollection):
-    circle = boundaries[6].mesh()
+    circle = boundaries[6].mesh(use_si=False)
     assert isinstance(circle, CircleMeshSurface)
     assert np.allclose(circle.center, [15.0, 15.0, 8.0])
     assert circle.radius == 2.5
@@ -434,7 +434,7 @@ def test_plane_with_circle_boundary_reads_origin_radius_and_uses_domain(tmp_path
     assert len(coll) == 1
     assert isinstance(coll[0], PlaneWithCircleBoundary)
 
-    mesh_obj = coll[0].mesh()
+    mesh_obj = coll[0].mesh(use_si=False)
     assert isinstance(mesh_obj, PlaneWithCircleMeshSurface)
     # Center copied verbatim, plane spans the full (nx, ny) rectangle.
     assert np.allclose(mesh_obj.center, [32.0, 24.0, 16.0])
@@ -490,7 +490,7 @@ def test_flat_surface_legacy_single_body_builds_one_rectangle(tmp_path: Path, un
     assert len(coll) == 1
     assert isinstance(coll[0], FlatSurfaceBoundary)
 
-    rect = coll[0].mesh()
+    rect = coll[0].mesh(use_si=False)
     assert isinstance(rect, RectangleMeshSurface)
     assert np.allclose(rect.center, [20.0, 15.0, 12.5])
     assert rect.width_u == 40.0 and rect.width_v == 30.0
@@ -522,7 +522,7 @@ def test_flat_surface_inside_complex_mode_also_works(tmp_path: Path, unit: Units
     assert isinstance(coll[0], FlatSurfaceBoundary)
     assert isinstance(coll[1], SphereBoundary)
 
-    flat_mesh = coll[0].mesh()
+    flat_mesh = coll[0].mesh(use_si=False)
     assert isinstance(flat_mesh, RectangleMeshSurface)
     assert flat_mesh.center[2] == 6.0
 
@@ -551,7 +551,7 @@ def test_rectangle_hole_boundary_builds_open_top_box(tmp_path: Path, unit: Units
     assert len(coll) == 1
     assert isinstance(coll[0], RectangleHoleBoundary)
 
-    box = coll[0].mesh()
+    box = coll[0].mesh(use_si=False)
     assert isinstance(box, BoxMeshSurface)
     assert (box.xmin, box.xmax) == (20.0, 40.0)
     assert (box.ymin, box.ymax) == (25.0, 35.0)
@@ -585,7 +585,7 @@ def test_cylinder_hole_boundary_builds_open_top_cylinder(tmp_path: Path, unit: U
     assert len(coll) == 1
     assert isinstance(coll[0], CylinderHoleBoundary)
 
-    cyl = coll[0].mesh()
+    cyl = coll[0].mesh(use_si=False)
     assert isinstance(cyl, CylinderMeshSurface)
     # center is the pit base at z=zlrechole, radius = (xu-xl)/2, height = zssurf-zl.
     assert np.allclose(cyl.center, [32.0, 32.0, 5.0])

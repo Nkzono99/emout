@@ -165,13 +165,13 @@ class Boundary:
 
     # -- public API ----------------------------------------------------------
 
-    def mesh(self, *, use_si: bool = False, **overrides) -> MeshSurface3D:
+    def mesh(self, *, use_si: bool = True, **overrides) -> MeshSurface3D:
         """Build the :class:`MeshSurface3D` for this boundary.
 
         Parameters auto-detected from ``data.inp`` may be overridden by
         passing keyword arguments. Overrides are interpreted in the same unit
-        system as the returned mesh (grid units by default, SI metres when
-        ``use_si=True``).
+        system as the returned mesh: SI metres by default
+        (``use_si=True``), or simulation grid units when ``use_si=False``.
         """
         params = self._build_params(use_si=use_si)
         params.update(overrides)
@@ -209,14 +209,15 @@ class Boundary:
             return other + self.mesh()
         return NotImplemented
 
-    def render(self, *, use_si: bool = False, **style_kwargs):
+    def render(self, *, use_si: bool = True, **style_kwargs):
         """Build the mesh and wrap it in a ``RenderItem`` for ``plot_surfaces``.
 
-        Convenience that mirrors :meth:`MeshSurface3D.render`. ``use_si`` is
-        forwarded to :meth:`mesh`; remaining keyword arguments are passed
-        through to ``RenderItem`` (``style``, ``solid_color``, ``alpha``, …).
-        For finer mesh-construction control, chain explicitly:
-        ``boundary.mesh(use_si=True, ntheta=96).render(style="solid")``.
+        Convenience that mirrors :meth:`MeshSurface3D.render`. ``use_si``
+        defaults to ``True`` (SI metres) and is forwarded to :meth:`mesh`;
+        remaining keyword arguments are passed through to ``RenderItem``
+        (``style``, ``solid_color``, ``alpha``, …). For finer
+        mesh-construction control, chain explicitly:
+        ``boundary.mesh(ntheta=96).render(style="solid")``.
         """
         return self.mesh(use_si=use_si).render(**style_kwargs)
 
@@ -852,15 +853,16 @@ class BoundaryCollection:
     def render(
         self,
         *,
-        use_si: bool = False,
+        use_si: bool = True,
         per: Optional[Mapping[int, Mapping[str, Any]]] = None,
         **style_kwargs,
     ):
         """Build the composite mesh and wrap it in a ``RenderItem``.
 
-        ``use_si`` and ``per`` are forwarded to :meth:`mesh`; remaining
-        keyword arguments are forwarded to ``RenderItem`` (``style``,
-        ``solid_color``, ``alpha``, …).
+        ``use_si`` defaults to ``True`` (SI metres). ``use_si`` and ``per``
+        are forwarded to :meth:`mesh`; remaining keyword arguments are
+        forwarded to ``RenderItem`` (``style``, ``solid_color``, ``alpha``,
+        …).
         """
         return self.mesh(use_si=use_si, per=per).render(**style_kwargs)
 
@@ -869,7 +871,7 @@ class BoundaryCollection:
     def mesh(
         self,
         *,
-        use_si: bool = False,
+        use_si: bool = True,
         per: Optional[Mapping[int, Mapping[str, Any]]] = None,
         **common_overrides,
     ) -> MeshSurface3D:
@@ -877,8 +879,9 @@ class BoundaryCollection:
 
         Parameters
         ----------
-        use_si : bool, default False
+        use_si : bool, default True
             Convert geometry to SI metres via ``data.unit.length.reverse``.
+            Pass ``use_si=False`` to keep simulation grid units instead.
         per : dict, optional
             Mapping from boundary index (0-based) to a dict of overrides
             passed to that boundary's ``mesh()`` call.
