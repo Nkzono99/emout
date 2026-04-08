@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "Shared Claude Code permissions for the emout repository. Kept intentionally permissive so routine work (editing source, running pytest, git commits, reading the MPIEMSES3D sibling repo) does not prompt. Per-user overrides live in .claude/settings.local.json (gitignored).",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "NotebookEdit",
+      "Glob",
+      "Grep",
+      "Bash",
+      "WebFetch",
+      "WebSearch",
+      "Skill",
+      "Agent",
+      "TaskCreate",
+      "TaskList",
+      "TaskGet",
+      "TaskUpdate",
+      "TaskStop",
+      "TaskOutput",
+      "ExitPlanMode"
+    ],
+    "ask": [],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(sudo -i:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf /*:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(rm -rf $HOME:*)"
+    ]
+  }
+}
