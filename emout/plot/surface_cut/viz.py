@@ -389,7 +389,7 @@ def plot_surfaces(
     contour_color: str = "k",
     contour_lw: float = 0.8,
     contour_on_top: bool = True,
-    contour_offset: Optional[float] = None,
+    contour_offset: float = 0.0,
     contour_side: str = "front",
     clip_to_bounds: bool = True,
 ):
@@ -414,11 +414,16 @@ def plot_surfaces(
     ``Poly3DCollection.do_3d_projection``) so interleaving meshes still
     render in the right order.
 
-    ``contour_offset`` defaults to a small positive value derived from the
-    scene bounds (~0.2 % of the longest extent). This shifts each contour
-    segment along the outward face normal so it does not z-fight with the
-    polygon it sits on. Pass ``0.0`` to disable, or a custom number to
-    override.
+    ``contour_offset`` defaults to ``0.0`` because shifting contour
+    segments along the source triangle's face normal **breaks line
+    continuity on curved surfaces**: adjacent triangles share an edge
+    but have different face normals, so the shared edge crossing gets
+    pushed in two different directions and the contour fractures into
+    per-triangle dashes. The polygon-vs-contour layering is already
+    handled by the explicit ``set_zorder`` mechanism above, so an
+    offset is not needed for visibility. Pass a small positive
+    ``contour_offset`` only when working with strictly flat surfaces
+    where every triangle shares the same normal.
     """
 
     items = _as_list(surfaces)
@@ -473,18 +478,6 @@ def plot_surfaces(
     #   per-triangle sort inside the merged Poly3DCollection still runs
     #   (it lives inside do_3d_projection, which is called either way).
     ax.computed_zorder = False
-
-    # Default contour_offset: ~0.2 % of the largest scene extent. This
-    # nudges each contour segment slightly along the outward face normal
-    # so it does not coincide with — and z-fight against — the polygon
-    # it was extracted from. The offset is in data units, not pixels.
-    if contour_offset is None:
-        diag = max(
-            float(bounds.x[1] - bounds.x[0]),
-            float(bounds.y[1] - bounds.y[0]),
-            float(bounds.z[1] - bounds.z[0]),
-        )
-        contour_offset = 0.002 * diag
 
     poly_V_chunks: list[np.ndarray] = []
     poly_F_chunks: list[np.ndarray] = []
