@@ -8,7 +8,9 @@ from emout.plot.surface_cut import (
     CylinderMeshSurface,
     Field3D,
     HollowCylinderMeshSurface,
+    RectangleMeshSurface,
     RenderItem,
+    SphereMeshSurface,
     UniformCellCenteredGrid,
     plot_surfaces,
 )
@@ -68,11 +70,11 @@ def test_cylinder_mesh_surface_side_has_constant_radius():
     assert np.isclose(V[:, 2].max(), 2.5)
 
 
-def test_hollow_cylinder_mesh_surface_top_cap_is_annulus():
+def test_hollow_cylinder_mesh_surface_top_cap_is_rect_with_hole():
     surface = HollowCylinderMeshSurface(
         center=(0.0, 0.0, 1.0),
         axis="z",
-        outer_radius=2.0,
+        width=4.0,
         inner_radius=0.75,
         length=6.0,
         parts=("top",),
@@ -85,8 +87,146 @@ def test_hollow_cylinder_mesh_surface_top_cap_is_annulus():
 
     assert F.size > 0
     assert np.allclose(V[:, 2], 4.0)
+    # Inner edge is the hole circle of radius 0.75.
     assert np.isclose(r.min(), 0.75)
-    assert np.isclose(r.max(), 2.0)
+    # The rectangle bounds the cap at |x|,|y| <= 2.0 with corners at r=2√2.
+    assert np.isclose(V[:, 0].max(), 2.0)
+    assert np.isclose(V[:, 0].min(), -2.0)
+    assert np.isclose(V[:, 1].max(), 2.0)
+    assert np.isclose(V[:, 1].min(), -2.0)
+    assert np.isclose(r.max(), 2.0 * np.sqrt(2.0))
+
+
+def test_hollow_cylinder_mesh_surface_accepts_rectangular_width():
+    surface = HollowCylinderMeshSurface(
+        center=(0.0, 0.0, 0.0),
+        axis="z",
+        width=(6.0, 4.0),
+        inner_radius=1.0,
+        length=2.0,
+        parts=("outer", "top", "bottom", "inner"),
+        ntheta=16,
+        nradial=3,
+        naxial=2,
+        nwall=2,
+    )
+
+    V, F = surface.mesh()
+
+    assert F.size > 0
+    # Outer rectangular bounds follow width_u=6, width_v=4.
+    assert np.isclose(V[:, 0].max(), 3.0)
+    assert np.isclose(V[:, 0].min(), -3.0)
+    assert np.isclose(V[:, 1].max(), 2.0)
+    assert np.isclose(V[:, 1].min(), -2.0)
+    # Axial extent is length=2 centered on z=0.
+    assert np.isclose(V[:, 2].max(), 1.0)
+    assert np.isclose(V[:, 2].min(), -1.0)
+
+
+def test_cylinder_mesh_surface_half_section_has_open_ends():
+    full = CylinderMeshSurface(
+        center=(0.0, 0.0, 0.0),
+        axis="z",
+        radius=1.0,
+        length=2.0,
+        parts=("side",),
+        ntheta=16,
+        naxial=3,
+    )
+    half = CylinderMeshSurface(
+        center=(0.0, 0.0, 0.0),
+        axis="z",
+        radius=1.0,
+        length=2.0,
+        parts=("side",),
+        ntheta=16,
+        naxial=3,
+        theta_range=(0.0, np.pi),
+    )
+
+    Vf, Ff = full.mesh()
+    Vh, Fh = half.mesh()
+
+    # The half has roughly half the triangle count.
+    assert Fh.shape[0] < Ff.shape[0]
+    # Every vertex is in the y >= 0 half-space (with numerical tolerance).
+    assert Vh[:, 1].min() >= -1e-9
+    # And includes the y=0 edge.
+    assert np.isclose(Vh[:, 1].min(), 0.0)
+
+
+def test_hollow_cylinder_mesh_surface_theta_range_limits_cap():
+    surface = HollowCylinderMeshSurface(
+        center=(0.0, 0.0, 0.0),
+        axis="z",
+        width=4.0,
+        inner_radius=0.5,
+        length=2.0,
+        parts=("top",),
+        ntheta=17,
+        nradial=3,
+        theta_range=(0.0, 0.5 * np.pi),
+    )
+
+    V, F = surface.mesh()
+
+    assert F.size > 0
+    # Quadrant: all vertices have x >= 0 and y >= 0.
+    assert V[:, 0].min() >= -1e-9
+    assert V[:, 1].min() >= -1e-9
+
+
+def test_rectangle_mesh_surface_builds_flat_panel():
+    surface = RectangleMeshSurface(
+        center=(1.0, 2.0, 3.0),
+        axis="z",
+        width=(4.0, 2.0),
+        resolution=(3, 5),
+    )
+
+    V, F = surface.mesh()
+
+    assert V.shape == (15, 3)
+    assert F.shape[0] == (5 - 1) * (3 - 1) * 2
+    assert np.allclose(V[:, 2], 3.0)
+    assert np.isclose(V[:, 0].min(), -1.0)
+    assert np.isclose(V[:, 0].max(), 3.0)
+    assert np.isclose(V[:, 1].min(), 1.0)
+    assert np.isclose(V[:, 1].max(), 3.0)
+
+
+def test_sphere_mesh_surface_points_lie_on_sphere():
+    surface = SphereMeshSurface(
+        center=(0.5, -1.0, 2.0),
+        radius=3.0,
+        ntheta=24,
+        nphi=13,
+    )
+
+    V, F = surface.mesh()
+    d = np.linalg.norm(V - np.array([0.5, -1.0, 2.0]), axis=1)
+
+    assert F.size > 0
+    assert np.allclose(d, 3.0, atol=1e-9)
+    assert np.isclose(V[:, 2].max(), 2.0 + 3.0)
+    assert np.isclose(V[:, 2].min(), 2.0 - 3.0)
+
+
+def test_sphere_mesh_surface_hemisphere_has_phi_range():
+    surface = SphereMeshSurface(
+        center=(0.0, 0.0, 0.0),
+        radius=1.0,
+        ntheta=16,
+        nphi=9,
+        phi_range=(0.0, 0.5 * np.pi),
+    )
+
+    V, F = surface.mesh()
+
+    assert F.size > 0
+    assert V[:, 2].min() >= -1e-9
+    assert np.isclose(V[:, 2].max(), 1.0)
 
 
 def test_plot_surfaces_accepts_explicit_mesh_surfaces():

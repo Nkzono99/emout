@@ -12,6 +12,9 @@ BoxFaceName = Literal["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"]
 CylinderPartName = Literal["side", "top", "bottom"]
 HollowCylinderPartName = Literal["outer", "inner", "top", "bottom"]
 
+_TWO_PI = 2.0 * np.pi
+_FULL_ANGLE_EPS = 1e-9
+
 
 class MeshSurface3D(ABC):
     """Explicit triangle mesh surface for `plot_surfaces`.
@@ -229,6 +232,49 @@ def _axial_range(
     return tmin, tmax
 
 
+def _resolve_theta_range(
+    theta_range: Optional[Tuple[float, float]],
+) -> Tuple[float, float, bool]:
+    """Return `(theta_min, theta_max, is_full)` for an optional angular range.
+
+    ``theta_range=None`` means the full `[0, 2π)` circle. Otherwise the two
+    values give the closed interval `[theta_min, theta_max]` in radians, and
+    the third return value indicates whether the interval covers the full
+    circle (in which case the angular dimension wraps and uses `endpoint=False`
+    sampling).
+    """
+    if theta_range is None:
+        return 0.0, _TWO_PI, True
+
+    tmin, tmax = theta_range
+    tmin = float(tmin)
+    tmax = float(tmax)
+    if not tmin < tmax:
+        raise ValueError("theta_range must satisfy theta_min < theta_max")
+    span = tmax - tmin
+    if span > _TWO_PI + _FULL_ANGLE_EPS:
+        raise ValueError("theta_range must span no more than 2π")
+    is_full = abs(span - _TWO_PI) <= _FULL_ANGLE_EPS
+    return tmin, tmax, is_full
+
+
+def _sample_theta(
+    ntheta: int,
+    theta_min: float,
+    theta_max: float,
+    is_full: bool,
+) -> np.ndarray:
+    """Sample `ntheta` angular positions for mesh generation.
+
+    When the range wraps (full circle) we exclude the endpoint so the grid
+    joins cleanly. Otherwise we include both endpoints so the open slice has
+    clean edges at `theta_min` and `theta_max`.
+    """
+    if is_full:
+        return np.linspace(theta_min, theta_min + _TWO_PI, ntheta, endpoint=False, dtype=np.float64)
+    return np.linspace(theta_min, theta_max, ntheta, endpoint=True, dtype=np.float64)
+
+
 def _disc_mesh(
     base: np.ndarray,
     e1: np.ndarray,
@@ -238,8 +284,14 @@ def _disc_mesh(
     ntheta: int,
     nradial: int,
     expected_normal: Tuple[float, float, float],
+    theta_range: Optional[Tuple[float, float]] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    theta = np.linspace(0.0, 2.0 * np.pi, ntheta, endpoint=False, dtype=np.float64)
+    theta_min, theta_max, is_full = _resolve_theta_range(theta_range)
+    theta = _sample_theta(ntheta, theta_min, theta_max, is_full)
+    n = theta.size
+    ncell_u = n if is_full else n - 1
+    if ncell_u < 1:
+        raise ValueError("ntheta is too small for the requested theta_range")
     radii = np.linspace(0.0, radius, nradial, dtype=np.float64)
 
     vertices = [base[None, :]]
@@ -252,21 +304,21 @@ def _disc_mesh(
         ring = base[None, :] + r * (ct[:, None] * e1[None, :] + st[:, None] * e2[None, :])
         vertices.append(ring)
         ring_offsets.append(offset)
-        offset += ntheta
+        offset += n
 
     V = np.vstack(vertices).astype(np.float64)
 
     faces: list[Tuple[int, int, int]] = []
     first = ring_offsets[0]
-    for i in range(ntheta):
-        i1 = (i + 1) % ntheta
+    for i in range(ncell_u):
+        i1 = (i + 1) % n if is_full else (i + 1)
         faces.append((0, first + i1, first + i))
 
     for layer in range(len(ring_offsets) - 1):
         off0 = ring_offsets[layer]
         off1 = ring_offsets[layer + 1]
-        for i in range(ntheta):
-            i1 = (i + 1) % ntheta
+        for i in range(ncell_u):
+            i1 = (i + 1) % n if is_full else (i + 1)
             faces.append((off0 + i, off0 + i1, off1 + i1))
             faces.append((off0 + i, off1 + i1, off1 + i))
 
@@ -275,26 +327,62 @@ def _disc_mesh(
     return V, F
 
 
-def _annulus_mesh(
+def _rect_with_hole_mesh(
     base: np.ndarray,
     e1: np.ndarray,
     e2: np.ndarray,
     *,
+    half_u: float,
+    half_v: float,
     inner_radius: float,
-    outer_radius: float,
     ntheta: int,
     nradial: int,
     expected_normal: Tuple[float, float, float],
+    theta_range: Optional[Tuple[float, float]] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    theta = np.linspace(0.0, 2.0 * np.pi, ntheta, endpoint=False, dtype=np.float64)
-    radii = np.linspace(inner_radius, outer_radius, nradial, dtype=np.float64)
-    R, T = np.meshgrid(radii, theta, indexing="ij")
+    """Mesh a rectangle with a centered circular hole.
+
+    The rectangle spans ``[-half_u, half_u] x [-half_v, half_v]`` in the
+    ``(e1, e2)`` plane located at ``base``. The circular hole of
+    ``inner_radius`` is centered on ``base`` and must fit entirely inside
+    the rectangle.
+
+    For each of the ``ntheta`` angular samples, a ray from the hole center
+    is traced outward until it hits the rectangle boundary. ``nradial`` points
+    are then placed linearly between the hole edge and that outer
+    intersection, producing a structured ``(nradial, ntheta)`` grid that
+    wraps in the angular direction when `theta_range` covers the full circle.
+    """
+    if inner_radius >= min(half_u, half_v):
+        raise ValueError(
+            "inner_radius must be < min(half_u, half_v) so the hole fits in the rectangle"
+        )
+
+    theta_min, theta_max, is_full = _resolve_theta_range(theta_range)
+    theta = _sample_theta(ntheta, theta_min, theta_max, is_full)
+    ct = np.cos(theta)
+    st = np.sin(theta)
+
+    eps = 1e-12
+    tu = half_u / np.maximum(np.abs(ct), eps)
+    tv = half_v / np.maximum(np.abs(st), eps)
+    t_rect = np.minimum(tu, tv)
+
+    inner_u = inner_radius * ct
+    inner_v = inner_radius * st
+    outer_u = t_rect * ct
+    outer_v = t_rect * st
+
+    alphas = np.linspace(0.0, 1.0, nradial, dtype=np.float64)
+    u_grid = (1.0 - alphas)[:, None] * inner_u[None, :] + alphas[:, None] * outer_u[None, :]
+    v_grid = (1.0 - alphas)[:, None] * inner_v[None, :] + alphas[:, None] * outer_v[None, :]
+
     points = (
         base[None, None, :]
-        + R[..., None] * np.cos(T)[..., None] * e1[None, None, :]
-        + R[..., None] * np.sin(T)[..., None] * e2[None, None, :]
+        + u_grid[..., None] * e1[None, None, :]
+        + v_grid[..., None] * e2[None, None, :]
     )
-    return _plane_mesh(points, expected_normal=expected_normal, wrap_u=True)
+    return _plane_mesh(points, expected_normal=expected_normal, wrap_u=is_full)
 
 
 class BoxMeshSurface(MeshSurface3D):
@@ -393,7 +481,12 @@ class BoxMeshSurface(MeshSurface3D):
 
 
 class CylinderMeshSurface(MeshSurface3D):
-    """Finite cylinder surface with selectable side/top/bottom parts."""
+    """Finite cylinder surface with selectable side/top/bottom parts.
+
+    Optionally a ``theta_range`` may be given to take an angular subrange of
+    the cylinder (e.g. a half section). A full ``2π`` range (the default)
+    yields a closed mesh.
+    """
 
     _allowed_parts = ("side", "top", "bottom")
 
@@ -410,6 +503,7 @@ class CylinderMeshSurface(MeshSurface3D):
         ntheta: int = 64,
         naxial: int = 2,
         nradial: int = 8,
+        theta_range: Optional[Tuple[float, float]] = None,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
@@ -422,9 +516,11 @@ class CylinderMeshSurface(MeshSurface3D):
         self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
         self.naxial = _normalize_count(naxial, name="naxial", minimum=2)
         self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        self.theta_range = theta_range
+        self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
 
     def _side_mesh(self) -> Tuple[np.ndarray, np.ndarray]:
-        theta = np.linspace(0.0, 2.0 * np.pi, self.ntheta, endpoint=False, dtype=np.float64)
+        theta = _sample_theta(self.ntheta, self._theta_min, self._theta_max, self._theta_full)
         t = np.linspace(self.tmin, self.tmax, self.naxial, dtype=np.float64)
         T, TH = np.meshgrid(t, theta, indexing="ij")
         points = (
@@ -436,7 +532,7 @@ class CylinderMeshSurface(MeshSurface3D):
                 + np.sin(TH)[..., None] * self.e2[None, None, :]
             )
         )
-        return _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=True)
+        return _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=self._theta_full)
 
     def _cap_mesh(self, which: str) -> Tuple[np.ndarray, np.ndarray]:
         t = self.tmax if which == "top" else self.tmin
@@ -450,6 +546,7 @@ class CylinderMeshSurface(MeshSurface3D):
             ntheta=self.ntheta,
             nradial=self.nradial,
             expected_normal=tuple(normal),
+            theta_range=self.theta_range,
         )
 
     def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -464,7 +561,38 @@ class CylinderMeshSurface(MeshSurface3D):
 
 
 class HollowCylinderMeshSurface(MeshSurface3D):
-    """Finite hollow cylinder surface with selectable outer/inner/cap parts."""
+    """Rectangular slab pierced by an axial cylindrical hole.
+
+    Despite the historical name, this surface is *not* a hollow cylinder. It
+    represents a rectangular block extending along ``axis`` with a circular
+    hole of ``inner_radius`` drilled through the middle. Use it when you want
+    to highlight "a rectangle with a centered circular hole" plus the hole
+    wall, for example to visualize a probe aperture on a planar electrode.
+
+    Geometry
+    --------
+    * The slab's cross section in the plane perpendicular to ``axis`` is a
+      rectangle of size ``width`` (a single float yields a square; a
+      ``(width_u, width_v)`` tuple yields an arbitrary rectangle). The
+      rectangle is centered on ``center`` in the local ``(e1, e2)`` frame
+      derived from ``axis``.
+    * Axially the slab extends over ``length`` (centered on ``center``) or,
+      equivalently, ``tmin..tmax``.
+    * A cylindrical hole of ``inner_radius`` runs through the slab on the
+      ``axis`` direction. It must fit inside the rectangle
+      (``inner_radius < min(width_u, width_v) / 2``).
+
+    Parts
+    -----
+    * ``"outer"``  – the 4 rectangular side walls of the slab.
+    * ``"inner"``  – the cylindrical hole surface (inward-facing).
+    * ``"top"``    – the cap at ``tmax``: rectangle with a central circular hole.
+    * ``"bottom"`` – the cap at ``tmin``: rectangle with a central circular hole.
+
+    Optional ``theta_range`` lets you take an angular subrange of every
+    theta-parameterized part (inner hole and both caps). The rectangular side
+    walls are unaffected — restrict them with ``parts`` if needed.
+    """
 
     _allowed_parts = ("outer", "inner", "top", "bottom")
 
@@ -472,7 +600,7 @@ class HollowCylinderMeshSurface(MeshSurface3D):
         self,
         center: Union[Tuple[float, float], Tuple[float, float, float], np.ndarray],
         axis: AxisSpec,
-        outer_radius: float,
+        width: Union[float, Tuple[float, float]],
         inner_radius: float,
         *,
         length: Optional[float] = None,
@@ -482,63 +610,114 @@ class HollowCylinderMeshSurface(MeshSurface3D):
         ntheta: int = 64,
         naxial: int = 2,
         nradial: int = 8,
+        nwall: int = 2,
+        theta_range: Optional[Tuple[float, float]] = None,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
-        self.outer_radius = float(outer_radius)
+
+        if isinstance(width, (int, float)):
+            wu = wv = float(width)
+        else:
+            try:
+                wu_raw, wv_raw = width  # type: ignore[misc]
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "width must be a float or a (width_u, width_v) pair"
+                ) from exc
+            wu = float(wu_raw)
+            wv = float(wv_raw)
+        if wu <= 0.0 or wv <= 0.0:
+            raise ValueError("width must be > 0")
+        self.width_u = wu
+        self.width_v = wv
+        self.half_u = 0.5 * wu
+        self.half_v = 0.5 * wv
+
         self.inner_radius = float(inner_radius)
-        if self.outer_radius <= 0.0:
-            raise ValueError("outer_radius must be > 0")
         if self.inner_radius <= 0.0:
             raise ValueError("inner_radius must be > 0")
-        if not self.inner_radius < self.outer_radius:
-            raise ValueError("Require inner_radius < outer_radius")
+        if self.inner_radius >= min(self.half_u, self.half_v):
+            raise ValueError(
+                "inner_radius must be < half of the smaller rectangle side"
+            )
 
         self.tmin, self.tmax = _axial_range(length=length, tmin=tmin, tmax=tmax)
         self.parts = _normalize_selection(parts, allowed=self._allowed_parts, name="parts")
         self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
         self.naxial = _normalize_count(naxial, name="naxial", minimum=2)
         self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        self.nwall = _normalize_count(nwall, name="nwall", minimum=2)
+        self.theta_range = theta_range
+        self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
 
-    def _side_mesh(self, radius: float, *, inward: bool) -> Tuple[np.ndarray, np.ndarray]:
-        theta = np.linspace(0.0, 2.0 * np.pi, self.ntheta, endpoint=False, dtype=np.float64)
+    def _inner_side_mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        theta = _sample_theta(self.ntheta, self._theta_min, self._theta_max, self._theta_full)
         t = np.linspace(self.tmin, self.tmax, self.naxial, dtype=np.float64)
         T, TH = np.meshgrid(t, theta, indexing="ij")
         points = (
             self.center[None, None, :]
             + T[..., None] * self.axis[None, None, :]
-            + radius
+            + self.inner_radius
             * (
                 np.cos(TH)[..., None] * self.e1[None, None, :]
                 + np.sin(TH)[..., None] * self.e2[None, None, :]
             )
         )
-        V, F = _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=True)
-        if inward:
-            F = F[:, [0, 2, 1]]
+        V, F = _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=self._theta_full)
+        # Flip to face inward (towards the axis of the hole).
+        F = F[:, [0, 2, 1]]
         return V, F
+
+    def _wall_meshes(self) -> list:
+        t = np.linspace(self.tmin, self.tmax, self.naxial, dtype=np.float64)
+
+        def build(
+            offset_vec: np.ndarray,
+            tangent_half: float,
+            normal_dir: np.ndarray,
+            tangent_axis: np.ndarray,
+        ) -> Tuple[np.ndarray, np.ndarray]:
+            s = np.linspace(-tangent_half, tangent_half, self.nwall, dtype=np.float64)
+            T, S = np.meshgrid(t, s, indexing="ij")
+            points = (
+                self.center[None, None, :]
+                + offset_vec[None, None, :]
+                + T[..., None] * self.axis[None, None, :]
+                + S[..., None] * tangent_axis[None, None, :]
+            )
+            return _plane_mesh(points, expected_normal=tuple(normal_dir), wrap_u=False)
+
+        return [
+            build(-self.half_u * self.e1, self.half_v, -self.e1, self.e2),
+            build(+self.half_u * self.e1, self.half_v,  self.e1, self.e2),
+            build(-self.half_v * self.e2, self.half_u, -self.e2, self.e1),
+            build(+self.half_v * self.e2, self.half_u,  self.e2, self.e1),
+        ]
 
     def _cap_mesh(self, which: str) -> Tuple[np.ndarray, np.ndarray]:
         t = self.tmax if which == "top" else self.tmin
         normal = self.axis if which == "top" else -self.axis
         base = self.center + t * self.axis
-        return _annulus_mesh(
+        return _rect_with_hole_mesh(
             base,
             self.e1,
             self.e2,
+            half_u=self.half_u,
+            half_v=self.half_v,
             inner_radius=self.inner_radius,
-            outer_radius=self.outer_radius,
             ntheta=self.ntheta,
             nradial=self.nradial,
             expected_normal=tuple(normal),
+            theta_range=self.theta_range,
         )
 
     def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
-        meshes: list[Tuple[np.ndarray, np.ndarray]] = []
+        meshes: list = []
         if "outer" in self.parts:
-            meshes.append(self._side_mesh(self.outer_radius, inward=False))
+            meshes.extend(self._wall_meshes())
         if "inner" in self.parts:
-            meshes.append(self._side_mesh(self.inner_radius, inward=True))
+            meshes.append(self._inner_side_mesh())
         if "top" in self.parts:
             meshes.append(self._cap_mesh("top"))
         if "bottom" in self.parts:
@@ -546,9 +725,161 @@ class HollowCylinderMeshSurface(MeshSurface3D):
         return _combine_meshes(meshes)
 
 
+class RectangleMeshSurface(MeshSurface3D):
+    """Single flat rectangular panel in 3D.
+
+    The rectangle lies in the plane orthogonal to ``axis`` that passes
+    through ``center``. Its in-plane frame ``(e1, e2)`` is derived from
+    ``axis`` in the same way as cylinder surfaces, and the rectangle
+    extends symmetrically about ``center`` with half-widths
+    ``(width_u/2, width_v/2)``.
+
+    Unlike ``BoxMeshSurface`` (which only produces axis-aligned faces), this
+    class lets you place a single arbitrarily-oriented rectangular panel
+    anywhere in space — convenient for highlighting a probe window, a
+    transparent cutting plane, or any planar mark.
+    """
+
+    def __init__(
+        self,
+        center: Union[Tuple[float, float], Tuple[float, float, float], np.ndarray],
+        axis: AxisSpec,
+        width: Union[float, Tuple[float, float]],
+        *,
+        resolution: Union[int, Tuple[int, int]] = (2, 2),
+        flip_normal: bool = False,
+    ):
+        self.center = _center_to_3vec(center)
+        self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
+
+        if isinstance(width, (int, float)):
+            wu = wv = float(width)
+        else:
+            try:
+                wu_raw, wv_raw = width  # type: ignore[misc]
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "width must be a float or a (width_u, width_v) pair"
+                ) from exc
+            wu = float(wu_raw)
+            wv = float(wv_raw)
+        if wu <= 0.0 or wv <= 0.0:
+            raise ValueError("width must be > 0")
+        self.width_u = wu
+        self.width_v = wv
+        self.half_u = 0.5 * wu
+        self.half_v = 0.5 * wv
+
+        self.resolution = _normalize_resolution(resolution)
+        self.flip_normal = bool(flip_normal)
+
+    def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        nu, nv = self.resolution
+        u = np.linspace(-self.half_u, self.half_u, nu, dtype=np.float64)
+        v = np.linspace(-self.half_v, self.half_v, nv, dtype=np.float64)
+        V_arr, U_arr = np.meshgrid(v, u, indexing="ij")  # shapes (nv, nu)
+        points = (
+            self.center[None, None, :]
+            + U_arr[..., None] * self.e1[None, None, :]
+            + V_arr[..., None] * self.e2[None, None, :]
+        )
+        normal = -self.axis if self.flip_normal else self.axis
+        return _plane_mesh(points, expected_normal=tuple(normal), wrap_u=False)
+
+
+class SphereMeshSurface(MeshSurface3D):
+    """Sphere mesh via latitude–longitude parameterization.
+
+    The sphere of ``radius`` is centered on ``center``. The local poles lie
+    on ``axis`` (default ``"z"``): latitude ``phi`` runs from ``-π/2`` at the
+    south pole to ``+π/2`` at the north pole, and longitude ``theta`` wraps
+    around in the ``(e1, e2)`` equatorial plane.
+
+    Optional ``theta_range`` and ``phi_range`` let you carve out a spherical
+    wedge, hemisphere, or any rectangular patch on the sphere. When a cut
+    exposes the sphere's interior the open flat surfaces are *not* generated
+    automatically; combine this class with other mesh surfaces if you need
+    to cap them.
+    """
+
+    def __init__(
+        self,
+        center: Union[Tuple[float, float], Tuple[float, float, float], np.ndarray],
+        radius: float,
+        *,
+        axis: AxisSpec = "z",
+        ntheta: int = 48,
+        nphi: int = 25,
+        theta_range: Optional[Tuple[float, float]] = None,
+        phi_range: Optional[Tuple[float, float]] = None,
+    ):
+        self.center = _center_to_3vec(center)
+        self.radius = float(radius)
+        if self.radius <= 0.0:
+            raise ValueError("radius must be > 0")
+        self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
+        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
+        self.nphi = _normalize_count(nphi, name="nphi", minimum=2)
+
+        self.theta_range = theta_range
+        self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
+        self.phi_range = phi_range
+        self._phi_min, self._phi_max = self._resolve_phi_range(phi_range)
+
+    @staticmethod
+    def _resolve_phi_range(
+        phi_range: Optional[Tuple[float, float]],
+    ) -> Tuple[float, float]:
+        half_pi = 0.5 * np.pi
+        if phi_range is None:
+            return -half_pi, half_pi
+        pmin, pmax = phi_range
+        pmin = float(pmin)
+        pmax = float(pmax)
+        if not pmin < pmax:
+            raise ValueError("phi_range must satisfy phi_min < phi_max")
+        if pmin < -half_pi - _FULL_ANGLE_EPS or pmax > half_pi + _FULL_ANGLE_EPS:
+            raise ValueError("phi_range must lie within [-π/2, π/2]")
+        return max(pmin, -half_pi), min(pmax, half_pi)
+
+    def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        theta = _sample_theta(self.ntheta, self._theta_min, self._theta_max, self._theta_full)
+        phi = np.linspace(self._phi_min, self._phi_max, self.nphi, dtype=np.float64)
+
+        PHI, TH = np.meshgrid(phi, theta, indexing="ij")  # shapes (nphi, ntheta)
+        cp = np.cos(PHI)
+        sp = np.sin(PHI)
+        ct = np.cos(TH)
+        st = np.sin(TH)
+
+        points = (
+            self.center[None, None, :]
+            + self.radius * cp[..., None] * ct[..., None] * self.e1[None, None, :]
+            + self.radius * cp[..., None] * st[..., None] * self.e2[None, None, :]
+            + self.radius * sp[..., None] * self.axis[None, None, :]
+        )
+
+        # _plane_mesh orients faces against a single reference normal, which
+        # does not generalize to a closed sphere. We build the grid faces and
+        # then flip them to face outward from `self.center` if needed.
+        V = points.reshape(-1, 3).astype(np.float64)
+        F = _grid_faces(self.nphi, self.ntheta, wrap_u=self._theta_full)
+        if F.size:
+            sample = F[: min(64, len(F))]
+            tris = V[sample]
+            face_normals = np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0])
+            centroids = tris.mean(axis=1)
+            outward = centroids - self.center[None, :]
+            if float((face_normals * outward).sum()) < 0.0:
+                F = F[:, [0, 2, 1]]
+        return V, F
+
+
 __all__ = [
     "MeshSurface3D",
     "BoxMeshSurface",
+    "RectangleMeshSurface",
     "CylinderMeshSurface",
     "HollowCylinderMeshSurface",
+    "SphereMeshSurface",
 ]

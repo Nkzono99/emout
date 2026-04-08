@@ -16,8 +16,10 @@ from .cutter import SurfaceCutter, KeepSide
 from .mesh import (
     MeshSurface3D,
     BoxMeshSurface,
+    RectangleMeshSurface,
     CylinderMeshSurface,
     HollowCylinderMeshSurface,
+    SphereMeshSurface,
 )
 from .sdf import (
     Surface3D,
@@ -48,8 +50,10 @@ __all__ = [
     "KeepSide",
     "MeshSurface3D",
     "BoxMeshSurface",
+    "RectangleMeshSurface",
     "CylinderMeshSurface",
     "HollowCylinderMeshSurface",
+    "SphereMeshSurface",
     # surfaces
     "Surface3D",
     "HeightFieldSurface",
