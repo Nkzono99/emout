@@ -570,7 +570,20 @@ def plot_surfaces(
                 offset=contour_offset,
             )
             if segs:
-                lc = Line3DCollection(segs, colors=contour_color, linewidths=contour_lw)
+                lc = Line3DCollection(
+                    segs,
+                    colors=contour_color,
+                    linewidths=contour_lw,
+                    # Round caps/joins matter a lot for thick contour
+                    # lines on curved surfaces. mpl's defaults (butt /
+                    # miter) leave a small triangular gap at every
+                    # segment boundary, and the gaps look like the
+                    # contour curve has been chopped into discrete
+                    # tick marks. Round caps fill in those gaps so
+                    # thick contours render as one continuous curve.
+                    capstyle="round",
+                    joinstyle="round",
+                )
                 # With ax.computed_zorder=False, set_zorder is honoured at
                 # draw time. Contours sit above the merged polygon (which
                 # gets zorder=1 below) when contour_on_top is True.
