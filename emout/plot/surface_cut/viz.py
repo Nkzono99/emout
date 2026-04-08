@@ -10,35 +10,23 @@ from matplotlib.colors import Normalize
 from matplotlib.colors import to_rgba
 from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
 
-try:
-    from skimage.measure import marching_cubes
-except ImportError as e:
-    raise ImportError(
-        "scikit-image is required for marching cubes. Install: pip install scikit-image"
-    ) from e
-
 
 Mode = Literal["cmap", "cont", "cmap+cont"]
 
 
 @dataclass(frozen=True)
 class RenderItem:
-    """Rendering specification for a surface.
+    """Rendering specification for a mesh surface.
 
     style:
       - 'field': color by sampled field values (colormap)
       - 'solid': constant face color (e.g., gray cut faces)
-
-    mask:
-      Optional solid/region used to *keep* only triangles whose centroid is inside (sdf<=0).
-      This is useful to show cut-faces only where they are exposed by a cut-away.
     """
 
     surface: object
     style: Literal["field", "solid"] = "field"
     solid_color: Union[str, Tuple[float, float, float], Tuple[float, float, float, float]] = "0.6"
     alpha: Optional[float] = None
-    mask: Optional[object] = None
     draw_contours: bool = True
     edge_color: Optional[str] = None
     edge_lw: float = 0.4
@@ -133,85 +121,42 @@ def _make_norm(
     return Normalize(vmin=vmin, vmax=vmax)
 
 
-def _sample_sdf_on_grid(surface, bounds: Bounds3D, grid_shape: Tuple[int, int, int]):
-    """Sample surface.sdf on a uniform grid in world coordinates.
+def _surface_mesh(surface) -> Tuple[np.ndarray, np.ndarray]:
+    """Extract ``(V, F)`` arrays from a :class:`MeshSurface3D`.
 
-    Returns
-    -------
-    xs, ys, zs : 1D arrays
-    sdf_zyx : ndarray (nz,ny,nx)
+    Accepts anything with a callable ``mesh()`` method that returns either a
+    ``(V, F)`` pair directly or another mesh-like object whose own ``mesh()``
+    yields the pair (e.g. a :class:`Boundary` from
+    :mod:`emout.emout.boundaries`, whose ``mesh()`` returns a
+    ``MeshSurface3D``). One level of unwrapping is enough because
+    :class:`CompositeMeshSurface` already returns ``(V, F)`` directly.
     """
-    nx, ny, nz = grid_shape  # (x,y,z)
-    xs = np.linspace(bounds.x[0], bounds.x[1], nx)
-    ys = np.linspace(bounds.y[0], bounds.y[1], ny)
-    zs = np.linspace(bounds.z[0], bounds.z[1], nz)
-
-    Z, Y, X = np.meshgrid(zs, ys, xs, indexing="ij")
-    sdf = surface.sdf(X, Y, Z).astype(np.float64)
-    return xs, ys, zs, sdf
-
-
-def _mesh_from_sdf(xs, ys, zs, sdf_zyx, level: float = 0.0):
-    """Marching cubes on sdf (z,y,x).
-
-    Returns
-    -------
-    V : (nV,3) float64
-        Vertices in world (x,y,z).
-    F : (nF,3) int64
-        Triangle indices.
-    N : (nV,3) float64
-        Vertex normals in world (x,y,z). Normal direction follows scikit-image
-        convention: points toward increasing sdf values (for a true SDF, this is
-        "outward").
-    """
-    dx = float(xs[1] - xs[0]) if xs.size > 1 else 1.0
-    dy = float(ys[1] - ys[0]) if ys.size > 1 else 1.0
-    dz = float(zs[1] - zs[0]) if zs.size > 1 else 1.0
-
-    verts_zyx, faces, normals_zyx, _ = marching_cubes(
-        sdf_zyx, level=level, spacing=(dz, dy, dx)
-    )
-
-    verts_zyx[:, 0] += zs[0]
-    verts_zyx[:, 1] += ys[0]
-    verts_zyx[:, 2] += xs[0]
-
-    V = np.column_stack([verts_zyx[:, 2], verts_zyx[:, 1], verts_zyx[:, 0]]).astype(np.float64)
-
-    # normals_zyx are in (z,y,x) order -> convert to (x,y,z)
-    N = np.column_stack([normals_zyx[:, 2], normals_zyx[:, 1], normals_zyx[:, 0]]).astype(np.float64)
-    nrm = np.linalg.norm(N, axis=1)
-    good = nrm > 0
-    N[good] /= nrm[good][:, None]
-    F = faces.astype(np.int64)
-    return V, F, N
-
-
-def _surface_mesh(surface, bounds: Bounds3D, grid_shape: Tuple[int, int, int], *, sdf_level: float):
-    """Build a triangle mesh from either an implicit surface or an explicit mesh."""
     mesh_fn = getattr(surface, "mesh", None)
-    if callable(mesh_fn):
-        V, F = mesh_fn()
-        V = np.asarray(V, dtype=np.float64)
-        F = np.asarray(F, dtype=np.int64)
-        return V, F
-
-    xs, ys, zs, sdf = _sample_sdf_on_grid(surface, bounds, grid_shape)
-    V, F, _ = _mesh_from_sdf(xs, ys, zs, sdf, level=sdf_level)
+    if not callable(mesh_fn):
+        raise TypeError(
+            f"Expected a MeshSurface3D-like object with a .mesh() method, "
+            f"got {type(surface).__name__}"
+        )
+    result = mesh_fn()
+    # Unwrap one level so Boundary objects (mesh() → MeshSurface3D) work too.
+    inner = getattr(result, "mesh", None)
+    if callable(inner):
+        result = inner()
+    V, F = result
+    V = np.asarray(V, dtype=np.float64)
+    F = np.asarray(F, dtype=np.int64)
     return V, F
 
 
 def _bounds_from_mesh_surfaces(surfaces) -> Optional[Bounds3D]:
-    """Infer plot bounds from explicit mesh surfaces only."""
+    """Infer plot bounds from explicit mesh surfaces."""
     mins: list[np.ndarray] = []
     maxs: list[np.ndarray] = []
     for item in _as_list(surfaces):
-        mesh_fn = getattr(item.surface, "mesh", None)
-        if not callable(mesh_fn):
+        try:
+            V, _ = _surface_mesh(item.surface)
+        except TypeError:
             return None
-        V, _ = mesh_fn()
-        V = np.asarray(V, dtype=np.float64)
         if V.size == 0:
             continue
         mins.append(np.nanmin(V, axis=0))
@@ -336,17 +281,6 @@ def _solid_poly_collection(
     return poly
 
 
-def _filter_faces_by_mask(V: np.ndarray, F: np.ndarray, mask) -> np.ndarray:
-    """Return faces to keep based on mask.sdf(centroid)<=0."""
-    tris = V[F]
-    c = tris.mean(axis=1)  # (nF,3)
-    m = mask.sdf(c[:, 0], c[:, 1], c[:, 2])
-    keep = np.asarray(m <= 0.0)
-    return F[keep]
-
-
-
-
 def _view_dir_from_axes(ax) -> np.ndarray:
     """Approximate view direction (from data toward the camera) in data coordinates.
 
@@ -423,7 +357,6 @@ def plot_surfaces(
     field=None,
     surfaces,
     bounds: Optional[Bounds3D] = None,
-    grid_shape: Tuple[int, int, int] = (140, 140, 100),
     mode: Mode = "cmap+cont",
     cmap_name: str = "jet",
     vmin: Optional[float] = None,
@@ -432,12 +365,11 @@ def plot_surfaces(
     contour_levels: Union[int, Sequence[float]] = 10,
     contour_color: str = "k",
     contour_lw: float = 0.8,
-    sdf_level: float = 0.0,
     contour_on_top: bool = True,
     contour_offset: float = 0.0,
     contour_side: str = "front"
 ):
-    """Render implicit surfaces or explicit face meshes with colormap and contours."""
+    """Render explicit triangle mesh surfaces with optional colormap + contours."""
 
     items = _as_list(surfaces)
 
@@ -450,7 +382,8 @@ def plot_surfaces(
             bounds = _bounds_from_mesh_surfaces(items)
             if bounds is None:
                 raise ValueError(
-                    "bounds is required when field is None or when rendering implicit surfaces without a field grid"
+                    "bounds is required when field is None and the surfaces "
+                    "do not expose vertex extents"
                 )
 
     cmap = plt.get_cmap(cmap_name)
@@ -463,14 +396,9 @@ def plot_surfaces(
 
     for i, srf in enumerate(items):
         surface = srf.surface
-        V, F = _surface_mesh(surface, bounds, grid_shape, sdf_level=sdf_level)
+        V, F = _surface_mesh(surface)
         if V.size == 0 or F.size == 0:
             continue
-
-        if srf.mask is not None:
-            F = _filter_faces_by_mask(V, F, srf.mask)
-            if F.size == 0:
-                continue
 
         item_alpha = alpha if srf.alpha is None else float(srf.alpha)
 

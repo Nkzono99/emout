@@ -5,7 +5,42 @@ from typing import Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from .sdf import AxisSpec, _axis_to_unit
+
+AxisSpec = Union[str, Tuple[float, float, float], np.ndarray]
+
+
+def _as_3vec(v, *, name: str) -> np.ndarray:
+    """Coerce ``v`` into a length-3 NumPy float vector or raise ``ValueError``."""
+    a = np.asarray(v, dtype=np.float64).reshape(-1)
+    if a.size != 3:
+        raise ValueError(f"{name} must be a 3-vector, got shape {a.shape}")
+    return a
+
+
+def _axis_to_unit(axis: AxisSpec) -> np.ndarray:
+    """Normalise an axis specifier into a unit 3-vector.
+
+    Accepts ``"x"`` / ``"y"`` / ``"z"`` (case-insensitive) or any 3-element
+    array-like. Raises ``ValueError`` for unrecognised strings or zero
+    vectors.
+    """
+    if isinstance(axis, str):
+        s = axis.lower().strip()
+        if s == "x":
+            a = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+        elif s == "y":
+            a = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+        elif s == "z":
+            a = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+        else:
+            raise ValueError("axis must be one of 'x','y','z' or a 3-vector.")
+    else:
+        a = _as_3vec(axis, name="axis")
+
+    n = np.linalg.norm(a)
+    if n == 0.0 or not np.isfinite(n):
+        raise ValueError("axis must be a finite non-zero vector.")
+    return a / n
 
 
 BoxFaceName = Literal["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"]
@@ -19,9 +54,11 @@ _FULL_ANGLE_EPS = 1e-9
 class MeshSurface3D(ABC):
     """Explicit triangle mesh surface for `plot_surfaces`.
 
-    Unlike `Surface3D`, this API represents already-selected faces directly.
-    It is meant for cases where "which face to show" is more important than
-    constructing a solid volume and extracting a cross section from it.
+    Each subclass knows how to materialise a structured ``(V, F)`` triangle
+    mesh for a specific shape (box, cylinder, sphere, …). Use ``+`` to
+    compose multiple shapes into a :class:`CompositeMeshSurface` and
+    :meth:`render` to wrap one in a :class:`RenderItem` ready for
+    :func:`emout.plot.surface_cut.plot_surfaces`.
     """
 
     @abstractmethod
