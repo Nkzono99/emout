@@ -700,11 +700,22 @@ def plot_surfaces(
             edgecolors_arg = "none"
         else:
             edgecolors_arg = ec_all
+        # Linewidth optimisation: a per-face linewidth array forces mpl to
+        # walk every face inside set_linewidth → _bcast_lwls in Python and
+        # is by far the slowest part of Poly3DCollection construction at
+        # high resolution. Detect the common case where every surface used
+        # the same edge_lw and pass a scalar instead — mpl then takes the
+        # fast cached-LineCollection path. (At high resolution this brought
+        # plot_surfaces from ~560 ms to ~120 ms in our profile.)
+        if lw_all.size == 0 or np.all(lw_all == lw_all[0]):
+            linewidths_arg = float(lw_all[0]) if lw_all.size else 0.0
+        else:
+            linewidths_arg = lw_all
         merged_poly = Poly3DCollection(
             tris,
             facecolors=fc_all,
             edgecolors=edgecolors_arg,
-            linewidths=lw_all,
+            linewidths=linewidths_arg,
             # Disable antialiasing on the polygon faces. mpl's default
             # AA produces semi-transparent fringes around every triangle
             # which the user sees as the whole face being "a bit
