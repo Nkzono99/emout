@@ -126,6 +126,45 @@ def _normalize_resolution(
     return nu, nv
 
 
+def _validate_scale(value, *, name: str = "resolution_scale") -> float:
+    """Validate a positive finite float used as a uniform resolution multiplier."""
+    s = float(value)
+    if not np.isfinite(s) or s <= 0.0:
+        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+    return s
+
+
+def _scale_count(value: int, scale: float, *, name: str, minimum: int) -> int:
+    """Multiply ``value`` by ``scale`` and pass through :func:`_normalize_count`.
+
+    Used to scale resolution-related counts (``ntheta``, ``nphi``, ``naxial``,
+    ``nradial``, ``nwall``) by the per-class ``resolution_scale``. The
+    minimum is enforced *after* scaling, so a too-small scale on a near-min
+    default will raise a clear error rather than silently clamp.
+    """
+    scaled = int(round(int(value) * float(scale)))
+    return _normalize_count(scaled, name=name, minimum=minimum)
+
+
+def _scale_resolution(
+    resolution: Union[int, Tuple[int, int]],
+    scale: float,
+    *,
+    name: str = "resolution",
+    minimum: int = 2,
+) -> Tuple[int, int]:
+    """Scale a ``(nu, nv)`` resolution tuple uniformly by ``scale``."""
+    nu, nv = _normalize_resolution(resolution, name=name, minimum=minimum)
+    nu_s = int(round(nu * float(scale)))
+    nv_s = int(round(nv * float(scale)))
+    if nu_s < minimum or nv_s < minimum:
+        raise ValueError(
+            f"{name} entries must be >= {minimum} after scaling "
+            f"({nu}, {nv}) by {scale}"
+        )
+    return nu_s, nv_s
+
+
 def _normalize_selection(
     value: Optional[Union[str, Sequence[str]]],
     *,
@@ -491,6 +530,7 @@ class BoxMeshSurface(MeshSurface3D):
         *,
         faces: Optional[Union[BoxFaceName, Sequence[BoxFaceName]]] = None,
         resolution: Union[int, Tuple[int, int]] = (2, 2),
+        resolution_scale: float = 1.0,
     ):
         self.xmin = float(xmin)
         self.xmax = float(xmax)
@@ -502,7 +542,7 @@ class BoxMeshSurface(MeshSurface3D):
             raise ValueError("Require xmin<=xmax, ymin<=ymax, zmin<=zmax")
 
         self.faces = _normalize_selection(faces, allowed=self._allowed_faces, name="faces")
-        self.resolution = _normalize_resolution(resolution)
+        self.resolution = _scale_resolution(resolution, _validate_scale(resolution_scale))
 
     def _face_mesh(self, face: str) -> Tuple[np.ndarray, np.ndarray]:
         nu, nv = self.resolution
@@ -594,6 +634,7 @@ class CylinderMeshSurface(MeshSurface3D):
         naxial: int = 2,
         nradial: int = 8,
         theta_range: Optional[Tuple[float, float]] = None,
+        resolution_scale: float = 1.0,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
@@ -603,9 +644,10 @@ class CylinderMeshSurface(MeshSurface3D):
 
         self.tmin, self.tmax = _axial_range(length=length, tmin=tmin, tmax=tmax)
         self.parts = _normalize_selection(parts, allowed=self._allowed_parts, name="parts")
-        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
-        self.naxial = _normalize_count(naxial, name="naxial", minimum=2)
-        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        scale = _validate_scale(resolution_scale)
+        self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)
+        self.naxial = _scale_count(naxial, scale, name="naxial", minimum=2)
+        self.nradial = _scale_count(nradial, scale, name="nradial", minimum=2)
         self.theta_range = theta_range
         self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
 
@@ -702,6 +744,7 @@ class HollowCylinderMeshSurface(MeshSurface3D):
         nradial: int = 8,
         nwall: int = 2,
         theta_range: Optional[Tuple[float, float]] = None,
+        resolution_scale: float = 1.0,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
@@ -734,10 +777,11 @@ class HollowCylinderMeshSurface(MeshSurface3D):
 
         self.tmin, self.tmax = _axial_range(length=length, tmin=tmin, tmax=tmax)
         self.parts = _normalize_selection(parts, allowed=self._allowed_parts, name="parts")
-        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
-        self.naxial = _normalize_count(naxial, name="naxial", minimum=2)
-        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
-        self.nwall = _normalize_count(nwall, name="nwall", minimum=2)
+        scale = _validate_scale(resolution_scale)
+        self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)
+        self.naxial = _scale_count(naxial, scale, name="naxial", minimum=2)
+        self.nradial = _scale_count(nradial, scale, name="nradial", minimum=2)
+        self.nwall = _scale_count(nwall, scale, name="nwall", minimum=2)
         self.theta_range = theta_range
         self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
 
@@ -858,6 +902,7 @@ class RectangleMeshSurface(MeshSurface3D):
         pmin: Union[Tuple[float, float, float], np.ndarray, None] = None,
         pmax: Union[Tuple[float, float, float], np.ndarray, None] = None,
         resolution: Union[int, Tuple[int, int]] = (2, 2),
+        resolution_scale: float = 1.0,
         flip_normal: bool = False,
     ):
         if pmin is not None or pmax is not None:
@@ -896,7 +941,7 @@ class RectangleMeshSurface(MeshSurface3D):
         self.half_u = 0.5 * wu
         self.half_v = 0.5 * wv
 
-        self.resolution = _normalize_resolution(resolution)
+        self.resolution = _scale_resolution(resolution, _validate_scale(resolution_scale))
         self.flip_normal = bool(flip_normal)
 
     @staticmethod
@@ -984,14 +1029,16 @@ class SphereMeshSurface(MeshSurface3D):
         nphi: int = 25,
         theta_range: Optional[Tuple[float, float]] = None,
         phi_range: Optional[Tuple[float, float]] = None,
+        resolution_scale: float = 1.0,
     ):
         self.center = _center_to_3vec(center)
         self.radius = float(radius)
         if self.radius <= 0.0:
             raise ValueError("radius must be > 0")
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
-        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
-        self.nphi = _normalize_count(nphi, name="nphi", minimum=2)
+        scale = _validate_scale(resolution_scale)
+        self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)
+        self.nphi = _scale_count(nphi, scale, name="nphi", minimum=2)
 
         self.theta_range = theta_range
         self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
@@ -1066,14 +1113,16 @@ class CircleMeshSurface(MeshSurface3D):
         nradial: int = 8,
         theta_range: Optional[Tuple[float, float]] = None,
         flip_normal: bool = False,
+        resolution_scale: float = 1.0,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
         self.radius = float(radius)
         if self.radius <= 0.0:
             raise ValueError("radius must be > 0")
-        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
-        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        scale = _validate_scale(resolution_scale)
+        self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)
+        self.nradial = _scale_count(nradial, scale, name="nradial", minimum=2)
         self.theta_range = theta_range
         self.flip_normal = bool(flip_normal)
 
@@ -1117,6 +1166,7 @@ class DiskMeshSurface(MeshSurface3D):
         naxial: int = 2,
         nradial: int = 8,
         theta_range: Optional[Tuple[float, float]] = None,
+        resolution_scale: float = 1.0,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
@@ -1131,9 +1181,10 @@ class DiskMeshSurface(MeshSurface3D):
 
         self.tmin, self.tmax = _axial_range(length=length, tmin=tmin, tmax=tmax)
         self.parts = _normalize_selection(parts, allowed=self._allowed_parts, name="parts")
-        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
-        self.naxial = _normalize_count(naxial, name="naxial", minimum=2)
-        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        scale = _validate_scale(resolution_scale)
+        self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)
+        self.naxial = _scale_count(naxial, scale, name="naxial", minimum=2)
+        self.nradial = _scale_count(nradial, scale, name="nradial", minimum=2)
         self.theta_range = theta_range
         self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
 
@@ -1211,6 +1262,7 @@ class PlaneWithCircleMeshSurface(MeshSurface3D):
         nradial: int = 8,
         theta_range: Optional[Tuple[float, float]] = None,
         flip_normal: bool = False,
+        resolution_scale: float = 1.0,
     ):
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
@@ -1241,8 +1293,9 @@ class PlaneWithCircleMeshSurface(MeshSurface3D):
                 "inner_radius must be < half of the smaller rectangle side"
             )
 
-        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
-        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        scale = _validate_scale(resolution_scale)
+        self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)
+        self.nradial = _scale_count(nradial, scale, name="nradial", minimum=2)
         self.theta_range = theta_range
         self.flip_normal = bool(flip_normal)
 

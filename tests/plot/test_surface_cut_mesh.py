@@ -245,6 +245,104 @@ def test_rectangle_mesh_surface_requires_one_form():
         RectangleMeshSurface()
 
 
+# ---------------------------------------------------------------------------
+# resolution_scale broadcast
+# ---------------------------------------------------------------------------
+
+
+def test_sphere_resolution_scale_multiplies_defaults():
+    base = SphereMeshSurface(center=(0, 0, 0), radius=1.0)
+    scaled = SphereMeshSurface(center=(0, 0, 0), radius=1.0, resolution_scale=2.5)
+    # Defaults are ntheta=48, nphi=25.
+    assert base.ntheta == 48 and base.nphi == 25
+    # 48 * 2.5 = 120; 25 * 2.5 = 62.5 → rounds to 62 or 63 (Python banker's
+    # rounding gives 62 for ties; for 25*2.5=62.5 it lands on 62 as well).
+    assert scaled.ntheta == round(48 * 2.5)
+    assert scaled.nphi == round(25 * 2.5)
+
+
+def test_cylinder_resolution_scale_scales_every_count():
+    base = CylinderMeshSurface(center=(0, 0, 0), axis="z", radius=1.0, length=2.0)
+    scaled = CylinderMeshSurface(
+        center=(0, 0, 0), axis="z", radius=1.0, length=2.0, resolution_scale=4
+    )
+    # Defaults: ntheta=64, naxial=2, nradial=8.
+    assert base.ntheta == 64 and base.naxial == 2 and base.nradial == 8
+    assert scaled.ntheta == 64 * 4
+    assert scaled.naxial == 2 * 4
+    assert scaled.nradial == 8 * 4
+
+
+def test_box_resolution_scale_scales_face_resolution():
+    base = BoxMeshSurface(0, 1, 0, 1, 0, 1, faces=("zmax",))
+    scaled = BoxMeshSurface(0, 1, 0, 1, 0, 1, faces=("zmax",), resolution_scale=5)
+    # Default resolution is (2, 2). After scale=5 → (10, 10).
+    assert base.resolution == (2, 2)
+    assert scaled.resolution == (10, 10)
+
+
+def test_resolution_scale_combines_with_explicit_count():
+    # Explicit ntheta becomes the *base* that scale multiplies.
+    surface = SphereMeshSurface(
+        center=(0, 0, 0), radius=1.0, ntheta=12, nphi=7, resolution_scale=3
+    )
+    assert surface.ntheta == 36
+    assert surface.nphi == 21
+
+
+def test_resolution_scale_rejects_non_positive():
+    with pytest.raises(ValueError, match="resolution_scale"):
+        SphereMeshSurface(center=(0, 0, 0), radius=1.0, resolution_scale=0)
+    with pytest.raises(ValueError, match="resolution_scale"):
+        SphereMeshSurface(center=(0, 0, 0), radius=1.0, resolution_scale=-1.0)
+    with pytest.raises(ValueError, match="resolution_scale"):
+        SphereMeshSurface(center=(0, 0, 0), radius=1.0, resolution_scale=float("nan"))
+
+
+def test_collection_mesh_broadcasts_resolution_scale_to_every_boundary(tmp_path):
+    """data.boundaries.mesh(resolution_scale=N) hits every entry."""
+    from emout.emout.boundaries import BoundaryCollection
+    from emout.utils import InpFile, Units
+
+    inp_path = tmp_path / "plasma.inp"
+    inp_path.write_text(
+        "!!key dx=[0.1],to_c=[10000.0]\n"
+        "&esorem\n"
+        "    nx = 64\n"
+        "    ny = 64\n"
+        "    nz = 64\n"
+        "/\n"
+        "&ptcond\n"
+        "    boundary_type = 'complex'\n"
+        "    boundary_types(1) = 'sphere'\n"
+        "    boundary_types(2) = 'cuboid'\n"
+        "    boundary_types(3) = 'cylinderz'\n"
+        "    sphere_origin(:, 1) = 10.0, 10.0, 10.0\n"
+        "    sphere_radius(1) = 1.0\n"
+        "    cuboid_shape(:, 2) = 0, 1, 0, 1, 0, 1\n"
+        "    cylinder_origin(:, 3) = 5.0, 5.0, 0.0\n"
+        "    cylinder_radius(3) = 1.0\n"
+        "    cylinder_height(3) = 2.0\n"
+        "/\n"
+    )
+    inp = InpFile(inp_path)
+    unit = Units(dx=0.1, to_c=10000.0)
+    boundaries = BoundaryCollection(inp, unit)
+
+    composite = boundaries.mesh(use_si=False, resolution_scale=4)
+    sphere_child, box_child, cyl_child = composite.children
+
+    # Sphere defaults: ntheta=48, nphi=25 → ×4
+    assert sphere_child.ntheta == 48 * 4
+    assert sphere_child.nphi == 25 * 4
+    # Box default resolution=(2, 2) → ×4
+    assert box_child.resolution == (8, 8)
+    # Cylinder defaults: ntheta=64, naxial=2, nradial=8 → ×4
+    assert cyl_child.ntheta == 64 * 4
+    assert cyl_child.naxial == 2 * 4
+    assert cyl_child.nradial == 8 * 4
+
+
 def test_sphere_mesh_surface_points_lie_on_sphere():
     surface = SphereMeshSurface(
         center=(0.5, -1.0, 2.0),
