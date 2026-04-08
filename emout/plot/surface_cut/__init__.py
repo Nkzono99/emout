@@ -17,9 +17,12 @@ from .mesh import (
     MeshSurface3D,
     BoxMeshSurface,
     RectangleMeshSurface,
+    CircleMeshSurface,
     CylinderMeshSurface,
     HollowCylinderMeshSurface,
+    DiskMeshSurface,
     SphereMeshSurface,
+    CompositeMeshSurface,
 )
 from .sdf import (
     Surface3D,
@@ -51,9 +54,12 @@ __all__ = [
     "MeshSurface3D",
     "BoxMeshSurface",
     "RectangleMeshSurface",
+    "CircleMeshSurface",
     "CylinderMeshSurface",
     "HollowCylinderMeshSurface",
+    "DiskMeshSurface",
     "SphereMeshSurface",
+    "CompositeMeshSurface",
     # surfaces
     "Surface3D",
     "HeightFieldSurface",

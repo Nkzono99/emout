@@ -198,6 +198,44 @@ class Emout:
             raise AttributeError(f"属性 '{name}' の読み込みに失敗しました: {e}")
 
     @property
+    def boundaries(self):
+        """MPIEMSES finbound 境界のコレクションを返す。
+
+        ``data.inp`` の ``boundary_type = 'complex'`` 設定と
+        ``boundary_types`` 配列をもとに、各 sub-boundary の
+        :class:`emout.emout.boundaries.Boundary` インスタンスを生成して
+        :class:`emout.emout.boundaries.BoundaryCollection` として返します。
+
+        使用例::
+
+            data = Emout("output_dir")
+
+            # 個別境界のメッシュ (grid 単位)
+            mesh = data.boundaries[0].mesh()
+
+            # SI 単位で、解像度をオーバーライド
+            mesh = data.boundaries[0].mesh(use_si=True, ntheta=96)
+
+            # すべての境界をまとめた合成メッシュ
+            composite = data.boundaries.mesh(use_si=True)
+
+            # 境界ごとに個別の引数を渡す
+            composite = data.boundaries.mesh(
+                use_si=True,
+                per={0: {"ntheta": 64}, 1: {"nradial": 12}},
+            )
+
+        Returns
+        -------
+        BoundaryCollection
+            サポートされた finbound 境界の集合。
+            `data.inp` が未読込または非 complex モードの場合は空集合を返します。
+        """
+        from .boundaries import BoundaryCollection
+
+        return BoundaryCollection(self._dir_inspector.inp, self.unit)
+
+    @property
     def backtrace(self) -> BacktraceWrapper:
         """バックトレース計算用ラッパーを返す。
 

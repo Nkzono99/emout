@@ -36,6 +36,34 @@ class MeshSurface3D(ABC):
         """
         raise NotImplementedError
 
+    def __add__(self, other: "MeshSurface3D") -> "MeshSurface3D":
+        if not isinstance(other, MeshSurface3D):
+            return NotImplemented
+        return CompositeMeshSurface([self, other])
+
+    def __radd__(self, other):
+        if other == 0:  # enables sum([...]) to start from 0
+            return self
+        return NotImplemented
+
+    def render(self, **style_kwargs):
+        """Wrap this mesh surface in a ``RenderItem`` ready for ``plot_surfaces``.
+
+        Parameters
+        ----------
+        **style_kwargs
+            Forwarded to :class:`emout.plot.surface_cut.viz.RenderItem`
+            (e.g. ``style="solid"``, ``solid_color="0.7"``, ``alpha=0.5``).
+
+        Returns
+        -------
+        RenderItem
+            A render item wrapping ``self``.
+        """
+        from .viz import RenderItem
+
+        return RenderItem(surface=self, **style_kwargs)
+
 
 def _normalize_count(value: int, *, name: str, minimum: int) -> int:
     ivalue = int(value)
@@ -325,6 +353,31 @@ def _disc_mesh(
     F = np.asarray(faces, dtype=np.int64)
     F = _orient_faces_to_normal(V, F, expected_normal=expected_normal)
     return V, F
+
+
+def _annulus_mesh(
+    base: np.ndarray,
+    e1: np.ndarray,
+    e2: np.ndarray,
+    *,
+    inner_radius: float,
+    outer_radius: float,
+    ntheta: int,
+    nradial: int,
+    expected_normal: Tuple[float, float, float],
+    theta_range: Optional[Tuple[float, float]] = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Mesh a flat annulus between two concentric circles in the (e1, e2) plane."""
+    theta_min, theta_max, is_full = _resolve_theta_range(theta_range)
+    theta = _sample_theta(ntheta, theta_min, theta_max, is_full)
+    radii = np.linspace(inner_radius, outer_radius, nradial, dtype=np.float64)
+    R, T = np.meshgrid(radii, theta, indexing="ij")
+    points = (
+        base[None, None, :]
+        + R[..., None] * np.cos(T)[..., None] * e1[None, None, :]
+        + R[..., None] * np.sin(T)[..., None] * e2[None, None, :]
+    )
+    return _plane_mesh(points, expected_normal=expected_normal, wrap_u=is_full)
 
 
 def _rect_with_hole_mesh(
@@ -875,11 +928,173 @@ class SphereMeshSurface(MeshSurface3D):
         return V, F
 
 
+class CircleMeshSurface(MeshSurface3D):
+    """Flat circular disc in a plane perpendicular to ``axis``.
+
+    The disc is centered on ``center`` with the given ``radius``. Its
+    orientation is controlled by ``axis`` (the outward normal). Use it for
+    the MPIEMSES ``circlex``/``circley``/``circlez`` boundary primitives or
+    whenever you need a single filled disk in 3D.
+    """
+
+    def __init__(
+        self,
+        center: Union[Tuple[float, float, float], np.ndarray],
+        axis: AxisSpec,
+        radius: float,
+        *,
+        ntheta: int = 64,
+        nradial: int = 8,
+        theta_range: Optional[Tuple[float, float]] = None,
+        flip_normal: bool = False,
+    ):
+        self.center = _center_to_3vec(center)
+        self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
+        self.radius = float(radius)
+        if self.radius <= 0.0:
+            raise ValueError("radius must be > 0")
+        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
+        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        self.theta_range = theta_range
+        self.flip_normal = bool(flip_normal)
+
+    def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        normal = -self.axis if self.flip_normal else self.axis
+        return _disc_mesh(
+            self.center,
+            self.e1,
+            self.e2,
+            radius=self.radius,
+            ntheta=self.ntheta,
+            nradial=self.nradial,
+            expected_normal=tuple(normal),
+            theta_range=self.theta_range,
+        )
+
+
+class DiskMeshSurface(MeshSurface3D):
+    """Annular disk (tube) with finite axial thickness.
+
+    Represents the MPIEMSES ``diskx``/``disky``/``diskz`` finbound primitive:
+    a ring with outer and inner cylindrical walls plus two annular end caps.
+    Unlike :class:`HollowCylinderMeshSurface` (rectangular slab with a hole),
+    the outer boundary here is also circular.
+    """
+
+    _allowed_parts = ("outer", "inner", "top", "bottom")
+
+    def __init__(
+        self,
+        center: Union[Tuple[float, float], Tuple[float, float, float], np.ndarray],
+        axis: AxisSpec,
+        outer_radius: float,
+        inner_radius: float,
+        *,
+        length: Optional[float] = None,
+        tmin: Optional[float] = None,
+        tmax: Optional[float] = None,
+        parts: Optional[Union[HollowCylinderPartName, Sequence[HollowCylinderPartName]]] = None,
+        ntheta: int = 64,
+        naxial: int = 2,
+        nradial: int = 8,
+        theta_range: Optional[Tuple[float, float]] = None,
+    ):
+        self.center = _center_to_3vec(center)
+        self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
+        self.outer_radius = float(outer_radius)
+        self.inner_radius = float(inner_radius)
+        if self.outer_radius <= 0.0:
+            raise ValueError("outer_radius must be > 0")
+        if self.inner_radius <= 0.0:
+            raise ValueError("inner_radius must be > 0")
+        if not self.inner_radius < self.outer_radius:
+            raise ValueError("Require inner_radius < outer_radius")
+
+        self.tmin, self.tmax = _axial_range(length=length, tmin=tmin, tmax=tmax)
+        self.parts = _normalize_selection(parts, allowed=self._allowed_parts, name="parts")
+        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
+        self.naxial = _normalize_count(naxial, name="naxial", minimum=2)
+        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        self.theta_range = theta_range
+        self._theta_min, self._theta_max, self._theta_full = _resolve_theta_range(theta_range)
+
+    def _side_mesh(self, radius: float, *, inward: bool) -> Tuple[np.ndarray, np.ndarray]:
+        theta = _sample_theta(self.ntheta, self._theta_min, self._theta_max, self._theta_full)
+        t = np.linspace(self.tmin, self.tmax, self.naxial, dtype=np.float64)
+        T, TH = np.meshgrid(t, theta, indexing="ij")
+        points = (
+            self.center[None, None, :]
+            + T[..., None] * self.axis[None, None, :]
+            + radius
+            * (
+                np.cos(TH)[..., None] * self.e1[None, None, :]
+                + np.sin(TH)[..., None] * self.e2[None, None, :]
+            )
+        )
+        V, F = _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=self._theta_full)
+        if inward:
+            F = F[:, [0, 2, 1]]
+        return V, F
+
+    def _cap_mesh(self, which: str) -> Tuple[np.ndarray, np.ndarray]:
+        t = self.tmax if which == "top" else self.tmin
+        normal = self.axis if which == "top" else -self.axis
+        base = self.center + t * self.axis
+        return _annulus_mesh(
+            base,
+            self.e1,
+            self.e2,
+            inner_radius=self.inner_radius,
+            outer_radius=self.outer_radius,
+            ntheta=self.ntheta,
+            nradial=self.nradial,
+            expected_normal=tuple(normal),
+            theta_range=self.theta_range,
+        )
+
+    def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        meshes: list = []
+        if "outer" in self.parts:
+            meshes.append(self._side_mesh(self.outer_radius, inward=False))
+        if "inner" in self.parts:
+            meshes.append(self._side_mesh(self.inner_radius, inward=True))
+        if "top" in self.parts:
+            meshes.append(self._cap_mesh("top"))
+        if "bottom" in self.parts:
+            meshes.append(self._cap_mesh("bottom"))
+        return _combine_meshes(meshes)
+
+
+class CompositeMeshSurface(MeshSurface3D):
+    """Composite mesh surface that concatenates child mesh surfaces.
+
+    Construct with a sequence of :class:`MeshSurface3D` instances (or use the
+    ``+`` operator on mesh surfaces). The composite's ``mesh()`` calls each
+    child's ``mesh()`` and welds them into a single ``(V, F)`` pair using
+    ``_combine_meshes``.
+    """
+
+    def __init__(self, children: Sequence["MeshSurface3D"]):
+        flat: list["MeshSurface3D"] = []
+        for child in children:
+            if isinstance(child, CompositeMeshSurface):
+                flat.extend(child.children)
+            else:
+                flat.append(child)
+        self.children = tuple(flat)
+
+    def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        return _combine_meshes([child.mesh() for child in self.children])
+
+
 __all__ = [
     "MeshSurface3D",
     "BoxMeshSurface",
     "RectangleMeshSurface",
+    "CircleMeshSurface",
     "CylinderMeshSurface",
     "HollowCylinderMeshSurface",
+    "DiskMeshSurface",
     "SphereMeshSurface",
+    "CompositeMeshSurface",
 ]
