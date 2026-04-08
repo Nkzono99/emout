@@ -315,6 +315,56 @@ def _view_dir_from_axes(ax) -> np.ndarray:
     el = np.deg2rad(getattr(ax, "elev", 30.0) or 30.0)
     return np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)], dtype=np.float64)
 
+def _is_mesh_open(V: np.ndarray, F: np.ndarray) -> bool:
+    """Return True if the mesh has a real (non-degenerate) boundary edge.
+
+    A closed triangle mesh has every non-degenerate edge shared by exactly
+    two triangles. Any edge with a count of 1 is a boundary edge — the
+    mesh is open at that point. Used by the contour back-face culling
+    logic to decide whether the mesh has a "back side" worth culling:
+    closed meshes do (and culling correctly hides occluded contour
+    curves), open meshes don't (so culling would only drop legitimately
+    visible contours).
+
+    Degenerate edges — both endpoints at the same 3D position — are
+    excluded. This is critical for lat-lng sphere meshes built by
+    :class:`SphereMeshSurface`: the pole rows collapse all vertices in a
+    row to the same 3D point, and the connecting "edges" between those
+    distinct-but-coincident pole vertex indices would otherwise look
+    like a giant boundary loop and falsely classify the sphere as open.
+
+    Cost is ``O(nF)`` plus one ``np.unique``.
+    """
+    if F.size == 0:
+        return False
+    edges = np.concatenate(
+        [F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]],
+        axis=0,
+    )
+    edges_sorted = np.sort(edges, axis=1)
+
+    # Drop degenerate edges (both endpoints map to the same 3D point).
+    # Use a small absolute tolerance because trig identities like
+    # cos(-π/2) are not exactly zero in fp64 — a sphere's pole row
+    # vertices differ by ~1e-17 epsilon noise but represent the same
+    # physical point. The threshold (1e-9) is far above fp64 noise but
+    # well below any physically meaningful distance in the units this
+    # library is used with.
+    p0 = V[edges_sorted[:, 0]]
+    p1 = V[edges_sorted[:, 1]]
+    nondegenerate = np.any(np.abs(p0 - p1) > 1e-9, axis=1)
+    edges_sorted = edges_sorted[nondegenerate]
+    if edges_sorted.size == 0:
+        return False
+
+    # Pack each edge into a single int64 key for fast unique counting.
+    a = edges_sorted[:, 0].astype(np.int64, copy=False)
+    b = edges_sorted[:, 1].astype(np.int64, copy=False)
+    keys = (a << np.int64(32)) | b
+    _, counts = np.unique(keys, return_counts=True)
+    return bool(np.any(counts == 1))
+
+
 def _label_position_for_level(segs_array: np.ndarray) -> Optional[np.ndarray]:
     """Pick a representative ``(x, y, z)`` for placing a contour label.
 
@@ -455,7 +505,7 @@ def plot_surfaces(
     contour_lw: float = 0.8,
     contour_on_top: bool = True,
     contour_offset: float = 0.0,
-    contour_side: str = "front",
+    contour_side: str = "auto",
     clabel: bool = False,
     clabel_fmt: Union[str, "Callable[[float], str]"] = "{:g}",
     clabel_kwargs: Optional["dict"] = None,
@@ -502,6 +552,19 @@ def plot_surfaces(
     to :meth:`matplotlib.axes.Axes.text`); useful keys include
     ``fontsize``, ``color``, ``ha``/``va``, ``bbox``. Defaults are
     ``color=contour_color``, ``fontsize=8``, centered alignment.
+
+    ``contour_side`` controls back-face culling for contour
+    extraction:
+
+    * ``"auto"`` (default) — detect whether the mesh is closed
+      (every edge shared by two triangles) or open (any boundary
+      edges). Closed meshes get the front-facing cull so back-side
+      contours don't bleed through. Open meshes (e.g. a half cylinder
+      built with ``theta_range``, a flat ``RectangleMeshSurface``,
+      or a ``CompositeMeshSurface`` of mostly-open boundaries) keep
+      every triangle because they have no back side to hide.
+    * ``"front"`` / ``"back"`` — explicit normal-based cull.
+    * ``"both"`` — keep every triangle, no culling.
     """
 
     items = _as_list(surfaces)
@@ -630,14 +693,35 @@ def plot_surfaces(
                 vval = field.sample(V[:, 0], V[:, 1], V[:, 2])
             fn = _face_normals_from_mesh(V, F)
 
-            # Optional back-face culling for contours (avoid seeing lines from the back side).
-            if contour_side not in ("both", "front", "back"):
-                raise ValueError('contour_side must be "both", "front", or "back"')
+            # Back-face culling for contours.
+            #
+            # contour_side options:
+            #   "auto"   — detect open vs closed mesh:
+            #              * closed mesh (every edge shared by 2 triangles)
+            #                → cull back-facing triangles like "front"
+            #              * open mesh (any boundary edge)
+            #                → keep everything; the mesh has no back side
+            #                  so any "front-facing" subset based on a
+            #                  single per-triangle normal is guaranteed
+            #                  to drop legitimately visible contours
+            #                  (e.g. a half-cylinder via theta_range
+            #                  whose outward normals all point AWAY from
+            #                  the camera).
+            #   "front"  — keep triangles whose normal faces the camera
+            #   "back"   — keep triangles whose normal faces away
+            #   "both"   — keep everything
+            if contour_side not in ("both", "front", "back", "auto"):
+                raise ValueError(
+                    'contour_side must be "auto", "both", "front", or "back"'
+                )
             F_contour = F
-            if contour_side != "both" and len(F_contour) > 0:
+            effective_side = contour_side
+            if effective_side == "auto":
+                effective_side = "both" if _is_mesh_open(V, F_contour) else "front"
+            if effective_side != "both" and len(F_contour) > 0:
                 vdir = _view_dir_from_axes(ax)
                 d = (fn[:, 0] * vdir[0] + fn[:, 1] * vdir[1] + fn[:, 2] * vdir[2])
-                keep = d > 0.0 if contour_side == "front" else d < 0.0
+                keep = d > 0.0 if effective_side == "front" else d < 0.0
                 # If orientation is flipped, keep may become almost empty; auto-flip in that case.
                 if keep.mean() < 0.05:
                     keep = ~keep

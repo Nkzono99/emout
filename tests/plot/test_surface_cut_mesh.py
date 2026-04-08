@@ -478,6 +478,114 @@ def test_plot_surfaces_clabel_places_one_text_per_level():
     plt.close(fig)
 
 
+def test_is_mesh_open_distinguishes_closed_vs_open():
+    """The boundary-edge detector correctly classifies closed vs open meshes."""
+    from emout.plot.surface_cut.viz import _is_mesh_open
+
+    # A full lat-lng sphere has degenerate (zero-length) "boundary edges"
+    # at the pole rows because every vertex in those rows maps to the
+    # same 3D point. The detector must filter those out and report
+    # closed.
+    closed_sphere = SphereMeshSurface(center=(0, 0, 0), radius=1.0, ntheta=16, nphi=9)
+    V_closed, F_closed = closed_sphere.mesh()
+    assert _is_mesh_open(V_closed, F_closed) is False
+
+    # A half-cylinder cut by theta_range has real boundary edges along
+    # the cut.
+    half_cyl = CylinderMeshSurface(
+        center=(0, 0, 0), axis="z", radius=1.0, length=2.0,
+        ntheta=16, naxial=4, theta_range=(0.0, np.pi),
+    )
+    V_half, F_half = half_cyl.mesh()
+    assert _is_mesh_open(V_half, F_half) is True
+
+    # A single rectangle face has 3 boundary edges.
+    rect = RectangleMeshSurface(center=(0, 0, 0), axis="z", width=2.0)
+    V_rect, F_rect = rect.mesh()
+    assert _is_mesh_open(V_rect, F_rect) is True
+
+
+def test_plot_surfaces_contour_auto_keeps_open_mesh_contours():
+    """``contour_side='auto'`` skips back-face culling on open meshes.
+
+    Reproduces the half-cylinder regression: a CylinderMeshSurface with
+    ``theta_range=(0, π)`` is open, and the previous default
+    (``contour_side='front'``) would drop 80–90% of its triangles
+    depending on the camera angle, so the contour curve appeared cut
+    off. With the auto default the open mesh skips culling and the full
+    contour line survives.
+    """
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection
+
+    # Synthetic field f(x, y, z) = z + 0.2*x broadcast to (nz, ny, nx).
+    # Centred half-cylinder strictly inside the cell-centred grid so
+    # field.sample never returns NaN for its vertices.
+    grid = UniformCellCenteredGrid(nx=20, ny=20, nz=20, dx=1.0, dy=1.0, dz=1.0)
+    z = grid.z_centers()[:, None, None]
+    x = grid.x_centers()[None, None, :]
+    y_zero = np.zeros((1, grid.ny, 1), dtype=np.float64)
+    data = (z + 0.2 * x + y_zero).astype(np.float64)
+    field = Field3D(grid, data)
+
+    half_cyl = CylinderMeshSurface(
+        center=(10.0, 10.0, 10.0),
+        axis="z",
+        radius=2.0,
+        length=6.0,            # spans z = 7 .. 13, well inside the grid
+        ntheta=64,
+        naxial=8,
+        theta_range=(0.0, np.pi),
+        parts=("side",),
+    )
+
+    # Field on cylinder side ≈ z + 0.2*x ≈ 8.6 .. 15.4 over its extent.
+    # Pick levels that definitely cut the cylinder.
+    levels = [10.0, 11.0, 12.0]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    # azim chosen so a "front"-cull would drop most of the half-cylinder
+    ax.view_init(elev=18, azim=-110)
+    plot_surfaces(
+        ax,
+        field=field,
+        surfaces=[RenderItem(half_cyl, style="field")],
+        bounds=Bounds3D((0.0, 20.0), (0.0, 20.0), (0.0, 20.0)),
+        contour_levels=levels,
+    )
+
+    lines = [c for c in ax.collections if isinstance(c, Line3DCollection)]
+    assert len(lines) >= 1
+    # auto-cull on an open mesh should leave many segments — the entire
+    # half-cylinder ring at each level. With the previous front-cull
+    # default this would be dropped to a tiny sliver.
+    # Note: Line3DCollection.get_segments() returns 2D projected segments
+    # which are empty before draw; the 3D segments live in _segments3d.
+    n_segs_auto = sum(len(lc._segments3d) for lc in lines)
+    assert n_segs_auto > 0
+
+    # Now run again with contour_side="front" forced and confirm we
+    # get strictly fewer segments — proving the auto path is what
+    # rescues them.
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111, projection="3d")
+    ax2.view_init(elev=18, azim=-110)
+    plot_surfaces(
+        ax2,
+        field=field,
+        surfaces=[RenderItem(half_cyl, style="field")],
+        bounds=Bounds3D((0.0, 20.0), (0.0, 20.0), (0.0, 20.0)),
+        contour_levels=levels,
+        contour_side="front",
+    )
+    lines_front = [c for c in ax2.collections if isinstance(c, Line3DCollection)]
+    n_segs_front = sum(len(lc._segments3d) for lc in lines_front)
+    assert n_segs_auto > n_segs_front
+
+    plt.close(fig)
+    plt.close(fig2)
+
+
 def test_plot_surfaces_clabel_off_by_default():
     """No labels when clabel is not enabled."""
     field = _make_field()
