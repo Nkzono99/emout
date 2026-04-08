@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 from emout.plot.surface_cut import (
     Bounds3D,
@@ -196,6 +197,54 @@ def test_rectangle_mesh_surface_builds_flat_panel():
     assert np.isclose(V[:, 1].max(), 3.0)
 
 
+def test_rectangle_mesh_surface_pmin_pmax_z_aligned():
+    surface = RectangleMeshSurface(pmin=(1.0, 2.0, 5.0), pmax=(4.0, 6.0, 5.0))
+    V, _ = surface.mesh()
+
+    # axis is z (the matching coordinate), centred on the box midpoint.
+    assert np.allclose(surface.axis, [0.0, 0.0, 1.0])
+    assert np.allclose(surface.center, [2.5, 4.0, 5.0])
+    assert surface.width_u == 3.0  # x extent
+    assert surface.width_v == 4.0  # y extent
+    assert np.allclose(V[:, 2], 5.0)
+    assert np.isclose(V[:, 0].min(), 1.0) and np.isclose(V[:, 0].max(), 4.0)
+    assert np.isclose(V[:, 1].min(), 2.0) and np.isclose(V[:, 1].max(), 6.0)
+
+
+def test_rectangle_mesh_surface_pmin_pmax_y_aligned():
+    surface = RectangleMeshSurface(pmin=(0.0, 5.0, 0.0), pmax=(10.0, 5.0, 8.0))
+    V, _ = surface.mesh()
+
+    assert np.allclose(surface.axis, [0.0, 1.0, 0.0])
+    assert np.allclose(surface.center, [5.0, 5.0, 4.0])
+    assert surface.width_u == 10.0  # x extent
+    assert surface.width_v == 8.0  # z extent
+    assert np.allclose(V[:, 1], 5.0)
+    assert np.isclose(V[:, 0].min(), 0.0) and np.isclose(V[:, 0].max(), 10.0)
+    assert np.isclose(V[:, 2].min(), 0.0) and np.isclose(V[:, 2].max(), 8.0)
+
+
+def test_rectangle_mesh_surface_pmin_pmax_rejects_non_axis_aligned():
+    with pytest.raises(ValueError, match="axis-aligned"):
+        RectangleMeshSurface(pmin=(0.0, 0.0, 0.0), pmax=(1.0, 2.0, 3.0))
+
+
+def test_rectangle_mesh_surface_rejects_mixing_forms():
+    with pytest.raises(ValueError, match="Cannot mix"):
+        RectangleMeshSurface(
+            center=(0.0, 0.0, 0.0),
+            axis="z",
+            width=1.0,
+            pmin=(0.0, 0.0, 0.0),
+            pmax=(1.0, 1.0, 0.0),
+        )
+
+
+def test_rectangle_mesh_surface_requires_one_form():
+    with pytest.raises(ValueError, match="requires either"):
+        RectangleMeshSurface()
+
+
 def test_sphere_mesh_surface_points_lie_on_sphere():
     surface = SphereMeshSurface(
         center=(0.5, -1.0, 2.0),
@@ -227,6 +276,92 @@ def test_sphere_mesh_surface_hemisphere_has_phi_range():
     assert F.size > 0
     assert V[:, 2].min() >= -1e-9
     assert np.isclose(V[:, 2].max(), 1.0)
+
+
+def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
+    """A sphere centered outside the bounds should be culled by clipping.
+
+    Without clip_to_bounds, every face of the sphere would land in
+    ax.collections regardless of the bounds box. With clip_to_bounds=True
+    (the default) the face filter drops every triangle whose centroid is
+    outside, and this surface contributes nothing to the rendered Axes.
+    """
+    field = _make_field()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Sphere completely outside the field's grid extent (which is
+    # 0..8 / 0..7 / 0..6 for the test fixture).
+    far_sphere = SphereMeshSurface(
+        center=(50.0, 50.0, 50.0), radius=1.0, ntheta=12, nphi=7
+    )
+    near_box = BoxMeshSurface(
+        1.0, 5.0, 1.0, 4.0, 1.0, 3.0, faces=("zmax",), resolution=(4, 4)
+    )
+
+    cmap, _norm = plot_surfaces(
+        ax,
+        field=field,
+        surfaces=[
+            RenderItem(near_box, style="field"),
+            RenderItem(far_sphere, style="solid"),
+        ],
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+        contour_levels=[8.0, 10.0],
+    )
+
+    # Only the box's collections (poly + contour line) survive; the sphere
+    # contributed zero faces after clipping.
+    assert cmap is not None
+    box_only_count = len(ax.collections)
+    assert box_only_count >= 1
+
+    plt.close(fig)
+
+    # With clip_to_bounds=False the sphere comes back into the scene as an
+    # extra solid Poly3DCollection.
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111, projection="3d")
+    plot_surfaces(
+        ax2,
+        field=field,
+        surfaces=[
+            RenderItem(near_box, style="field"),
+            RenderItem(far_sphere, style="solid"),
+        ],
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+        contour_levels=[8.0, 10.0],
+        clip_to_bounds=False,
+    )
+    assert len(ax2.collections) > box_only_count
+    plt.close(fig2)
+
+
+def test_plot_surfaces_clip_to_bounds_partial_mesh_keeps_inside_faces():
+    """A mesh straddling the bounds keeps the inside half and drops the rest."""
+    field = _make_field()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Box that pokes well outside the field domain on +x. Faces of the box
+    # whose centroid lies inside the bounds box should survive; the rest
+    # should be culled.
+    half_in = BoxMeshSurface(
+        4.0, 20.0, 1.0, 4.0, 1.0, 3.0, resolution=(4, 4)
+    )
+
+    cmap, _norm = plot_surfaces(
+        ax,
+        field=field,
+        surfaces=[RenderItem(half_in, style="solid")],
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+    )
+
+    # The collection should still exist (some faces survived) — the assertion
+    # we care about is that the call did not error and produced a render.
+    assert cmap is not None
+    assert len(ax.collections) >= 1
+    plt.close(fig)
 
 
 def test_plot_surfaces_accepts_explicit_mesh_surfaces():

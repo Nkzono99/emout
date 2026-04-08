@@ -184,6 +184,29 @@ def _face_normals_from_mesh(V: np.ndarray, F: np.ndarray) -> np.ndarray:
     return fn
 
 
+def _clip_faces_to_bounds(V: np.ndarray, F: np.ndarray, bounds: Bounds3D) -> np.ndarray:
+    """Return the subset of ``F`` whose centroids fall inside ``bounds``.
+
+    This is a fast centroid-based clip rather than a true polygon-versus-AABB
+    intersection: triangles straddling the bounding box are kept or dropped
+    wholesale based on which side their centroid lies on. The result has
+    slightly jagged edges right at the bounds but is visually acceptable for
+    overlay plots and avoids any new vertex generation. Vertices are not
+    compacted — unused entries simply stop being referenced.
+    """
+    if F.size == 0:
+        return F
+    tris = V[F]                         # (nF, 3, 3)
+    centroids = tris.mean(axis=1)       # (nF, 3)
+    cx, cy, cz = centroids[:, 0], centroids[:, 1], centroids[:, 2]
+    keep = (
+        (cx >= bounds.x[0]) & (cx <= bounds.x[1])
+        & (cy >= bounds.y[0]) & (cy <= bounds.y[1])
+        & (cz >= bounds.z[0]) & (cz <= bounds.z[1])
+    )
+    return F[keep]
+
+
 def _face_values_from_vertex_values(F: np.ndarray, vval: np.ndarray) -> np.ndarray:
     """頂点値から各面の代表値を計算する。
     
@@ -367,9 +390,18 @@ def plot_surfaces(
     contour_lw: float = 0.8,
     contour_on_top: bool = True,
     contour_offset: float = 0.0,
-    contour_side: str = "front"
+    contour_side: str = "front",
+    clip_to_bounds: bool = True,
 ):
-    """Render explicit triangle mesh surfaces with optional colormap + contours."""
+    """Render explicit triangle mesh surfaces with optional colormap + contours.
+
+    When ``clip_to_bounds`` is ``True`` (the default) every mesh is filtered
+    against the resolved ``bounds`` (either the user-supplied box or the
+    field/mesh-derived one) by dropping triangles whose centroid lies
+    outside. Pass ``clip_to_bounds=False`` to disable the clip and render
+    every mesh in full — useful when you intentionally want surfaces
+    extending beyond the plot extent.
+    """
 
     items = _as_list(surfaces)
 
@@ -419,6 +451,11 @@ def plot_surfaces(
         V, F = _surface_mesh(surface)
         if V.size == 0 or F.size == 0:
             continue
+
+        if clip_to_bounds:
+            F = _clip_faces_to_bounds(V, F, bounds)
+            if F.size == 0:
+                continue
 
         item_alpha = alpha if srf.alpha is None else float(srf.alpha)
 

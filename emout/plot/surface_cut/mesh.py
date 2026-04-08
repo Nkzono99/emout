@@ -818,27 +818,63 @@ class HollowCylinderMeshSurface(MeshSurface3D):
 class RectangleMeshSurface(MeshSurface3D):
     """Single flat rectangular panel in 3D.
 
-    The rectangle lies in the plane orthogonal to ``axis`` that passes
-    through ``center``. Its in-plane frame ``(e1, e2)`` is derived from
-    ``axis`` in the same way as cylinder surfaces, and the rectangle
-    extends symmetrically about ``center`` with half-widths
-    ``(width_u/2, width_v/2)``.
+    Two construction forms are accepted:
 
-    Unlike ``BoxMeshSurface`` (which only produces axis-aligned faces), this
-    class lets you place a single arbitrarily-oriented rectangular panel
-    anywhere in space — convenient for highlighting a probe window, a
-    transparent cutting plane, or any planar mark.
+    1. **Symmetric / oriented form** — give ``center``, ``axis``, ``width``::
+
+           RectangleMeshSurface(
+               center=(2.5, 4.0, 5.0),
+               axis="z",
+               width=(3.0, 4.0),
+           )
+
+       The rectangle lies in the plane orthogonal to ``axis`` passing
+       through ``center``, with half-widths ``(width_u/2, width_v/2)`` in
+       the local ``(e1, e2)`` frame derived from ``axis``. This works for
+       any axis direction (including non-axis-aligned 3-vectors).
+
+    2. **Corner form** — give two opposite corners ``pmin`` and ``pmax``::
+
+           RectangleMeshSurface(pmin=(1, 2, 5), pmax=(4, 6, 5))
+
+       Convenient for axis-aligned rectangles when you already know the
+       extents but do not want to compute the centre by hand. ``pmin`` and
+       ``pmax`` must share exactly one coordinate; that coordinate picks
+       the perpendicular axis (``"x"``, ``"y"``, or ``"z"``) and the
+       remaining two coordinates define the rectangle's extent.
+
+    Unlike :class:`BoxMeshSurface` (which only produces axis-aligned
+    faces), this class lets you place a single arbitrarily-oriented
+    rectangular panel anywhere in space — convenient for highlighting a
+    probe window, a transparent cutting plane, or any planar mark.
     """
 
     def __init__(
         self,
-        center: Union[Tuple[float, float], Tuple[float, float, float], np.ndarray],
-        axis: AxisSpec,
-        width: Union[float, Tuple[float, float]],
+        center: Union[Tuple[float, float], Tuple[float, float, float], np.ndarray, None] = None,
+        axis: Optional[AxisSpec] = None,
+        width: Union[float, Tuple[float, float], None] = None,
         *,
+        pmin: Union[Tuple[float, float, float], np.ndarray, None] = None,
+        pmax: Union[Tuple[float, float, float], np.ndarray, None] = None,
         resolution: Union[int, Tuple[int, int]] = (2, 2),
         flip_normal: bool = False,
     ):
+        if pmin is not None or pmax is not None:
+            if pmin is None or pmax is None:
+                raise ValueError("pmin and pmax must be given together")
+            if center is not None or axis is not None or width is not None:
+                raise ValueError(
+                    "Cannot mix pmin/pmax with center/axis/width — pick one form"
+                )
+            center, axis, width = self._corners_to_center_axis_width(pmin, pmax)
+
+        if center is None or axis is None or width is None:
+            raise ValueError(
+                "RectangleMeshSurface requires either (center, axis, width) "
+                "or (pmin, pmax)"
+            )
+
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
 
@@ -862,6 +898,52 @@ class RectangleMeshSurface(MeshSurface3D):
 
         self.resolution = _normalize_resolution(resolution)
         self.flip_normal = bool(flip_normal)
+
+    @staticmethod
+    def _corners_to_center_axis_width(pmin, pmax):
+        """Map two opposite corners to ``(center, axis_letter, (wu, wv))``.
+
+        ``pmin`` and ``pmax`` must share exactly one coordinate. The matching
+        coordinate becomes the perpendicular ``axis``; the two non-matching
+        coordinates define the rectangle's extent. The resulting ``(wu, wv)``
+        ordering matches the local ``(e1, e2)`` frame produced by
+        :func:`_orthonormal_frame` for the chosen axis.
+        """
+        pmin_arr = _as_3vec(pmin, name="pmin")
+        pmax_arr = _as_3vec(pmax, name="pmax")
+        delta = pmax_arr - pmin_arr
+        abs_delta = np.abs(delta)
+
+        tol = 1e-12
+        flat_axes = np.where(abs_delta <= tol)[0]
+        if flat_axes.size == 0:
+            raise ValueError(
+                "pmin and pmax must share one coordinate to define an "
+                "axis-aligned rectangle (no zero delta in "
+                f"{tuple(delta.tolist())})"
+            )
+        if flat_axes.size > 1:
+            raise ValueError(
+                "pmin and pmax differ in fewer than 2 coordinates — "
+                f"degenerate rectangle (delta={tuple(delta.tolist())})"
+            )
+
+        flat_idx = int(flat_axes[0])
+        axis_letter = "xyz"[flat_idx]
+        center_arr = 0.5 * (pmin_arr + pmax_arr)
+        # The non-flat axes, in canonical order, line up with (e1, e2):
+        #   axis="x" → e1=y, e2=z
+        #   axis="y" → e1=x, e2=±z (sign absorbed by abs)
+        #   axis="z" → e1=x, e2=y
+        other_indices = [i for i in (0, 1, 2) if i != flat_idx]
+        wu = float(abs_delta[other_indices[0]])
+        wv = float(abs_delta[other_indices[1]])
+        if wu <= 0.0 or wv <= 0.0:
+            raise ValueError(
+                f"pmin and pmax must define a non-degenerate rectangle "
+                f"(got widths wu={wu}, wv={wv})"
+            )
+        return center_arr, axis_letter, (wu, wv)
 
     def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
         nu, nv = self.resolution
