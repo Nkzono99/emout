@@ -842,15 +842,23 @@ class Data3d(Data):
         ----------
         surfaces
             :class:`emout.plot.surface_cut.RenderItem` か
-            :class:`emout.plot.surface_cut.MeshSurface3D` 、またはそれらの
-            シーケンス。メッシュ単体が渡された場合は ``render()`` 相当の
-            デフォルトスタイルで包みます。
+            :class:`emout.plot.surface_cut.MeshSurface3D` 、または
+            :class:`emout.emout.boundaries.Boundary` /
+            :class:`emout.emout.boundaries.BoundaryCollection`、
+            あるいはそれらのシーケンス。
+            ``MeshSurface3D`` 単体が渡された場合は ``render()`` 相当の
+            デフォルトスタイルで包みます。``Boundary`` /
+            ``BoundaryCollection`` が渡された場合は ``mesh(use_si=use_si)``
+            を呼んでから ``render()`` でラップするので、
+            ``data.phisp[-1].plot_surfaces(data.boundaries)`` のように
+            一行で渡せます。
         ax : matplotlib.axes.Axes, optional
             描画先 Axes です。未指定の場合は新たに 3D 軸を作成します。
         use_si : bool, optional
             `True` (デフォルト) の場合、データと格子間隔を SI 単位に
-            変換してから描画します。単位変換キーが無い場合は自動で
-            `False` 扱いとなります。
+            変換してから描画します。``Boundary`` を渡した場合の境界
+            メッシュ生成にもこの値が伝播します。
+            単位変換キーが無い場合は自動で `False` 扱いとなります。
         vmin, vmax : float, optional
             カラーマップの範囲です。
         **kwargs : dict
@@ -865,6 +873,7 @@ class Data3d(Data):
         """
         import matplotlib.pyplot as plt
 
+        from emout.emout.boundaries import Boundary, BoundaryCollection
         from emout.plot.surface_cut import (
             Field3D,
             MeshSurface3D,
@@ -893,9 +902,14 @@ class Data3d(Data):
                 return item
             if isinstance(item, MeshSurface3D):
                 return item.render()
+            if isinstance(item, (Boundary, BoundaryCollection)):
+                return item.render(use_si=effective_si)
             return item
 
-        if isinstance(surfaces, (RenderItem, MeshSurface3D)):
+        # A bare BoundaryCollection is iterable, but we want to treat it as a
+        # single composite — match the (RenderItem, MeshSurface3D) branch.
+        single_types = (RenderItem, MeshSurface3D, Boundary, BoundaryCollection)
+        if isinstance(surfaces, single_types):
             items = _wrap(surfaces)
         else:
             items = [_wrap(s) for s in surfaces]

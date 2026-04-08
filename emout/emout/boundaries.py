@@ -177,6 +177,49 @@ class Boundary:
         params.update(overrides)
         return self._build_mesh(params)
 
+    # -- composition ---------------------------------------------------------
+
+    def __add__(self, other):
+        """Combine boundaries (or a boundary and another collection/mesh).
+
+        ``boundary1 + boundary2`` and ``boundary + collection`` both return a
+        :class:`BoundaryCollection` whose ``mesh()`` builds the composite,
+        so the user can pick ``use_si``/``per`` at render time::
+
+            mesh = (data.boundaries[0] + data.boundaries[2]).mesh(use_si=True)
+
+        ``boundary + mesh_surface`` falls back to building this boundary's
+        mesh in grid units and concatenating with the existing
+        :class:`CompositeMeshSurface` ``+`` operator.
+        """
+        if isinstance(other, Boundary):
+            unit = self.unit if self.unit is not None else other.unit
+            return BoundaryCollection.from_boundaries([self, other], unit=unit)
+        if isinstance(other, BoundaryCollection):
+            unit = self.unit if self.unit is not None else other.unit
+            return BoundaryCollection.from_boundaries([self, *other], unit=unit)
+        if isinstance(other, MeshSurface3D):
+            return self.mesh() + other
+        return NotImplemented
+
+    def __radd__(self, other):
+        if other == 0:  # enables sum([b1, b2, ...])
+            return BoundaryCollection.from_boundaries([self], unit=self.unit)
+        if isinstance(other, MeshSurface3D):
+            return other + self.mesh()
+        return NotImplemented
+
+    def render(self, *, use_si: bool = False, **style_kwargs):
+        """Build the mesh and wrap it in a ``RenderItem`` for ``plot_surfaces``.
+
+        Convenience that mirrors :meth:`MeshSurface3D.render`. ``use_si`` is
+        forwarded to :meth:`mesh`; remaining keyword arguments are passed
+        through to ``RenderItem`` (``style``, ``solid_color``, ``alpha``, …).
+        For finer mesh-construction control, chain explicitly:
+        ``boundary.mesh(use_si=True, ntheta=96).render(style="solid")``.
+        """
+        return self.mesh(use_si=use_si).render(**style_kwargs)
+
 
 # ---------------------------------------------------------------------------
 # Concrete boundary classes
@@ -681,6 +724,45 @@ class BoundaryCollection:
         self.skipped: List[Tuple[int, str, str]] = []
         self._boundaries = self._build()
 
+    @classmethod
+    def from_boundaries(
+        cls,
+        boundaries: "Iterable[Boundary]",
+        unit=None,
+    ) -> "BoundaryCollection":
+        """Build a collection from an explicit iterable of boundaries.
+
+        Skips the namelist parsing path used by ``__init__``. Useful when
+        composing boundaries with ``+`` (``boundary1 + boundary2``) or
+        constructing ad-hoc subsets for plotting and tests.
+
+        Parameters
+        ----------
+        boundaries
+            Iterable of :class:`Boundary` instances. ``BoundaryCollection``
+            children are flattened.
+        unit
+            Optional :class:`emout.utils.Units` for SI conversion. Falls back
+            to the first non-``None`` ``unit`` found on the input boundaries.
+        """
+        flat: List[Boundary] = []
+        for item in boundaries:
+            if isinstance(item, BoundaryCollection):
+                flat.extend(item)
+            else:
+                flat.append(item)
+        if unit is None:
+            for b in flat:
+                if getattr(b, "unit", None) is not None:
+                    unit = b.unit
+                    break
+        instance = cls.__new__(cls)
+        instance.inp = None
+        instance.unit = unit
+        instance.skipped = []
+        instance._boundaries = flat
+        return instance
+
     # -- construction --------------------------------------------------------
 
     def _build(self) -> List[Boundary]:
@@ -746,6 +828,41 @@ class BoundaryCollection:
     def __repr__(self) -> str:
         types = ", ".join(b.btype for b in self._boundaries)
         return f"<BoundaryCollection [{types}]>"
+
+    # -- composition ---------------------------------------------------------
+
+    def __add__(self, other):
+        if isinstance(other, BoundaryCollection):
+            unit = self.unit if self.unit is not None else other.unit
+            return type(self).from_boundaries([*self, *other], unit=unit)
+        if isinstance(other, Boundary):
+            unit = self.unit if self.unit is not None else other.unit
+            return type(self).from_boundaries([*self, other], unit=unit)
+        if isinstance(other, MeshSurface3D):
+            return self.mesh() + other
+        return NotImplemented
+
+    def __radd__(self, other):
+        if other == 0:  # sum([...]) compatibility
+            return self
+        if isinstance(other, MeshSurface3D):
+            return other + self.mesh()
+        return NotImplemented
+
+    def render(
+        self,
+        *,
+        use_si: bool = False,
+        per: Optional[Mapping[int, Mapping[str, Any]]] = None,
+        **style_kwargs,
+    ):
+        """Build the composite mesh and wrap it in a ``RenderItem``.
+
+        ``use_si`` and ``per`` are forwarded to :meth:`mesh`; remaining
+        keyword arguments are forwarded to ``RenderItem`` (``style``,
+        ``solid_color``, ``alpha``, …).
+        """
+        return self.mesh(use_si=use_si, per=per).render(**style_kwargs)
 
     # -- composite mesh ------------------------------------------------------
 

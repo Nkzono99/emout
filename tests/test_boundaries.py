@@ -305,6 +305,103 @@ def test_mesh_render_returns_render_item():
 
 
 # ---------------------------------------------------------------------------
+# Boundary __add__ composition
+# ---------------------------------------------------------------------------
+
+
+def test_boundary_add_returns_collection(boundaries: BoundaryCollection):
+    combined = boundaries[0] + boundaries[1]
+    assert isinstance(combined, BoundaryCollection)
+    assert len(combined) == 2
+    assert combined[0] is boundaries[0]
+    assert combined[1] is boundaries[1]
+    # Unit propagates from the first boundary that has one.
+    assert combined.unit is boundaries[0].unit
+
+
+def test_boundary_add_three_flattens(boundaries: BoundaryCollection):
+    combined = boundaries[0] + boundaries[1] + boundaries[2]
+    assert isinstance(combined, BoundaryCollection)
+    assert len(combined) == 3
+
+
+def test_boundary_add_collection(boundaries: BoundaryCollection):
+    pair = boundaries[0] + boundaries[1]
+    triple = boundaries[2] + pair
+    assert isinstance(triple, BoundaryCollection)
+    assert len(triple) == 3
+    # Order: left side first, then the right collection's children.
+    assert triple[0] is boundaries[2]
+    assert triple[1] is boundaries[0]
+    assert triple[2] is boundaries[1]
+
+
+def test_boundary_add_collection_then_mesh_use_si(boundaries: BoundaryCollection):
+    composite_mesh = (boundaries[0] + boundaries[1]).mesh(use_si=True)
+    # The Sphere child should have its center scaled to SI metres.
+    sphere_child = composite_mesh.children[0]
+    assert isinstance(sphere_child, SphereMeshSurface)
+    # dx = 0.1 ⇒ grid→SI is divide-by-10. boundaries[0] is sphere at (10, 20, 30).
+    assert np.allclose(sphere_child.center, [1.0, 2.0, 3.0])
+
+
+def test_boundary_sum_via_python_sum(boundaries: BoundaryCollection):
+    # sum() uses __radd__ with start=0.
+    combined = sum([boundaries[0], boundaries[3], boundaries[6]])
+    assert isinstance(combined, BoundaryCollection)
+    assert len(combined) == 3
+    assert combined[0] is boundaries[0]
+    assert combined[1] is boundaries[3]
+    assert combined[2] is boundaries[6]
+
+
+def test_boundary_add_meshsurface_yields_composite(boundaries: BoundaryCollection):
+    extra = SphereMeshSurface(center=(0.0, 0.0, 0.0), radius=1.0, ntheta=12, nphi=7)
+    composite = boundaries[0] + extra
+    assert isinstance(composite, CompositeMeshSurface)
+    # First child is whatever boundaries[0].mesh() built (a SphereMeshSurface).
+    assert isinstance(composite.children[0], SphereMeshSurface)
+    assert composite.children[1] is extra
+
+
+def test_collection_from_boundaries_preserves_order_and_unit(boundaries: BoundaryCollection, unit: Units):
+    explicit = type(boundaries).from_boundaries(
+        [boundaries[2], boundaries[0]], unit=unit
+    )
+    assert isinstance(explicit, BoundaryCollection)
+    assert len(explicit) == 2
+    assert explicit[0] is boundaries[2]
+    assert explicit[1] is boundaries[0]
+    assert explicit.unit is unit
+    # The composite mesh works without an `inp` reference.
+    composite_mesh = explicit.mesh(use_si=True)
+    assert isinstance(composite_mesh, CompositeMeshSurface)
+
+
+def test_boundary_render_returns_render_item(boundaries: BoundaryCollection):
+    from emout.plot.surface_cut import RenderItem
+
+    item = boundaries[0].render(use_si=True, style="solid", solid_color="0.4", alpha=0.6)
+    assert isinstance(item, RenderItem)
+    assert isinstance(item.surface, SphereMeshSurface)
+    assert item.style == "solid"
+    assert item.solid_color == "0.4"
+    assert item.alpha == 0.6
+    # use_si propagated through.
+    assert np.allclose(item.surface.center, [1.0, 2.0, 3.0])
+
+
+def test_collection_render_returns_render_item(boundaries: BoundaryCollection):
+    from emout.plot.surface_cut import RenderItem
+
+    item = (boundaries[0] + boundaries[1]).render(use_si=True, style="solid", alpha=0.5)
+    assert isinstance(item, RenderItem)
+    assert isinstance(item.surface, CompositeMeshSurface)
+    assert item.style == "solid"
+    assert item.alpha == 0.5
+
+
+# ---------------------------------------------------------------------------
 # plane-with-circle* and legacy *-hole / flat-surface boundaries
 # ---------------------------------------------------------------------------
 

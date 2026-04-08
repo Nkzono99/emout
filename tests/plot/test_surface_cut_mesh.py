@@ -280,6 +280,73 @@ def test_plot_surfaces_accepts_explicit_mesh_surfaces():
     plt.close(fig)
 
 
+def test_data3d_plot_surfaces_accepts_boundary_collection(tmp_path):
+    """Verify Data3d.plot_surfaces auto-wraps Boundary / BoundaryCollection.
+
+    This is the one-line API entrypoint:
+        data.phisp[-1].plot_surfaces(data.boundaries)
+    or
+        data.phisp[-1].plot_surfaces(data.boundaries[0] + data.boundaries[1])
+    """
+    from emout.emout.boundaries import BoundaryCollection
+    from emout.emout.data.data import Data3d
+    from emout.utils import InpFile, Units
+    from emout.utils.units import UnitTranslator
+
+    # Build an inp with two boundaries.
+    inp_path = tmp_path / "plasma.inp"
+    inp_path.write_text(
+        "!!key dx=[0.1],to_c=[10000.0]\n"
+        "&ptcond\n"
+        "    boundary_type = 'complex'\n"
+        "    boundary_types(1) = 'sphere'\n"
+        "    boundary_types(2) = 'sphere'\n"
+        "    sphere_origin(:, 1) = 2.0, 2.0, 2.0\n"
+        "    sphere_radius(1) = 0.5\n"
+        "    sphere_origin(:, 2) = 5.0, 5.0, 3.0\n"
+        "    sphere_radius(2) = 0.7\n"
+        "/\n"
+    )
+    inp = InpFile(inp_path)
+    unit = Units(dx=0.1, to_c=10000.0)
+    boundaries = BoundaryCollection(inp, unit)
+
+    # Build a Data3d fixture covering the simulation domain.
+    nx, ny, nz = 8, 8, 6
+    data = np.arange(nx * ny * nz, dtype=np.float64).reshape(nz, ny, nx)
+    length_unit = UnitTranslator(0.1, 1.0)  # dx=0.1m
+    val_unit = UnitTranslator(1.0, 1.0)
+    d3 = Data3d(
+        data,
+        filename="dummy.h5",
+        axisunits=[None, length_unit, length_unit, length_unit],
+        valunit=val_unit,
+    )
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # 1) Bare BoundaryCollection (treated as a single composite).
+    cmap, _norm = d3.plot_surfaces(boundaries, ax=ax, use_si=True)
+    assert cmap is not None
+
+    # 2) Boundary + Boundary returns a BoundaryCollection — also auto-wrapped.
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111, projection="3d")
+    cmap2, _norm2 = d3.plot_surfaces(boundaries[0] + boundaries[1], ax=ax2, use_si=True)
+    assert cmap2 is not None
+
+    # 3) A single Boundary.
+    fig3 = plt.figure()
+    ax3 = fig3.add_subplot(111, projection="3d")
+    cmap3, _norm3 = d3.plot_surfaces(boundaries[0], ax=ax3, use_si=True)
+    assert cmap3 is not None
+
+    plt.close(fig)
+    plt.close(fig2)
+    plt.close(fig3)
+
+
 def test_data3d_plot_surfaces_wraps_field_and_mesh():
     from emout.emout.data.data import Data3d
     from emout.utils.units import UnitTranslator
