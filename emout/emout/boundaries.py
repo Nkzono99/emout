@@ -26,7 +26,8 @@ a companion ``mesh()`` that concatenates every boundary into a single
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
+import inspect
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Set, Tuple, Type
 
 import numpy as np
 
@@ -41,6 +42,36 @@ from emout.plot.surface_cut import (
     RectangleMeshSurface,
     SphereMeshSurface,
 )
+
+
+# ---------------------------------------------------------------------------
+# Mesh-class kwarg introspection (for BoundaryCollection.mesh filtering)
+# ---------------------------------------------------------------------------
+
+
+def _accepted_kwargs(mesh_cls: Optional[type]) -> Optional[Set[str]]:
+    """Return the set of keyword argument names accepted by ``mesh_cls.__init__``.
+
+    Returns ``None`` if ``mesh_cls`` is ``None`` or its constructor accepts
+    arbitrary ``**kwargs`` (in which case the caller should treat the
+    boundary as accepting any kwarg). Otherwise returns the explicit set of
+    parameter names, with ``self`` removed.
+    """
+    if mesh_cls is None:
+        return None
+    try:
+        sig = inspect.signature(mesh_cls.__init__)
+    except (TypeError, ValueError):
+        return None
+
+    accepted: Set[str] = set()
+    for name, param in sig.parameters.items():
+        if name == "self":
+            continue
+        if param.kind == inspect.Parameter.VAR_KEYWORD:
+            return None
+        accepted.add(name)
+    return accepted
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +147,10 @@ class Boundary:
 
     Concrete subclasses know which ``&ptcond`` parameters to consult and how
     to construct their :class:`MeshSurface3D` representation. They must
-    implement :meth:`_build_params` and :meth:`_build_mesh`.
+    implement :meth:`_build_params` and :meth:`_build_mesh`, and they should
+    declare :attr:`mesh_class` so :class:`BoundaryCollection.mesh` can filter
+    broadcast keyword arguments to the kwargs the underlying mesh class
+    actually accepts.
 
     Parameters
     ----------
@@ -131,6 +165,13 @@ class Boundary:
         The MPIEMSES type string (``"sphere"``, ``"cylinderz"``, …). Kept so
         classes handling several axis variants can infer the axis letter.
     """
+
+    #: The :class:`MeshSurface3D` subclass that this boundary builds. Used by
+    #: :meth:`BoundaryCollection.mesh` to filter broadcast keyword arguments
+    #: so that, for example, ``data.boundaries.mesh(theta_range=...)`` only
+    #: forwards ``theta_range`` to boundaries whose mesh class actually
+    #: accepts it. Set to ``None`` to opt out of filtering.
+    mesh_class: Optional[Type[MeshSurface3D]] = None
 
     def __init__(self, inp, unit, index: int, btype: str):
         self.inp = inp
@@ -230,6 +271,8 @@ class Boundary:
 class SphereBoundary(Boundary):
     """MPIEMSES ``sphere`` boundary → :class:`SphereMeshSurface`."""
 
+    mesh_class = SphereMeshSurface
+
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         pt = self._ptcond()
         center = _get_vector(pt, "sphere_origin", self.fortran_index)
@@ -251,6 +294,8 @@ class SphereBoundary(Boundary):
 
 class CuboidBoundary(Boundary):
     """MPIEMSES ``cuboid`` boundary → :class:`BoxMeshSurface`."""
+
+    mesh_class = BoxMeshSurface
 
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         pt = self._ptcond()
@@ -279,6 +324,8 @@ class RectangleBoundary(Boundary):
     The flat face is inferred from whichever of ``x``/``y``/``z`` has
     ``min == max``.
     """
+
+    mesh_class = BoxMeshSurface
 
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         pt = self._ptcond()
@@ -327,6 +374,8 @@ class RectangleBoundary(Boundary):
 class CircleBoundary(Boundary):
     """MPIEMSES ``circlex``/``circley``/``circlez`` → :class:`CircleMeshSurface`."""
 
+    mesh_class = CircleMeshSurface
+
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         pt = self._ptcond()
         center = _get_vector(pt, "circle_origin", self.fortran_index)
@@ -358,6 +407,8 @@ class CylinderBoundary(Boundary):
     ``tmax=cylinder_height`` so the cylinder extends in the ``+axis``
     direction (matching the Fortran convention).
     """
+
+    mesh_class = CylinderMeshSurface
 
     @property
     def is_open(self) -> bool:
@@ -402,6 +453,8 @@ class CylinderBoundary(Boundary):
 
 class DiskBoundary(Boundary):
     """MPIEMSES ``diskx``/``y``/``z`` annular disk → :class:`DiskMeshSurface`."""
+
+    mesh_class = DiskMeshSurface
 
     @property
     def axis_letter(self) -> str:
@@ -449,6 +502,8 @@ class PlaneWithCircleBoundary(Boundary):
     drawn large enough to cover the simulation domain (``nx``/``ny``/``nz``
     grid extents).
     """
+
+    mesh_class = PlaneWithCircleMeshSurface
 
     @property
     def axis_letter(self) -> str:
@@ -501,6 +556,8 @@ class FlatSurfaceBoundary(Boundary):
     a flat rectangular plane at ``z = zssurf`` that spans the entire
     horizontal domain.
     """
+
+    mesh_class = RectangleMeshSurface
 
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         zssurf = _safe_attr(self.inp, "zssurf")
@@ -587,6 +644,8 @@ class RectangleHoleBoundary(Boundary):
     shape to overlay on a field plot.
     """
 
+    mesh_class = BoxMeshSurface
+
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         bounds = _rectangle_hole_bounds(self.inp)
         coords = np.array(
@@ -616,6 +675,8 @@ class CylinderHoleBoundary(Boundary):
     :class:`CylinderMeshSurface` with only the ``side`` and ``bottom``
     parts, matching the Fortran wall + bottom-circle construction.
     """
+
+    mesh_class = CylinderMeshSurface
 
     def _build_params(self, use_si: bool) -> Dict[str, Any]:
         bounds = _rectangle_hole_bounds(self.inp)
@@ -884,16 +945,34 @@ class BoundaryCollection:
             Pass ``use_si=False`` to keep simulation grid units instead.
         per : dict, optional
             Mapping from boundary index (0-based) to a dict of overrides
-            passed to that boundary's ``mesh()`` call.
+            passed to that boundary's ``mesh()`` call. Per-index entries are
+            merged on top of (and override) the broadcast ``common_overrides``
+            and **bypass the kwarg filter** — they go straight through to
+            ``boundary.mesh()``.
         **common_overrides
-            Overrides broadcast to every boundary. Unknown kwargs for a
-            particular boundary type will raise ``TypeError`` from the
-            underlying mesh constructor — use ``per=`` to target.
+            Overrides broadcast to every boundary. Each boundary only sees
+            the subset of these kwargs that its underlying ``mesh_class``
+            ``__init__`` actually accepts (introspected via
+            :func:`inspect.signature`). For example::
+
+                data.boundaries.mesh(theta_range=[0, np.pi])
+
+            forwards ``theta_range`` to the sphere/cylinder/disk/circle/
+            plane-with-circle entries that support it and silently drops it
+            for cuboid/rectangle/flat-surface entries.
         """
         per = per or {}
         children: List[MeshSurface3D] = []
         for boundary in self._boundaries:
-            extra: Dict[str, Any] = dict(common_overrides)
+            accepted = _accepted_kwargs(getattr(type(boundary), "mesh_class", None))
+            if accepted is None:
+                # No introspection possible — broadcast everything verbatim.
+                extra: Dict[str, Any] = dict(common_overrides)
+            else:
+                extra = {k: v for k, v in common_overrides.items() if k in accepted}
+            # Per-boundary overrides always win, and bypass the filter so the
+            # caller can target a specific entry with kwargs the broadcast
+            # filter would otherwise drop.
             extra.update(per.get(boundary.index, {}))
             children.append(boundary.mesh(use_si=use_si, **extra))
         return CompositeMeshSurface(children)

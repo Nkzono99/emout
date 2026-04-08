@@ -266,6 +266,48 @@ def test_collection_mesh_per_boundary_overrides(boundaries: BoundaryCollection):
     assert cyl_child.naxial == 6
 
 
+def test_collection_mesh_common_overrides_are_filtered_per_boundary(boundaries: BoundaryCollection):
+    """Broadcast kwargs only reach boundaries whose mesh_class accepts them.
+
+    The fixture has 7 boundaries: sphere, cuboid, cylinderz, diskz,
+    open-cylinderx, rectangle, circlez. Of those, sphere/cylinderz/diskz/
+    open-cylinderx/circlez accept theta_range; cuboid/rectangle do not. The
+    broadcast must apply theta_range only to the angular-aware ones and
+    silently drop it for the box-shaped ones.
+    """
+    composite = boundaries.mesh(theta_range=(0.0, np.pi))
+
+    # The 7 children come back in the same order as the source boundaries.
+    sphere_child, cuboid_child, cyl_child, disk_child, open_cyl_child, rect_child, circle_child = composite.children
+
+    # Angular-aware boundaries received theta_range:
+    assert sphere_child.theta_range == (0.0, np.pi)
+    assert cyl_child.theta_range == (0.0, np.pi)
+    assert disk_child.theta_range == (0.0, np.pi)
+    assert open_cyl_child.theta_range == (0.0, np.pi)
+    assert circle_child.theta_range == (0.0, np.pi)
+
+    # BoxMeshSurface-backed boundaries do NOT take theta_range and the
+    # filter drops it instead of crashing the underlying constructor.
+    assert isinstance(cuboid_child, BoxMeshSurface)
+    assert isinstance(rect_child, BoxMeshSurface)
+
+
+def test_collection_mesh_common_override_unknown_to_all_is_dropped(boundaries: BoundaryCollection):
+    # Pass a totally unrelated kwarg — every boundary's filter should drop
+    # it and the call should still succeed.
+    composite = boundaries.mesh(definitely_not_a_param=42)
+    assert len(composite.children) == len(boundaries)
+
+
+def test_collection_mesh_per_overrides_bypass_the_filter(boundaries: BoundaryCollection):
+    # The cuboid does not accept theta_range, so a broadcast is filtered out.
+    # But a per-index entry is forwarded as-is — it would crash the cuboid
+    # constructor with TypeError, which proves the bypass.
+    with pytest.raises(TypeError):
+        boundaries.mesh(per={1: {"theta_range": (0.0, np.pi)}})
+
+
 # ---------------------------------------------------------------------------
 # MeshSurface3D + operator and render()
 # ---------------------------------------------------------------------------
