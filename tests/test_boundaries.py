@@ -21,8 +21,12 @@ from emout.emout.boundaries import (
     CircleBoundary,
     CuboidBoundary,
     CylinderBoundary,
+    CylinderHoleBoundary,
     DiskBoundary,
+    FlatSurfaceBoundary,
+    PlaneWithCircleBoundary,
     RectangleBoundary,
+    RectangleHoleBoundary,
     SphereBoundary,
 )
 from emout.plot.surface_cut import (
@@ -32,6 +36,8 @@ from emout.plot.surface_cut import (
     CylinderMeshSurface,
     DiskMeshSurface,
     MeshSurface3D,
+    PlaneWithCircleMeshSurface,
+    RectangleMeshSurface,
     SphereMeshSurface,
 )
 from emout.utils import InpFile, Units
@@ -115,10 +121,10 @@ def test_collection_repr_and_iteration(boundaries: BoundaryCollection):
         assert b.fortran_index == i + 1
 
 
-def test_collection_empty_when_not_complex(tmp_path: Path, unit: Units):
+def test_collection_empty_when_unsupported_top_level_type(tmp_path: Path, unit: Units):
     path = tmp_path / "plasma.inp"
     path.write_text(
-        "&ptcond\n    boundary_type = 'flat-surface'\n    zssurf = 60.0\n/\n"
+        "&ptcond\n    boundary_type = 'none'\n/\n"
     )
     inp = InpFile(path)
     coll = BoundaryCollection(inp, unit)
@@ -126,12 +132,12 @@ def test_collection_empty_when_not_complex(tmp_path: Path, unit: Units):
     assert not coll
 
 
-def test_collection_skips_unsupported_types(tmp_path: Path, unit: Units):
+def test_collection_skips_unsupported_complex_types(tmp_path: Path, unit: Units):
     path = tmp_path / "plasma.inp"
     path.write_text(
         "&ptcond\n"
         "    boundary_type = 'complex'\n"
-        "    boundary_types(1) = 'flat-surface'\n"
+        "    boundary_types(1) = 'hyperboloid-hole'\n"
         "    boundary_types(2) = 'sphere'\n"
         "    sphere_origin(:, 2) = 1.0, 2.0, 3.0\n"
         "    sphere_radius(2) = 0.5\n"
@@ -139,11 +145,13 @@ def test_collection_skips_unsupported_types(tmp_path: Path, unit: Units):
     )
     inp = InpFile(path)
     coll = BoundaryCollection(inp, unit)
-    # Only the sphere is supported.
+    # Only the sphere is supported — hyperboloid-hole is still unhandled.
     assert len(coll) == 1
     assert isinstance(coll[0], SphereBoundary)
     assert coll[0].index == 1  # original 0-based position preserved
-    assert any("flat-surface" in entry for entry in (f"{s[1]}" for s in coll.skipped))
+    assert any(
+        "hyperboloid-hole" in entry for entry in (f"{s[1]}" for s in coll.skipped)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -294,3 +302,224 @@ def test_mesh_render_returns_render_item():
     assert item.style == "solid"
     assert item.solid_color == "0.5"
     assert item.alpha == 0.4
+
+
+# ---------------------------------------------------------------------------
+# plane-with-circle* and legacy *-hole / flat-surface boundaries
+# ---------------------------------------------------------------------------
+
+
+def _make_inp(tmp_path: Path, ptcond_body: str, *, include_key: bool = True) -> InpFile:
+    path = tmp_path / "plasma.inp"
+    header = "!!key dx=[0.1],to_c=[10000.0]\n" if include_key else ""
+    path.write_text(header + ptcond_body)
+    return InpFile(path)
+
+
+def test_plane_with_circle_boundary_reads_origin_radius_and_uses_domain(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 64
+    ny = 48
+    nz = 32
+/
+&ptcond
+    boundary_type = 'complex'
+    boundary_types(1) = 'plane-with-circlez'
+    plane_with_circle_origin(:, 1) = 32.0, 24.0, 16.0
+    plane_with_circle_radius(1) = 4.0
+/
+""",
+    )
+    coll = BoundaryCollection(inp, unit)
+    assert len(coll) == 1
+    assert isinstance(coll[0], PlaneWithCircleBoundary)
+
+    mesh_obj = coll[0].mesh()
+    assert isinstance(mesh_obj, PlaneWithCircleMeshSurface)
+    # Center copied verbatim, plane spans the full (nx, ny) rectangle.
+    assert np.allclose(mesh_obj.center, [32.0, 24.0, 16.0])
+    assert np.isclose(mesh_obj.width_u, 64.0)
+    assert np.isclose(mesh_obj.width_v, 48.0)
+    assert np.isclose(mesh_obj.inner_radius, 4.0)
+    # plane-with-circlez ⇒ normal is z.
+    assert np.allclose(mesh_obj.axis, [0.0, 0.0, 1.0])
+
+
+def test_plane_with_circle_boundary_use_si_converts_all_lengths(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 64
+    ny = 48
+    nz = 32
+/
+&ptcond
+    boundary_type = 'complex'
+    boundary_types(1) = 'plane-with-circlex'
+    plane_with_circle_origin(:, 1) = 10.0, 20.0, 30.0
+    plane_with_circle_radius(1) = 2.0
+/
+""",
+    )
+    mesh_obj = BoundaryCollection(inp, unit)[0].mesh(use_si=True)
+    # dx = 0.1 ⇒ divide-by-10. plane-with-circlex → width is (ny, nz).
+    assert np.allclose(mesh_obj.center, [1.0, 2.0, 3.0])
+    assert np.isclose(mesh_obj.inner_radius, 0.2)
+    assert np.isclose(mesh_obj.width_u, 4.8)  # ny=48 grid → 4.8 m
+    assert np.isclose(mesh_obj.width_v, 3.2)  # nz=32 grid → 3.2 m
+
+
+def test_flat_surface_legacy_single_body_builds_one_rectangle(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 40
+    ny = 30
+    nz = 20
+/
+&ptcond
+    boundary_type = 'flat-surface'
+    zssurf = 12.5
+    zsbuf = 1.0
+/
+""",
+    )
+    coll = BoundaryCollection(inp, unit)
+    assert len(coll) == 1
+    assert isinstance(coll[0], FlatSurfaceBoundary)
+
+    rect = coll[0].mesh()
+    assert isinstance(rect, RectangleMeshSurface)
+    assert np.allclose(rect.center, [20.0, 15.0, 12.5])
+    assert rect.width_u == 40.0 and rect.width_v == 30.0
+    # Normal is +z for a flat-surface.
+    assert np.allclose(rect.axis, [0.0, 0.0, 1.0])
+
+
+def test_flat_surface_inside_complex_mode_also_works(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 10
+    ny = 10
+    nz = 10
+/
+&ptcond
+    boundary_type = 'complex'
+    boundary_types(1) = 'flat-surface'
+    boundary_types(2) = 'sphere'
+    zssurf = 6.0
+    sphere_origin(:, 2) = 5.0, 5.0, 8.0
+    sphere_radius(2) = 1.0
+/
+""",
+    )
+    coll = BoundaryCollection(inp, unit)
+    assert len(coll) == 2
+    assert isinstance(coll[0], FlatSurfaceBoundary)
+    assert isinstance(coll[1], SphereBoundary)
+
+    flat_mesh = coll[0].mesh()
+    assert isinstance(flat_mesh, RectangleMeshSurface)
+    assert flat_mesh.center[2] == 6.0
+
+
+def test_rectangle_hole_boundary_builds_open_top_box(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 64
+    ny = 64
+    nz = 64
+/
+&ptcond
+    boundary_type = 'rectangle-hole'
+    zssurf = 50.0
+    xlrechole(1) = 20.0
+    xurechole(1) = 40.0
+    ylrechole(1) = 25.0
+    yurechole(1) = 35.0
+    zlrechole(2) = 10.0
+/
+""",
+    )
+    coll = BoundaryCollection(inp, unit)
+    assert len(coll) == 1
+    assert isinstance(coll[0], RectangleHoleBoundary)
+
+    box = coll[0].mesh()
+    assert isinstance(box, BoxMeshSurface)
+    assert (box.xmin, box.xmax) == (20.0, 40.0)
+    assert (box.ymin, box.ymax) == (25.0, 35.0)
+    assert (box.zmin, box.zmax) == (10.0, 50.0)
+    # Top face (zmax) is intentionally omitted — it is the pit opening.
+    assert "zmax" not in box.faces
+    assert {"xmin", "xmax", "ymin", "ymax", "zmin"} <= set(box.faces)
+
+
+def test_cylinder_hole_boundary_builds_open_top_cylinder(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 64
+    ny = 64
+    nz = 64
+/
+&ptcond
+    boundary_type = 'cylinder-hole'
+    zssurf = 40.0
+    xlrechole(1) = 28.0
+    xurechole(1) = 36.0
+    ylrechole(1) = 28.0
+    yurechole(1) = 36.0
+    zlrechole(2) = 5.0
+/
+""",
+    )
+    coll = BoundaryCollection(inp, unit)
+    assert len(coll) == 1
+    assert isinstance(coll[0], CylinderHoleBoundary)
+
+    cyl = coll[0].mesh()
+    assert isinstance(cyl, CylinderMeshSurface)
+    # center is the pit base at z=zlrechole, radius = (xu-xl)/2, height = zssurf-zl.
+    assert np.allclose(cyl.center, [32.0, 32.0, 5.0])
+    assert np.isclose(cyl.radius, 4.0)
+    assert cyl.tmin == 0.0 and cyl.tmax == 35.0
+    # Top cap (opening) is not rendered.
+    assert set(cyl.parts) == {"side", "bottom"}
+
+
+def test_rectangle_hole_use_si_converts_all_lengths(tmp_path: Path, unit: Units):
+    inp = _make_inp(
+        tmp_path,
+        """\
+&esorem
+    nx = 64
+    ny = 64
+    nz = 64
+/
+&ptcond
+    boundary_type = 'rectangle-hole'
+    zssurf = 50.0
+    xlrechole(1) = 20.0
+    xurechole(1) = 40.0
+    ylrechole(1) = 25.0
+    yurechole(1) = 35.0
+    zlrechole(2) = 10.0
+/
+""",
+    )
+    box = BoundaryCollection(inp, unit)[0].mesh(use_si=True)
+    # dx=0.1 ⇒ divide-by-10.
+    assert box.xmin == 2.0 and box.xmax == 4.0
+    assert box.ymin == 2.5 and box.ymax == 3.5
+    assert box.zmin == 1.0 and box.zmax == 5.0

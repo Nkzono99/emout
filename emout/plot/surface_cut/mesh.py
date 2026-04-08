@@ -1065,6 +1065,84 @@ class DiskMeshSurface(MeshSurface3D):
         return _combine_meshes(meshes)
 
 
+class PlaneWithCircleMeshSurface(MeshSurface3D):
+    """Flat rectangular plane containing a central circular hole.
+
+    Unlike :class:`HollowCylinderMeshSurface` — which is a *solid slab* with
+    a cylindrical hole through it — this surface is a zero-thickness panel.
+    It is the natural representation for the MPIEMSES finbound primitives
+    ``plane-with-circlex``/``y``/``z``, where a single flat conducting
+    plane has a round aperture cut out of it.
+
+    The rectangle is centered on ``center``, lies in the plane perpendicular
+    to ``axis`` and spans ``width`` (``(width_u, width_v)`` in the local
+    frame). The circular hole of ``inner_radius`` is concentric with the
+    rectangle and must satisfy
+    ``inner_radius < min(width_u, width_v) / 2``.
+    """
+
+    def __init__(
+        self,
+        center: Union[Tuple[float, float, float], np.ndarray],
+        axis: AxisSpec,
+        width: Union[float, Tuple[float, float]],
+        inner_radius: float,
+        *,
+        ntheta: int = 64,
+        nradial: int = 8,
+        theta_range: Optional[Tuple[float, float]] = None,
+        flip_normal: bool = False,
+    ):
+        self.center = _center_to_3vec(center)
+        self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
+
+        if isinstance(width, (int, float)):
+            wu = wv = float(width)
+        else:
+            try:
+                wu_raw, wv_raw = width  # type: ignore[misc]
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "width must be a float or a (width_u, width_v) pair"
+                ) from exc
+            wu = float(wu_raw)
+            wv = float(wv_raw)
+        if wu <= 0.0 or wv <= 0.0:
+            raise ValueError("width must be > 0")
+        self.width_u = wu
+        self.width_v = wv
+        self.half_u = 0.5 * wu
+        self.half_v = 0.5 * wv
+
+        self.inner_radius = float(inner_radius)
+        if self.inner_radius <= 0.0:
+            raise ValueError("inner_radius must be > 0")
+        if self.inner_radius >= min(self.half_u, self.half_v):
+            raise ValueError(
+                "inner_radius must be < half of the smaller rectangle side"
+            )
+
+        self.ntheta = _normalize_count(ntheta, name="ntheta", minimum=3)
+        self.nradial = _normalize_count(nradial, name="nradial", minimum=2)
+        self.theta_range = theta_range
+        self.flip_normal = bool(flip_normal)
+
+    def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
+        normal = -self.axis if self.flip_normal else self.axis
+        return _rect_with_hole_mesh(
+            self.center,
+            self.e1,
+            self.e2,
+            half_u=self.half_u,
+            half_v=self.half_v,
+            inner_radius=self.inner_radius,
+            ntheta=self.ntheta,
+            nradial=self.nradial,
+            expected_normal=tuple(normal),
+            theta_range=self.theta_range,
+        )
+
+
 class CompositeMeshSurface(MeshSurface3D):
     """Composite mesh surface that concatenates child mesh surfaces.
 
@@ -1094,6 +1172,7 @@ __all__ = [
     "CircleMeshSurface",
     "CylinderMeshSurface",
     "HollowCylinderMeshSurface",
+    "PlaneWithCircleMeshSurface",
     "DiskMeshSurface",
     "SphereMeshSurface",
     "CompositeMeshSurface",
