@@ -427,24 +427,39 @@ def plot_surfaces(
         levels = np.asarray(list(contour_levels), dtype=float)
 
     # NOTE on rendering order:
-    #   matplotlib's mplot3d uses a painter's algorithm — every collection
-    #   gets a single "depth" value (set_sort_zpos override OR average
-    #   camera-space z of its vertices) and is drawn back-to-front.
+    #   matplotlib's mplot3d uses a painter's algorithm. There are two
+    #   levels of sorting:
     #
-    #   We deliberately do NOT call set_sort_zpos on the polygon collections.
-    #   Doing so pins them to a fixed depth and forces input-order sorting,
-    #   which makes multiple surfaces (e.g. a sphere + a plane) appear in the
-    #   wrong order whenever the camera angle disagrees with insertion order.
-    #   Letting mplot3d compute zpos from the actual vertex centroids gives
-    #   correct depth ordering as the user rotates the axes.
+    #     (a) Across collections: each Poly3DCollection gets a single
+    #         "depth" value (set_sort_zpos override, or by default the
+    #         average camera-space z of its vertices). All collections
+    #         are drawn back-to-front by that single value.
     #
-    #   Contour lines DO get an explicit forward push: a 1-D Line3DCollection
-    #   sitting exactly on the surface it was extracted from would z-fight
-    #   with its parent polygon under any naive sort. The push is a single
-    #   constant — no per-item tiebreaker — so contours from different
-    #   surfaces stay consistently above all polygon faces but still sort
-    #   sensibly amongst themselves via their own vertex centroids.
+    #     (b) Within a single Poly3DCollection: every triangle is sorted
+    #         independently by its own camera-space average z. This is
+    #         the only level of sort that gives *correct* depth ordering
+    #         when surfaces interpenetrate or interleave in 3D.
+    #
+    #   We therefore merge every face from every input mesh into ONE
+    #   Poly3DCollection (with per-face colors / edges / linewidths) so
+    #   the per-triangle sort kicks in and the user gets the visually
+    #   correct order from any viewpoint. This means we cannot meaningfully
+    #   call set_sort_zpos on individual surfaces — we have only one big
+    #   collection — but that is exactly what we want.
+    #
+    #   Contour lines stay separate (one Line3DCollection per surface)
+    #   because they are 1D and would otherwise z-fight with the polygon
+    #   they were extracted from. They share a single forward sort_zpos
+    #   so they stay above every polygon face while still sorting sensibly
+    #   amongst themselves via their vertex centroids.
     contour_forward_z = bounds.z[1] + 1.0e9
+
+    poly_V_chunks: list[np.ndarray] = []
+    poly_F_chunks: list[np.ndarray] = []
+    poly_fc_chunks: list[np.ndarray] = []
+    poly_ec_chunks: list[np.ndarray] = []
+    poly_lw_chunks: list[np.ndarray] = []
+    v_offset = 0
 
     for srf in items:
         surface = srf.surface
@@ -459,47 +474,71 @@ def plot_surfaces(
 
         item_alpha = alpha if srf.alpha is None else float(srf.alpha)
 
+        # Decide whether faces from this surface get drawn at all, and
+        # compute the per-face color array (one rgba per triangle).
+        draw_faces = False
+        facecolors: Optional[np.ndarray] = None
+        vval: Optional[np.ndarray] = None  # field samples for contour extraction
+
         if srf.style == "solid":
-            poly = _solid_poly_collection(
-                V,
-                F,
-                color=srf.solid_color,
-                alpha=item_alpha,
-                edge_color=srf.edge_color,
-                edge_lw=srf.edge_lw,
-            )
-            ax.add_collection3d(poly)
-            continue
+            draw_faces = True
+            rgba = np.asarray(to_rgba(srf.solid_color), dtype=np.float64).copy()
+            rgba[3] = item_alpha
+            facecolors = np.tile(rgba, (F.shape[0], 1))
+        elif srf.style == "field":
+            if field is None:
+                raise ValueError("field is required when style='field' or contours are requested")
+            vval = field.sample(V[:, 0], V[:, 1], V[:, 2])
+            if mode in ("cmap", "cmap+cont"):
+                draw_faces = True
+                face_val = _face_values_from_vertex_values(F, vval)
+                facecolors = np.asarray(cmap(norm(face_val)), dtype=np.float64).copy()
+                facecolors[:, 3] = np.where(np.isfinite(face_val), item_alpha, 0.0)
+        else:
+            raise ValueError(f"Unknown surface style {srf.style!r}")
 
-        if field is None:
-            raise ValueError("field is required when style='field' or contours are requested")
+        if draw_faces and facecolors is not None:
+            nF = F.shape[0]
+            if srf.edge_color is None:
+                edgecolors = np.zeros((nF, 4), dtype=np.float64)
+            else:
+                edge_rgba = np.asarray(to_rgba(srf.edge_color), dtype=np.float64).copy()
+                edgecolors = np.tile(edge_rgba, (nF, 1))
+            linewidths = np.full(nF, float(srf.edge_lw), dtype=np.float64)
 
-        vval = field.sample(V[:, 0], V[:, 1], V[:, 2])
+            poly_V_chunks.append(V)
+            poly_F_chunks.append(F + v_offset)
+            poly_fc_chunks.append(facecolors)
+            poly_ec_chunks.append(edgecolors)
+            poly_lw_chunks.append(linewidths)
+            v_offset += V.shape[0]
 
-        if mode in ("cmap", "cmap+cont"):
-            face_val = _face_values_from_vertex_values(F, vval)
-            poly = _poly_collection(V, F, face_val, cmap=cmap, norm=norm, alpha=item_alpha)
-            ax.add_collection3d(poly)
-
-        if srf.draw_contours and mode in ("cont", "cmap+cont"):
+        # Contour lines remain per-item — they live in a separate
+        # Line3DCollection that gets pushed forward via sort_zpos.
+        if srf.style == "field" and srf.draw_contours and mode in ("cont", "cmap+cont"):
+            if vval is None:
+                # Should be unreachable (vval is set in the field branch above),
+                # but be defensive in case mode/style invariants change.
+                vval = field.sample(V[:, 0], V[:, 1], V[:, 2])
             fn = _face_normals_from_mesh(V, F)
 
             # Optional back-face culling for contours (avoid seeing lines from the back side).
             if contour_side not in ("both", "front", "back"):
                 raise ValueError('contour_side must be "both", "front", or "back"')
-            if contour_side != "both" and len(F) > 0:
+            F_contour = F
+            if contour_side != "both" and len(F_contour) > 0:
                 vdir = _view_dir_from_axes(ax)
                 d = (fn[:, 0] * vdir[0] + fn[:, 1] * vdir[1] + fn[:, 2] * vdir[2])
                 keep = d > 0.0 if contour_side == "front" else d < 0.0
                 # If orientation is flipped, keep may become almost empty; auto-flip in that case.
                 if keep.mean() < 0.05:
                     keep = ~keep
-                F = F[keep]
+                F_contour = F_contour[keep]
                 fn = fn[keep]
 
             segs = _contour_segments_on_mesh(
                 V,
-                F,
+                F_contour,
                 vval,
                 levels,
                 face_normals=fn,
@@ -514,6 +553,41 @@ def plot_surfaces(
                 except Exception:
                     pass
                 ax.add_collection3d(lc)
+
+    # ---- merged polygon collection ----
+    if poly_V_chunks:
+        V_all = np.vstack(poly_V_chunks).astype(np.float64)
+        F_all = np.vstack(poly_F_chunks).astype(np.int64)
+        fc_all = np.vstack(poly_fc_chunks)
+        ec_all = np.vstack(poly_ec_chunks)
+        lw_all = np.concatenate(poly_lw_chunks)
+
+        tris = V_all[F_all]
+        # If every requested edge is fully transparent, switch to "none" so
+        # mpl skips the edge-drawing path entirely (slight speed win and a
+        # cleaner output).
+        if not np.any(ec_all[:, 3] > 0.0):
+            edgecolors_arg = "none"
+        else:
+            edgecolors_arg = ec_all
+        merged_poly = Poly3DCollection(
+            tris,
+            facecolors=fc_all,
+            edgecolors=edgecolors_arg,
+            linewidths=lw_all,
+            # Disable antialiasing on the polygon faces. mpl's default
+            # AA produces semi-transparent fringes around every triangle
+            # which the user sees as the whole face being "a bit
+            # transparent" even when the per-face alpha is 1.0. Crisp
+            # edges are also a better fit for the painter's-algorithm
+            # depth sort, since AA depends on draw order.
+            antialiaseds=False,
+        )
+        # set_alpha(None) tells mpl NOT to multiply every face by a
+        # global alpha — we want the per-face rgba in fc_all to be the
+        # final value, including the explicit 1.0 cases.
+        merged_poly.set_alpha(None)
+        ax.add_collection3d(merged_poly)
 
     ax.set_xlim(*bounds.x)
     ax.set_ylim(*bounds.y)

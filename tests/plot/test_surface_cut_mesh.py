@@ -379,14 +379,14 @@ def test_sphere_mesh_surface_hemisphere_has_phi_range():
 def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
     """A sphere centered outside the bounds should be culled by clipping.
 
-    Without clip_to_bounds, every face of the sphere would land in
-    ax.collections regardless of the bounds box. With clip_to_bounds=True
-    (the default) the face filter drops every triangle whose centroid is
-    outside, and this surface contributes nothing to the rendered Axes.
+    With clip_to_bounds=True (the default) every triangle whose centroid is
+    outside ``bounds`` is dropped before being added to the merged
+    :class:`Poly3DCollection`. With clip_to_bounds=False the sphere's faces
+    survive, so the merged collection contains strictly more triangles.
     """
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
     field = _make_field()
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
 
     # Sphere completely outside the field's grid extent (which is
     # 0..8 / 0..7 / 0..6 for the test fixture).
@@ -397,6 +397,14 @@ def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
         1.0, 5.0, 1.0, 4.0, 1.0, 3.0, faces=("zmax",), resolution=(4, 4)
     )
 
+    def _merged_face_count(ax):
+        """Return the number of faces in the (single) merged Poly3DCollection."""
+        polys = [c for c in ax.collections if isinstance(c, Poly3DCollection)]
+        assert len(polys) == 1, f"expected one merged Poly3DCollection, got {len(polys)}"
+        return len(polys[0].get_facecolors())
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
     cmap, _norm = plot_surfaces(
         ax,
         field=field,
@@ -407,17 +415,12 @@ def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
         bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
         contour_levels=[8.0, 10.0],
     )
-
-    # Only the box's collections (poly + contour line) survive; the sphere
-    # contributed zero faces after clipping.
     assert cmap is not None
-    box_only_count = len(ax.collections)
-    assert box_only_count >= 1
-
+    n_faces_clipped = _merged_face_count(ax)
     plt.close(fig)
 
-    # With clip_to_bounds=False the sphere comes back into the scene as an
-    # extra solid Poly3DCollection.
+    # With clip_to_bounds=False the sphere's triangles are added back,
+    # so the merged collection contains strictly more faces.
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111, projection="3d")
     plot_surfaces(
@@ -431,8 +434,75 @@ def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
         contour_levels=[8.0, 10.0],
         clip_to_bounds=False,
     )
-    assert len(ax2.collections) > box_only_count
+    n_faces_full = _merged_face_count(ax2)
+    assert n_faces_full > n_faces_clipped
     plt.close(fig2)
+
+
+def test_plot_surfaces_merges_polygons_into_single_collection():
+    """All input mesh surfaces share a single Poly3DCollection.
+
+    Per-triangle depth sorting only happens *within* a Poly3DCollection.
+    Merging every input surface's faces into one collection lets mpl sort
+    each triangle independently for correct rendering order, instead of
+    sorting whole collections by their average z (which gets the order
+    wrong as soon as the meshes interleave).
+    """
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    field = _make_field()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    surfaces = [
+        RenderItem(
+            CylinderMeshSurface(
+                center=(3.0, 3.0, 2.0),
+                axis="z",
+                radius=1.0,
+                length=2.0,
+                parts=("side",),
+                ntheta=18,
+                naxial=4,
+            ),
+            style="solid",
+            solid_color="0.5",
+        ),
+        RenderItem(
+            BoxMeshSurface(
+                1.0, 5.0, 1.0, 4.0, 1.0, 3.0,
+                faces=("zmax",),
+                resolution=(3, 3),
+            ),
+            style="field",
+        ),
+        RenderItem(
+            SphereMeshSurface(
+                center=(4.0, 3.0, 2.0), radius=0.8, ntheta=14, nphi=8
+            ),
+            style="solid",
+            solid_color="tab:blue",
+            alpha=0.4,
+        ),
+    ]
+
+    plot_surfaces(
+        ax,
+        field=field,
+        surfaces=surfaces,
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+        mode="cmap",  # disable contours so the count is purely the merged poly
+    )
+
+    polys = [c for c in ax.collections if isinstance(c, Poly3DCollection)]
+    assert len(polys) == 1
+    # The merged collection should hold faces from all three surfaces
+    # combined (cylinder side + box face + sphere). Per-triangle counts
+    # depend on resolution but the lower bound is the box's 18 + sphere
+    # base ≥ 100; we just check it is "much more than one surface".
+    n_faces = len(polys[0].get_facecolors())
+    assert n_faces > 50
+    plt.close(fig)
 
 
 def test_plot_surfaces_clip_to_bounds_partial_mesh_keeps_inside_faces():
@@ -508,7 +578,11 @@ def test_plot_surfaces_accepts_explicit_mesh_surfaces():
 
     assert cmap is not None
     assert norm.vmin < norm.vmax
-    assert len(ax.collections) >= 2
+    # All polygon faces from every surface are now merged into a single
+    # Poly3DCollection so mpl can sort each triangle individually for
+    # correct depth order. Contour Line3DCollections (if any segments
+    # were extracted) are added on top.
+    assert len(ax.collections) >= 1
 
     plt.close(fig)
 
