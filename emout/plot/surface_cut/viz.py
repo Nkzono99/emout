@@ -389,7 +389,7 @@ def plot_surfaces(
     contour_color: str = "k",
     contour_lw: float = 0.8,
     contour_on_top: bool = True,
-    contour_offset: float = 0.0,
+    contour_offset: Optional[float] = None,
     contour_side: str = "front",
     clip_to_bounds: bool = True,
 ):
@@ -401,6 +401,24 @@ def plot_surfaces(
     outside. Pass ``clip_to_bounds=False`` to disable the clip and render
     every mesh in full — useful when you intentionally want surfaces
     extending beyond the plot extent.
+
+    Side effect: this function sets ``ax.computed_zorder = False`` so it
+    can pin the merged polygon collection behind the contour line
+    collections via explicit ``set_zorder``. mplot3d's automatic
+    inter-collection depth sort relies on a single per-collection z value
+    that goes through the camera projection, which is camera-dependent and
+    causes contours to vanish behind the polygon they were extracted from
+    at certain viewpoints. Disabling computed_zorder makes the contour
+    layering camera-independent. Per-triangle depth sort *within* the
+    merged polygon collection still runs (it lives in
+    ``Poly3DCollection.do_3d_projection``) so interleaving meshes still
+    render in the right order.
+
+    ``contour_offset`` defaults to a small positive value derived from the
+    scene bounds (~0.2 % of the longest extent). This shifts each contour
+    segment along the outward face normal so it does not z-fight with the
+    polygon it sits on. Pass ``0.0`` to disable, or a custom number to
+    override.
     """
 
     items = _as_list(surfaces)
@@ -433,26 +451,40 @@ def plot_surfaces(
     #     (a) Across collections: each Poly3DCollection gets a single
     #         "depth" value (set_sort_zpos override, or by default the
     #         average camera-space z of its vertices). All collections
-    #         are drawn back-to-front by that single value.
+    #         are drawn back-to-front by that single value when
+    #         ax.computed_zorder is True (the default).
     #
     #     (b) Within a single Poly3DCollection: every triangle is sorted
     #         independently by its own camera-space average z. This is
     #         the only level of sort that gives *correct* depth ordering
     #         when surfaces interpenetrate or interleave in 3D.
     #
-    #   We therefore merge every face from every input mesh into ONE
+    #   We merge every face from every input mesh into ONE
     #   Poly3DCollection (with per-face colors / edges / linewidths) so
     #   the per-triangle sort kicks in and the user gets the visually
-    #   correct order from any viewpoint. This means we cannot meaningfully
-    #   call set_sort_zpos on individual surfaces — we have only one big
-    #   collection — but that is exactly what we want.
+    #   correct order from any viewpoint.
     #
-    #   Contour lines stay separate (one Line3DCollection per surface)
-    #   because they are 1D and would otherwise z-fight with the polygon
-    #   they were extracted from. They share a single forward sort_zpos
-    #   so they stay above every polygon face while still sorting sensibly
-    #   amongst themselves via their vertex centroids.
-    contour_forward_z = bounds.z[1] + 1.0e9
+    #   For the contour Line3DCollections vs. the merged polygon, we
+    #   cannot rely on (a) because mpl's auto sort goes through the
+    #   camera projection: at some camera angles the contours sort as
+    #   "background" relative to the merged polygon's average z and
+    #   vanish behind it. Instead we disable computed_zorder and pin
+    #   the layering with explicit set_zorder values. The internal
+    #   per-triangle sort inside the merged Poly3DCollection still runs
+    #   (it lives inside do_3d_projection, which is called either way).
+    ax.computed_zorder = False
+
+    # Default contour_offset: ~0.2 % of the largest scene extent. This
+    # nudges each contour segment slightly along the outward face normal
+    # so it does not coincide with — and z-fight against — the polygon
+    # it was extracted from. The offset is in data units, not pixels.
+    if contour_offset is None:
+        diag = max(
+            float(bounds.x[1] - bounds.x[0]),
+            float(bounds.y[1] - bounds.y[0]),
+            float(bounds.z[1] - bounds.z[0]),
+        )
+        contour_offset = 0.002 * diag
 
     poly_V_chunks: list[np.ndarray] = []
     poly_F_chunks: list[np.ndarray] = []
@@ -546,12 +578,10 @@ def plot_surfaces(
             )
             if segs:
                 lc = Line3DCollection(segs, colors=contour_color, linewidths=contour_lw)
-                if contour_on_top and hasattr(lc, "set_sort_zpos"):
-                    lc.set_sort_zpos(contour_forward_z)
-                try:
-                    lc.set_zorder(10)
-                except Exception:
-                    pass
+                # With ax.computed_zorder=False, set_zorder is honoured at
+                # draw time. Contours sit above the merged polygon (which
+                # gets zorder=1 below) when contour_on_top is True.
+                lc.set_zorder(2 if contour_on_top else 1)
                 ax.add_collection3d(lc)
 
     # ---- merged polygon collection ----
@@ -587,6 +617,9 @@ def plot_surfaces(
         # global alpha — we want the per-face rgba in fc_all to be the
         # final value, including the explicit 1.0 cases.
         merged_poly.set_alpha(None)
+        # Pin polygons below contour lines via explicit zorder
+        # (computed_zorder is disabled at the top of this function).
+        merged_poly.set_zorder(1)
         ax.add_collection3d(merged_poly)
 
     ax.set_xlim(*bounds.x)

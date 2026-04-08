@@ -439,6 +439,54 @@ def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
     plt.close(fig2)
 
 
+def test_plot_surfaces_contour_pinned_above_polygon_zorder():
+    """Contours render above the merged polygon via explicit set_zorder.
+
+    plot_surfaces disables ``ax.computed_zorder`` (so the explicit zorder
+    we set is honoured) and pins the merged polygon at zorder=1 and any
+    contour Line3DCollection at zorder=2. This is camera-independent and
+    avoids the set_sort_zpos / camera-projection trap that previously
+    caused contours to vanish behind their parent polygon.
+    """
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
+
+    field = _make_field()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # The fixture field is f(x,y,z) = x + 2y + 3z. On the zmax=3 face
+    # of the box below, f ranges roughly 1+2+9=12 .. 7+10+9=26, so a
+    # level of 18 will definitely cut the face and produce contour
+    # segments.
+    box = BoxMeshSurface(
+        1.0, 7.0, 1.0, 5.0, 1.0, 3.0,
+        faces=("zmax",),
+        resolution=(6, 6),
+    )
+
+    plot_surfaces(
+        ax,
+        field=field,
+        surfaces=[RenderItem(box, style="field")],
+        bounds=Bounds3D((0.0, 8.0), (0.0, 7.0), (0.0, 6.0)),
+        contour_levels=[15.0, 18.0, 22.0],
+    )
+
+    assert ax.computed_zorder is False
+
+    polys = [c for c in ax.collections if isinstance(c, Poly3DCollection)]
+    lines = [c for c in ax.collections if isinstance(c, Line3DCollection)]
+    assert len(polys) == 1
+    assert polys[0].get_zorder() == 1
+    # At least one contour level cuts the box's zmax face, so we
+    # should have a Line3DCollection sitting at zorder=2.
+    assert len(lines) >= 1
+    for lc in lines:
+        assert lc.get_zorder() == 2
+
+    plt.close(fig)
+
+
 def test_plot_surfaces_merges_polygons_into_single_collection():
     """All input mesh surfaces share a single Poly3DCollection.
 
