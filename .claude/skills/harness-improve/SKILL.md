@@ -1,6 +1,6 @@
 ---
 name: harness-improve
-description: Audit and improve the emout repository's Claude Code harness — CLAUDE.md, AGENTS.md, .claude/skills/*, .claude/agents/*, and .claude/settings.local.json. Includes itself in scope. Use when harness instructions start drifting from actual project reality, when you notice repeated friction in a workflow, or at the end of a session to capture new learnings.
+description: Audit and improve the emout repository's Claude Code harness — CLAUDE.md, AGENTS.md, .claude/skills/*, .claude/agents/*, .claude/settings.json, and .claude/settings.local.json. Includes itself in scope. Use when harness instructions start drifting from actual project reality, when you notice repeated friction in a workflow, when the user passes a reference repo/URL to compare against, or at the end of a session to capture new learnings.
 ---
 
 # harness-improve
@@ -13,7 +13,8 @@ The harness is everything under:
 - `AGENTS.md` (generic LLM/Codex guide; the two files are deliberately kept aligned but independent)
 - `.claude/skills/` (project-local skills, including **this one**)
 - `.claude/agents/` (project-local subagents)
-- `.claude/settings.local.json` (permission list)
+- `.claude/settings.json` (shared, committed permissions baseline)
+- `.claude/settings.local.json` (per-user, gitignored overrides)
 
 `harness-improve` explicitly includes **itself** as a target of improvement. If you find the instructions in this file lead you astray, rewrite this file too.
 
@@ -23,6 +24,7 @@ The harness is everything under:
 - When you notice you are repeating the same small correction to other harness files.
 - When an instruction in `CLAUDE.md` / `AGENTS.md` / a skill / an agent **contradicts** what the code actually does (e.g. file paths, class names, test names).
 - When you hit friction that a better skill or agent would remove.
+- When the user invokes you with a reference URL or repo (e.g. `/harness-improve https://github.com/...`) — fetch it, treat it as an external benchmark in Phase 3, and adopt only patterns that pull weight here.
 - **Not** for routine minor edits — those belong in the normal edit flow. `harness-improve` is for deliberate, systematic passes.
 
 ## What "improvement" means here
@@ -47,9 +49,11 @@ Read every harness file end to end:
 - `AGENTS.md`
 - every `.claude/skills/*/SKILL.md` (including this file)
 - every `.claude/agents/*.md`
-- `.claude/settings.local.json`
+- `.claude/settings.json` and `.claude/settings.local.json` (latter may be absent)
 
 Also run `git log --oneline -20` for context on what has changed recently. Do not rely on memory — the point of this skill is that memory is unreliable.
+
+Run the inventory in **parallel**: a single message containing one Bash for `git log` plus the Reads/Glob/Grep is much cheaper than sequential round-trips. Files can also be modified between invocations (linters, the user, sibling sessions), so re-Read before editing — never trust your in-context copy.
 
 ### Phase 2 — Truth check
 
@@ -70,8 +74,11 @@ If the session's work introduced a new recurring pattern — a new subsystem, a 
 - **The docs themselves** (`CLAUDE.md` / `AGENTS.md`): a short note, a pointer, a gotcha.
 - **A new skill**: a repeatable recipe that is long enough that inlining it in the docs would dilute them, and where a future session would benefit from being told "use skill X" instead of re-discovering.
 - **A new agent**: a research or investigation task that is heavyweight enough to deserve its own context window.
+- **Settings** (`.claude/settings.json`): if the rule is *deterministic and tool-mediated* (e.g. "always allow this Bash pattern", "deny that path"), put it in settings rather than as a behavioral instruction in CLAUDE.md. Settings are enforced; instructions are advisory.
 
 Resist the urge to add everything. A useful heuristic: if the pattern fired exactly once in this session, it is probably not a skill yet. Wait for the second occurrence.
+
+If the user supplied an external reference (URL, repo, doc) when invoking this skill, treat it as a benchmark: fetch it, list the patterns it advocates, and adopt only those that match a real friction point you observed in *this* repo. Do not import patterns wholesale — every adopted item must justify its presence by improving truthfulness or removing a recurring mistake here.
 
 ### Phase 4 — Prune
 
@@ -103,8 +110,10 @@ Output a compact summary of changes you made, grouped by file. Call out anything
 - `CLAUDE.md` and `AGENTS.md` are independent regular files (not a symlink). Do not re-symlink them.
 - `CLAUDE.md` and `AGENTS.md` keep the same top-level section outline so cross-referencing `§N` stays meaningful.
 - Skills live at `.claude/skills/<name>/SKILL.md` with a `name` + `description` frontmatter only (no extra fields unless you know the harness reads them).
+- Skill `description` fields are *triggers*: write them so a future model recognises when to invoke the skill, not as a prose summary of what it does. "Use when …" phrasing, not "This skill provides …".
 - Agent files live at `.claude/agents/<name>.md` with `name` + `description` + optional `tools` frontmatter, then the system prompt.
-- Do not weaken `.claude/settings.local.json` permissions casually. If a command needs a new permission, add it narrowly.
+- `.claude/settings.json` is the **shared, committed** permissions baseline. Keep it permissive (broad allow + narrow deny) so contributors do not get stuck on prompts. `.claude/settings.local.json` is per-user and gitignored — leave it alone unless the user asks.
+- Whenever you edit `settings.json` / `settings.local.json`, validate JSON syntax (`python -c "import json; json.load(open(...))"`).
 
 ## Non-goals
 

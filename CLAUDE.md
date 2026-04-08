@@ -77,19 +77,26 @@ python -m pytest tests/ -q \
 
 → `AGENTS.md §11` を参照。
 
-## 12. Claude Code 固有の skill / agent
+## 12. Claude Code 固有の skill / agent / settings
 
 ### 用意済み skill（`.claude/skills/`）
 
-- **`harness-improve`** — この harness 自体（`CLAUDE.md`, `AGENTS.md`, `.claude/skills/*`, `.claude/agents/*`）をレビュー・改善するメタスキル。自分自身（`harness-improve` スキル）も改善対象に含む。セッション終了直前や、harness の指示がズレ始めたと感じた時に呼ぶ。
+- **`harness-improve`** — この harness 自体（`CLAUDE.md`, `AGENTS.md`, `.claude/skills/*`, `.claude/agents/*`, `.claude/settings.json`）をレビュー・改善するメタスキル。自分自身（`harness-improve` スキル）も改善対象に含む。セッション終了直前、harness の指示がズレ始めたと感じた時、もしくは参考リポジトリ／URL を引数に渡してベンチマークしたい時に呼ぶ。
 - **`run-tests`** — このプロジェクトのテストベースラインを走らせるショートカット。既知の壊れた TOML テストを除外して実行する。
 - **`add-mesh-surface`** — `emout/plot/surface_cut/mesh.py` に新しい `MeshSurface3D` サブクラスを追加する手順の雛形。`_plane_mesh` 系ヘルパの使い分け・`__all__` の更新・テスト追加までカバー。
 - **`add-boundary`** — `emout/emout/boundaries.py` に MPIEMSES の新しい境界型を追加する手順の雛形。`_BOUNDARY_CLASS_MAP` 登録・`use_si` 対応・f90nml 疎配列アクセスまでカバー。
 
-使い方: `Skill(skill="<name>")` で呼び出す。引数が必要な skill はフロントマターに明記する。
+使い方: `Skill(skill="<name>")` または `/<name>` で呼び出す。引数を取る skill は `/<name> <args>` の形を受け取る。
 
 ### 用意済み agent（`.claude/agents/`）
 
 - **`finbound-investigator`** — MPIEMSES3D の `docs/Parameters.md` と `src/physics/collision/*.F90` を読み込み、指定された `boundary_type` / `boundary_types` のパラメータ仕様や Fortran 実装を抽出する調査役。`data.boundaries` を拡張する時の背景調査に使う。
 
 使い方: `Agent(subagent_type="finbound-investigator", prompt="...")`。
+
+### 設定ファイル（`.claude/`）
+
+- **`settings.json`** — 共有・コミット対象の権限ベースライン。`allow` は広く（Read/Edit/Write/Bash/Skill/Agent などをそのまま許可）、`ask` は空、`deny` は最小限（`sudo`, `rm -rf /` 系のみ）。コントリビュータは clone した時点でこの設定を引き継ぐ。
+- **`settings.local.json`** — 個人ユーザー固有の追加権限。`.gitignore` 済み。手で広げる場合はここに追記する（`settings.json` の方は不必要に変更しないこと）。
+
+settings の編集後は `python -c "import json; json.load(open('.claude/settings.json'))"` で構文を検証する。
