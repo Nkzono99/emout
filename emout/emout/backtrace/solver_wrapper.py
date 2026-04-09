@@ -244,8 +244,9 @@ class BacktraceWrapper:
         max_step: int = 10000,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
+        remote: bool = True,
         **kwargs,
-    ) -> ProbabilityResult:
+    ) -> "ProbabilityResult":
         """値を取得する。
         
         Parameters
@@ -282,6 +283,27 @@ class BacktraceWrapper:
         ProbabilityResult
             処理結果です。
         """
+        # Dask Actor が起動していれば worker 上で計算 + キャッシュし、
+        # proxy を返す（大きな numpy 配列がローカルに転送されない）
+        if remote:
+            from emout.distributed.remote_render import (
+                get_or_create_session,
+                RemoteProbabilityResult,
+                _next_key,
+            )
+            session = get_or_create_session(self.directory)
+            if session is not None:
+                key = _next_key("prob")
+                session.compute_probabilities(
+                    key,
+                    x=x, y=y, z=z, vx=vx, vy=vy, vz=vz,
+                    ispec=ispec, istep=istep, dt=dt,
+                    max_step=max_step, use_adaptive_dt=use_adaptive_dt,
+                    n_threads=n_threads, remote=False,  # worker 側では再帰しない
+                    **kwargs,
+                ).result()
+                return RemoteProbabilityResult(session, key)
+
         from vdsolverf.core import PhaseGrid
         from vdsolverf.emses import get_probabilities as _backend
 
