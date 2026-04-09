@@ -119,4 +119,4 @@ Then the full baseline via the `run-tests` skill.
 
 ## Announcement
 
-After landing, update `AGENTS.md §8` and/or `CLAUDE.md §8` only if the new type introduces a new *convention* (e.g. a new helper function, a new parameter idiom). Trivial additions that follow the existing pattern do not need doc updates — `SUPPORTED_BOUNDARY_TYPES` is the runtime source of truth.
+Trivial additions that follow the existing pattern do not need harness updates — `SUPPORTED_BOUNDARY_TYPES` is the runtime source of truth. If the new type introduces a new *convention* (e.g. a new helper function, a new parameter idiom), update the relevant `.claude/rules/` file or this skill.

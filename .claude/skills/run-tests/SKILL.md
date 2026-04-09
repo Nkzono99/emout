@@ -1,6 +1,6 @@
 ---
 name: run-tests
-description: Run emout's full pytest baseline. Use whenever you need a clean signal that your changes did not introduce regressions. Also the canonical way to refresh the test-count number quoted in AGENTS.md §10.
+description: Run emout's full pytest baseline. Use whenever you need a clean signal that your changes did not introduce regressions.
 ---
 
 # run-tests
@@ -29,8 +29,8 @@ were repaired on 2026-04-09:
 - The expected baseline (as of 2026-04-09) is `177 passed`. On machines
   without `toml2inp`, expect `153 passed, 19 skipped` instead; both are
   clean signals. Any *failure* or lower passed-count means a regression.
-- If you added tests, update the `172` number in `AGENTS.md §10` and in
-  the paragraph above.
+- If you added tests, update the baseline number in `CLAUDE.md` / `AGENTS.md`
+  and in the paragraph above.
 - If you only touched surface_cut / boundaries, the narrower form is
   faster and equally informative:
 
