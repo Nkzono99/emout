@@ -5,7 +5,7 @@ emout
 
 .. include:: ../../README.en.md
    :parser: myst_parser.sphinx_
-   :end-before: ## Table of Contents
+   :end-before: ## Installation
 
 .. toctree::
    :maxdepth: 2
