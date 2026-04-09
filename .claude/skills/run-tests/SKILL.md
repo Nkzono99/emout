@@ -24,7 +24,7 @@ Both of those are tracked in `AGENTS.md §10` — update that section if either 
 
 ## How to use the result
 
-- The expected baseline (as of 2026-04-09) is `135 passed`. Any lower number means you introduced a regression; any higher number means you added tests and should update `AGENTS.md §10`.
+- The expected baseline (as of 2026-04-09) is `141 passed`. Any lower number means you introduced a regression; any higher number means you added tests and should update `AGENTS.md §10`.
 - If you only touched surface_cut / boundaries, the narrower form is faster and equally informative:
 
   ```bash

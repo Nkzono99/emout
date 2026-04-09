@@ -1158,6 +1158,44 @@ class Data2d(Data):
         else:
             return imgs[0] if len(imgs) == 1 else imgs
 
+    def cmap(self, **kwargs):
+        """2次元データをカラーマップとして描画する。
+
+        :py:meth:`plot` の ``mode='cm'`` と等価なショートカット。
+        ``data.cmap(...)`` の形で直接呼び出せるように用意されている。
+        引数は :py:meth:`plot` とまったく同じで、 ``mode`` だけは
+        受け付けない（指定すると :class:`TypeError`）。
+
+        Returns
+        -------
+        matplotlib.image.AxesImage or list or None
+            :py:meth:`plot` と同じ返値。
+        """
+        if "mode" in kwargs:
+            raise TypeError(
+                "Data2d.cmap() does not accept 'mode'; call plot(mode=...) directly instead"
+            )
+        return self.plot(mode="cm", **kwargs)
+
+    def contour(self, **kwargs):
+        """2次元データを等高線として描画する。
+
+        :py:meth:`plot` の ``mode='cont'`` と等価なショートカット。
+        ``data.contour(...)`` の形で直接呼び出せるように用意されている。
+        引数は :py:meth:`plot` とまったく同じで、 ``mode`` だけは
+        受け付けない（指定すると :class:`TypeError`）。
+
+        Returns
+        -------
+        matplotlib.contour.QuadContourSet or list or None
+            :py:meth:`plot` と同じ返値。
+        """
+        if "mode" in kwargs:
+            raise TypeError(
+                "Data2d.contour() does not accept 'mode'; call plot(mode=...) directly instead"
+            )
+        return self.plot(mode="cont", **kwargs)
+
     def plot_pyvista(
         self,
         use_si: bool = True,

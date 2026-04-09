@@ -135,7 +135,7 @@ python -m build
 
 対象: `pytest -q --ignore=tests/utils/test_toml_converter.py --ignore=tests/utils/test_toml_integration.py`
 
-結果: **135 passed**
+結果: **141 passed**
 
 既知の壊れ:
 - `tests/utils/test_toml_converter.py` — `load_toml_as_namelist` が未実装でコレクションエラー
