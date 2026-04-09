@@ -4,15 +4,37 @@ Lang: [日本語](README.md) | [English](README.en.md)
 
 [![PyPI version](https://img.shields.io/pypi/v/emout.svg)](https://pypi.org/project/emout/)
 [![Python](https://img.shields.io/pypi/pyversions/emout.svg)](https://pypi.org/project/emout/)
+[![Docs](https://github.com/Nkzono99/emout/actions/workflows/docs.yaml/badge.svg)](https://nkzono99.github.io/emout/)
+[![CodeQL](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **[EMSES](https://github.com/Nkzono99/MPIEMSES3D) シミュレーション出力の解析・可視化 Python ライブラリ**
+
+emout は:
+
+- `.h5` グリッド出力 + `plasma.inp` / `plasma.toml` を 1 行で読み込む Facade
+- データ次元から自動で最適なビューを選ぶ 1D / 2D / 3D プロット
+- `!!key dx=...,to_c=...` を解析して生成する EMSES ⇄ SI 単位変換器
+- EMSES の finbound 境界を Python オブジェクトとして扱える境界 API
+
+---
 
 - **ドキュメント（日本語）:** [ユーザーガイド](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
 
 EMSES の出力ファイル（`.h5`）とパラメータファイル（`plasma.inp` / `plasma.toml`）を読み込み、
 数行のコードでデータの閲覧・プロット・アニメーション作成・SI 単位への変換ができます。
+
+---
+
+## 主な特徴
+
+- **最小コードで可視化** — `data.phisp[-1, :, 100, :].plot()` の 1 行で SI 単位付きの 2D プロットが描ける
+- **時系列アニメーション** — `gifplot()` 一発で GIF / HTML、`build_frame_updater()` で複数パネル
+- **自動 SI 単位変換** — `plasma.inp` 1 行目の `!!key dx=...,to_c=...` から 30+ の物理量の単位換算器を生成
+- **動的変数解決** — `data.phisp`, `data.nd1p`, `data.j1xy`, `data.j1xyz` のように EMSES のファイル名から直接アクセス
+- **3D 可視化** — PyVista 連携、finbound 境界メッシュの自動生成 (`data.boundaries`)
+- **パラメータファイル対応** — 旧式 `plasma.inp` と新式 `plasma.toml` の両方に対応、TOML のネスト構造は `data.toml` でそのまま参照
 
 ---
 
@@ -29,8 +51,10 @@ EMSES の出力ファイル（`.h5`）とパラメータファイル（`plasma.i
 9. [データマスク](#データマスク)
 10. [追加出力の結合](#追加出力の結合)
 11. [3D プロット (PyVista)](#3d-プロット-pyvista)
-12. [ポアソン方程式の求解 (実験的)](#ポアソン方程式の求解-実験的)
-13. [バックトレース (実験的)](#バックトレース-実験的)
+12. [境界メッシュ (`data.boundaries`)](#境界メッシュ-databoundaries)
+13. [ポアソン方程式の求解 (実験的)](#ポアソン方程式の求解-実験的)
+14. [バックトレース (実験的)](#バックトレース-実験的)
+15. [コントリビュート](#コントリビュート)
 
 ---
 
@@ -157,6 +181,21 @@ data.phisp[-1, 100, :, :].plot(mode="cont")
 # ベクトル場（ストリームライン）
 data.j1xy[-1, 100, :, :].plot()
 ```
+
+#### 2D ショートカットメソッド
+
+2D データでは `mode=` をわざわざ渡す代わりに、意図を名前に刻んだ 2 つのショートカットが使えます。
+引数は `plot()` と同じで（`mode` だけ受け付けません）、後から読み返すときに意図がすぐ分かります。
+
+```python
+# mode='cm' と等価
+data.phisp[-1, 100, :, :].cmap()
+
+# mode='cont' と等価
+data.phisp[-1, 100, :, :].contour()
+```
+
+`plot(mode='cm+cont')` のように重ね描きしたい場合や、1D / 3D プロットは従来どおり `plot()` を使ってください。
 
 ---
 
@@ -463,6 +502,80 @@ plot_surfaces(
 
 ---
 
+## 境界メッシュ (`data.boundaries`)
+
+MPIEMSES の `&ptcond` で定義された finbound / legacy 境界型を Python オブジェクトとして扱えます。
+各境界は `MeshSurface3D` を返し、3D フィールドプロットへのオーバーレイや個別カスタマイズが可能です。
+
+### アクセス
+
+```python
+# コレクション全体
+data.boundaries                 # BoundaryCollection (iterable, indexable)
+len(data.boundaries)
+data.boundaries.types           # 各境界の boundary_types 文字列リスト
+data.boundaries.skipped         # [(index, type_name, reason), ...]
+
+# 個別の境界
+data.boundaries[0]              # SphereBoundary / CylinderBoundary / ... などのサブクラス
+data.boundaries[0].mesh()       # → MeshSurface3D (デフォルトは SI 単位)
+data.boundaries[0].mesh(use_si=False)  # グリッド単位のまま
+
+# 全境界を一つの複合メッシュとして取得
+data.boundaries.mesh()          # → CompositeMeshSurface
+```
+
+### 3D フィールドプロットへのオーバーレイ
+
+`Data3d.plot_surfaces` に `data.boundaries` を渡すと、等位面・スライスの上に境界形状を重ねて描画できます。
+
+```python
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection="3d")
+
+data.phisp[-1].plot_surfaces(
+    ax=ax,
+    surfaces=data.boundaries,         # 全境界を自動で RenderItem 化
+)
+plt.show()
+```
+
+### 合成とカスタマイズ
+
+```python
+# Boundary + Boundary → BoundaryCollection
+combined = data.boundaries[0] + data.boundaries[1]
+
+# 境界ごとにスタイルを変える
+data.phisp[-1].plot_surfaces(
+    ax=ax,
+    surfaces=data.boundaries.render(
+        per={
+            0: dict(style="solid", solid_color="0.7"),
+            1: dict(alpha=0.5),
+        },
+    ),
+)
+```
+
+### 対応している境界型
+
+`boundary_type = "complex"` モードで `boundary_types(i)` に指定できる形状と、
+legacy 単独モードで `boundary_type = "..."` に直接指定できる型の両方をサポートしています。
+
+| カテゴリ | 型名 |
+| --- | --- |
+| 閉じた立体 | `sphere`, `cuboid` |
+| 円柱 | `cylinderx`, `cylindery`, `cylinderz`, `open-cylinderx/y/z` |
+| 平板 | `rectangle`, `circlex/y/z`, `diskx/y/z`, `plane-with-circlex/y/z` |
+| Legacy 単独モード | `flat-surface`, `rectangle-hole`, `cylinder-hole` |
+
+詳細なパラメータ定義は [MPIEMSES3D Parameters.md](https://github.com/Nkzono99/MPIEMSES3D/blob/main/docs/Parameters.md) を参照してください。未登録の型は `data.boundaries.skipped` に `(index, 型名, 理由)` として残り、警告にはなりません。
+
+---
+
 ## ポアソン方程式の求解 (実験的)
 
 <details>
@@ -533,6 +646,18 @@ stop_cluster()
 ```
 
 </details>
+
+---
+
+## コントリビュート
+
+バグ報告・機能提案・PR を歓迎します。
+
+- **バグ / 質問:** [GitHub Issues](https://github.com/Nkzono99/emout/issues) に再現手順を添えて投稿してください
+- **PR:** `main` から作業ブランチを切り、`pytest -q` がグリーンの状態で送ってください（現在のベースラインは `AGENTS.md §10` を参照）
+- **ドキュメント:** `README.md` (日本語) と `README.en.md` (英語) は対応する形で維持されています。片方を更新したらもう片方にも反映してください
+
+開発環境のセットアップやディレクトリ構成は [AGENTS.md](AGENTS.md) にまとまっています。
 
 ---
 

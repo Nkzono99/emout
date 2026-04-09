@@ -4,15 +4,37 @@ Lang: [English](README.en.md) | [日本語](README.md)
 
 [![PyPI version](https://img.shields.io/pypi/v/emout.svg)](https://pypi.org/project/emout/)
 [![Python](https://img.shields.io/pypi/pyversions/emout.svg)](https://pypi.org/project/emout/)
+[![Docs](https://github.com/Nkzono99/emout/actions/workflows/docs.yaml/badge.svg)](https://nkzono99.github.io/emout/)
+[![CodeQL](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Python library for analyzing and visualizing [EMSES](https://github.com/Nkzono99/MPIEMSES3D) simulation outputs**
+
+emout is:
+
+- a one-line facade for loading `.h5` grid output + `plasma.inp` / `plasma.toml`
+- 1D / 2D / 3D plotting that auto-selects the right view from data dimensionality
+- an EMSES ⇄ SI unit conversion system driven by the `!!key dx=...,to_c=...` header
+- a Python-native interface to EMSES `finbound` boundary geometry
+
+---
 
 - **Documentation (English):** [User Guide](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
 
 emout reads EMSES output files (`.h5`) and parameter files (`plasma.inp` / `plasma.toml`),
 letting you browse, plot, animate, and convert data to SI units in just a few lines of code.
+
+---
+
+## Highlights
+
+- **Plot in one line** — `data.phisp[-1, :, 100, :].plot()` produces a 2D colormap with SI unit labels
+- **Time-series animations** — `gifplot()` writes GIF / HTML in a single call, `build_frame_updater()` composes multi-panel layouts
+- **Automatic SI conversion** — parses `!!key dx=...,to_c=...` from `plasma.inp` and builds 30+ unit translators on the fly
+- **Dynamic variable resolution** — access EMSES outputs by filename: `data.phisp`, `data.nd1p`, `data.j1xy`, `data.j1xyz`
+- **3D visualization** — PyVista integration, plus auto-generated finbound boundary meshes via `data.boundaries`
+- **Parameter file flexibility** — reads both legacy `plasma.inp` and modern `plasma.toml`; nested TOML structure stays accessible via `data.toml`
 
 ---
 
@@ -29,8 +51,10 @@ letting you browse, plot, animate, and convert data to SI units in just a few li
 9. [Data Masking](#data-masking)
 10. [Appended Outputs](#appended-outputs)
 11. [3D Plotting (PyVista)](#3d-plotting-pyvista)
-12. [Solving Poisson's Equation (Experimental)](#solving-poissons-equation-experimental)
-13. [Backtrace (Experimental)](#backtrace-experimental)
+12. [Boundary Meshes (`data.boundaries`)](#boundary-meshes-databoundaries)
+13. [Solving Poisson's Equation (Experimental)](#solving-poissons-equation-experimental)
+14. [Backtrace (Experimental)](#backtrace-experimental)
+15. [Contributing](#contributing)
 
 ---
 
@@ -157,6 +181,22 @@ data.phisp[-1, 100, :, :].plot(mode="cont")
 # Vector field (streamlines)
 data.j1xy[-1, 100, :, :].plot()
 ```
+
+#### 2D shortcut methods
+
+On 2D data you can skip the stringly-typed `mode=` argument and call a named
+method that makes the intent obvious when you re-read the script later. Both
+shortcuts accept every keyword `plot()` does — except `mode`, which is fixed.
+
+```python
+# equivalent to mode='cm'
+data.phisp[-1, 100, :, :].cmap()
+
+# equivalent to mode='cont'
+data.phisp[-1, 100, :, :].contour()
+```
+
+For an overlay (`plot(mode='cm+cont')`) or for 1D / 3D data, use `plot()` directly.
 
 ---
 
@@ -463,6 +503,82 @@ plot_surfaces(
 
 ---
 
+## Boundary Meshes (`data.boundaries`)
+
+The `finbound` / legacy boundaries defined under MPIEMSES's `&ptcond` are exposed
+as Python objects. Each boundary produces a `MeshSurface3D` that you can overlay
+onto a 3D field plot or style individually.
+
+### Access
+
+```python
+# The whole collection
+data.boundaries                 # BoundaryCollection (iterable, indexable)
+len(data.boundaries)
+data.boundaries.types           # list of boundary_types strings
+data.boundaries.skipped         # [(index, type_name, reason), ...]
+
+# An individual boundary
+data.boundaries[0]              # subclass (SphereBoundary, CylinderBoundary, ...)
+data.boundaries[0].mesh()       # → MeshSurface3D (SI units by default)
+data.boundaries[0].mesh(use_si=False)  # keep grid units
+
+# All boundaries fused into one composite mesh
+data.boundaries.mesh()          # → CompositeMeshSurface
+```
+
+### Overlay on a 3D field plot
+
+Pass `data.boundaries` straight to `Data3d.plot_surfaces` to draw the
+geometries on top of isosurfaces or slices.
+
+```python
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection="3d")
+
+data.phisp[-1].plot_surfaces(
+    ax=ax,
+    surfaces=data.boundaries,         # auto-wrapped into RenderItems
+)
+plt.show()
+```
+
+### Composition and per-boundary styling
+
+```python
+# Boundary + Boundary → BoundaryCollection
+combined = data.boundaries[0] + data.boundaries[1]
+
+# Different style per boundary
+data.phisp[-1].plot_surfaces(
+    ax=ax,
+    surfaces=data.boundaries.render(
+        per={
+            0: dict(style="solid", solid_color="0.7"),
+            1: dict(alpha=0.5),
+        },
+    ),
+)
+```
+
+### Supported boundary types
+
+Both `boundary_type = "complex"` with `boundary_types(i)` and the legacy
+single-body modes (`boundary_type = "rectangle-hole"` etc.) are supported.
+
+| Category | Type name |
+| --- | --- |
+| Closed solids | `sphere`, `cuboid` |
+| Cylinders | `cylinderx`, `cylindery`, `cylinderz`, `open-cylinderx/y/z` |
+| Flat panels | `rectangle`, `circlex/y/z`, `diskx/y/z`, `plane-with-circlex/y/z` |
+| Legacy single-body | `flat-surface`, `rectangle-hole`, `cylinder-hole` |
+
+See [MPIEMSES3D Parameters.md](https://github.com/Nkzono99/MPIEMSES3D/blob/main/docs/Parameters.md) for the full parameter specification. Unregistered types are recorded in `data.boundaries.skipped` as `(index, type_name, reason)` tuples rather than raising.
+
+---
+
 ## Solving Poisson's Equation (Experimental)
 
 <details>
@@ -533,6 +649,18 @@ stop_cluster()
 ```
 
 </details>
+
+---
+
+## Contributing
+
+Bug reports, feature requests, and pull requests are welcome.
+
+- **Bugs / questions:** open a [GitHub Issue](https://github.com/Nkzono99/emout/issues) with a minimal reproduction
+- **Pull requests:** branch off `main`, keep `pytest -q` green (current baseline in `AGENTS.md §10`), and submit
+- **Docs:** `README.md` (Japanese) and `README.en.md` (English) are kept in sync by hand — please update both when touching user-facing content
+
+The development environment and repo layout are covered in [AGENTS.md](AGENTS.md).
 
 ---
 
