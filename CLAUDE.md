@@ -146,7 +146,7 @@ Claude Code 固有:
 
 対象: `pytest -q`
 
-結果: **172 passed**（`toml2inp` 未インストール環境では 19 件が skipped、153 passed）
+結果: **177 passed**（`toml2inp` 未インストール環境では 19 件が skipped、158 passed）
 
 過去の既知失敗は 2026-04-09 に解消済み:
 - `tests/utils/test_toml_converter.py` — 削除 API のテストを除去し `TomlData` / `load_toml` のみに再構成。

@@ -26,7 +26,7 @@ were repaired on 2026-04-09:
 
 ## How to use the result
 
-- The expected baseline (as of 2026-04-09) is `172 passed`. On machines
+- The expected baseline (as of 2026-04-09) is `177 passed`. On machines
   without `toml2inp`, expect `153 passed, 19 skipped` instead; both are
   clean signals. Any *failure* or lower passed-count means a regression.
 - If you added tests, update the `172` number in `AGENTS.md §10` and in
