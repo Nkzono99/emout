@@ -1,3 +1,9 @@
+"""Multi-particle backtrace result container.
+
+:class:`MultiBacktraceResult` aggregates multiple :class:`BacktraceResult`
+instances and supports sampling, iteration, and statistical queries.
+"""
+
 from typing import Any, Iterator, Optional, Sequence, Union
 
 import numpy as np

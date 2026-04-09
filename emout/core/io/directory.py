@@ -1,3 +1,10 @@
+"""Directory inspection and input-file discovery for EMSES runs.
+
+:class:`DirectoryInspector` locates ``plasma.inp`` / ``plasma.toml``,
+resolves append-directory chains, and provides lazy access to parsed
+input parameters and unit conversion objects.
+"""
+
 # emout/io/directory.py
 
 import logging

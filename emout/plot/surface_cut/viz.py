@@ -1,3 +1,10 @@
+"""Matplotlib rendering pipeline for surface-cut meshes.
+
+Provides :class:`RenderItem` for pairing meshes with scalar fields,
+:class:`Bounds3D` for view-volume management, and the
+:func:`plot_surfaces` entry point.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

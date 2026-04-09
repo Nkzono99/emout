@@ -192,6 +192,89 @@ def test_backtrace_wrapper_remote_uses_full_emout_open_kwargs(monkeypatch):
     assert calls[1][2]["remote"] is False
 
 
+def test_remote_heatmap_fetch_returns_local_heatmap(monkeypatch):
+    """RemoteHeatmap.fetch() should transfer data and return a local HeatmapData."""
+    from emout.distributed.remote_render import RemoteHeatmap
+    from emout.core.backtrace.probability_result import HeatmapData
+
+    X = np.arange(6).reshape(2, 3).astype(float)
+    Y = np.arange(6).reshape(2, 3).astype(float) * 2
+    Z = np.ones((2, 3))
+
+    class FakeSession:
+        def fetch_heatmap_data(self, key, var1, var2):
+            return FakeFuture({
+                "X": X, "Y": Y, "Z": Z,
+                "xlabel": "vx", "ylabel": "vz",
+                "title": "vx vs vz", "units": None,
+            })
+
+    hm = RemoteHeatmap(FakeSession(), "k", "vx", "vz")
+    local = hm.fetch()
+
+    assert isinstance(local, HeatmapData)
+    assert np.array_equal(local.X, X)
+    assert np.array_equal(local.Z, Z)
+    assert local.xlabel == "vx"
+
+
+def test_remote_xy_data_fetch_returns_local_xy_data(monkeypatch):
+    """RemoteXYData.fetch() should transfer data and return a local XYData."""
+    from emout.distributed.remote_render import RemoteXYData
+    from emout.core.backtrace.xy_data import XYData
+
+    x = np.linspace(0, 1, 10)
+    y = np.sin(x)
+
+    class FakeSession:
+        def fetch_xy_data(self, key, var1, var2):
+            return FakeFuture({
+                "x": x, "y": y,
+                "xlabel": "x", "ylabel": "vz",
+                "title": "x vs vz", "units": None,
+            })
+
+    proxy = RemoteXYData(FakeSession(), "k", "x", "vz")
+    local = proxy.fetch()
+
+    assert isinstance(local, XYData)
+    assert np.array_equal(local.x, x)
+    assert local.ylabel == "vz"
+
+
+def test_remote_heatmap_plot_outside_recording_renders_on_server():
+    """RemoteHeatmap.plot() outside remote_figure() should render on worker."""
+    from emout.distributed.remote_render import RemoteHeatmap
+
+    render_calls = []
+
+    class FakeSession:
+        def render_pair(self, key, var1, var2, fmt="png", dpi=150, **kw):
+            render_calls.append((key, var1, var2))
+            # Return 1x1 white PNG
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            from io import BytesIO
+            fig, ax = plt.subplots()
+            buf = BytesIO()
+            fig.savefig(buf, format="png")
+            plt.close(fig)
+            return FakeFuture(buf.getvalue())
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    hm = RemoteHeatmap(FakeSession(), "k", "vx", "vz")
+    hm.plot(ax=ax)
+    plt.close(fig)
+
+    assert len(render_calls) == 1
+    assert render_calls[0] == ("k", "vx", "vz")
+
+
 def test_stop_cluster_can_shutdown_by_address(monkeypatch):
     import dask.distributed
 

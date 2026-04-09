@@ -1,3 +1,9 @@
+"""Energy-flux probability distribution results.
+
+:class:`ProbabilityResult` computes and visualises energy-resolved pitch-angle
+distributions, while :class:`HeatmapData` wraps 2-D histogram payloads.
+"""
+
 from typing import Any, Iterator, Sequence
 
 import matplotlib.pyplot as plt
@@ -10,9 +16,10 @@ _TRAPEZOID = getattr(np, "trapezoid", np.trapz)
 
 
 class HeatmapData:
-    """
-    2D グリッド上の値を保持し、pcolormesh で描画するヘルパークラス。
-    X, Y, Z はすべて 2D numpy.ndarray で同じ形状である必要があります。
+    """2-D histogram data with axis labels and a plot helper.
+
+    Stores bin edges, counts, and axis metadata produced by
+    :class:`ProbabilityResult` computations.
     """
 
     def __init__(

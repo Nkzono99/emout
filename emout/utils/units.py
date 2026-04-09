@@ -1,3 +1,11 @@
+"""Physical unit translators and conversion system for EMSES quantities.
+
+:class:`UnitTranslator` converts between EMSES grid units and SI, while
+:class:`Units` bundles translators for all standard field quantities
+derived from the simulation parameters.
+"""
+
+
 class UnitTranslator:
     """単位変換器.
 

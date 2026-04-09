@@ -57,11 +57,41 @@ class RemoteSession:
     # -- computation (result stays on worker) --------------------------------
 
     def compute_probabilities(self, key: str, **kwargs) -> bool:
+        """Run backtrace probability calculation and cache the result.
+
+        Parameters
+        ----------
+        key : str
+            Cache key under which the result is stored.
+        **kwargs
+            Keyword arguments forwarded to
+            ``Emout.backtrace.get_probabilities()``.
+
+        Returns
+        -------
+        bool
+            ``True`` on success.
+        """
         result = self._data.backtrace.get_probabilities(**kwargs)
         self._cache[key] = result
         return True
 
     def compute_backtraces(self, key: str, **kwargs) -> bool:
+        """Run particle backtrace calculation and cache the result.
+
+        Parameters
+        ----------
+        key : str
+            Cache key under which the result is stored.
+        **kwargs
+            Keyword arguments forwarded to
+            ``Emout.backtrace.get_backtraces_from_particles()``.
+
+        Returns
+        -------
+        bool
+            ``True`` on success.
+        """
         result = self._data.backtrace.get_backtraces_from_particles(**kwargs)
         self._cache[key] = result
         return True
@@ -72,6 +102,28 @@ class RemoteSession:
         self, key: str, var1: str, var2: str,
         fmt: str = "png", dpi: int = 150, **plot_kwargs,
     ) -> bytes:
+        """Render a 2-D heatmap of a cached probability result and return image bytes.
+
+        Parameters
+        ----------
+        key : str
+            Cache key referencing a previously computed probability result.
+        var1 : str
+            Name of the first axis variable (e.g. ``"vx"``).
+        var2 : str
+            Name of the second axis variable (e.g. ``"vz"``).
+        fmt : str, optional
+            Image format (``"png"``, ``"svg"``, etc.), by default ``"png"``.
+        dpi : int, optional
+            Output resolution in dots per inch, by default 150.
+        **plot_kwargs
+            Additional keyword arguments forwarded to ``HeatmapData.plot()``.
+
+        Returns
+        -------
+        bytes
+            Rendered image as raw bytes in the requested format.
+        """
         import matplotlib.pyplot as plt
         from io import BytesIO
 
@@ -85,6 +137,79 @@ class RemoteSession:
         fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
         return buf.getvalue()
+
+    def fetch_heatmap_data(self, key: str, var1: str, var2: str) -> dict:
+        """Return serialised HeatmapData arrays for local plotting.
+
+        Parameters
+        ----------
+        key : str
+            Cache key referencing a previously computed probability result.
+        var1, var2 : str
+            Axis variable names (e.g. ``"vx"``, ``"vz"``).
+
+        Returns
+        -------
+        dict
+            ``{"X", "Y", "Z", "xlabel", "ylabel", "title", "units"}``
+            where X/Y/Z are numpy arrays and units is a tuple or None.
+        """
+        result = self._cache[key]
+        heatmap = result.pair(var1, var2)
+        units_payload = None
+        if heatmap.units is not None:
+            units_payload = [
+                {"from_unit": u.from_unit, "to_unit": u.to_unit,
+                 "name": u.name, "unit": u.unit}
+                for u in heatmap.units
+            ]
+        return {
+            "X": np.asarray(heatmap.X),
+            "Y": np.asarray(heatmap.Y),
+            "Z": np.asarray(heatmap.Z),
+            "xlabel": heatmap.xlabel,
+            "ylabel": heatmap.ylabel,
+            "title": heatmap.title,
+            "units": units_payload,
+        }
+
+    def fetch_xy_data(self, key: str, var1: str, var2: str) -> dict:
+        """Return serialised XYData / MultiXYData arrays for local plotting.
+
+        Parameters
+        ----------
+        key : str
+            Cache key referencing a previously computed backtrace result.
+        var1, var2 : str
+            Axis variable names (e.g. ``"x"``, ``"vz"``).
+
+        Returns
+        -------
+        dict
+            ``{"x", "y", "xlabel", "ylabel", "title", "units", "last_indexes"}``
+            where x/y are numpy arrays.  ``last_indexes`` is present only for
+            :class:`MultiXYData`.
+        """
+        result = self._cache[key]
+        xy = result.pair(var1, var2)
+        units_payload = None
+        if xy.units is not None:
+            units_payload = [
+                {"from_unit": u.from_unit, "to_unit": u.to_unit,
+                 "name": u.name, "unit": u.unit}
+                for u in xy.units
+            ]
+        payload = {
+            "x": np.asarray(xy.x),
+            "y": np.asarray(xy.y),
+            "xlabel": xy.xlabel,
+            "ylabel": xy.ylabel,
+            "title": xy.title,
+            "units": units_payload,
+        }
+        if hasattr(xy, "last_indexes"):
+            payload["last_indexes"] = np.asarray(xy.last_indexes)
+        return payload
 
     def render_energy_spectrum(
         self, key: str, energy_bins=None, scale: str = "log",
@@ -260,7 +385,10 @@ class RemoteSession:
 
 
 class RemoteHeatmap:
-    """``HeatmapData.plot()`` と同じインタフェースの proxy。worker 側でレンダリングする。"""
+    """``HeatmapData.plot()`` と同じインタフェースの proxy。
+
+    ``remote_figure()`` 内ではコマンド記録、外ではデータ転送＋ローカル描画。
+    """
 
     def __init__(self, session: RemoteSession, cache_key: str, var1: str, var2: str):
         self._session = session
@@ -268,7 +396,44 @@ class RemoteHeatmap:
         self._var1 = var1
         self._var2 = var2
 
+    def fetch(self):
+        """Fetch the heatmap data from the worker and return a local :class:`HeatmapData`.
+
+        Returns
+        -------
+        HeatmapData
+            A local copy that supports full matplotlib customisation.
+        """
+        from emout.core.backtrace.probability_result import HeatmapData
+        from emout.utils.units import UnitTranslator
+
+        payload = self._session.fetch_heatmap_data(
+            self._key, self._var1, self._var2,
+        ).result()
+        units = None
+        if payload["units"] is not None:
+            units = [
+                UnitTranslator(u["from_unit"], u["to_unit"],
+                               name=u["name"], unit=u["unit"])
+                for u in payload["units"]
+            ]
+        return HeatmapData(
+            X=payload["X"], Y=payload["Y"], Z=payload["Z"],
+            xlabel=payload["xlabel"], ylabel=payload["ylabel"],
+            title=payload["title"], units=units,
+        )
+
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
+        """Plot the heatmap.
+
+        Inside a ``remote_figure()`` context the call is recorded and
+        replayed on the worker together with any ``plt.*`` calls.
+        Outside, the rendering is executed on the worker and the
+        resulting image is displayed.
+
+        To get a local :class:`HeatmapData` for full matplotlib control,
+        use :meth:`fetch` instead.
+        """
         from .remote_figure import bind_session, is_recording, record_backtrace_render
         if is_recording():
             bind_session(self._session)
@@ -284,7 +449,10 @@ class RemoteHeatmap:
 
 
 class RemoteXYData:
-    """``XYData.plot()`` / ``MultiXYData.plot()`` と同じインタフェースの proxy。"""
+    """``XYData.plot()`` / ``MultiXYData.plot()`` と同じインタフェースの proxy。
+
+    ``remote_figure()`` 内ではコマンド記録、外ではデータ転送＋ローカル描画。
+    """
 
     def __init__(self, session: RemoteSession, cache_key: str, var1: str, var2: str):
         self._session = session
@@ -292,7 +460,51 @@ class RemoteXYData:
         self._var1 = var1
         self._var2 = var2
 
+    def fetch(self):
+        """Fetch the XY data from the worker and return a local object.
+
+        Returns
+        -------
+        XYData or MultiXYData
+            A local copy that supports full matplotlib customisation.
+        """
+        from emout.core.backtrace.xy_data import MultiXYData, XYData
+        from emout.utils.units import UnitTranslator
+
+        payload = self._session.fetch_xy_data(
+            self._key, self._var1, self._var2,
+        ).result()
+        units = None
+        if payload["units"] is not None:
+            units = [
+                UnitTranslator(u["from_unit"], u["to_unit"],
+                               name=u["name"], unit=u["unit"])
+                for u in payload["units"]
+            ]
+        if "last_indexes" in payload:
+            return MultiXYData(
+                x=payload["x"], y=payload["y"],
+                last_indexes=payload["last_indexes"],
+                xlabel=payload["xlabel"], ylabel=payload["ylabel"],
+                title=payload["title"], units=units,
+            )
+        return XYData(
+            x=payload["x"], y=payload["y"],
+            xlabel=payload["xlabel"], ylabel=payload["ylabel"],
+            title=payload["title"], units=units,
+        )
+
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
+        """Plot the XY data.
+
+        Inside a ``remote_figure()`` context the call is recorded and
+        replayed on the worker together with any ``plt.*`` calls.
+        Outside, the rendering is executed on the worker and the
+        resulting image is displayed.
+
+        To get a local :class:`XYData` / :class:`MultiXYData` for full
+        matplotlib control, use :meth:`fetch` instead.
+        """
         from .remote_figure import bind_session, is_recording, record_backtrace_render
         if is_recording():
             bind_session(self._session)

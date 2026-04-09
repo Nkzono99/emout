@@ -1,3 +1,10 @@
+"""Animation framework for time-series EMSES data.
+
+:class:`FrameUpdater` wraps a single data series and produces per-frame
+plots, while :class:`Animator` orchestrates one or more updaters into a
+``matplotlib.animation.FuncAnimation``.
+"""
+
 import collections
 import warnings
 from os import PathLike

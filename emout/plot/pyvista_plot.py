@@ -1,3 +1,10 @@
+"""PyVista-based 3-D visualisation helpers for scalar and vector fields.
+
+All functions in this module require the optional ``pyvista`` dependency.
+They are called by :meth:`Data3d.plot_pyvista` and
+:meth:`VectorData.plot_pyvista`.
+"""
+
 import importlib
 from typing import Any, Literal, Optional, Tuple, Union
 
@@ -10,7 +17,13 @@ _AXIS_TO_INDEX = {"t": 0, "z": 1, "y": 2, "x": 3}
 
 
 def _require_pyvista():
-    """pyvista を遅延 import して返す。"""
+    """Lazily import and return the pyvista module.
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If pyvista is not installed.
+    """
     try:
         return importlib.import_module("pyvista")
     except Exception as exc:
@@ -20,7 +33,22 @@ def _require_pyvista():
 
 
 def _offseted(line: np.ndarray, offset: Union[float, str, None]) -> np.ndarray:
-    """位置指定を実座標オフセットへ変換する。"""
+    """Apply a positional offset to a coordinate array.
+
+    Parameters
+    ----------
+    line : np.ndarray
+        1-D array of coordinate values.
+    offset : float or str or None
+        Offset specification. A float is added directly. String values
+        ``'left'``, ``'center'``, and ``'right'`` shift so that the
+        first, middle, or last element becomes zero.
+
+    Returns
+    -------
+    np.ndarray
+        A new array with the offset applied.
+    """
     line = np.array(line, dtype=float, copy=True)
     if offset is None:
         return line
@@ -38,12 +66,46 @@ def _offseted(line: np.ndarray, offset: Union[float, str, None]) -> np.ndarray:
 
 
 def _as_scalar_array(data, use_si: bool) -> np.ndarray:
+    """Return the data values, optionally converted to SI units.
+
+    Parameters
+    ----------
+    data : Data2d or Data3d
+        Grid data object with optional ``valunit`` attribute.
+    use_si : bool
+        If True and ``data.valunit`` is available, convert values to SI.
+
+    Returns
+    -------
+    np.ndarray
+        Scalar values as a float array.
+    """
     if use_si and getattr(data, "valunit", None) is not None:
         return np.asarray(data.valunit.reverse(data), dtype=float)
     return np.asarray(data, dtype=float)
 
 
 def _axis_values(data, use_si: bool, offsets=None):
+    """Build coordinate values for each spatial axis with optional SI conversion and offset.
+
+    Parameters
+    ----------
+    data : Data2d or Data3d
+        Grid data object carrying slice and axis-unit metadata.
+    use_si : bool
+        If True and axis units are available, convert coordinates to SI.
+    offsets : tuple of (float or str or None), optional
+        Per-axis ``(x, y, z)`` positional offsets forwarded to
+        :func:`_offseted`.
+
+    Returns
+    -------
+    coords : dict[str, np.ndarray]
+        Mapping from axis name (``'x'``, ``'y'``, ``'z'``) to coordinate
+        arrays.
+    labels : dict[str, str]
+        Mapping from axis name to a human-readable label string.
+    """
     coords = {}
     labels = {}
     if offsets is None:
@@ -66,6 +128,20 @@ def _axis_values(data, use_si: bool, offsets=None):
 
 
 def _scalar_label(data, use_si: bool) -> str:
+    """Return a human-readable label including units if *use_si* is True.
+
+    Parameters
+    ----------
+    data : Data2d or Data3d
+        Grid data object with optional ``valunit`` attribute.
+    use_si : bool
+        If True and value units are available, append the unit string.
+
+    Returns
+    -------
+    str
+        Label of the form ``"name [unit]"`` or just ``"name"``.
+    """
     name = data.name or "value"
     if use_si and getattr(data, "valunit", None) is not None:
         return f"{name} [{data.valunit.unit}]"
@@ -73,12 +149,34 @@ def _scalar_label(data, use_si: bool) -> str:
 
 
 def _spacing(values: np.ndarray) -> float:
+    """Compute uniform grid spacing from a 1-D coordinate array.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        1-D array of coordinate values (assumed uniformly spaced).
+
+    Returns
+    -------
+    float
+        The spacing between consecutive values, or ``1.0`` when the
+        array has fewer than two elements.
+    """
     if len(values) <= 1:
         return 1.0
     return float(values[1] - values[0])
 
 
 def _show_bounds(plotter, axis_labels):
+    """Annotate a PyVista plotter with axis labels and tick marks.
+
+    Parameters
+    ----------
+    plotter : pyvista.Plotter
+        The plotter instance to annotate.
+    axis_labels : dict[str, str]
+        Mapping from ``'x'``, ``'y'``, ``'z'`` to label strings.
+    """
     try:
         plotter.show_bounds(
             xlabel=axis_labels["x"],
@@ -90,7 +188,31 @@ def _show_bounds(plotter, axis_labels):
 
 
 def create_plane_mesh(data2d, use_si=True, offsets=None, scalar_name=None):
-    """Data2d 用の平面 StructuredGrid を生成する。"""
+    """Create a PyVista plane mesh from a 2-D scalar field.
+
+    Parameters
+    ----------
+    data2d : Data2d
+        2-D grid data to visualise.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    scalar_name : str, optional
+        Name for the scalar data array attached to the mesh.  Defaults
+        to ``data2d.name``.
+
+    Returns
+    -------
+    mesh : pyvista.StructuredGrid
+        Plane mesh with scalar values attached.
+    scalar_name : str
+        Name of the scalar array on the mesh.
+    axis_labels : dict[str, str]
+        Axis label strings.
+    scalar_label : str
+        Human-readable scalar label including units.
+    """
     if len(data2d.use_axes) != 2:
         raise ValueError("plot_pyvista for Data2d requires 2D data.")
     if "t" in data2d.use_axes:
@@ -129,7 +251,31 @@ def create_plane_mesh(data2d, use_si=True, offsets=None, scalar_name=None):
 
 
 def create_volume_mesh(data3d, use_si=True, offsets=None, scalar_name=None):
-    """Data3d 用の ImageData を生成する。"""
+    """Create a PyVista volume mesh from a 3-D scalar field.
+
+    Parameters
+    ----------
+    data3d : Data3d
+        3-D grid data to visualise.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    scalar_name : str, optional
+        Name for the scalar data array attached to the mesh.  Defaults
+        to ``data3d.name``.
+
+    Returns
+    -------
+    mesh : pyvista.ImageData
+        Volume mesh with scalar values attached.
+    scalar_name : str
+        Name of the scalar array on the mesh.
+    axis_labels : dict[str, str]
+        Axis label strings.
+    scalar_label : str
+        Human-readable scalar label including units.
+    """
     axes = tuple(data3d.use_axes)
     if set(axes) != set(_SPATIAL_AXES):
         raise ValueError(
@@ -176,7 +322,39 @@ def plot_scalar_plane(
     add_scalar_bar=True,
     **kwargs,
 ):
-    """Data2d を 3D 空間上の平面として pyvista 描画する。"""
+    """Plot a 2-D scalar field on a PyVista plane.
+
+    Parameters
+    ----------
+    data2d : Data2d
+        2-D grid data to visualise.
+    plotter : pyvista.Plotter, optional
+        Existing plotter to draw into.  A new one is created if *None*.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    show : bool, optional
+        If True, call ``plotter.show()`` before returning.
+    cmap : str, optional
+        Colour-map name forwarded to PyVista.
+    clim : tuple of float, optional
+        ``(vmin, vmax)`` colour limits.
+    scalar_name : str, optional
+        Name for the scalar data array on the mesh.
+    show_edges : bool, optional
+        Show mesh edge lines.
+    add_scalar_bar : bool, optional
+        Add a colour-bar to the plotter.
+    **kwargs
+        Additional keyword arguments forwarded to
+        ``plotter.add_mesh``.
+
+    Returns
+    -------
+    pyvista.Plotter
+        The plotter instance used for rendering.
+    """
     pv = _require_pyvista()
     if plotter is None:
         plotter = pv.Plotter()
@@ -227,7 +405,53 @@ def plot_scalar_volume(
     show_edges=False,
     **kwargs,
 ):
-    """Data3d を pyvista で描画する。"""
+    """Plot a 3-D scalar field as a volume rendering.
+
+    Parameters
+    ----------
+    data3d : Data3d
+        3-D grid data to visualise.
+    mode : {'box', 'volume', 'slice', 'contour'}, optional
+        Rendering mode.  ``'box'`` extracts the outer surface,
+        ``'volume'`` uses GPU volume rendering, ``'slice'`` shows
+        orthogonal slices, and ``'contour'`` draws iso-surfaces.
+    plotter : pyvista.Plotter, optional
+        Existing plotter to draw into.  A new one is created if *None*.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    show : bool, optional
+        If True, call ``plotter.show()`` before returning.
+    cmap : str, optional
+        Colour-map name forwarded to PyVista.
+    clim : tuple of float, optional
+        ``(vmin, vmax)`` colour limits.
+    opacity : float or str, optional
+        Opacity for volume rendering.  Can be a transfer function name
+        such as ``'sigmoid'``.
+    contour_levels : int or np.ndarray, optional
+        Number of iso-surfaces (or explicit levels) when
+        *mode='contour'*.
+    scalar_name : str, optional
+        Name for the scalar data array on the mesh.
+    add_outline : bool, optional
+        Draw an outline box around the volume.
+    outline_color : str, optional
+        Colour of the outline box.
+    add_scalar_bar : bool, optional
+        Add a colour-bar to the plotter.
+    show_edges : bool, optional
+        Show mesh edge lines (used in ``'box'`` mode).
+    **kwargs
+        Additional keyword arguments forwarded to
+        ``plotter.add_mesh`` or ``plotter.add_volume``.
+
+    Returns
+    -------
+    pyvista.Plotter
+        The plotter instance used for rendering.
+    """
     pv = _require_pyvista()
     if plotter is None:
         plotter = pv.Plotter()
@@ -310,7 +534,33 @@ def create_vector_mesh3d(
     vector_name="vectors",
     magnitude_name="magnitude",
 ):
-    """3成分 Data3d から pyvista.ImageData ベクトル場を生成する。"""
+    """Create a PyVista mesh from three vector-component arrays.
+
+    Parameters
+    ----------
+    x_data3d, y_data3d, z_data3d : Data3d
+        X-, Y-, and Z-component 3-D grid data.  All three must share
+        the same shape and spatial axes.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    vector_name : str, optional
+        Name for the vector data array attached to the mesh.
+    magnitude_name : str, optional
+        Name for the magnitude scalar array attached to the mesh.
+
+    Returns
+    -------
+    mesh : pyvista.ImageData
+        Volume mesh with vector and magnitude arrays.
+    vector_name : str
+        Name of the vector array on the mesh.
+    magnitude_name : str
+        Name of the magnitude array on the mesh.
+    axis_labels : dict[str, str]
+        Axis label strings.
+    """
     if x_data3d.shape != y_data3d.shape or x_data3d.shape != z_data3d.shape:
         raise ValueError("All vector components must have the same shape.")
 
@@ -333,6 +583,7 @@ def create_vector_mesh3d(
     )
 
     def _component_values(component):
+        """Flatten one vector component into F-order for PyVista."""
         if use_si and getattr(component, "valunit", None) is not None:
             arr = np.asarray(component.valunit.reverse(component), dtype=float)
         else:
@@ -374,7 +625,44 @@ def plot_vector_quiver3d(
     add_scalar_bar=True,
     **kwargs,
 ):
-    """3次元 quiver を pyvista で描画する。"""
+    """Plot a 3-D vector field as quiver arrows.
+
+    Parameters
+    ----------
+    x_data3d, y_data3d, z_data3d : Data3d
+        X-, Y-, and Z-component 3-D grid data.
+    plotter : pyvista.Plotter, optional
+        Existing plotter to draw into.  A new one is created if *None*.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    show : bool, optional
+        If True, call ``plotter.show()`` before returning.
+    skip : int or tuple of int, optional
+        Down-sampling factor for quiver arrows.  A single integer
+        applies to all axes; a 3-tuple ``(skip_x, skip_y, skip_z)``
+        allows per-axis control.
+    scale_by_magnitude : bool, optional
+        Scale arrow length by vector magnitude.
+    factor : float, optional
+        Glyph scale factor.  When *None* an automatic value is
+        computed from the domain size and mean magnitude.
+    cmap : str, optional
+        Colour-map name forwarded to PyVista.
+    clim : tuple of float, optional
+        ``(vmin, vmax)`` colour limits.
+    add_scalar_bar : bool, optional
+        Add a colour-bar to the plotter.
+    **kwargs
+        Additional keyword arguments forwarded to
+        ``plotter.add_mesh``.
+
+    Returns
+    -------
+    pyvista.Plotter
+        The plotter instance used for rendering.
+    """
     pv = _require_pyvista()
     if plotter is None:
         plotter = pv.Plotter()
@@ -460,7 +748,49 @@ def plot_vector_streamlines3d(
     add_scalar_bar=True,
     **kwargs,
 ):
-    """3次元流線を pyvista で描画する。"""
+    """Plot a 3-D vector field as streamlines.
+
+    Parameters
+    ----------
+    x_data3d, y_data3d, z_data3d : Data3d
+        X-, Y-, and Z-component 3-D grid data.
+    plotter : pyvista.Plotter, optional
+        Existing plotter to draw into.  A new one is created if *None*.
+    use_si : bool, optional
+        Convert coordinates and values to SI units.
+    offsets : tuple of (float or str or None), optional
+        Per-axis positional offsets ``(x, y, z)``.
+    show : bool, optional
+        If True, call ``plotter.show()`` before returning.
+    n_points : int, optional
+        Number of seed points for streamline integration.
+    source_radius : float, optional
+        Radius of the spherical seed source.  Defaults to 25 % of the
+        smallest domain extent.
+    source_center : tuple of float, optional
+        Centre of the seed source.  Defaults to the mesh centre.
+    tube_radius : float, optional
+        If given, render streamlines as tubes with this radius.
+    cmap : str, optional
+        Colour-map name forwarded to PyVista.
+    clim : tuple of float, optional
+        ``(vmin, vmax)`` colour limits.
+    add_scalar_bar : bool, optional
+        Add a colour-bar to the plotter.
+    **kwargs
+        Additional keyword arguments forwarded to
+        ``mesh.streamlines``.
+
+    Returns
+    -------
+    pyvista.Plotter
+        The plotter instance used for rendering.
+
+    Raises
+    ------
+    RuntimeError
+        If no streamlines could be generated with the given parameters.
+    """
     pv = _require_pyvista()
     if plotter is None:
         plotter = pv.Plotter()

@@ -1,10 +1,27 @@
+"""Utility for dispatching computation to a local or Dask backend."""
+
 import sys
 
 
 def run_backend(func, *args, **kwargs):
-    """
-    • compute=True: 即 execute(func) して結果を返す
-    • compute=False: Dask Future を返す (Client が無ければ即時実行して返す)
+    """Execute *func* locally or on the connected Dask cluster.
+
+    If a Dask client is active, submits *func* via ``client.submit``;
+    otherwise falls back to a direct local call.
+
+    Parameters
+    ----------
+    func : callable
+        The function to execute.
+    *args
+        Positional arguments forwarded to *func*.
+    **kwargs
+        Keyword arguments forwarded to *func*.
+
+    Returns
+    -------
+    object
+        The return value of *func*.
     """
     if sys.version_info.minor < 10:
         return func(*args, **kwargs)

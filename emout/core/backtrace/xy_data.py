@@ -1,3 +1,9 @@
+"""Lightweight x-y pair data containers for backtrace visualisation.
+
+:class:`XYData` holds a single named curve, while :class:`MultiXYData`
+groups several curves for overlay plotting.
+"""
+
 from typing import Any, Iterator, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -5,9 +11,7 @@ import numpy as np
 
 
 class XYData:
-    """
-    単一シリーズ (x, y) を保持し、plot() で x vs y を描くヘルパークラス。
-    """
+    """Named x-y curve with optional unit labels and a plot helper."""
 
     def __init__(
         self,
@@ -105,9 +109,7 @@ class XYData:
 
 
 class MultiXYData:
-    """
-    複数シリーズ (x[i,:], y[i,:]) を保持し、plot() で全シリーズをプロットするヘルパークラス。
-    """
+    """Collection of :class:`XYData` curves for overlay plotting."""
 
     def __init__(
         self,

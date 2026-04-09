@@ -1,3 +1,10 @@
+"""Triangle-mesh surface definitions for MPIEMSES boundary visualisation.
+
+Each :class:`MeshSurface3D` subclass generates vertices, faces, and
+optionally samples a :class:`~.field.Field3D` on the surface for
+colour-mapped rendering.
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -515,7 +522,7 @@ def _rect_with_hole_mesh(
 
 
 class BoxMeshSurface(MeshSurface3D):
-    """Explicit box faces selectable by name."""
+    """Axis-aligned box (cuboid) mesh with selectable faces."""
 
     _allowed_faces = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
 

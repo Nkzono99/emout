@@ -1,3 +1,5 @@
+"""Relocate EMSES magnetic-field components to cell centres."""
+
 from typing import Literal, Tuple
 
 import numpy as np

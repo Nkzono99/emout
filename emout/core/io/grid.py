@@ -1,3 +1,10 @@
+"""Grid data loading from EMSES HDF5 output files.
+
+:class:`GridDataLoader` resolves field names (including relocated fields
+and vector components) and returns :class:`~emout.core.data.data.GridDataSeries`
+or :class:`~emout.core.data.vector_data.VectorData` instances.
+"""
+
 # emout/io/grid.py
 
 import logging
@@ -38,10 +45,10 @@ tqdm = get_tqdm()
 
 
 class GridDataLoader:
-    """
-    Emout の __getattr__ 相当のロジックを担うクラス。
-    - GridDataSeries / VectorData2d の生成
-    - relocated field (.create) の呼び出し
+    """Resolve EMSES field names and load grid data from HDF5 files.
+
+    Supports plain scalars, relocated electric/magnetic fields (``re*``,
+    ``rb*``), and multi-axis vector fields (``{name}xy``, ``{name}xyz``).
     """
 
     def __init__(

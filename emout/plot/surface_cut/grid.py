@@ -1,3 +1,5 @@
+"""Uniform cell-centred grid definition for surface-cut operations."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

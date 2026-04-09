@@ -1,3 +1,10 @@
+"""Facade class that provides unified access to EMSES simulation outputs.
+
+The :class:`Emout` class aggregates directory inspection, grid data loading,
+particle data, boundary modelling, and backtrace analysis into a single
+entry point.
+"""
+
 import logging
 from pathlib import Path
 from typing import List, Union
@@ -140,15 +147,25 @@ class Emout:
 
     @property
     def icur(self) -> pd.DataFrame:
-        """
-        'icur' を DataFrame で返す
+        """Return the ``icur`` diagnostic file as a DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Table with step numbers and per-species / per-body current
+            columns parsed from the ``icur`` text file.
         """
         return self._dir_inspector.read_icur_as_dataframe()
 
     @property
     def pbody(self) -> pd.DataFrame:
-        """
-        'pbody' を DataFrame で返す
+        """Return the ``pbody`` diagnostic file as a DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Table with a ``step`` column and per-body particle-count
+            columns parsed from the ``pbody`` text file.
         """
         return self._dir_inspector.read_pbody_as_dataframe()
 
@@ -180,11 +197,33 @@ class Emout:
         return ParticlesSeries(self.directory, species=species, vunits=vunits)
 
     def __getattr__(self, name: str) -> Union[GridDataSeries, VectorData2d, VectorData3d]:
-        """
-        - r[e/b][xyz] → relocated field の生成
-        - (dname)(axis1)(axis2)(axis3) → VectorData3d
-        - (dname)(axis1)(axis2) → VectorData2d
-        - それ以外 → GridDataSeries
+        """Dynamically resolve EMSES field names to data objects.
+
+        The following name patterns are recognised:
+
+        * ``p{N}`` -- particle species *N* (delegates to :meth:`particle`).
+        * ``r[eb][xyz]`` -- relocated (cell-centred) electric / magnetic
+          field component.
+        * ``{base}{a1}{a2}{a3}`` (three distinct axis letters) --
+          :class:`VectorData3d` combining three scalar components.
+        * ``{base}{a1}{a2}`` -- :class:`VectorData2d` combining two
+          scalar components.
+        * anything else -- :class:`GridDataSeries` loaded from HDF5.
+
+        Parameters
+        ----------
+        name : str
+            Attribute name to resolve.
+
+        Returns
+        -------
+        GridDataSeries or VectorData2d or VectorData3d
+            The resolved data object.
+
+        Raises
+        ------
+        AttributeError
+            If *name* cannot be mapped to any known field or file.
         """
         import re
 
@@ -203,8 +242,8 @@ class Emout:
 
         ``data.inp`` の ``boundary_type = 'complex'`` 設定と
         ``boundary_types`` 配列をもとに、各 sub-boundary の
-        :class:`emout.emout.boundaries.Boundary` インスタンスを生成して
-        :class:`emout.emout.boundaries.BoundaryCollection` として返します。
+        :class:`emout.core.boundaries.Boundary` インスタンスを生成して
+        :class:`emout.core.boundaries.BoundaryCollection` として返します。
 
         使用例::
 

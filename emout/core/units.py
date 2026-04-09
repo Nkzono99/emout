@@ -1,3 +1,10 @@
+"""Unit mapping from EMSES field names to physical-unit translators.
+
+Defines :func:`build_name2unit_mapping` which creates a regex-keyed
+dictionary that maps grid-data names (e.g. ``phisp``, ``bx``, ``nd1p``)
+to factory functions producing :class:`~emout.utils.UnitTranslator` instances.
+"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
@@ -12,16 +19,18 @@ if TYPE_CHECKING:
 
 
 def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
-    """必要なオブジェクトを構築する。
-    
+    """Build a regex dictionary mapping field-name patterns to unit-translator factories.
+
     Parameters
     ----------
     max_ndp : int, optional
-        密度種別の最大番号です。
+        Maximum species number for density fields (``nd{N}p``).
+
     Returns
     -------
     RegexDict
-        処理結果です。
+        Regex dictionary mapping field-name patterns to unit-translator
+        factory functions.
     """
     mapping: dict[str, Callable[..., UnitTranslator]] = {
         r"phisp": lambda out: out.unit.phi,
@@ -108,31 +117,33 @@ def wpit_unit(out: Emout) -> UnitTranslator:
 
 
 def none_unit(out: Emout) -> UnitTranslator:
-    """無次元の単位変換器を返す。
-    
+    """Return an identity (dimensionless) unit translator.
+
     Parameters
     ----------
     out : Emout
-        単位変換の参照元 `Emout` オブジェクトです。
+        Source :class:`Emout` instance (unused, kept for API consistency).
+
     Returns
     -------
     UnitTranslator
-        処理結果です。
+        Identity translator (dimensionless).
     """
     return UnitTranslator(1, 1, name="", unit="")
 
 
 def ndp_unit(out: Emout) -> UnitTranslator:
-    """`ndp` の単位変換器を返す。
-    
+    """Return a unit translator for grid-density fields (``nd*p``).
+
     Parameters
     ----------
     out : Emout
-        単位変換の参照元 `Emout` オブジェクトです。
+        Source :class:`Emout` instance providing plasma parameters.
+
     Returns
     -------
     UnitTranslator
-        処理結果です。
+        Translator converting grid-density to number density in /cc.
     """
     wp = out.unit.f.reverse(out.inp.wp[0])
     mp = abs(cn.m_e / out.inp.qm[0])
@@ -141,16 +152,18 @@ def ndp_unit(out: Emout) -> UnitTranslator:
 
 
 def nd3p_unit(out: Emout) -> UnitTranslator:
-    """`nd3p` の単位変換器を返す。
-    
+    """Return a unit translator for species-3 grid-density (``nd3p``).
+
     Parameters
     ----------
     out : Emout
-        単位変換の参照元 `Emout` オブジェクトです。
+        Source :class:`Emout` instance providing plasma parameters.
+
     Returns
     -------
     UnitTranslator
-        処理結果です。
+        Translator converting grid-density to number density in /cc for
+        species 3.
     """
     wpp = out.unit.f.reverse(out.inp.wp[2])
     np = wpp**2 * cn.m_e * cn.epsilon_0 / cn.e**2

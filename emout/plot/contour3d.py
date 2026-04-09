@@ -1,3 +1,5 @@
+"""3-D iso-surface (contour) rendering via matplotlib tri-surface plots."""
+
 # isosurface_mpl_roi.py
 from __future__ import annotations
 

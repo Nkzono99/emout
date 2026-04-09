@@ -1,3 +1,10 @@
+"""Single-timestep particle data container.
+
+:class:`ParticleData` holds per-particle arrays (position, velocity, etc.)
+loaded from ``p{species}{comp}*_{part}.h5`` files and provides a
+:meth:`plot` shortcut for scatter / histogram visualisation.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,7 +16,10 @@ import pandas as pd
 
 @dataclass(slots=True)
 class ParticleData:
-    """ParticleData クラス。
+    """Single-timestep container for one particle-data component.
+
+    Wraps a 1-D float array of per-particle values (e.g. x-positions or
+    vx-velocities) with optional unit metadata and a :meth:`plot` helper.
     """
     values: np.ndarray
     valunit: Optional[Any] = None

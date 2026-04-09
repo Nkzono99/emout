@@ -1,3 +1,5 @@
+"""Shared utilities: input-file parsing, unit conversion, and helpers."""
+
 from .emsesinp import InpFile, UnitConversionKey
 from .group import Group
 from .poisson import poisson

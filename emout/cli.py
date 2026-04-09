@@ -23,17 +23,20 @@ _STATE_FILE = _STATE_DIR / "server.json"
 
 
 def _save_state(data: dict) -> None:
+    """Persist server state (address, PID) to ``~/.emout/server.json``."""
     _STATE_DIR.mkdir(parents=True, exist_ok=True)
     _STATE_FILE.write_text(json.dumps(data, indent=2))
 
 
 def _load_state() -> dict | None:
+    """Load server state from ``~/.emout/server.json``, or ``None`` if absent."""
     if _STATE_FILE.exists():
         return json.loads(_STATE_FILE.read_text())
     return None
 
 
 def _clear_state() -> None:
+    """Remove the ``~/.emout/server.json`` state file if it exists."""
     _STATE_FILE.unlink(missing_ok=True)
 
 
@@ -43,6 +46,14 @@ def _clear_state() -> None:
 
 
 def cmd_server_start(args):
+    """Start a Dask scheduler and worker, then block until Ctrl-C.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments including scheduler-ip, scheduler-port,
+        partition, processes, threads, cores, memory, and walltime.
+    """
     from emout.distributed.client import start_cluster
     from emout.distributed.config import DaskConfig
 
@@ -95,6 +106,13 @@ def cmd_server_start(args):
 
 
 def cmd_server_stop(_args):
+    """Stop the running Dask server and clean up the state file.
+
+    Parameters
+    ----------
+    _args : argparse.Namespace
+        Parsed CLI arguments (unused).
+    """
     from emout.distributed.client import stop_cluster
 
     state = _load_state()
@@ -131,6 +149,13 @@ def cmd_server_stop(_args):
 
 
 def cmd_server_status(_args):
+    """Print the current Dask server address, PID, and worker count.
+
+    Parameters
+    ----------
+    _args : argparse.Namespace
+        Parsed CLI arguments (unused).
+    """
     state = _load_state()
     if state is None:
         print("No running server.")
@@ -155,6 +180,7 @@ def cmd_server_status(_args):
 
 
 def main():
+    """Entry point for the ``emout`` CLI."""
     parser = argparse.ArgumentParser(prog="emout", description="emout CLI")
     sub = parser.add_subparsers(dest="command")
 

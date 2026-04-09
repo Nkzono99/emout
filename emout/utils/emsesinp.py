@@ -1,3 +1,10 @@
+"""Parser for EMSES ``plasma.inp`` namelist files.
+
+:class:`InpFile` reads Fortran namelist parameters via :mod:`f90nml` and
+exposes them as attributes, handling sparse-array indexing and the
+``!!key`` unit-conversion header.
+"""
+
 import re
 
 import f90nml

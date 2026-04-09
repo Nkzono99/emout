@@ -1,3 +1,10 @@
+"""Optional Dask-based distributed computing subsystem.
+
+Available only on Python >= 3.10 with ``dask`` and ``distributed``
+installed.  Provides cluster management, remote figure recording,
+and remote backtrace / field rendering.
+"""
+
 import sys
 
 if sys.version_info.minor >= 10:

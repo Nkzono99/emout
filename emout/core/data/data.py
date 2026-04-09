@@ -1,3 +1,9 @@
+"""Dimensioned ndarray subclasses for EMSES grid data.
+
+Provides :class:`Data` (base), :class:`Data1d` through :class:`Data4d`,
+each carrying axis metadata, unit translators, and plot helpers.
+"""
+
 import re
 import warnings
 from os import PathLike

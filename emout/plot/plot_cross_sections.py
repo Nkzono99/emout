@@ -1,3 +1,9 @@
+"""Cross-section plotting for MPIEMSES finbound boundaries.
+
+Renders sphere, flat-surface, and rectangle boundaries on a 2-D plane
+using information from the ``plasma.inp`` parameter file.
+"""
+
 from typing import Callable, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt

@@ -1,3 +1,9 @@
+"""Data extraction utilities for saving subsets of EMSES output.
+
+Provides :class:`EmoutDataExtraction` which wraps an :class:`Emout` instance
+and automatically persists accessed grid data as HDF5 snapshots.
+"""
+
 import logging
 import re
 from pathlib import Path
@@ -16,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 
 class EmoutDataExtraction:
-    """EmoutDataExtraction クラス。
+    """Wrapper around :class:`Emout` that persists accessed data to disk.
+
+    Every grid field accessed via attribute lookup is automatically saved
+    as an HDF5 snapshot (last timestep only) into an extraction directory,
+    enabling lightweight data subsets for post-processing or transfer.
     """
     def __init__(self, root: Union[Path, str], data: Emout, nparent=1):
         """インスタンスを初期化する。
@@ -41,34 +51,34 @@ class EmoutDataExtraction:
 
     @property
     def directory(self):
-        """対象ディレクトリを返す。
-        
+        """Return the base simulation directory.
+
         Returns
         -------
-        object
-            処理結果です。
+        Path
+            Root output directory of the wrapped :class:`Emout` instance.
         """
         return self._data.directory
 
     @property
     def inp(self):
-        """入力パラメータを返す。
-        
+        """Return the input parameter file.
+
         Returns
         -------
-        object
-            処理結果です。
+        InpFile or None
+            Parsed ``plasma.inp`` parameters, or ``None`` if unavailable.
         """
         return self._data.inp
 
     @property
     def unit(self):
-        """単位変換オブジェクトを返す。
-        
+        """Return the unit conversion object.
+
         Returns
         -------
-        object
-            処理結果です。
+        Units or None
+            Unit translators derived from the conversion key, or ``None``.
         """
         return self._data.unit
 
@@ -84,23 +94,43 @@ class EmoutDataExtraction:
 
     @property
     def icur(self) -> pd.DataFrame:
-        """
-        'icur' を DataFrame で返す
+        """Return the ``icur`` diagnostic file as a DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Table with step numbers and per-species / per-body current
+            columns parsed from the ``icur`` text file.
         """
         return self._data.icur
 
     @property
     def pbody(self) -> pd.DataFrame:
-        """
-        'pbody' を DataFrame で返す
+        """Return the ``pbody`` diagnostic file as a DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Table with a ``step`` column and per-body particle-count
+            columns parsed from the ``pbody`` text file.
         """
         return self._data.pbody
 
     def __getattr__(self, name: str) -> Union[GridDataSeries, VectorData2d]:
-        """
-        - r[e/b][xyz] → relocated field の生成
-        - (dname)(axis1)(axis2) → VectorData2d
-        - それ以外 → GridDataSeries
+        """Resolve a field name, persist the data, and return it.
+
+        Delegates to the wrapped :class:`Emout` for name resolution, then
+        saves the last-timestep snapshot as HDF5 into :attr:`extract_dir`.
+
+        Parameters
+        ----------
+        name : str
+            Attribute name to resolve (same patterns as :meth:`Emout.__getattr__`).
+
+        Returns
+        -------
+        GridDataSeries or VectorData2d
+            The resolved data object.
         """
         data = getattr(self._data, name)
 
@@ -117,16 +147,16 @@ class EmoutDataExtraction:
         return data
 
     def save_hdf5(self, name):
-        """データを保存する。
-        
+        """Save the last timestep of the named field to an HDF5 file.
+
+        The file is written to :attr:`extract_dir` as
+        ``{name}00_0000.h5``.  If the file already exists the write is
+        skipped.
+
         Parameters
         ----------
-        name : object
-            対象データ名またはキー名です。
-        Returns
-        -------
-        None
-            戻り値はありません。
+        name : str
+            Grid-data field name (e.g. ``"phisp"``, ``"ex"``).
         """
         path = self.extract_dir / f"{name}00_0000.h5"
         if path.exists():
@@ -141,23 +171,26 @@ class EmoutDataExtraction:
 
     @property
     def backtrace(self) -> BacktraceWrapper:
-        """バックトレースソルバを返す。
-        
+        """Return the backtrace solver wrapper.
+
         Returns
         -------
         BacktraceWrapper
-            処理結果です。
+            Backtrace API bound to the underlying simulation data.
         """
         return self._data.backtrace
 
     @property
     def extract_dir(self):
-        """dir を抽出する。
-        
+        """Compute the extraction output directory.
+
+        The path is derived from :attr:`directory` by taking the last
+        *nparent* path components and appending them to *root*.
+
         Returns
         -------
-        object
-            処理結果です。
+        Path
+            Directory where extracted HDF5 snapshots are written.
         """
         p = self.directory
         d = ""

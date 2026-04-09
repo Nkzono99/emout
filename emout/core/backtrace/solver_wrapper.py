@@ -1,3 +1,10 @@
+"""High-level wrapper for particle backtrace solvers.
+
+:class:`BacktraceWrapper` configures field interpolation, integrator
+parameters, and optional Dask-based remote execution, then delegates
+to the underlying ODE solver.
+"""
+
 from typing import Any, List, Sequence, Tuple, Union
 
 import numpy as np
@@ -10,7 +17,11 @@ from emout.distributed.utils import run_backend
 
 
 class BacktraceWrapper:
-    """BacktraceWrapper クラス。
+    """High-level wrapper for particle backtrace solvers.
+
+    Configures field interpolation, integrator parameters, and optional
+    Dask-based remote execution, then delegates to the underlying ODE
+    solver.
     """
     def __init__(
         self,

@@ -1,3 +1,9 @@
+"""Lazy time-series loader for EMSES grid HDF5 files.
+
+:class:`GridDataSeries` memory-maps a sequence of ``{name}00_0000.h5``
+files and produces :class:`~emout.core.data.data.Data` slices on demand.
+"""
+
 from itertools import chain
 from os import PathLike
 from pathlib import Path

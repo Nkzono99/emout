@@ -1,3 +1,10 @@
+"""Low-level 2-D plotting helpers for scalar and vector fields.
+
+Functions in this module accept raw numpy arrays plus axis / unit
+metadata and produce matplotlib figures.  They are called by the
+:meth:`Data.plot` and :meth:`VectorData.plot` convenience methods.
+"""
+
 import copy
 
 import matplotlib

@@ -1,3 +1,5 @@
+"""Supplementary plotting helpers for boundary cross-sections with holes."""
+
 from typing import Tuple, Union, TYPE_CHECKING
 
 import matplotlib.pyplot as plt

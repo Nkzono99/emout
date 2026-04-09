@@ -1,3 +1,10 @@
+"""Multi-component vector field wrappers.
+
+:class:`VectorData` bundles two or three :class:`~emout.core.data.data.Data`
+components and provides unified plotting for 2-D quiver / streamline and
+3-D PyVista visualisation.
+"""
+
 import re
 import warnings
 from os import PathLike
@@ -13,19 +20,32 @@ from emout.utils import UnitTranslator
 
 
 class VectorData(utils.Group):
-    """VectorData クラス。
+    """Multi-component vector field container.
+
+    Wraps 2 or 3 :class:`~emout.core.data.data.Data` arrays (x, y[, z])
+    and delegates axis metadata, slicing, and plotting to the underlying
+    components.
+
+    Parameters
+    ----------
+    objs : list of Data
+        Vector components (length 2 or 3).
+    name : str, optional
+        Display name for the vector field.
+    attrs : dict, optional
+        Additional attributes inherited by the wrapper.
     """
     def __init__(self, objs: List[Any], name=None, attrs=None):
-        """インスタンスを初期化する。
-        
+        """Initialise a VectorData instance.
+
         Parameters
         ----------
-        objs : List[Any]
-            ベクトル成分データのリストです（2成分または3成分）。
-        name : object, optional
-            対象データ名またはキー名です。
-        attrs : object, optional
-            生成される `VectorData` に引き継ぐ属性辞書です。
+        objs : list of Data
+            Vector components (length 2 or 3).
+        name : str, optional
+            Display name for the vector field.
+        attrs : dict, optional
+            Additional attributes inherited by the wrapper.
         """
         if len(objs) not in (2, 3):
             raise ValueError("VectorData requires 2 or 3 components.")
@@ -73,67 +93,67 @@ class VectorData(utils.Group):
 
     @property
     def name(self) -> str:
-        """データ名を返す。
-        
+        """Return the human-readable name of this vector field.
+
         Returns
         -------
         str
-            文字列表現です。
+            Human-readable name of this vector field.
         """
         return self.attrs["name"]
 
     @property
     def valunit(self) -> UnitTranslator:
-        """値の単位変換器を返す。
-        
+        """Return the unit translator for the field values.
+
         Returns
         -------
         UnitTranslator
-            処理結果です。
+            Unit translator for the field values.
         """
         return self.objs[0].valunit
 
     @property
     def axisunits(self) -> UnitTranslator:
-        """軸ごとの単位変換器を返す。
-        
+        """Return per-axis unit translators.
+
         Returns
         -------
-        UnitTranslator
-            処理結果です。
+        list of UnitTranslator
+            Per-axis unit translators ``[-1]=x, [-2]=y, [-3]=z``.
         """
         return self.objs[0].axisunits
 
     @property
     def slice_axes(self) -> np.ndarray:
-        """各配列軸に対応する元データ軸を返す。
-        
+        """Return the mapping from current array axes to original data axes.
+
         Returns
         -------
         np.ndarray
-            処理結果です。
+            Integer array mapping current array axes to original data axes.
         """
         return self.objs[0].slice_axes
 
     @property
     def slices(self) -> np.ndarray:
-        """各軸のスライス範囲を返す。
-        
+        """Return the slice objects describing the current sub-range on each axis.
+
         Returns
         -------
         np.ndarray
-            処理結果です。
+            Slice objects describing the current sub-range on each axis.
         """
         return self.objs[0].slices
 
     @property
-    def shape(self) -> np.ndarray:
-        """ベクトル成分を除いたデータ形状を返す。
-        
+    def shape(self) -> tuple:
+        """Return the shape of the underlying component arrays.
+
         Returns
         -------
-        np.ndarray
-            処理結果です。
+        tuple
+            Shape tuple of the underlying component arrays.
         """
         return self.objs[0].shape
 

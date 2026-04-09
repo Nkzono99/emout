@@ -1,3 +1,9 @@
+"""Network and cluster configuration helpers.
+
+Resolves local IP addresses, checks port availability, and manages
+the ``~/.emout/server.json`` state file used by the CLI.
+"""
+
 # emout/distributed/config.py
 import json
 import logging

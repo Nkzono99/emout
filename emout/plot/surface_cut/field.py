@@ -1,3 +1,5 @@
+"""3-D scalar field wrapper for surface-cut interpolation."""
+
 from __future__ import annotations
 
 import numpy as np

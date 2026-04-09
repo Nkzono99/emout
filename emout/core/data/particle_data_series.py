@@ -1,3 +1,10 @@
+"""Time-series loaders for particle HDF5 output.
+
+:class:`ParticleDataSeries` lazily loads per-component particle data
+across timesteps, while :class:`MultiParticleDataSeries` (aliased as
+``ParticlesSeries``) aggregates multiple components for a given species.
+"""
+
 from __future__ import annotations
 
 import re

@@ -1,3 +1,5 @@
+"""Generic grouping container with element-wise attribute delegation."""
+
 import math
 
 

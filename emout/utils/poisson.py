@@ -1,3 +1,10 @@
+"""Poisson-equation solver with configurable boundary conditions.
+
+Provides the :func:`poisson` entry point and boundary-condition classes
+(:class:`PeriodicPoissonBoundary`, :class:`DirichletPoissonBoundary`,
+:class:`NeumannPoissonBoundary`) for 1-D / 2-D / 3-D grids.
+"""
+
 from abc import ABCMeta, abstractmethod
 from functools import partial
 from typing import Callable, List, Tuple
@@ -184,8 +191,7 @@ class FFT3d:
 
 
 class PoissonBoundary(metaclass=ABCMeta):
-    """PoissonBoundary クラス。
-    """
+    """Abstract base for Poisson boundary conditions."""
     def __init__(self, axis: int, boundary_values: Tuple[float] = (0.0, 0.0)):
         """インスタンスを初期化する。
         
@@ -321,8 +327,7 @@ class PoissonBoundary(metaclass=ABCMeta):
 
 
 class PeriodicPoissonBoundary(PoissonBoundary):
-    """PeriodicPoissonBoundary クラス。
-    """
+    """Periodic boundary condition for the Poisson solver."""
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
         """境界条件に対応した順方向 FFT 関数を返す。
@@ -409,8 +414,7 @@ class PeriodicPoissonBoundary(PoissonBoundary):
 
 
 class DirichletPoissonBoundary(PoissonBoundary):
-    """DirichletPoissonBoundary クラス。
-    """
+    """Fixed-value (Dirichlet) boundary condition for the Poisson solver."""
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
         """境界条件に対応した順方向 FFT 関数を返す。
@@ -499,8 +503,7 @@ class DirichletPoissonBoundary(PoissonBoundary):
 
 
 class NeumannPoissonBoundary(PoissonBoundary):
-    """NeumannPoissonBoundary クラス。
-    """
+    """Zero-gradient (Neumann) boundary condition for the Poisson solver."""
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
         """境界条件に対応した順方向 FFT 関数を返す。

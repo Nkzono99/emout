@@ -1,3 +1,5 @@
+"""Miscellaneous helpers: regex dict, file-info parsing, interpolation, and slicing."""
+
 import re
 from pathlib import Path
 

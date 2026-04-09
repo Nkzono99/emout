@@ -1,3 +1,9 @@
+"""Single-particle backtrace result container.
+
+:class:`BacktraceResult` stores the trajectory and field values along a
+single particle backtrace and provides attribute-based column access.
+"""
+
 from typing import Any, Iterator
 
 import numpy as np
