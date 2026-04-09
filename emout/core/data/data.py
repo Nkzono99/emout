@@ -486,7 +486,7 @@ class Data(np.ndarray):
         if is_recording():
             request_session(remote_kwargs)
             recipe_index = self._to_recipe_index()
-            record_field_plot(self.name, recipe_index, plot_kwargs)
+            record_field_plot(self.name, recipe_index, plot_kwargs, emout_kwargs=remote_kwargs)
             return _REMOTE_PLOT_HANDLED
 
         # --- remote_figure 外 + Dask session あり: データ転送モード ---
@@ -498,7 +498,7 @@ class Data(np.ndarray):
             return None
 
         recipe_index = self._to_recipe_index()
-        payload = session.fetch_field(self.name, recipe_index).result()
+        payload = session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs).result()
 
         local_data = type(self)(
             payload["array"],
@@ -932,7 +932,7 @@ class Data3d(Data):
             session = get_or_create_session(emout_kwargs=remote_kwargs)
             if session is not None:
                 recipe_index = self._to_recipe_index()
-                payload = session.fetch_field(self.name, recipe_index).result()
+                payload = session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs).result()
                 local_data = Data3d(
                     payload["array"],
                     name=payload["name"],

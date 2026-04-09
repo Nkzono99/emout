@@ -33,7 +33,11 @@ def test_fetch_field_returns_numpy_payload():
             assert index == (slice(None), slice(None))
             return data
 
-    fake_session = SimpleNamespace(_data=SimpleNamespace(phisp=Holder()))
+    fake_emout = SimpleNamespace(phisp=Holder())
+    fake_session = SimpleNamespace(
+        _instances={"default": fake_emout},
+        _resolve=lambda emout_kwargs=None: fake_emout,
+    )
 
     payload = RemoteSession.fetch_field(
         fake_session,
@@ -87,19 +91,21 @@ def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch
     assert len(commands_seen) == 1
     commands, fmt, dpi = commands_seen[0]
     assert len(commands) == 1
-    kind, name, recipe_index, plot_kwargs = commands[0]
+    kind, name, recipe_index, plot_kwargs, emout_kwargs = commands[0]
     assert kind == "field_plot"
     assert name == "phisp"
     assert recipe_index == (0, 0, slice(0, 2, 1), slice(0, 2, 1))
     assert plot_kwargs["axes"] == "auto"
     assert plot_kwargs["mode"] == "cm"
     assert plot_kwargs["use_si"] is True
+    assert emout_kwargs == open_kwargs
     assert fmt == "png"
     assert dpi == 150
     assert displayed == [(b"png-bytes", None)]
 
 
-def test_get_or_create_session_cache_key_includes_input_path(monkeypatch):
+def test_get_or_create_session_returns_shared_session(monkeypatch):
+    """All calls return the same shared session regardless of emout_kwargs."""
     import dask.distributed
 
     from emout.distributed import remote_render
@@ -137,9 +143,10 @@ def test_get_or_create_session_cache_key_includes_input_path(monkeypatch):
     session2 = remote_render.get_or_create_session(emout_kwargs=kwargs1)
     session3 = remote_render.get_or_create_session(emout_kwargs=kwargs2)
 
+    # Shared session: all three are the same object, only 1 Actor created
     assert session1 is session2
-    assert session3 is not session1
-    assert len(submissions) == 2
+    assert session3 is session1
+    assert len(submissions) == 1
 
 
 def test_backtrace_wrapper_remote_uses_full_emout_open_kwargs(monkeypatch):
@@ -189,6 +196,7 @@ def test_backtrace_wrapper_remote_uses_full_emout_open_kwargs(monkeypatch):
     assert calls[0] == ("session", {"emout_kwargs": remote_kwargs, "emout_dir": "/tmp/output"})
     assert calls[1][0] == "compute"
     assert calls[1][1] == "prob_0"
+    assert calls[1][2]["emout_kwargs"] == remote_kwargs
     assert calls[1][2]["remote"] is False
 
 

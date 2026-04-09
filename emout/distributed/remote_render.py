@@ -31,9 +31,13 @@ def _next_key(prefix: str = "result") -> str:
 
 
 class RemoteSession:
-    """Dask Actor: worker プロセスに常駐し、計算結果をキャッシュしつつ再描画に応える。
+    """Shared Dask Actor that manages multiple Emout instances on one worker.
 
-    ``client.submit(RemoteSession, emout_dir, actor=True)`` で生成する。
+    A single ``RemoteSession`` lazily loads :class:`Emout` instances as they
+    are referenced by ``emout_kwargs``, so results from different simulations
+    can coexist in the same ``remote_figure()`` block.
+
+    Create with ``client.submit(RemoteSession, actor=True)``.
     """
 
     def __init__(
@@ -45,24 +49,51 @@ class RemoteSession:
         import matplotlib
         matplotlib.use("Agg")
 
-        import emout
-        self._emout_kwargs = _normalize_emout_kwargs(
-            emout_dir=emout_dir,
-            input_path=input_path,
-            emout_kwargs=emout_kwargs,
-        )
-        self._data = emout.Emout(**self._emout_kwargs)
+        self._instances: dict[str, Any] = {}  # JSON key → Emout
         self._cache: dict[str, Any] = {}
+
+        # Backward compat: eagerly load if kwargs provided
+        if emout_dir is not None or emout_kwargs is not None:
+            normalized = _normalize_emout_kwargs(
+                emout_dir=emout_dir,
+                input_path=input_path,
+                emout_kwargs=emout_kwargs,
+            )
+            self._get_emout(normalized)
+
+    def _get_emout(self, emout_kwargs: dict):
+        """Lazy-load and cache an Emout instance by its normalized kwargs."""
+        import json as _json
+        cache_key = _json.dumps(emout_kwargs, sort_keys=True)
+        if cache_key not in self._instances:
+            import emout
+            self._instances[cache_key] = emout.Emout(**emout_kwargs)
+        return self._instances[cache_key]
+
+    def _resolve(self, emout_kwargs=None):
+        """Return the Emout for *emout_kwargs*, or the first loaded instance."""
+        if emout_kwargs is not None:
+            return self._get_emout(emout_kwargs)
+        if not self._instances:
+            raise RuntimeError("No Emout instances loaded in this session")
+        return next(iter(self._instances.values()))
+
+    @property
+    def _data(self):
+        """Backward-compat property: return the first loaded Emout."""
+        return self._resolve()
 
     # -- computation (result stays on worker) --------------------------------
 
-    def compute_probabilities(self, key: str, **kwargs) -> bool:
+    def compute_probabilities(self, key: str, emout_kwargs=None, **kwargs) -> bool:
         """Run backtrace probability calculation and cache the result.
 
         Parameters
         ----------
         key : str
             Cache key under which the result is stored.
+        emout_kwargs : dict, optional
+            Identifies which Emout instance to use.
         **kwargs
             Keyword arguments forwarded to
             ``Emout.backtrace.get_probabilities()``.
@@ -72,17 +103,20 @@ class RemoteSession:
         bool
             ``True`` on success.
         """
-        result = self._data.backtrace.get_probabilities(**kwargs)
+        data = self._resolve(emout_kwargs)
+        result = data.backtrace.get_probabilities(**kwargs)
         self._cache[key] = result
         return True
 
-    def compute_backtraces(self, key: str, **kwargs) -> bool:
+    def compute_backtraces(self, key: str, emout_kwargs=None, **kwargs) -> bool:
         """Run particle backtrace calculation and cache the result.
 
         Parameters
         ----------
         key : str
             Cache key under which the result is stored.
+        emout_kwargs : dict, optional
+            Identifies which Emout instance to use.
         **kwargs
             Keyword arguments forwarded to
             ``Emout.backtrace.get_backtraces_from_particles()``.
@@ -92,7 +126,8 @@ class RemoteSession:
         bool
             ``True`` on success.
         """
-        result = self._data.backtrace.get_backtraces_from_particles(**kwargs)
+        data = self._resolve(emout_kwargs)
+        result = data.backtrace.get_backtraces_from_particles(**kwargs)
         self._cache[key] = result
         return True
 
@@ -230,11 +265,12 @@ class RemoteSession:
 
     def render_field(
         self, attr_name: str, index: tuple,
-        fmt: str = "png", dpi: int = 150, **plot_kwargs,
+        fmt: str = "png", dpi: int = 150, emout_kwargs=None, **plot_kwargs,
     ) -> bytes:
         """Render a sliced field (e.g. data.phisp[-1, :, 100, :]) as image bytes."""
         import matplotlib.pyplot as plt
-        arr = getattr(self._data, attr_name)[index]
+        data = self._resolve(emout_kwargs)
+        arr = getattr(data, attr_name)[index]
 
         def _draw(fig, ax):
             plt.sca(ax)
@@ -242,13 +278,14 @@ class RemoteSession:
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
-    def fetch_field(self, attr_name: str, index: tuple) -> dict:
+    def fetch_field(self, attr_name: str, index: tuple, emout_kwargs=None) -> dict:
         """フィールドのスライス済みデータ + メタデータを返す（ローカル描画用）。
 
         全 3D 配列ではなく、スライス済みの小さな配列（2D: 数 KB〜数 MB）だけを
         転送するので、ローカルで plt.axhline() 等を重ねられる。
         """
-        arr = getattr(self._data, attr_name)[index]
+        data = self._resolve(emout_kwargs)
+        arr = getattr(data, attr_name)[index]
         return {
             "array": np.asarray(arr),
             "name": arr.name,
@@ -261,11 +298,12 @@ class RemoteSession:
     def render_plot_surfaces(
         self, attr_name: str, t_index: int,
         use_si: bool = True, fmt: str = "png", dpi: int = 150,
-        **plot_kwargs,
+        emout_kwargs=None, **plot_kwargs,
     ) -> bytes:
         """Render Data3d.plot_surfaces on the worker and return image bytes."""
-        data3d = getattr(self._data, attr_name)[t_index]
-        boundaries = self._data.boundaries
+        data = self._resolve(emout_kwargs)
+        data3d = getattr(data, attr_name)[t_index]
+        boundaries = data.boundaries
 
         def _draw(fig, ax):
             import matplotlib.pyplot as plt
@@ -278,25 +316,27 @@ class RemoteSession:
 
     def render_boundaries(
         self, use_si: bool = True, fmt: str = "png", dpi: int = 150,
-        **plot_kwargs,
+        emout_kwargs=None, **plot_kwargs,
     ) -> bytes:
         """Render BoundaryCollection.plot() on the worker and return image bytes."""
+        data = self._resolve(emout_kwargs)
+
         def _draw(fig, ax):
             ax = fig.add_subplot(111, projection="3d")
-            self._data.boundaries.plot(ax=ax, use_si=use_si, **plot_kwargs)
+            data.boundaries.plot(ax=ax, use_si=use_si, **plot_kwargs)
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
     def replay_figure(self, commands: list, fmt: str = "png", dpi: int = 150) -> bytes:
-        """コマンドリストを順に再生し、レンダリング結果を返す。
+        """Replay a command list and return the rendered image bytes.
 
-        ``remote_figure()`` コンテキストが収集したコマンドを worker 上の
-        matplotlib で再生する。コマンド形式:
+        Command formats::
 
-        - ``("field_plot", attr_name, recipe_index, plot_kwargs)``
-        - ``("plt", method_name, args, kwargs)``
-        - ``("boundary_plot", plot_kwargs)``
-        - ``("backtrace_render", cache_key, var1, var2, plot_kwargs)``
+            ("field_plot", attr_name, recipe_index, plot_kwargs, emout_kwargs)
+            ("plt", method_name, args, kwargs)
+            ("boundary_plot", plot_kwargs, emout_kwargs)
+            ("backtrace_render", cache_key, var1, var2, plot_kwargs)
+            ("energy_spectrum", cache_key, spec_kwargs)
         """
         import matplotlib
         matplotlib.use("Agg")
@@ -306,8 +346,9 @@ class RemoteSession:
         for cmd in commands:
             kind = cmd[0]
             if kind == "field_plot":
-                _, attr_name, recipe_index, plot_kwargs = cmd
-                arr = getattr(self._data, attr_name)[recipe_index]
+                _, attr_name, recipe_index, plot_kwargs, emout_kwargs = cmd
+                data = self._resolve(emout_kwargs)
+                arr = getattr(data, attr_name)[recipe_index]
                 arr.plot(**plot_kwargs)
 
             elif kind == "plt":
@@ -316,9 +357,10 @@ class RemoteSession:
                 func(*args, **kwargs)
 
             elif kind == "boundary_plot":
-                _, plot_kwargs = cmd
+                _, plot_kwargs, emout_kwargs = cmd
+                data = self._resolve(emout_kwargs)
                 ax = plt.gca()
-                self._data.boundaries.plot(ax=ax, **plot_kwargs)
+                data.boundaries.plot(ax=ax, **plot_kwargs)
 
             elif kind == "backtrace_render":
                 _, cache_key, var1, var2, plot_kwargs = cmd
@@ -326,37 +368,6 @@ class RemoteSession:
                 heatmap = result.pair(var1, var2)
                 ax = plt.gca()
                 heatmap.plot(ax=ax, **plot_kwargs)
-
-            elif kind == "backtrace_render_inline":
-                # Pre-fetched foreign data — reconstruct and plot locally
-                _, payload, plot_kwargs = cmd
-                from emout.core.backtrace.probability_result import HeatmapData
-                units = _rebuild_units(payload.get("units"))
-                heatmap = HeatmapData(
-                    X=payload["X"], Y=payload["Y"], Z=payload["Z"],
-                    xlabel=payload["xlabel"], ylabel=payload["ylabel"],
-                    title=payload["title"], units=units,
-                )
-                ax = plt.gca()
-                heatmap.plot(ax=ax, **plot_kwargs)
-
-            elif kind == "field_plot_inline":
-                # Pre-fetched foreign field data
-                _, payload, plot_kwargs = cmd
-                from emout.core.data.data import Data1d, Data2d, Data3d, Data4d
-                arr = payload["array"]
-                cls_map = {1: Data1d, 2: Data2d, 3: Data3d, 4: Data4d}
-                DataCls = cls_map.get(arr.ndim, Data2d)
-                local_data = DataCls(
-                    arr, name=payload["name"],
-                    axisunits=payload["axisunits"],
-                    valunit=payload["valunit"],
-                )
-                local_data.slices = payload["slices"]
-                local_data.slice_axes = payload["slice_axes"]
-                local_data._emout_dir = None
-                local_data._emout_open_kwargs = None
-                local_data.plot(**plot_kwargs)
 
             elif kind == "energy_spectrum":
                 _, cache_key, spec_kwargs = cmd
@@ -623,7 +634,7 @@ def display_image(img_bytes: bytes, ax=None):
 # Session management
 # ---------------------------------------------------------------------------
 
-_session_cache: dict[str, RemoteSession] = {}
+_shared_session: Optional[RemoteSession] = None
 
 
 def _normalize_emout_kwargs(
@@ -658,13 +669,16 @@ def _normalize_emout_kwargs(
 def get_or_create_session(
     emout_dir=None, input_path=None, emout_kwargs: dict[str, Any] | None = None,
 ) -> Optional[RemoteSession]:
-    """Dask client が起動していれば RemoteSession actor を返す。なければ None。
+    """Return the shared RemoteSession actor, creating it if needed.
 
-    ``~/.emout/server.json`` が存在し、かつ Dask client がまだ無い場合は
-    自動的に ``connect()`` して接続する。これにより ``client = connect()`` を
-    スクリプトに明示的に書かなくても、``emout server start`` しておけば
-    透過的にリモート実行される。
+    A single shared session manages all Emout instances lazily.
+    ``emout_kwargs`` is accepted for API compatibility but is no longer
+    used as a cache key — every call returns the same session.
+
+    Returns ``None`` when no Dask client is available.
     """
+    global _shared_session
+
     if sys.version_info < (3, 10):
         return None
 
@@ -673,13 +687,11 @@ def get_or_create_session(
     except ImportError:
         return None
 
-    # 既存の client を探す
     try:
         client = default_client()
     except ValueError:
         client = None
 
-    # client が無いが server.json があれば自動接続
     if client is None:
         state_file = Path.home() / ".emout" / "server.json"
         if state_file.exists():
@@ -692,25 +704,14 @@ def get_or_create_session(
         else:
             return None
 
-    if emout_dir is None and emout_kwargs is None:
-        return None
+    if _shared_session is None:
+        future = client.submit(RemoteSession, actor=True)
+        _shared_session = future.result()
 
-    normalized_kwargs = _normalize_emout_kwargs(
-        emout_dir=emout_dir,
-        input_path=input_path,
-        emout_kwargs=emout_kwargs,
-    )
-    cache_key = json.dumps(normalized_kwargs, sort_keys=True)
-    if cache_key not in _session_cache:
-        future = client.submit(
-            RemoteSession,
-            actor=True,
-            emout_kwargs=normalized_kwargs,
-        )
-        _session_cache[cache_key] = future.result()
-    return _session_cache[cache_key]
+    return _shared_session
 
 
 def clear_sessions() -> None:
-    """全セッションをクリアする。"""
-    _session_cache.clear()
+    """Clear the shared session."""
+    global _shared_session
+    _shared_session = None

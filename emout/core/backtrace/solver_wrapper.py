@@ -317,6 +317,7 @@ class BacktraceWrapper:
                 key = _next_key("prob")
                 session.compute_probabilities(
                     key,
+                    emout_kwargs=self.remote_open_kwargs,
                     x=x, y=y, z=z, vx=vx, vy=vy, vz=vz,
                     ispec=ispec, istep=istep, dt=dt,
                     max_step=max_step, use_adaptive_dt=use_adaptive_dt,

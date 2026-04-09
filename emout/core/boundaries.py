@@ -956,7 +956,8 @@ class BoundaryCollection:
         from emout.plot.surface_cut import plot_surfaces as _plot_surfaces, RenderItem
 
         if is_recording():
-            request_session(getattr(self, "_emout_open_kwargs", None))
+            emout_kw = getattr(self, "_emout_open_kwargs", None)
+            request_session(emout_kw)
             record_boundary_plot(
                 {
                     "use_si": use_si,
@@ -965,7 +966,8 @@ class BoundaryCollection:
                     "solid_color": solid_color,
                     "alpha": alpha,
                     **kwargs,
-                }
+                },
+                emout_kwargs=emout_kw,
             )
             return None
 
