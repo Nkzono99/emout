@@ -85,6 +85,13 @@ class Data(np.ndarray):
             Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
+
+        if obj.ndim < 4 and slice_axes is None:
+            raise ValueError(
+                f"Data base class requires a 4-D array (t, z, y, x), "
+                f"got shape {obj.shape}. Use Data1d/Data2d/Data3d/Data4d instead."
+            )
+
         obj.datafile = DataFileInfo(filename)
         obj.name = name
 
@@ -106,6 +113,11 @@ class Data(np.ndarray):
         obj.slice_axes = slice_axes
 
         return obj
+
+    def __repr__(self):
+        name = self.name or "unnamed"
+        unit = self.valunit.unit if self.valunit else "raw"
+        return f"<{type(self).__name__}: name={name!r}, shape={self.shape}, unit={unit}>"
 
     def __getitem__(self, item):
         """Retrieve an element or sub-array by index or slice.
@@ -692,6 +704,11 @@ class Data4d(Data):
         """
         obj = np.asarray(input_array).view(cls)
 
+        if obj.ndim != 4:
+            raise ValueError(
+                f"Data4d requires a 4-D array (t, z, y, x), got shape {obj.shape}"
+            )
+
         if "xslice" not in kwargs:
             kwargs["xslice"] = slice(0, obj.shape[3], 1)
         if "yslice" not in kwargs:
@@ -742,6 +759,11 @@ class Data3d(Data):
             Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
+
+        if obj.ndim != 3:
+            raise ValueError(
+                f"Data3d requires a 3-D array (z, y, x), got shape {obj.shape}"
+            )
 
         if "xslice" not in kwargs:
             kwargs["xslice"] = slice(0, obj.shape[2], 1)
@@ -1016,7 +1038,7 @@ class Data2d(Data):
         obj = np.asarray(input_array).view(cls)
 
         if "xslice" not in kwargs:
-            kwargs["xslice"] = slice(0, obj.shape[1], 1)
+            kwargs["xslice"] = slice(0, obj.shape[-1], 1)
         if "yslice" not in kwargs:
             kwargs["yslice"] = slice(0, obj.shape[0], 1)
         if "zslice" not in kwargs:
@@ -1303,7 +1325,7 @@ class Data1d(Data):
         obj = np.asarray(input_array).view(cls)
 
         if "xslice" not in kwargs:
-            kwargs["xslice"] = slice(0, obj.shape[1], 1)
+            kwargs["xslice"] = slice(0, obj.shape[-1], 1)
         if "yslice" not in kwargs:
             kwargs["yslice"] = slice(0, 1, 1)
         if "zslice" not in kwargs:

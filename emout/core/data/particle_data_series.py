@@ -71,6 +71,12 @@ class ParticleDataSeries:
         self.valunit = valunit
         self.name = name
 
+    def __repr__(self) -> str:
+        return (
+            f"<ParticleDataSeries: name={self.name!r}, "
+            f"timesteps={len(self)}, file={self.filename.name}>"
+        )
+
     def close(self) -> None:
         """Close the underlying HDF5 file handle."""
         self.h5.close()
@@ -226,7 +232,9 @@ class ParticleDataSeries:
             Combined series.
         """
         if not isinstance(other, ParticleDataSeries):
-            raise TypeError()
+            raise TypeError(
+                f"Cannot chain ParticleDataSeries with {type(other).__name__}"
+            )
         return self.chain(other)
 
 
@@ -280,7 +288,9 @@ class MultiParticleDataSeries(ParticleDataSeries):
             Flattened list of leaf ParticleDataSeries objects.
         """
         if not isinstance(s, ParticleDataSeries):
-            raise TypeError()
+            raise TypeError(
+                f"Expected ParticleDataSeries, got {type(s).__name__}"
+            )
         if not isinstance(s, MultiParticleDataSeries):
             return [s]
         out: List[ParticleDataSeries] = []
@@ -393,23 +403,45 @@ class ParticleSnapshot:
     """Single-timestep snapshot bundling all particle components."""
     fields: Dict[str, ParticleData]
 
-    def __getattr__(self, name: str) -> ParticleData:
-        """Resolve attribute access to a particle component.
+    def __repr__(self) -> str:
+        comps = list(self.fields.keys())
+        n = len(next(iter(self.fields.values()))) if self.fields else 0
+        return f"<ParticleSnapshot: components={comps}, particles={n}>"
+
+    def __getattr__(self, name: str):
+        """Resolve attribute access to a particle component or phase-space pair.
+
+        Single component names (``'x'``, ``'vx'``, ``'tid'``) return the
+        corresponding :class:`ParticleData`.  Two-key concatenations such
+        as ``'xvx'`` or ``'yvz'`` return a callable that delegates to
+        :meth:`plot_phase_space`.
 
         Parameters
         ----------
         name : str
-            Component name (e.g. ``'x'``, ``'vx'``, ``'tid'``)
+            Component name or two-component shorthand
 
         Returns
         -------
-        ParticleData
-            Particle data for the requested component.
+        ParticleData or functools.partial
         """
-        try:
+        # Direct component lookup
+        if name in self.fields:
             return self.fields[name]
-        except KeyError as e:
-            raise AttributeError(name) from e
+
+        # Phase-space shorthand: e.g. "xvx" -> plot_phase_space("x", "vx")
+        from functools import partial
+
+        for key1 in self._PHASE_KEYS:
+            if name.startswith(key1):
+                rest = name[len(key1):]
+                if rest in self._PHASE_KEYS and rest != key1:
+                    return partial(self.plot_phase_space, key1, rest)
+
+        raise AttributeError(
+            f"'{type(self).__name__}' has no component or pair '{name}'. "
+            f"Available: {list(self.fields.keys())}"
+        )
 
     def keys(self) -> Iterable[str]:
         """Return the available component names.
@@ -430,6 +462,89 @@ class ParticleSnapshot:
             Mapping from component name to ParticleData.
         """
         return dict(self.fields)
+
+    # ---- Phase-space plotting ----
+
+    _PHASE_KEYS = ("x", "y", "z", "vx", "vy", "vz")
+
+    def plot_phase_space(
+        self,
+        var1: str,
+        var2: str,
+        kind: str = "scatter",
+        ax=None,
+        use_si: bool = True,
+        bins: int = 64,
+        **kwargs,
+    ):
+        """Plot a 2-D phase-space diagram.
+
+        Parameters
+        ----------
+        var1 : str
+            Horizontal axis variable (``'x'``, ``'y'``, ``'z'``,
+            ``'vx'``, ``'vy'``, ``'vz'``).
+        var2 : str
+            Vertical axis variable.
+        kind : {'scatter', 'hist2d'}
+            Plot type.
+        ax : matplotlib.axes.Axes, optional
+            Target axes. If ``None``, uses the current axes.
+        use_si : bool, default True
+            Convert to SI units when unit metadata is available.
+        bins : int, default 64
+            Number of bins per axis (only used when ``kind='hist2d'``).
+        **kwargs
+            Forwarded to :func:`matplotlib.axes.Axes.scatter` or
+            :func:`matplotlib.axes.Axes.hist2d`.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+        """
+        import matplotlib.pyplot as plt
+
+        for v in (var1, var2):
+            if v not in self._PHASE_KEYS:
+                raise KeyError(
+                    f"Unknown variable {v!r}; choose from {self._PHASE_KEYS}"
+                )
+            if v not in self.fields:
+                raise KeyError(
+                    f"Component {v!r} is not loaded in this snapshot. "
+                    f"Available: {list(self.fields.keys())}"
+                )
+
+        d1 = self.fields[var1]
+        d2 = self.fields[var2]
+
+        vals1 = d1.val_si.values if (use_si and d1.valunit) else d1.values
+        vals2 = d2.val_si.values if (use_si and d2.valunit) else d2.values
+
+        # Filter NaN particles
+        mask = np.isfinite(vals1) & np.isfinite(vals2)
+        vals1 = vals1[mask]
+        vals2 = vals2[mask]
+
+        if ax is None:
+            ax = plt.gca()
+
+        xlabel = f"{var1} [{d1.valunit.unit}]" if (use_si and d1.valunit) else var1
+        ylabel = f"{var2} [{d2.valunit.unit}]" if (use_si and d2.valunit) else var2
+
+        if kind == "scatter":
+            kwargs.setdefault("s", 0.3)
+            kwargs.setdefault("alpha", 0.5)
+            ax.scatter(vals1, vals2, **kwargs)
+        elif kind == "hist2d":
+            ax.hist2d(vals1, vals2, bins=bins, **kwargs)
+        else:
+            raise ValueError(f"Unsupported kind {kind!r}; use 'scatter' or 'hist2d'")
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(f"{var1} vs {var2}")
+        return ax
 
 
 # ============================================================
@@ -588,6 +703,13 @@ class ParticlesSeries:
             Traceback object, if any
         """
         self.close()
+
+    def __repr__(self) -> str:
+        comps = self.available_components()
+        return (
+            f"<ParticlesSeries: species={self.species}, "
+            f"components={list(comps)}, timesteps={len(self)}>"
+        )
 
     def __getattr__(self, name: str):
         # p.x / p.vx / p.tid returns the corresponding series

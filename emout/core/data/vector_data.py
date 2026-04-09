@@ -72,6 +72,13 @@ class VectorData(utils.Group):
         if z_data is not None:
             self.z_data = z_data
 
+    def __repr__(self) -> str:
+        n = len(self.objs)
+        return (
+            f"<VectorData: name={self.name!r}, "
+            f"components={n}, shape={self.shape}>"
+        )
+
     def __setattr__(self, key, value):
         """Set an attribute, routing component data to the internal dict.
 
