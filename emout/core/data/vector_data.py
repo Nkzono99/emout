@@ -79,6 +79,37 @@ class VectorData(utils.Group):
             f"components={n}, shape={self.shape}>"
         )
 
+    def negate(self) -> "VectorData":
+        """Return a new VectorData with all components sign-flipped.
+
+        Returns
+        -------
+        VectorData
+            Negated copy.
+
+        Examples
+        --------
+        >>> data.bxyz[-1].negate().plot()
+        """
+        negated = [comp.negate() for comp in self.objs]
+        return VectorData(negated, name=self.name, attrs=dict(self.attrs))
+
+    def scale(self, factor: float) -> "VectorData":
+        """Return a new VectorData with all components scaled.
+
+        Parameters
+        ----------
+        factor : float
+            Multiplicative factor.
+
+        Returns
+        -------
+        VectorData
+            Scaled copy.
+        """
+        scaled = [comp.scale(factor) for comp in self.objs]
+        return VectorData(scaled, name=self.name, attrs=dict(self.attrs))
+
     def __setattr__(self, key, value):
         """Set an attribute, routing component data to the internal dict.
 

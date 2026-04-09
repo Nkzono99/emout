@@ -469,6 +469,42 @@ class Data(np.ndarray):
         """Convert to a plain NumPy ndarray."""
         return np.array(self)
 
+    def negate(self) -> "Data":
+        """Return a copy with all values sign-flipped.
+
+        Equivalent to ``-self`` but chainable with :meth:`mirror`,
+        :meth:`tile`, and :meth:`plot`.
+
+        Returns
+        -------
+        Data
+            Negated copy (same subclass).
+
+        Examples
+        --------
+        >>> data.ex[-1, :, ny//2, :].negate().mirror('z').plot()
+        """
+        return self._rebuild(-np.asarray(self), changed_ax=0, new_len=self.shape[0])
+
+    def scale(self, factor: float) -> "Data":
+        """Return a copy with all values multiplied by *factor*.
+
+        Parameters
+        ----------
+        factor : float
+            Multiplicative factor.
+
+        Returns
+        -------
+        Data
+            Scaled copy (same subclass).
+
+        Examples
+        --------
+        >>> data.phisp[-1].scale(1e3).plot()
+        """
+        return self._rebuild(np.asarray(self) * factor, changed_ax=0, new_len=self.shape[0])
+
     def _resolve_axis(self, axis) -> int:
         """Convert an axis name or index to an array dimension index.
 
