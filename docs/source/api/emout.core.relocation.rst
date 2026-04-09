@@ -1,21 +1,21 @@
-emout.emout.relocation package
+emout.core.relocation package
 ==============================
 
 Submodules
 ----------
 
-emout.emout.relocation.electric module
+emout.core.relocation.electric module
 --------------------------------------
 
-.. automodule:: emout.emout.relocation.electric
+.. automodule:: emout.core.relocation.electric
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.relocation.magnetic module
+emout.core.relocation.magnetic module
 --------------------------------------
 
-.. automodule:: emout.emout.relocation.magnetic
+.. automodule:: emout.core.relocation.magnetic
    :members:
    :show-inheritance:
    :undoc-members:
@@ -23,7 +23,7 @@ emout.emout.relocation.magnetic module
 Module contents
 ---------------
 
-.. automodule:: emout.emout.relocation
+.. automodule:: emout.core.relocation
    :members:
    :show-inheritance:
    :undoc-members:

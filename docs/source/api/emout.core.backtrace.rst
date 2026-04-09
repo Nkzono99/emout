@@ -1,45 +1,45 @@
-emout.emout.backtrace package
+emout.core.backtrace package
 =============================
 
 Submodules
 ----------
 
-emout.emout.backtrace.backtrace\_result module
+emout.core.backtrace.backtrace\_result module
 ----------------------------------------------
 
-.. automodule:: emout.emout.backtrace.backtrace_result
+.. automodule:: emout.core.backtrace.backtrace_result
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.backtrace.multi\_backtrace\_result module
+emout.core.backtrace.multi\_backtrace\_result module
 -----------------------------------------------------
 
-.. automodule:: emout.emout.backtrace.multi_backtrace_result
+.. automodule:: emout.core.backtrace.multi_backtrace_result
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.backtrace.probability\_result module
+emout.core.backtrace.probability\_result module
 ------------------------------------------------
 
-.. automodule:: emout.emout.backtrace.probability_result
+.. automodule:: emout.core.backtrace.probability_result
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.backtrace.solver\_wrapper module
+emout.core.backtrace.solver\_wrapper module
 --------------------------------------------
 
-.. automodule:: emout.emout.backtrace.solver_wrapper
+.. automodule:: emout.core.backtrace.solver_wrapper
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.backtrace.xy\_data module
+emout.core.backtrace.xy\_data module
 -------------------------------------
 
-.. automodule:: emout.emout.backtrace.xy_data
+.. automodule:: emout.core.backtrace.xy_data
    :members:
    :show-inheritance:
    :undoc-members:
@@ -47,7 +47,7 @@ emout.emout.backtrace.xy\_data module
 Module contents
 ---------------
 
-.. automodule:: emout.emout.backtrace
+.. automodule:: emout.core.backtrace
    :members:
    :show-inheritance:
    :undoc-members:

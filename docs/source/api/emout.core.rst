@@ -1,4 +1,4 @@
-emout.emout package
+emout.core package
 ===================
 
 Subpackages
@@ -7,34 +7,34 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   emout.emout.backtrace
-   emout.emout.data
-   emout.emout.io
-   emout.emout.relocation
+   emout.core.backtrace
+   emout.core.data
+   emout.core.io
+   emout.core.relocation
 
 Submodules
 ----------
 
-emout.emout.extraction module
+emout.core.extraction module
 -----------------------------
 
-.. automodule:: emout.emout.extraction
+.. automodule:: emout.core.extraction
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.facade module
+emout.core.facade module
 -------------------------
 
-.. automodule:: emout.emout.facade
+.. automodule:: emout.core.facade
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.units module
+emout.core.units module
 ------------------------
 
-.. automodule:: emout.emout.units
+.. automodule:: emout.core.units
    :members:
    :show-inheritance:
    :undoc-members:
@@ -42,7 +42,7 @@ emout.emout.units module
 Module contents
 ---------------
 
-.. automodule:: emout.emout
+.. automodule:: emout.core
    :members:
    :show-inheritance:
    :undoc-members:

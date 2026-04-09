@@ -19,12 +19,13 @@ release = '2.9.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx',
-    'sphinx_autodoc_typehints',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx_autodoc_typehints",
     "myst_parser",
+    "sphinx_copybutton",
 ]
 
 source_suffix = {
@@ -35,8 +36,23 @@ source_suffix = {
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
+
+# -- Intersphinx (cross-reference external projects) -------------------------
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+}
+
+# -- Copybutton settings ----------------------------------------------------
+
+copybutton_prompt_text = r">>> |\.\.\. |\$ "
+copybutton_prompt_is_regexp = True
 
 
 

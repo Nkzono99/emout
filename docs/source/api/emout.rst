@@ -7,8 +7,8 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   emout.core
    emout.distributed
-   emout.emout
    emout.plot
    emout.utils
 

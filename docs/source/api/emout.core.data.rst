@@ -1,29 +1,29 @@
-emout.emout.data package
+emout.core.data package
 ========================
 
 Submodules
 ----------
 
-emout.emout.data.data module
+emout.core.data.data module
 ----------------------------
 
-.. automodule:: emout.emout.data.data
+.. automodule:: emout.core.data.data
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.data.griddata\_series module
+emout.core.data.griddata\_series module
 ----------------------------------------
 
-.. automodule:: emout.emout.data.griddata_series
+.. automodule:: emout.core.data.griddata_series
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.data.vector\_data module
+emout.core.data.vector\_data module
 ------------------------------------
 
-.. automodule:: emout.emout.data.vector_data
+.. automodule:: emout.core.data.vector_data
    :members:
    :show-inheritance:
    :undoc-members:
@@ -31,7 +31,7 @@ emout.emout.data.vector\_data module
 Module contents
 ---------------
 
-.. automodule:: emout.emout.data
+.. automodule:: emout.core.data
    :members:
    :show-inheritance:
    :undoc-members:

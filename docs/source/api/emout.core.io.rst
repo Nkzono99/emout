@@ -1,21 +1,21 @@
-emout.emout.io package
+emout.core.io package
 ======================
 
 Submodules
 ----------
 
-emout.emout.io.directory module
+emout.core.io.directory module
 -------------------------------
 
-.. automodule:: emout.emout.io.directory
+.. automodule:: emout.core.io.directory
    :members:
    :show-inheritance:
    :undoc-members:
 
-emout.emout.io.grid module
+emout.core.io.grid module
 --------------------------
 
-.. automodule:: emout.emout.io.grid
+.. automodule:: emout.core.io.grid
    :members:
    :show-inheritance:
    :undoc-members:
@@ -23,7 +23,7 @@ emout.emout.io.grid module
 Module contents
 ---------------
 
-.. automodule:: emout.emout.io
+.. automodule:: emout.core.io
    :members:
    :show-inheritance:
    :undoc-members:
