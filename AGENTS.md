@@ -133,15 +133,13 @@ python -m build
 
 ## 10. 現在のテストベースライン（2026-04-09 更新）
 
-対象: `pytest -q --ignore=tests/utils/test_toml_converter.py --ignore=tests/utils/test_toml_integration.py`
+対象: `pytest -q`
 
-結果: **141 passed**
+結果: **172 passed**（`toml2inp` 未インストール環境では 19 件が skipped、153 passed）
 
-既知の壊れ:
-- `tests/utils/test_toml_converter.py` — `load_toml_as_namelist` が未実装でコレクションエラー
-- `tests/utils/test_toml_integration.py` — 11 件失敗。外部 `toml2inp` バイナリが未インストールだと `data.inp is None` になり属性アクセスが落ちる。`toml2inp` を入れると解消する想定。
-
-上記 2 ファイルは `data.boundaries` や surface_cut メッシュを触る作業には影響しない（別レイヤの統合テスト）。新規作業で既知失敗の範囲外に赤を増やさないこと。
+過去の既知失敗は 2026-04-09 に解消済み:
+- `tests/utils/test_toml_converter.py` — 削除された `load_toml_as_namelist` / `_convert_v*` のテストを削除し、現存する `TomlData` / `load_toml` のみをテストするよう再構成。
+- `tests/utils/test_toml_integration.py` — `shutil.which("toml2inp")` で skipif を掛け、バイナリ未インストール環境では skip されるようにした。インストール済みなら通常通り走る。
 
 ## 11. 作業ログ用メモ欄
 

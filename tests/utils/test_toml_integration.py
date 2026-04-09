@@ -2,7 +2,13 @@
 
 Emout / DirectoryInspector を通じて plasma.toml を読み込み、
 既存の InpFile API がすべて動作することを確認する。
+
+plasma.toml → plasma.inp の変換は MPIEMSES3D 側の ``toml2inp``
+コマンドに依存しており、未インストールの環境ではこれらのテストは
+丸ごと skip する。
 """
+
+import shutil
 
 import f90nml
 import h5py
@@ -10,6 +16,11 @@ import numpy as np
 import pytest
 
 import emout
+
+pytestmark = pytest.mark.skipif(
+    shutil.which("toml2inp") is None,
+    reason="toml2inp command not found on PATH; install MPIEMSES3D to run these tests",
+)
 
 # テスト用 plasma.inp 内容 (conftest.py と同じパラメータ)
 INP_NML = """!!key dx=[0.5],to_c=[10000.0]
