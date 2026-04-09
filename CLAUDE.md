@@ -16,7 +16,8 @@
   - 可視化: `emout/plot/`（特に `emout/plot/surface_cut/` のメッシュ境界描画 API）
   - 境界モデル: `emout/emout/boundaries.py`（MPIEMSES3D の `finbound` / legacy 境界を Python から扱う）
   - 入力パラメータ・単位系: `emout/utils/emsesinp.py`, `emout/utils/units.py`, `emout/emout/units.py`
-  - 実験機能（依存追加あり）: `emout/emout/backtrace/`, `emout/distributed/`
+  - リモート実行（実験的）: `emout/distributed/`（Dask Actor、`remote_figure` コンテキスト、CLI サーバー）
+  - バックトレース（実験的）: `emout/emout/backtrace/`
 
 ## 2. まず読むファイル
 
@@ -132,7 +133,7 @@ Claude Code からは `Bash` で `python -m pytest tests/ -q` を直接呼ぶか
 - **ドキュメントの日英ペアを同じ PR で両方更新すること。** 対象:
   - `README.md` ⇔ `README.en.md`
   - `CLAUDE.md` ⇔ `AGENTS.md`（同一内容）
-  - `docs/source/guide/*.md` ⇔ `docs/source/guide/*.ja.md`
+  - `docs/source/guide/*.md` ⇔ `docs/source/guide/*.ja.md`（`quickstart` / `plotting` / `animation` / `inp` / `units` / `boundaries` / `distributed` の 7 ペア）
 - optional 依存機能を触る場合、依存未導入時に import で壊れないか。
 - `emout.plot.surface_cut` の `viz.py` 経由の機能は `scikit-image` / `matplotlib` 必須。
 
@@ -156,6 +157,11 @@ Claude Code 固有:
 - `HollowCylinderMeshSurface` は矩形スラブ + 円筒穴モデル（2026-04-08 変更）。古い annular 形状は `DiskMeshSurface` に移した。
 - `data.boundaries.mesh()` は `CompositeMeshSurface` を返す。`children` 属性で個別メッシュに触れる。
 - `Data3d.plot_surfaces(surfaces, ...)` は 3D スカラー場に明示メッシュを重ねて描画する。
+- `emout/distributed/remote_render.py` に `RemoteSession` (Dask Actor) + proxy クラス群を追加（2026-04-09）。backtrace 計算結果を worker メモリに保持し、可視化パラメータだけ変えて再レンダリングする設計。
+- `emout/distributed/remote_figure.py` に `remote_figure()` コンテキストマネージャを追加（2026-04-09）。matplotlib.pyplot をモンキーパッチしてコマンドを記録、worker で一括再生して PNG bytes を返す。
+- `emout/cli.py` に `emout server start/stop/status` CLI を追加（2026-04-09）。`~/.emout/server.json` に起動情報を書き出し、スクリプトから `connect()` なしで自動接続する。
+- `Data._try_remote_plot()` が Dask session の有無で 3 段階に分岐: (1) `remote_figure` 内ならコマンド記録、(2) session ありならデータ転送モード（スライスだけ転送しローカル描画）、(3) なければ従来ローカル。
+- `BoundaryCollection.plot()` で境界メッシュを単体で 3D 表示できるようになった（2026-04-09）。
 
 ## 12. 用意済み skill / agent / settings
 
@@ -177,6 +183,16 @@ Claude Code 固有:
 | `finbound-investigator` | MPIEMSES3D の finbound パラメータ仕様を Fortran ソースから調査する |
 
 使い方: `Agent(subagent_type="finbound-investigator", prompt="...")`。
+
+### CLI エントリポイント
+
+`pyproject.toml` の `[project.scripts]` に `emout = "emout.cli:main"` が登録されている。
+
+| コマンド | 用途 |
+| --- | --- |
+| `emout server start` | Dask スケジューラ + ワーカーを起動。`~/.emout/server.json` に接続情報を保存 |
+| `emout server stop` | 停止 |
+| `emout server status` | 起動中のアドレス・ワーカー数を表示 |
 
 ### settings（`.claude/`）
 

@@ -107,8 +107,7 @@ Output a compact summary of changes you made, grouped by file. Call out anything
 
 ## Invariants to preserve
 
-- `CLAUDE.md` and `AGENTS.md` are independent regular files (not a symlink). Do not re-symlink them.
-- `CLAUDE.md` and `AGENTS.md` keep the same top-level section outline so cross-referencing `§N` stays meaningful.
+- `CLAUDE.md` and `AGENTS.md` are **identical copies**. Edit one, then `cp` to the other. Do not let them diverge.
 - Skills live at `.claude/skills/<name>/SKILL.md` with a `name` + `description` frontmatter only (no extra fields unless you know the harness reads them).
 - Skill `description` fields are *triggers*: write them so a future model recognises when to invoke the skill, not as a prose summary of what it does. "Use when …" phrasing, not "This skill provides …".
 - Agent files live at `.claude/agents/<name>.md` with `name` + `description` + optional `tools` frontmatter, then the system prompt.
