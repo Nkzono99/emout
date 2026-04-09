@@ -505,6 +505,32 @@ class Data(np.ndarray):
         """
         return self._rebuild(np.asarray(self) * factor, changed_ax=0, new_len=self.shape[0])
 
+    def flip(self, axis=0) -> "Data":
+        """Reverse the data along the specified axis.
+
+        Coordinates are kept unchanged, so ``plot()`` shows the values
+        in reversed order against the original grid.
+
+        Parameters
+        ----------
+        axis : int or str
+            Array dimension index, or axis name (``'x'``, ``'y'``,
+            ``'z'``, ``'t'``).
+
+        Returns
+        -------
+        Data
+            Reversed copy (same subclass).
+
+        Examples
+        --------
+        >>> data.phisp[-1, :, ny//2, :].flip('z').plot()
+        """
+        ax = self._resolve_axis(axis)
+        return self._rebuild(
+            np.flip(np.asarray(self), axis=ax), changed_ax=ax, new_len=self.shape[ax]
+        )
+
     def _resolve_axis(self, axis) -> int:
         """Convert an axis name or index to an array dimension index.
 
