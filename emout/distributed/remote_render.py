@@ -405,7 +405,13 @@ _session_cache: dict[str, RemoteSession] = {}
 def get_or_create_session(
     emout_dir, input_path=None,
 ) -> Optional[RemoteSession]:
-    """Dask client が起動していれば RemoteSession actor を返す。なければ None。"""
+    """Dask client が起動していれば RemoteSession actor を返す。なければ None。
+
+    ``~/.emout/server.json`` が存在し、かつ Dask client がまだ無い場合は
+    自動的に ``connect()`` して接続する。これにより ``client = connect()`` を
+    スクリプトに明示的に書かなくても、``emout server start`` しておけば
+    透過的にリモート実行される。
+    """
     if sys.version_info.minor < 10:
         return None
 
@@ -414,10 +420,26 @@ def get_or_create_session(
     except ImportError:
         return None
 
+    # 既存の client を探す
     try:
         client = default_client()
     except ValueError:
-        return None
+        client = None
+
+    # client が無いが server.json があれば自動接続
+    if client is None:
+        from pathlib import Path
+        import json
+        state_file = Path.home() / ".emout" / "server.json"
+        if state_file.exists():
+            try:
+                state = json.loads(state_file.read_text())
+                from dask.distributed import Client
+                client = Client(state["address"])
+            except Exception:
+                return None
+        else:
+            return None
 
     cache_key = str(emout_dir)
     if cache_key not in _session_cache:

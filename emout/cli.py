@@ -59,14 +59,22 @@ def cmd_server_start(args):
     )
 
     addr = client.scheduler_info()["address"]
+    n_workers = len(client.scheduler_info().get("workers", {}))
     _save_state({"address": addr, "pid": os.getpid()})
 
+    from emout.distributed.config import _get_local_ip
+    detected_ip = _get_local_ip()
+
     print(f"Scheduler running at {addr}")
+    print(f"Detected IP: {detected_ip}")
+    print(f"Workers: {n_workers}")
     print(f"State saved to {_STATE_FILE}")
     print()
-    print("Connect from your scripts:")
-    print("  from emout.distributed import connect")
-    print("  client = connect()")
+    print("Scripts will auto-connect — just use emout normally:")
+    print("  data = emout.Emout('output_dir')")
+    print("  data.phisp[-1, :, 100, :].plot()  # auto-remote")
+    print()
+    print("Or explicitly: from emout.distributed import connect; connect()")
     print()
     print("Press Ctrl-C to stop the server.")
 
