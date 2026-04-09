@@ -16,6 +16,7 @@ emout
    guide/animation
    guide/inp
    guide/units
+   guide/boundaries
 
 .. toctree::
    :maxdepth: 2
@@ -26,6 +27,7 @@ emout
    guide/animation.ja
    guide/inp.ja
    guide/units.ja
+   guide/boundaries.ja
 
 .. toctree::
    :maxdepth: 2

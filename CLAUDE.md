@@ -1,98 +1,184 @@
-# CLAUDE.md
+# emout 開発ガイド
 
 > **やりとりの言語: 日本語。** ユーザーとの対話・質問・進捗報告・コミットメッセージのレビューコメントなど、人間に向けて出力するテキストはすべて日本語で書くこと。コード・ファイル名・コミットメッセージ本文・コードコメント・ログ出力・docstring などは従来どおり英語のままで構わない（既存スタイルに合わせる）。ユーザーが英語で話しかけてきた場合のみ英語に切り替えてよい。
 
-Claude Code 固有の作業ガイドです。汎用的な開発ガイドは `AGENTS.md` にまとまっています（セクション番号は対応させてあります）。このファイルは `AGENTS.md` を前提に **Claude Code の harness をどう使うか** を上乗せする形で書いています。
+> **`CLAUDE.md` と `AGENTS.md` は同一内容で管理されている。** 変更はどちらか一方に行い、もう一方にもコピーすること。
+
+このファイルは、Claude Code / Codex / その他の LLM エージェントがこのリポジトリで開発・保守を行うための実務ガイドです。
 
 ## 1. プロジェクト概要
 
-→ `AGENTS.md §1` を参照。
+- `emout` は、EMSES の出力ファイル（主に `*.h5`, `plasma.inp`, `plasma.toml`, `icur`, `pbody`）を Python で読み込み、解析・可視化するライブラリです。
+- 公開入口は `emout.Emout`（`emout/__init__.py`）です。
+- コア機能は以下に分かれます。
+  - I/O と Facade: `emout/emout/facade.py`, `emout/emout/io/`
+  - データモデル: `emout/emout/data/`
+  - 可視化: `emout/plot/`（特に `emout/plot/surface_cut/` のメッシュ境界描画 API）
+  - 境界モデル: `emout/emout/boundaries.py`（MPIEMSES3D の `finbound` / legacy 境界を Python から扱う）
+  - 入力パラメータ・単位系: `emout/utils/emsesinp.py`, `emout/utils/units.py`, `emout/emout/units.py`
+  - 実験機能（依存追加あり）: `emout/emout/backtrace/`, `emout/distributed/`
 
 ## 2. まず読むファイル
 
-→ `AGENTS.md §2` を参照。加えて Claude Code セッションで毎回頭に入れておくと良いもの:
-
-- `tests/test_boundaries.py` — `data.boundaries` の挙動を再現するのに `InpFile` を一時ファイルから組む手順がある。F90 namelist の疎配列アクセスの test fixture としても有用。
-- `emout/plot/surface_cut/mesh.py` — メッシュクラスがすべて一ファイルにあるので、類似クラスを追加する時の雛形として最短距離。
-- `.claude/skills/` — このリポジトリ固有の skill 群。`add-mesh-surface` / `add-boundary` / `run-tests` / `harness-improve` が使える。
+- `README.md` / `README.en.md`（利用者向け API と使用例）
+- `pyproject.toml`（依存関係・Python バージョン・配布設定）
+- `tests/conftest.py`（最小データセットの作り方）
+- `tests/data/test_data.py`（データアクセスの期待仕様）
+- `tests/plot/test_contour3d.py`（3D 可視化 API の期待仕様）
+- `tests/plot/test_surface_cut_mesh.py`（明示メッシュサーフェスと `Data3d.plot_surfaces` の期待仕様）
+- `tests/test_boundaries.py`（`data.boundaries` / 境界クラスの期待仕様。`InpFile` を一時ファイルから組む fixture としても有用）
+- `emout/plot/surface_cut/mesh.py`（メッシュクラスが一ファイルにあるので類似クラスの雛形として最短距離）
+- `.claude/skills/`（`add-mesh-surface` / `add-boundary` / `run-tests` / `harness-improve` が使える）
 
 ## 3. 参照すべき外部ドキュメント
 
-→ `AGENTS.md §3` を参照。Claude Code から調査する場合は `Explore` エージェントに MPIEMSES3D のパスを渡すと深く調べられる。例:
+- `/home/b/b36291/large0/Github/MPIEMSES3D/docs/Parameters.md` / `Parameters.en.md`
+  - `&ptcond` の `boundary_type` / `boundary_types`（finbound / 複合モード）と各幾何形状のパラメータ一覧がある。`data.boundaries` を触るときは必ず参照。
+- `/home/b/b36291/large0/Github/MPIEMSES3D/src/physics/collision/surfaces.F90` / `objects.F90`
+  - legacy `*-hole` モード（`rectangle-hole`, `cylinder-hole` など）が実際にどのスカラ／配列インデックス（`xlrechole(1)`, `zlrechole(2)` など）を読むかの根拠コード。
 
-```
-Agent(
-  description="Extract finbound param spec",
-  subagent_type="Explore",
-  prompt="..."
-)
-```
-
-`/home/b/b36291/large0/Github/MPIEMSES3D/` 以下は `Read`/`Grep`/`Glob` でもそのまま触れる（permission が通っている）。
+Claude Code から調査する場合は `Explore` エージェントに MPIEMSES3D のパスを渡すと深く調べられる。`/home/b/b36291/large0/Github/MPIEMSES3D/` 以下は `Read`/`Grep`/`Glob` でもそのまま触れる。また `Agent(subagent_type="finbound-investigator", prompt="...")` で境界パラメータの詳細調査を委譲できる。
 
 ## 4. 開発環境セットアップ
 
-→ `AGENTS.md §4` を参照。
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e .
+```
+
+ドキュメントを触る場合のみ:
+
+```bash
+pip install -r docs/requirements.txt
+```
 
 ## 5. よく使うコマンド
 
-→ `AGENTS.md §5` を参照。Claude Code では `Bash` から `python -m pytest tests/ -q` を直接呼べばよい（2026-04-09 に TOML 系テストを修復済みで、`--ignore` は不要。ショートカットとして `Skill(skill="run-tests")` も使える）。
+```bash
+# 全テスト
+pytest -q
+
+# 対象テストのみ
+pytest tests/plot/test_contour3d.py -q
+pytest tests/plot/test_surface_cut_mesh.py -q
+pytest tests/test_boundaries.py -q
+pytest tests/data/test_data.py -q
+
+# ドキュメントビルド
+sphinx-build -b html docs/source docs/build/html
+
+# パッケージビルド
+python -m build
+```
+
+Claude Code からは `Bash` で `python -m pytest tests/ -q` を直接呼ぶか、`Skill(skill="run-tests")` を使う。
 
 ## 6. 実装時の必須ルール
 
-→ `AGENTS.md §6` を参照。Claude Code で作業する時に特に踏みがちな落とし穴:
-
-- **symlink を壊さない**: `CLAUDE.md` / `AGENTS.md` は独立ファイルとして併存させている（元は symlink だった）。両方を更新する場合は両ファイルを個別に編集する（片方だけ更新して symlink 復活させない）。
-- **Pylance の "unused import/variable" 警告は新規追加の瞬間だけ出ることが多い**。その後実際に使えば警告は消える。過剰反応して import を削除しないこと。
+- **後方互換性を最優先にする。** 利用者がまずまずいる前提で、公開 API の削除・改名・挙動変更は原則行わない。
+  - `Emout.__getattr__` の動的解決（`p{species}`, `r[eb][xyz]`, `{name}{axis1}{axis2}`）は既存ユーザーコードに直結するため破壊しない。
+  - 整理が必要な場合は旧名をラッパーとして残し、 `warnings.warn(..., DeprecationWarning, stacklevel=2)` を出してから新実装へ委譲する。少なくとも 1 マイナーリリースは共存させ、削除時期はユーザーに確認する。
+  - 「新メソッドを追加して既存メソッドを温存する」パターンは推奨。例: `Data2d.cmap()` / `Data2d.contour()` を `plot(mode=...)` と並存させて追加。
+  - 挙動を変えるときは新キーワード引数（デフォルトは旧挙動）として追加し、デフォルトを切り替える前にアナウンスする。
+- **軸順序を崩さない。**
+  - グリッドデータは基本 `(t, z, y, x)`、3D ボリュームは `(z, y, x)` 前提。
+  - `Data3d.axisunits` は末尾が x、`[-1]`/`[-2]`/`[-3]` がそれぞれ x/y/z の `UnitTranslator`。
+- **ファイル命名規則を守る。**
+  - グリッド: `{name}00_0000.h5`
+  - 粒子: `p{species}{comp}(e?){seg}_{part}.h5`
+- **単位変換は `plasma.inp` 1 行目の `!!key dx=[...],to_c=[...]` に依存する。**
+  - 未設定ケース（`unit is None`）を壊さない。
+  - grid→SI は `data.unit.length.reverse(x)`、SI→grid は `.trans(x)`。スカラでも NumPy 配列でも動く。
+- **`docs/build/`、`__pycache__/`、一時生成物は原則編集対象外。**
+- Pylance の "unused import/variable" 警告は新規追加の瞬間だけ出ることが多い。過剰反応して import を削除しないこと。
 - **`f90nml` の疎配列は 2D と 1D で `start_index` の形が違う**。`_get_scalar` / `_get_vector` ヘルパを使うか、直接触るなら以下を想定:
   - 1D: `start_index[name] == [start_for_dim1]`
   - 2D: `start_index[name] == [None, start_for_dim2]`（dim1 は完全記述、dim2 が疎）
-  - この違いで boundary 境界クラスの実装が分岐している。
 
 ## 7. surface_cut / メッシュ境界 API の設計メモ
 
-→ `AGENTS.md §7` を参照。Claude Code から新しいメッシュクラスを足す場合は `Skill(skill="add-mesh-surface")` を使うと雛形とチェックリストが即座に出る。
+`emout/plot/surface_cut/mesh.py` に置く `MeshSurface3D` サブクラスは、MPIEMSES の各幾何形状と 1 対 1 の関係で設計されている。新しい形状を追加する場合は `Skill(skill="add-mesh-surface")` で雛形を出すか、以下のパターンを踏む。
+
+- ベースは `MeshSurface3D`（抽象クラス）。実装すべきは `mesh() -> (V, F)` だけ。
+- 共通ヘルパ（同ファイル内）：`_orthonormal_frame`, `_center_to_3vec`, `_axial_range`, `_resolve_theta_range` / `_sample_theta`, `_plane_mesh`, `_disc_mesh` / `_annulus_mesh` / `_rect_with_hole_mesh`, `_combine_meshes`
+- `MeshSurface3D.__add__` で `a + b` が `CompositeMeshSurface` になる。
+- `MeshSurface3D.render(**style_kwargs)` は `RenderItem` を返す。
 
 ## 8. data.boundaries API の設計メモ
 
-→ `AGENTS.md §8` を参照。新しい finbound 境界型を足す場合は `Skill(skill="add-boundary")` を使う。スキルの中に MPIEMSES docs の参照パスと、`BoundaryCollection._build` の分岐ポイントが書いてある。
+`emout/emout/boundaries.py` が `data.boundaries[i]` / `data.boundaries.mesh()` のすべてを担う。新しい finbound 境界型を足す場合は `Skill(skill="add-boundary")` を使う。
+
+- 入口は `BoundaryCollection(inp, unit)`。
+- `_build` は complex モード（`boundary_types(*)` 走査）と legacy 単独モードの 2 分岐。
+- `_BOUNDARY_CLASS_MAP` に登録する。未登録の型は `collection.skipped` に残る。
+- f90nml の疎配列は `_get_scalar` / `_get_vector` を使う（Fortran 1-indexed）。
+- `HollowCylinderMeshSurface` = 矩形スラブ + 円筒穴。`DiskMeshSurface` とは別物。
+- legacy `rectangle-hole` / `cylinder-hole`: `zlrechole(2)` (Fortran index 2) に注意。
+
+新しい境界型の追加手順:
+1. `mesh.py` にメッシュクラスを追加 → `__all__` と `__init__.py` にも追記
+2. `boundaries.py` に `Boundary` サブクラスを追加
+3. `_BOUNDARY_CLASS_MAP` に登録
+4. `tests/test_boundaries.py` にテスト追加
 
 ## 9. 変更時チェックリスト
 
-→ `AGENTS.md §9` を参照。Claude Code 向けの追加:
+- 変更した機能に対応するテストを追加・更新したか。
+- `pytest -q` を実行し、グリーンを維持しているか確認したか（現ベースラインは §10 参照）。
+- 公開 API を変えるときは §6 の後方互換ルールに従っているか。
+- 公開 API や挙動を変えた場合、`README.md` / `README.en.md` と `docs/source/` を更新したか。
+- **ドキュメントの日英ペアを同じ PR で両方更新すること。** 対象:
+  - `README.md` ⇔ `README.en.md`
+  - `CLAUDE.md` ⇔ `AGENTS.md`（同一内容）
+  - `docs/source/guide/*.md` ⇔ `docs/source/guide/*.ja.md`
+- optional 依存機能を触る場合、依存未導入時に import で壊れないか。
+- `emout.plot.surface_cut` の `viz.py` 経由の機能は `scikit-image` / `matplotlib` 必須。
 
-- `TaskCreate` で作業を 3 ステップ以上に分解する価値があるかを最初に判断する。単発の編集は TaskCreate 不要。
-- 編集対象に手を入れる前に **必ず `Read` で現状を確認** する（これは harness の約束事だが、Edit/Write は直前の Read を要求する）。
-- 変更をコミットするのは **ユーザーが明示的に頼んだ時のみ**。自動コミットはしないこと。今セッションのように `適宜コミットして良い` と許可されている場合のみ、自然な境界で切ってコミットする。
+Claude Code 固有:
+- `TaskCreate` で作業を 3 ステップ以上に分解する価値があるか最初に判断する。
+- 編集前に **必ず `Read` で現状を確認**。
+- コミットは **ユーザーが許可した時のみ**。
 
-## 10. 現在のテストベースライン
+## 10. 現在のテストベースライン（2026-04-09 更新）
 
-→ `AGENTS.md §10` を参照。
+対象: `pytest -q`
+
+結果: **172 passed**（`toml2inp` 未インストール環境では 19 件が skipped、153 passed）
+
+過去の既知失敗は 2026-04-09 に解消済み:
+- `tests/utils/test_toml_converter.py` — 削除 API のテストを除去し `TomlData` / `load_toml` のみに再構成。
+- `tests/utils/test_toml_integration.py` — `shutil.which("toml2inp")` で skipif を掛けた。
 
 ## 11. 作業ログ用メモ欄
 
-→ `AGENTS.md §11` を参照。
+- `HollowCylinderMeshSurface` は矩形スラブ + 円筒穴モデル（2026-04-08 変更）。古い annular 形状は `DiskMeshSurface` に移した。
+- `data.boundaries.mesh()` は `CompositeMeshSurface` を返す。`children` 属性で個別メッシュに触れる。
+- `Data3d.plot_surfaces(surfaces, ...)` は 3D スカラー場に明示メッシュを重ねて描画する。
 
-## 12. Claude Code 固有の skill / agent / settings
+## 12. 用意済み skill / agent / settings
 
-### 用意済み skill（`.claude/skills/`）
+### skill（`.claude/skills/`）
 
-- **`harness-improve`** — この harness 自体（`CLAUDE.md`, `AGENTS.md`, `.claude/skills/*`, `.claude/agents/*`, `.claude/settings.json`）をレビュー・改善するメタスキル。自分自身（`harness-improve` スキル）も改善対象に含む。セッション終了直前、harness の指示がズレ始めたと感じた時、もしくは参考リポジトリ／URL を引数に渡してベンチマークしたい時に呼ぶ。
-- **`run-tests`** — このプロジェクトのテストベースラインを走らせるショートカット。既知の壊れた TOML テストを除外して実行する。
-- **`add-mesh-surface`** — `emout/plot/surface_cut/mesh.py` に新しい `MeshSurface3D` サブクラスを追加する手順の雛形。`_plane_mesh` 系ヘルパの使い分け・`__all__` の更新・テスト追加までカバー。
-- **`add-boundary`** — `emout/emout/boundaries.py` に MPIEMSES の新しい境界型を追加する手順の雛形。`_BOUNDARY_CLASS_MAP` 登録・`use_si` 対応・f90nml 疎配列アクセスまでカバー。
+| skill | 用途 |
+| --- | --- |
+| `harness-improve` | この harness 自体をレビュー・改善するメタスキル |
+| `run-tests` | テストベースラインを走らせるショートカット |
+| `add-mesh-surface` | `mesh.py` に新しい `MeshSurface3D` サブクラスを追加する雛形 |
+| `add-boundary` | `boundaries.py` に新しい境界型を追加する雛形 |
 
-使い方: `Skill(skill="<name>")` または `/<name>` で呼び出す。引数を取る skill は `/<name> <args>` の形を受け取る。
+使い方: `Skill(skill="<name>")` または `/<name>` で呼び出す。
 
-### 用意済み agent（`.claude/agents/`）
+### agent（`.claude/agents/`）
 
-- **`finbound-investigator`** — MPIEMSES3D の `docs/Parameters.md` と `src/physics/collision/*.F90` を読み込み、指定された `boundary_type` / `boundary_types` のパラメータ仕様や Fortran 実装を抽出する調査役。`data.boundaries` を拡張する時の背景調査に使う。
+| agent | 用途 |
+| --- | --- |
+| `finbound-investigator` | MPIEMSES3D の finbound パラメータ仕様を Fortran ソースから調査する |
 
 使い方: `Agent(subagent_type="finbound-investigator", prompt="...")`。
 
-### 設定ファイル（`.claude/`）
+### settings（`.claude/`）
 
-- **`settings.json`** — 共有・コミット対象の権限ベースライン。`allow` は広く（Read/Edit/Write/Bash/Skill/Agent などをそのまま許可）、`ask` は空、`deny` は最小限（`sudo`, `rm -rf /` 系のみ）。コントリビュータは clone した時点でこの設定を引き継ぐ。
-- **`settings.local.json`** — 個人ユーザー固有の追加権限。`.gitignore` 済み。手で広げる場合はここに追記する（`settings.json` の方は不必要に変更しないこと）。
-
-settings の編集後は `python -c "import json; json.load(open('.claude/settings.json'))"` で構文を検証する。
+- `settings.json` — 共有・コミット対象の権限ベースライン。編集後は `python -c "import json; json.load(open('.claude/settings.json'))"` で構文検証する。
+- `settings.local.json` — 個人用（`.gitignore` 済み）。
