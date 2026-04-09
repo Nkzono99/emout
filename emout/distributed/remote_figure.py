@@ -28,8 +28,19 @@ from typing import Any, List, Optional, Tuple
 
 _recording: bool = False
 _commands: List[Tuple[str, Any, ...]] = []
-_recording_session = None
+_command_sessions: List[Any] = []  # parallel to _commands: session per command
+_last_bound_session: Any = None    # most recently bound session
 _session_request: Optional[dict[str, Any]] = None
+
+
+def _reset_recording_state() -> None:
+    global _recording, _commands, _command_sessions
+    global _last_bound_session, _session_request
+    _recording = False
+    _commands = []
+    _command_sessions = []
+    _last_bound_session = None
+    _session_request = None
 
 
 def is_recording() -> bool:
@@ -37,53 +48,69 @@ def is_recording() -> bool:
     return _recording
 
 
+def _record(cmd: Tuple[str, Any, ...]) -> None:
+    """Record *cmd* and tag it with the most recently bound session."""
+    _commands.append(cmd)
+    _command_sessions.append(_last_bound_session)
+
+
 def record_field_plot(attr_name: str, recipe_index: tuple, plot_kwargs: dict) -> None:
     """``Data*.plot()`` からコマンドを記録する。"""
-    _commands.append(("field_plot", attr_name, recipe_index, plot_kwargs))
+    _record(("field_plot", attr_name, recipe_index, plot_kwargs))
 
 
 def record_plt_call(method: str, args: tuple, kwargs: dict) -> None:
     """``plt.*`` 呼び出しを記録する。"""
     _commands.append(("plt", method, args, kwargs))
+    _command_sessions.append(None)  # plt calls have no owning session
 
 
 def record_boundary_plot(plot_kwargs: dict) -> None:
     """``BoundaryCollection.plot()`` を記録する。"""
-    _commands.append(("boundary_plot", plot_kwargs))
+    _record(("boundary_plot", plot_kwargs))
 
 
 def record_backtrace_render(cache_key: str, var1: str, var2: str, plot_kwargs: dict) -> None:
     """``RemoteHeatmap.plot()`` / ``RemoteXYData.plot()`` を記録する。"""
-    _commands.append(("backtrace_render", cache_key, var1, var2, plot_kwargs))
+    _record(("backtrace_render", cache_key, var1, var2, plot_kwargs))
 
 
 def record_energy_spectrum(cache_key: str, spec_kwargs: dict) -> None:
     """``RemoteProbabilityResult.plot_energy_spectrum()`` を記録する。"""
-    _commands.append(("energy_spectrum", cache_key, spec_kwargs))
+    _record(("energy_spectrum", cache_key, spec_kwargs))
 
 
 def bind_session(session) -> None:
-    """記録済みコマンドの再生先セッションを固定する。"""
-    global _recording_session
+    """Register *session* as the owner of the next recorded data command.
+
+    Multiple sessions are allowed — when the ``remote_figure`` block
+    closes and more than one session is detected, the framework
+    automatically falls back to *fetch + local render* mode.
+    """
+    global _last_bound_session
     if session is None:
         return
-    if _recording_session is None:
-        _recording_session = session
-        return
-    if _recording_session is not session:
-        raise RuntimeError("remote_figure() cannot mix commands from different remote sessions")
+    _last_bound_session = session
 
 
 def request_session(emout_kwargs: Optional[dict[str, Any]]) -> None:
-    """記録されたコマンドからセッション生成条件を登録する。"""
-    global _session_request
+    """Eagerly resolve a session from *emout_kwargs* and bind it.
+
+    Called by ``Data._try_remote_plot()`` which doesn't have a session
+    object yet.  The session is resolved here so that per-command
+    tracking works for multi-session figures.
+    """
+    global _last_bound_session, _session_request
     if emout_kwargs is None:
         return
+    # Eagerly resolve the session for per-command tracking
+    from .remote_render import get_or_create_session
+    session = get_or_create_session(emout_kwargs=emout_kwargs)
+    if session is not None:
+        _last_bound_session = session
+    # Keep first request for single-session fallback
     if _session_request is None:
         _session_request = dict(emout_kwargs)
-        return
-    if _session_request != emout_kwargs:
-        raise RuntimeError("remote_figure() cannot mix commands from different Emout sources")
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +202,8 @@ class RemoteFigure:
         self
             メソッドチェーンまたは ``with`` 文向け。
         """
-        global _recording, _commands, _recording_session, _session_request
+        global _recording, _commands, _command_sessions
+        global _last_bound_session, _session_request
 
         if self._opened:
             raise RuntimeError("RemoteFigure is already open")
@@ -190,11 +218,13 @@ class RemoteFigure:
 
         _recording = True
         _commands = []
-        _recording_session = session
+        _command_sessions = []
+        _last_bound_session = session
         _session_request = None
 
         if self.figsize is not None:
             _commands.append(("plt", "figure", (), {"figsize": self.figsize}))
+            _command_sessions.append(None)
 
         # Monkey-patch plt functions to record instead of execute
         import matplotlib.pyplot as plt
@@ -214,8 +244,13 @@ class RemoteFigure:
         return self
 
     def close(self) -> None:
-        """記録を停止し、コマンドを worker で再生して画像を表示する。"""
-        global _recording, _commands, _recording_session, _session_request
+        """記録を停止し、コマンドを worker で再生して画像を表示する。
+
+        単一セッションの場合は worker 上で一括 replay（高効率）。
+        複数セッションが検出された場合は各セッションからデータを fetch し、
+        ローカルで合成描画にフォールバックする。
+        """
+        global _recording
 
         if not self._opened:
             return
@@ -228,22 +263,31 @@ class RemoteFigure:
             setattr(plt, name, orig)
         self._originals = {}
 
-        # Flush commands to worker
-        replay_session = self._init_session or _recording_session
-        if replay_session is None and _session_request is not None:
-            from .remote_render import get_or_create_session
-            replay_session = get_or_create_session(emout_kwargs=_session_request)
+        # Determine unique sessions
+        unique_sessions = {id(s) for s in _command_sessions if s is not None}
 
-        if replay_session is not None and _commands:
-            img_bytes = replay_session.replay_figure(
-                _commands, fmt=self.fmt, dpi=self.dpi,
-            ).result()
-            from .remote_render import display_image
-            display_image(img_bytes)
+        if len(unique_sessions) <= 1:
+            # --- Single session: replay on worker (efficient) ---
+            replay_session = self._init_session or _last_bound_session
+            if replay_session is None and _session_request is not None:
+                from .remote_render import get_or_create_session
+                replay_session = get_or_create_session(emout_kwargs=_session_request)
 
-        _commands = []
-        _recording_session = None
-        _session_request = None
+            if replay_session is not None and _commands:
+                img_bytes = replay_session.replay_figure(
+                    _commands, fmt=self.fmt, dpi=self.dpi,
+                ).result()
+                from .remote_render import display_image
+                display_image(img_bytes)
+        else:
+            # --- Multi-session: fetch data and render locally ---
+            if _commands:
+                _replay_locally(
+                    _commands, _command_sessions,
+                    fmt=self.fmt, dpi=self.dpi, figsize=self.figsize,
+                )
+
+        _reset_recording_state()
         self._opened = False
 
     def __enter__(self) -> "RemoteFigure":

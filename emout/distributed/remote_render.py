@@ -361,6 +361,37 @@ class RemoteSession:
                 ax = plt.gca()
                 heatmap.plot(ax=ax, **plot_kwargs)
 
+            elif kind == "backtrace_render_inline":
+                # Pre-fetched foreign data — reconstruct and plot locally
+                _, payload, plot_kwargs = cmd
+                from emout.core.backtrace.probability_result import HeatmapData
+                units = _rebuild_units(payload.get("units"))
+                heatmap = HeatmapData(
+                    X=payload["X"], Y=payload["Y"], Z=payload["Z"],
+                    xlabel=payload["xlabel"], ylabel=payload["ylabel"],
+                    title=payload["title"], units=units,
+                )
+                ax = plt.gca()
+                heatmap.plot(ax=ax, **plot_kwargs)
+
+            elif kind == "field_plot_inline":
+                # Pre-fetched foreign field data
+                _, payload, plot_kwargs = cmd
+                from emout.core.data.data import Data1d, Data2d, Data3d, Data4d
+                arr = payload["array"]
+                cls_map = {1: Data1d, 2: Data2d, 3: Data3d, 4: Data4d}
+                DataCls = cls_map.get(arr.ndim, Data2d)
+                local_data = DataCls(
+                    arr, name=payload["name"],
+                    axisunits=payload["axisunits"],
+                    valunit=payload["valunit"],
+                )
+                local_data.slices = payload["slices"]
+                local_data.slice_axes = payload["slice_axes"]
+                local_data._emout_dir = None
+                local_data._emout_open_kwargs = None
+                local_data.plot(**plot_kwargs)
+
             elif kind == "energy_spectrum":
                 _, cache_key, spec_kwargs = cmd
                 result = self._cache[cache_key]
