@@ -26,11 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class Emout:
-    """
-    EMSES 出力／.inp ファイルをまとめて扱う Facade クラス。
-    """
+    """Facade class for unified access to EMSES simulation outputs."""
 
-    # name2unit マッピング (一度だけビルド)
+    # name-to-unit mapping (built once)
     name2unit = build_name2unit_mapping(max_ndp=9)
 
     def __init__(
@@ -42,24 +40,26 @@ class Emout:
         input_path: Union[Path, str, None] = None,
         output_directory: Union[Path, str, None] = None,
     ):
-        """Emout ファサードを初期化する。
+        """Initialize the Emout facade.
 
         Parameters
         ----------
-        directory : Union[Path, str], optional
-            基準ディレクトリです。`input_path` / `output_directory` 未指定時は
-            入力ファイル・出力ファイルの両方をこのディレクトリから探索します。
-        append_directories : Union[List[Union[Path, str]], None], optional
-            追加で参照するディレクトリまたはそのリストです。
-        ad : Union[List[Union[Path, str]], None], optional
-            `append_directories` の短縮エイリアスです。両方指定した場合は `append_directories` が優先されます。
-        inpfilename : Union[Path, str], optional
-            入力パラメータファイル名です。`input_path` が指定されている場合は無視されます。
-        input_path : Union[Path, str, None], optional
-            入力パラメータファイルへのフルパスです（例: ``/path/to/plasma.toml``）。
-        output_directory : Union[Path, str, None], optional
-            シミュレーション出力ファイルを格納したディレクトリです。
-            未指定時は `directory` が使われます。
+        directory : Path or str, optional
+            Base directory. When *input_path* and *output_directory* are
+            not given, both input and output files are looked up here.
+        append_directories : list of (Path or str) or None, optional
+            Additional directories to chain for multi-segment runs.
+        ad : list of (Path or str) or None, optional
+            Short alias for *append_directories*. When both are given,
+            *append_directories* takes precedence.
+        inpfilename : Path or str, optional
+            Input parameter file name. Ignored when *input_path* is set.
+        input_path : Path or str or None, optional
+            Full path to the input parameter file
+            (e.g. ``/path/to/plasma.toml``).
+        output_directory : Path or str or None, optional
+            Directory containing simulation output files.
+            Defaults to *directory* when not specified.
         """
         self._dir_inspector = DirectoryInspector(
             directory=directory,
@@ -76,72 +76,73 @@ class Emout:
 
     @property
     def directory(self) -> Path:
-        """メインディレクトリを返す。
+        """Return the main output directory.
 
         Returns
         -------
         Path
-            EMSES 出力の基準ディレクトリです。
+            Base directory for EMSES output files.
         """
         return self._dir_inspector.main_directory
 
     @property
     def append_directories(self) -> List[Path]:
-        """追加チェーンディレクトリ一覧を返す。
+        """Return the list of chained append directories.
 
         Returns
         -------
         List[Path]
-            読み込み時に後段として連結されるディレクトリ一覧です。
+            Directories concatenated after the main directory during loading.
         """
         return self._dir_inspector.append_directories
 
     @property
     def inp(self) -> Union[InpFile, None]:
-        """読み込まれた `.inp` 情報を返す。
+        """Return the parsed input parameter file.
 
         Returns
         -------
-        Union[InpFile, None]
-            `.inp` の読み込み結果です。未読込時は `None`。
+        InpFile or None
+            Parsed ``plasma.inp`` parameters, or ``None`` if not loaded.
         """
         return self._dir_inspector.inp
 
     @property
     def toml(self):
-        """TOML データを返す。
+        """Return the parsed TOML configuration.
 
-        ``plasma.toml`` が存在する場合のみ有効。
-        ``data.toml.species[0].wp`` のように
-        構造化 TOML へ直接アクセスできる。
-        `group_id` を使う ``*_groups`` は読み込み時に各 entry へ展開され、
-        `data.toml` からは group table が取り除かれる。
+        Only available when ``plasma.toml`` exists. Provides attribute
+        access to the structured TOML data, e.g.
+        ``data.toml.species[0].wp``.  Entries using ``group_id``
+        (``*_groups``) are expanded at load time and the group tables
+        are removed from the returned object.
 
         Returns
         -------
         TomlData or None
-            TOML 読み込み時は ``TomlData``、それ以外は ``None``。
+            Parsed TOML data, or ``None`` if unavailable.
         """
         return self._dir_inspector.toml
 
     @property
     def unit(self) -> Union[Units, None]:
-        """単位変換情報を返す。
+        """Return the unit conversion object.
 
         Returns
         -------
-        Union[Units, None]
-            `UnitConversionKey` が取得できた場合は `Units`、未設定なら `None`。
+        Units or None
+            Unit translators derived from the conversion key, or ``None``
+            if no conversion key is available.
         """
         return self._dir_inspector.unit
 
     def is_valid(self) -> bool:
-        """シミュレーション出力が正常終了しているか判定する。
+        """Check whether the simulation completed successfully.
 
         Returns
         -------
         bool
-            条件判定結果です。
+            True if the last recorded step matches ``nstep`` in the input file.
         """
         return self._dir_inspector.is_valid()
 
@@ -170,17 +171,17 @@ class Emout:
         return self._dir_inspector.read_pbody_as_dataframe()
 
     def particle(self, species: int):
-        """粒子時系列データを読み込む `ParticlesSeries` を返す。
+        """Return a ParticlesSeries for the given species.
 
         Parameters
         ----------
         species : int
-            粒子種別番号（1 始まり）です。
+            Particle species number (1-based)
 
         Returns
         -------
-        object
-            指定種別の粒子データ系列オブジェクトです。
+        ParticlesSeries
+            Particle data series for the specified species.
         """
         x_unit = self.unit.length
         v_unit = self.unit.v
@@ -234,31 +235,31 @@ class Emout:
         try:
             return self._grid_loader.load(name)
         except (KeyError, FileNotFoundError, OSError) as e:
-            raise AttributeError(f"属性 '{name}' の読み込みに失敗しました: {e}") from e
+            raise AttributeError(f"Failed to load attribute '{name}': {e}") from e
 
     @property
     def boundaries(self):
-        """MPIEMSES finbound 境界のコレクションを返す。
+        """Return the MPIEMSES finbound boundary collection.
 
-        ``data.inp`` の ``boundary_type = 'complex'`` 設定と
-        ``boundary_types`` 配列をもとに、各 sub-boundary の
-        :class:`emout.core.boundaries.Boundary` インスタンスを生成して
-        :class:`emout.core.boundaries.BoundaryCollection` として返します。
+        Builds :class:`~emout.core.boundaries.Boundary` instances from the
+        ``boundary_types`` array in ``data.inp`` (when ``boundary_type =
+        'complex'``) and returns them as a
+        :class:`~emout.core.boundaries.BoundaryCollection`.
 
-        使用例::
+        Examples::
 
             data = Emout("output_dir")
 
-            # 個別境界のメッシュ (grid 単位)
+            # Individual boundary mesh (grid units)
             mesh = data.boundaries[0].mesh()
 
-            # SI 単位で、解像度をオーバーライド
+            # SI units with resolution override
             mesh = data.boundaries[0].mesh(use_si=True, ntheta=96)
 
-            # すべての境界をまとめた合成メッシュ
+            # Composite mesh of all boundaries
             composite = data.boundaries.mesh(use_si=True)
 
-            # 境界ごとに個別の引数を渡す
+            # Per-boundary keyword overrides
             composite = data.boundaries.mesh(
                 use_si=True,
                 per={0: {"ntheta": 64}, 1: {"nradial": 12}},
@@ -267,8 +268,8 @@ class Emout:
         Returns
         -------
         BoundaryCollection
-            サポートされた finbound 境界の集合。
-            `data.inp` が未読込または非 complex モードの場合は空集合を返します。
+            Supported finbound boundaries. Returns an empty collection
+            if ``data.inp`` is not loaded or is not in complex mode.
         """
         from .boundaries import BoundaryCollection
 
@@ -280,12 +281,13 @@ class Emout:
 
     @property
     def backtrace(self) -> BacktraceWrapper:
-        """バックトレース計算用ラッパーを返す。
+        """Return the backtrace solver wrapper.
 
         Returns
         -------
         BacktraceWrapper
-            現在のディレクトリ/入力条件に紐づいたバックトレース API です。
+            Backtrace API bound to this simulation's directory and input
+            parameters.
         """
         return BacktraceWrapper(
             directory=self._dir_inspector.main_directory,

@@ -29,16 +29,16 @@ class EmoutDataExtraction:
     enabling lightweight data subsets for post-processing or transfer.
     """
     def __init__(self, root: Union[Path, str], data: Emout, nparent=1):
-        """インスタンスを初期化する。
-        
+        """Initialize the extraction wrapper.
+
         Parameters
         ----------
         root : Union[Path, str]
-            ファイルまたはディレクトリのパスです。
+            Root directory for extracted output.
         data : Emout
-            処理対象のデータ。
+            Source simulation data.
         nparent : int, optional
-            再帰抽出時に遡る親階層数です。
+            Number of parent path components to preserve in the output path.
         """
         self._root = Path(root)
         self._data = data
@@ -83,12 +83,12 @@ class EmoutDataExtraction:
         return self._data.unit
 
     def is_valid(self) -> bool:
-        """データセットの妥当性を検証する。
-        
+        """Check whether the underlying dataset is valid.
+
         Returns
         -------
         bool
-            条件判定結果です。
+            Whether the simulation completed successfully.
         """
         return self._data.is_valid()
 

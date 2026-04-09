@@ -34,9 +34,9 @@ class BacktraceWrapper:
         Parameters
         ----------
         directory : Path
-            Emout.directory と同様のディレクトリパス
+            Simulation output directory (same semantics as ``Emout.directory``)
         inp : InpFile
-            Emout.inp と同様の InpFile オブジェクト。dt などの情報を保持
+            Parsed input-parameter object holding ``dt`` and related fields
         """
         self.directory = directory
         self.inp = inp
@@ -55,33 +55,33 @@ class BacktraceWrapper:
         use_adaptive_dt: bool = False,
         **kwargs,
     ) -> Tuple[Any, Any, Any, Any]:
-        """値を取得する。
-        
+        """Run a single-particle backtrace and return the trajectory.
+
         Parameters
         ----------
         position : np.ndarray
-            粒子の初期位置です。
+            Initial particle position
         velocity : np.ndarray
-            粒子の初期速度です。
+            Initial particle velocity
         ispec : int, optional
-            粒子種別 index です。
+            Particle species index (0-based)
         istep : int, optional
-            開始ステップ index です。
-        dt : Union[float, None], optional
-            時間刻みです。
+            Starting time-step index
+        dt : float or None, optional
+            Time step size
         max_step : int, optional
-            追跡する最大ステップ数です。
+            Maximum number of backtrace steps
         output_interval : int, optional
-            出力間隔ステップです。
+            Output interval in steps
         use_adaptive_dt : bool, optional
-            `True` の場合、逆追跡計算で可変時間刻みを使用します。
+            If True, use adaptive time stepping during backtrace
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
-        Tuple[Any, Any, Any, Any]
-            処理結果です。
+        BacktraceResult
+            Trajectory data containing times, probability, positions, and velocities.
         """
         from vdsolverf.core import Particle
         from vdsolverf.emses import get_backtrace as _backend
@@ -115,41 +115,41 @@ class BacktraceWrapper:
         n_threads: int = 4,
         **kwargs,
     ) -> Any:
-        """値を取得する。
-        
+        """Run backtraces for multiple particles and return aggregated results.
+
         Parameters
         ----------
         positions : np.ndarray
-            粒子位置配列です。
+            Particle position array, shape ``(N, 3)``
         velocities : np.ndarray
-            粒子速度配列です。
+            Particle velocity array, shape ``(N, 3)``
         ispec : int, optional
-            粒子種別 index です。
+            Particle species index (0-based)
         istep : int, optional
-            開始ステップ index です。
-        dt : Union[float, None], optional
-            時間刻みです。
+            Starting time-step index
+        dt : float or None, optional
+            Time step size
         max_step : int, optional
-            追跡する最大ステップ数です。
+            Maximum number of backtrace steps
         output_interval : int, optional
-            出力間隔ステップです。
+            Output interval in steps
         use_adaptive_dt : bool, optional
-            `True` の場合、逆追跡計算で可変時間刻みを使用します。
+            If True, use adaptive time stepping during backtrace
         n_threads : int, optional
-            並列実行スレッド数です。
+            Number of parallel threads
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
-        Any
-            処理結果です。
+        MultiBacktraceResult
+            Aggregated trajectory data for all particles.
         """
         from vdsolverf.core import Particle
         from vdsolverf.emses import get_backtraces as _backend
 
         if positions.shape != velocities.shape:
-            raise ValueError("positions と velocities の shape が違います")
+            raise ValueError("positions and velocities must have the same shape")
 
         particles: List[Any] = [
             Particle(pos_vec, vel_vec)
@@ -193,33 +193,33 @@ class BacktraceWrapper:
         n_threads: int = 4,
         **kwargs,
     ) -> Any:
-        """値を取得する。
-        
+        """Run backtraces from pre-built Particle objects.
+
         Parameters
         ----------
         particles : Sequence[Any]
-            逆追跡の開始粒子集合です。
+            Collection of particles to backtrace
         ispec : int, optional
-            粒子種別 index です。
+            Particle species index (0-based)
         istep : int, optional
-            開始ステップ index です。
-        dt : Union[float, None], optional
-            時間刻みです。
+            Starting time-step index
+        dt : float or None, optional
+            Time step size
         max_step : int, optional
-            追跡する最大ステップ数です。
+            Maximum number of backtrace steps
         output_interval : int, optional
-            出力間隔ステップです。
+            Output interval in steps
         use_adaptive_dt : bool, optional
-            `True` の場合、逆追跡計算で可変時間刻みを使用します。
+            If True, use adaptive time stepping during backtrace
         n_threads : int, optional
-            並列実行スレッド数です。
+            Number of parallel threads
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
-        Any
-            処理結果です。
+        MultiBacktraceResult
+            Aggregated trajectory data for all particles.
         """
         from vdsolverf.emses import get_backtraces as _backend
 
@@ -265,44 +265,44 @@ class BacktraceWrapper:
         remote: bool = True,
         **kwargs,
     ) -> "ProbabilityResult":
-        """値を取得する。
-        
+        """Compute arrival probabilities over a 6-D phase-space grid.
+
         Parameters
         ----------
-        x : Union[Tuple[float, float, int], Sequence[float]]
-            x 座標または x 成分。
-        y : Union[Tuple[float, float, int], Sequence[float]]
-            y 座標または y 成分。
-        z : Union[Tuple[float, float, int], Sequence[float]]
-            z 座標または z 成分。
-        vx : Union[Tuple[float, float, int], Sequence[float]]
-            x 方向速度成分です。
-        vy : Union[Tuple[float, float, int], Sequence[float]]
-            y 方向速度成分です。
-        vz : Union[Tuple[float, float, int], Sequence[float]]
-            z 方向速度成分です。
+        x : tuple of (float, float, int) or sequence of float
+            X coordinates or grid specification ``(start, stop, n)``
+        y : tuple of (float, float, int) or sequence of float
+            Y coordinates or grid specification
+        z : tuple of (float, float, int) or sequence of float
+            Z coordinates or grid specification
+        vx : tuple of (float, float, int) or sequence of float
+            Velocity x-component values or grid specification
+        vy : tuple of (float, float, int) or sequence of float
+            Velocity y-component values or grid specification
+        vz : tuple of (float, float, int) or sequence of float
+            Velocity z-component values or grid specification
         ispec : int, optional
-            粒子種別 index です。
+            Particle species index (0-based)
         istep : int, optional
-            開始ステップ index です。
-        dt : Union[float, None], optional
-            時間刻みです。
+            Starting time-step index
+        dt : float or None, optional
+            Time step size
         max_step : int, optional
-            追跡する最大ステップ数です。
+            Maximum number of backtrace steps
         use_adaptive_dt : bool, optional
-            `True` の場合、逆追跡計算で可変時間刻みを使用します。
+            If True, use adaptive time stepping during backtrace
         n_threads : int, optional
-            並列実行スレッド数です。
+            Number of parallel threads
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
         ProbabilityResult
-            処理結果です。
+            Phase-space probability distribution.
         """
-        # Dask Actor が起動していれば worker 上で計算 + キャッシュし、
-        # proxy を返す（大きな numpy 配列がローカルに転送されない）
+        # If a Dask Actor is running, compute + cache on the worker and
+        # return a proxy (avoids transferring large numpy arrays locally)
         if remote:
             from emout.distributed.remote_render import (
                 get_or_create_session,
@@ -347,16 +347,17 @@ class BacktraceWrapper:
         )
 
         def _size(var):
-            """選択された粒子数を返す。
-            
+            """Return the number of grid points for a single axis variable.
+
             Parameters
             ----------
-            var : object
-                対象変数名です。
+            var : tuple or sequence or scalar
+                Axis specification (start, stop, n), explicit values, or scalar
+
             Returns
             -------
-            object
-                処理結果です。
+            int
+                Number of grid points along this axis.
             """
             if isinstance(var, tuple) and len(var) == 3 and isinstance(var[2], int):
                 return var[2]
@@ -388,39 +389,39 @@ class BacktraceWrapper:
         n_threads: int = 4,
         **kwargs,
     ) -> Any:
-        """値を取得する。
-        
+        """Compute arrival probabilities from position/velocity arrays.
+
         Parameters
         ----------
         positions : np.ndarray
-            粒子位置配列です。
+            Particle position array, shape ``(N, 3)``
         velocities : np.ndarray
-            粒子速度配列です。
+            Particle velocity array, shape ``(N, 3)``
         ispec : int, optional
-            粒子種別 index です。
+            Particle species index (0-based)
         istep : int, optional
-            開始ステップ index です。
-        dt : Union[float, None], optional
-            時間刻みです。
+            Starting time-step index
+        dt : float or None, optional
+            Time step size
         max_step : int, optional
-            追跡する最大ステップ数です。
+            Maximum number of backtrace steps
         use_adaptive_dt : bool, optional
-            `True` の場合、逆追跡計算で可変時間刻みを使用します。
+            If True, use adaptive time stepping during backtrace
         n_threads : int, optional
-            並列実行スレッド数です。
+            Number of parallel threads
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
         Any
-            処理結果です。
+            Raw probability array returned by the backend.
         """
         from vdsolverf.core import Particle
         from vdsolverf.emses import get_probabilities as _backend
 
         if positions.shape != velocities.shape:
-            raise ValueError("positions と velocities の shape が違います")
+            raise ValueError("positions and velocities must have the same shape")
 
         particles = [Particle(p, v) for p, v in zip(positions, velocities)]
 
@@ -448,31 +449,31 @@ class BacktraceWrapper:
         n_threads: int = 4,
         **kwargs,
     ) -> Any:
-        """値を取得する。
-        
+        """Compute arrival probabilities from pre-built Particle objects.
+
         Parameters
         ----------
         particles : Sequence[Any]
-            確率計算の対象となる粒子集合です。
+            Collection of particles for probability computation
         ispec : int, optional
-            粒子種別 index です。
+            Particle species index (0-based)
         istep : int, optional
-            開始ステップ index です。
-        dt : Union[float, None], optional
-            時間刻みです。
+            Starting time-step index
+        dt : float or None, optional
+            Time step size
         max_step : int, optional
-            追跡する最大ステップ数です。
+            Maximum number of backtrace steps
         use_adaptive_dt : bool, optional
-            `True` の場合、逆追跡計算で可変時間刻みを使用します。
+            If True, use adaptive time stepping during backtrace
         n_threads : int, optional
-            並列実行スレッド数です。
+            Number of parallel threads
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
         Any
-            処理結果です。
+            Raw probability array returned by the backend.
         """
         from vdsolverf.emses import get_probabilities as _backend
 

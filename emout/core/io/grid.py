@@ -27,17 +27,17 @@ logger = logging.getLogger(__name__)
 
 
 def get_tqdm():
-    """適切な tqdm を返すユーティリティ関数."""
+    """Return the appropriate tqdm variant for the current environment."""
     try:
         shell = get_ipython().__class__.__name__  # type: ignore
         if shell == "ZMQInteractiveShell":
-            logger.debug("Notebook 環境検出")
+            logger.debug("Notebook environment detected")
             return notebook_tqdm
         else:
-            logger.debug("IPython 環境（Notebook ではない）検出")
+            logger.debug("IPython environment (non-notebook) detected")
             return tqdm
     except NameError:
-        logger.debug("標準 Python 環境検出")
+        logger.debug("Standard Python environment detected")
         return tqdm
 
 
@@ -54,30 +54,31 @@ class GridDataLoader:
     def __init__(
         self, dir_inspector: DirectoryInspector, name2unit_map: dict[str, Any]
     ):
-        """インスタンスを初期化する。
-        
+        """Initialize the loader.
+
         Parameters
         ----------
         dir_inspector : DirectoryInspector
-            ディレクトリ情報を提供する `DirectoryInspector` インスタンスです。
+            Inspector that provides directory and parameter information.
         name2unit_map : dict[str, Any]
-            データ名から単位変換器を取得するマッピングです。
+            Mapping from data names to unit translator factories.
         """
         self.dir_inspector = dir_inspector
         self.name2unit_map = name2unit_map
 
     def load(self, name: str) -> Any:
-        """
-        - r[e/b][xyz] の形式 → relocated field を生成
-        - (dname)(axis1)(axis2)(axis3) の形式（xyz permutation）→ VectorData3d を返す
-        - (dname)(axis1)(axis2) の形式 → VectorData2d を返す
-        - それ以外 → GridDataSeries をチェーンして返す
+        """Load grid data by name, handling relocated and vector fields.
+
+        - ``r[e/b][xyz]`` -- generate a relocated field.
+        - ``(dname)(axis1)(axis2)(axis3)`` (xyz permutation) -- return VectorData3d.
+        - ``(dname)(axis1)(axis2)`` -- return VectorData2d.
+        - Otherwise -- return a chained GridDataSeries.
         """
         logger.debug(f"GridDataLoader.load: {name}")
 
         m = re.match(r"^r([eb][xyz])$", name)
         if m:
-            fld = m.group(1)  # ex: 'ebx', 'exy' など
+            fld = m.group(1)  # e.g. 'ex', 'by'
             logger.debug(f"Relocated field requested: {fld}")
             self._create_relocated_field_hdf5(fld)
 
@@ -89,7 +90,7 @@ class GridDataLoader:
             if len(set(axes)) == 3:
                 skip_2d_vector_parse = True
                 logger.debug(
-                    f"VectorData3d を生成: base={dname}, axes=({axis1},{axis2},{axis3})"
+                    f"Building VectorData3d: base={dname}, axes=({axis1},{axis2},{axis3})"
                 )
                 try:
                     arr1 = self.load(f"{dname}{axis1}")
@@ -99,7 +100,7 @@ class GridDataLoader:
                     return vd
                 except (KeyError, FileNotFoundError, OSError):
                     logger.debug(
-                        "VectorData3d 解決に失敗したため通常の GridDataSeries 読み込みへフォールバックします。",
+                        "VectorData3d resolution failed; falling back to plain GridDataSeries.",
                         exc_info=True,
                     )
 
@@ -108,11 +109,11 @@ class GridDataLoader:
             if m2:
                 dname, axis1, axis2 = m2.groups()
                 logger.debug(
-                    f"VectorData2d を生成: base={dname}, axes=({axis1},{axis2})"
+                    f"Building VectorData2d: base={dname}, axes=({axis1},{axis2})"
                 )
                 arr1 = self.load(
                     f"{dname}{axis1}"
-                )  # 再帰的に GridDataSeries or relocated field
+                )  # recursively loads GridDataSeries or relocated field
                 arr2 = self.load(f"{dname}{axis2}")
                 vd = VectorData2d([arr1, arr2], name=name)
                 return vd
@@ -132,41 +133,41 @@ class GridDataLoader:
         return gd
 
     def _find_h5file(self, directory: Path, name: str) -> Path:
-        """指定データ名に対応する HDF5 ファイルを 1 件だけ探索する。
+        """Find exactly one HDF5 file for the given data name.
 
         Parameters
         ----------
         directory : Path
-            処理対象ディレクトリのパスです。
+            Directory to search
         name : str
-            対象データ名またはキー名です。
+            Field name
 
         Returns
         -------
         Path
-            見つかった HDF5 ファイルパスです。
+            Path to the matching HDF5 file.
         """
         pattern = f"{name}00_0000.h5"
         matches = list(directory.glob(pattern))
         if not matches:
-            raise FileNotFoundError(f"{pattern} が見つかりません: {directory}")
+            raise FileNotFoundError(f"{pattern} not found in: {directory}")
         if len(matches) > 1:
-            raise RuntimeError(f"{pattern} が複数見つかりました: {directory}")
+            raise RuntimeError(f"Multiple matches for {pattern} in: {directory}")
         return matches[0]
 
     def _load_griddata(self, h5file_path: Path) -> GridDataSeries:
-        # unit が定義されていれば name2unit から拾う
-        """HDF5 ファイルから `GridDataSeries` を構築する。
+        # Pick unit translators from name2unit when available
+        """Build a GridDataSeries from an HDF5 file.
 
         Parameters
         ----------
         h5file_path : Path
-            読み込む `{name}00_0000.h5` ファイルパスです。
-        
+            Path to the ``{name}00_0000.h5`` file
+
         Returns
         -------
         GridDataSeries
-            単位情報付きで初期化されたグリッド時系列データです。
+            Grid time-series data initialised with unit information.
         """
         unit = self.dir_inspector.unit
         if unit is None:
@@ -174,12 +175,12 @@ class GridDataLoader:
             axisunit = None
             valunit = None
         else:
-            # "t", "axis" は常に key がある想定
+            # "t" and "axis" are always expected to have keys
             tunit = self.name2unit_map.get("t", lambda out: None)(self.dir_inspector)
             axisunit = self.name2unit_map.get("axis", lambda out: None)(
                 self.dir_inspector
             )
-            # 実際の値のユニットはファイル名から抽出
+            # Actual value unit is extracted from the file name
             base_name = h5file_path.name.replace("00_0000.h5", "")
             valunit = self.name2unit_map.get(base_name, lambda out: None)(
                 self.dir_inspector
@@ -204,17 +205,12 @@ class GridDataLoader:
         return series
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:
-        """補間済み（relocated）場データ HDF5 を全対象ディレクトリに生成する。
+        """Generate relocated field HDF5 files in all target directories.
 
         Parameters
         ----------
         field_name : str
-            元場データ名です（例: `ex`, `by`）。
-
-        Returns
-        -------
-        None
-            戻り値はありません。
+            Original field name (e.g. ``"ex"``, ``"by"``).
         """
         axis = "zyx".index(field_name[-1])
 
@@ -227,30 +223,25 @@ class GridDataLoader:
     def _create_one_relocated(
         self, directory: Path, name: str, axis: int
     ) -> None:
-        """単一ディレクトリに relocated HDF5 を生成する。
+        """Generate a relocated HDF5 file in a single directory.
 
         Parameters
         ----------
         directory : Path
-            処理対象ディレクトリのパスです。
+            Target directory.
         name : str
-            対象データ名またはキー名です。
+            Field name.
         axis : int
-            補間方向を表す軸 index（`x=2`, `y=1`, `z=0`）。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
+            Interpolation axis index (``x=2``, ``y=1``, ``z=0``).
         """
         input_fp = directory / f"{name}00_0000.h5"
         output_fp = directory / f"r{name}00_0000.h5"
 
         if output_fp.exists():
-            logger.debug(f"既に存在: {output_fp.resolve()}")
+            logger.debug(f"Already exists: {output_fp.resolve()}")
             return
 
-        logger.info(f"Relocated field 作成: {output_fp.resolve()}")
+        logger.info(f"Creating relocated field: {output_fp.resolve()}")
         with h5py.File(input_fp, "r") as h5f_in:
             field = h5f_in[name]
 
@@ -276,17 +267,18 @@ class GridDataLoader:
                         )
 
     def _get_btype(self, name: str) -> str:
-        """境界条件コード（`periodic/dirichlet/neumann`）を取得する。
+        """Return the boundary condition code for the given field.
 
         Parameters
         ----------
         name : str
-            対象データ名またはキー名です。
+            Field name.
 
         Returns
         -------
         str
-            `name` に対応する境界条件名です。
+            Boundary condition name (``"periodic"``, ``"dirichlet"``, or
+            ``"neumann"``).
         """
         axis = "zyx".index(name[-1])
         btype_list = ["periodic", "dirichlet", "neumann"]

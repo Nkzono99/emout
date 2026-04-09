@@ -26,13 +26,7 @@ class ParticleData:
     name: str = "value"
 
     def __post_init__(self):
-        """初期化後の検証と整形を行う。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
-        """
+        """Validate and normalise after initialisation."""
         self.values = np.asarray(self.values, dtype=float)
         self.values[self.values == -9999] = np.nan
         if self.values.ndim != 1:
@@ -40,9 +34,7 @@ class ParticleData:
 
     @property
     def val_si(self) -> "ParticleData":
-        """
-        SI単位系に変換した ParticleData を返す
-        """
+        """Return a new ParticleData converted to SI units."""
         if self.valunit is None:
             raise ValueError("valunit is not set.")
 
@@ -52,48 +44,46 @@ class ParticleData:
     # --- pandas bridge -----------------
 
     def to_series(self, index=None) -> pd.Series:
-        """
-        pandas.Series に変換（plotなどが使える）
-        """
+        """Convert to a :class:`pandas.Series`."""
 
         return pd.Series(self.values, index=index, name=self.name)
 
     def plot(self, *args, **kwargs):
-        """`pandas.Series.plot` を用いて粒子データを描画する。
+        """Plot the particle data via :meth:`pandas.Series.plot`.
 
         Parameters
         ----------
         *args : tuple
-            `pandas.Series.plot` へ渡す位置引数です。
-            例: `kind`, `x`, `y`。
+            Positional arguments forwarded to :meth:`pandas.Series.plot`
+            (e.g. *kind*, *x*, *y*).
         **kwargs : dict
-            `pandas.Series.plot` へ渡すキーワード引数です。
-            例: `ax`, `figsize`, `title`, `xlabel`, `ylabel`, `grid`,
-            `legend`, `color`, `style`, `xlim`, `ylim`。
+            Keyword arguments forwarded to :meth:`pandas.Series.plot`
+            (e.g. *ax*, *figsize*, *title*, *xlabel*, *ylabel*, *grid*,
+            *legend*, *color*, *style*, *xlim*, *ylim*).
 
         Returns
         -------
         matplotlib.axes.Axes or matplotlib.artist.Artist
-            pandas が返す描画オブジェクトです（`kind` に依存）。
+            Plot object returned by pandas (depends on *kind*).
         """
         return self.to_series().plot(*args, **kwargs)
 
     def __len__(self):
-        """要素数を返す。
-        
+        """Return the number of particles.
+
         Returns
         -------
         int
-            要素数。
+            Number of elements.
         """
         return len(self.values)
 
     def __repr__(self):
-        """文字列表現を返す。
-        
+        """Return a string representation.
+
         Returns
         -------
         str
-            文字列表現。
+            Human-readable summary.
         """
         return f"ParticleData(name={self.name}, unit={self.valunit}, values={self.values})"

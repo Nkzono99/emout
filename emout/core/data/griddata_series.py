@@ -19,18 +19,18 @@ from .data import Data3d, Data4d
 
 
 class GridDataSeries:
-    """3次元時系列データを管理する.
+    """Manage 3-D time-series grid data.
 
     Attributes
     ----------
     datafile : DataFileInfo
-        データファイル情報
+        Data file metadata.
     h5 : h5py.File
-        hdf5ファイルオブジェクト
+        HDF5 file handle.
     group : h5py.Datasets
-        データセット
+        HDF5 dataset group.
     name : str
-        データセット名
+        Dataset name.
     """
 
     def __init__(
@@ -41,14 +41,14 @@ class GridDataSeries:
         axisunit: UnitTranslator = None,
         valunit: UnitTranslator = None,
     ):
-        """3次元時系列データを生成する.
+        """Create a 3-D time-series data object.
 
         Parameters
         ----------
         filename : str or Path
-            ファイル名
+            Path to the HDF5 file.
         name : str
-            データの名前
+            Dataset name.
         """
         self.datafile = DataFileInfo(filename)
         self.h5 = h5py.File(str(filename), "r")
@@ -63,25 +63,25 @@ class GridDataSeries:
         self._emout_open_kwargs = None
 
     def close(self) -> None:
-        """hdf5ファイルを閉じる."""
+        """Close the HDF5 file."""
         self.h5.close()
 
     def time_series(self, x, y, z) -> np.ndarray:
-        """指定した範囲の時系列データを取得する.
+        """Return the time series for the specified spatial range.
 
         Parameters
         ----------
         x : int or slice
-            x座標
+            X coordinate or range.
         y : int or slice
-            y座標
+            Y coordinate or range.
         z : int or slice
-            z座標
+            Z coordinate or range.
 
         Returns
         -------
         numpy.ndarray
-            指定した範囲の時系列データ
+            Time-series data for the specified range.
         """
         series = []
         indexes = sorted(self._index2key.keys())
@@ -92,43 +92,43 @@ class GridDataSeries:
 
     @property
     def filename(self) -> Path:
-        """ファイル名を返す.
+        """Return the file name.
 
         Returns
         -------
         Path
-            ファイル名
+            File name.
         """
         return self.datafile.filename
 
     @property
     def directory(self) -> Path:
-        """ディレクトリ名を返す.
+        """Return the directory name.
 
         Returns
         -------
         Path
-            ディレクトリ名
+            Directory path.
         """
         return self.datafile.directory
 
     def _create_data_with_index(self, index: int) -> Data3d:
-        """時間が指定された場合に、その時間におけるData3dを生成する.
+        """Create a Data3d snapshot for the given time index.
 
         Parameters
         ----------
         index : int
-            時間インデックス
+            Time index.
 
         Returns
         -------
         Data3d
-            生成したData3d
+            3-D data at the specified timestep.
 
         Raises
         ------
         IndexError
-            指定した時間が存在しない場合の例外
+            If the specified time index does not exist.
         """
         if index not in self._index2key:
             raise IndexError()
@@ -151,19 +151,19 @@ class GridDataSeries:
     def __create_data_with_indexes(
         self, indexes: List[int], tslice: slice = None
     ) -> Data4d:
-        """時間が範囲で指定された場合に、Data4dを生成する.
+        """Create a Data4d from a range of time indices.
 
         Parameters
         ----------
         indexes : list
-            時間インデックスのリスト
+            List of time indices.
         tslice : slice, optional
-            時間インデックスの範囲, by default None
+            Time index range, by default ``None``.
 
         Returns
         -------
         Data4d
-            生成したData4d
+            4-D data spanning the specified timesteps.
         """
         if tslice is not None:
             start = tslice.start or 0
@@ -187,24 +187,24 @@ class GridDataSeries:
     def __getitem__(
         self, item: Union[int, slice, List[int], Tuple[Union[int, slice, List[int]]]]
     ) -> Union["Data3d", "Data4d"]:
-        """時系列データをスライスしたものを返す.
+        """Return a slice of the time-series data.
 
         Parameters
         ----------
         item : int or slice or list or tuple(int or slice or list)
-            tzxyインデックスの範囲
+            Time / spatial index or range (t, z, y, x).
 
         Returns
         -------
         Data3d or Data4d
-            スライスされたデータ
+            Sliced data.
 
         Raises
         ------
         TypeError
-            itemのタイプが正しくない場合の例外
+            If *item* has an unsupported type.
         """
-        # xyzの範囲も指定された場合
+        # When xyz ranges are also specified
         if isinstance(item, tuple):
             if isinstance(item[0], int):
                 return self[item[0]][item[1:]]
@@ -212,50 +212,50 @@ class GridDataSeries:
                 slices = (slice(None), *item[1:])
                 return self[item[0]][slices]
 
-        # 以下、tの範囲のみ指定された場合
-        if isinstance(item, int):  # tが一つだけ指定された場合
+        # Below: only the t range is specified
+        if isinstance(item, int):  # single t index
             index = item
             if index < 0:
                 index = len(self) + index
             return self._create_data_with_index(index)
 
-        elif isinstance(item, slice):  # tがスライスで指定された場合
+        elif isinstance(item, slice):  # t given as a slice
             indexes = list(utils.range_with_slice(item, maxlen=len(self)))
             return self.__create_data_with_indexes(indexes, tslice=item)
 
-        elif isinstance(item, list):  # tがリストで指定された場合
+        elif isinstance(item, list):  # t given as a list
             return self.__create_data_with_indexes(item)
 
         else:
             raise TypeError()
 
     def chain(self, other_series: "GridDataSeries") -> "MultiGridDataSeries":
-        """GridDataSeriesを結合する.
+        """Chain this series with another.
 
         Parameters
         ----------
         other_series : GridDataSeries
-            結合するGridDataSeries
+            Series to append.
 
         Returns
         -------
         MultiGridDataSeries
-            結合したGridDataSeries
+            Concatenated series.
         """
         return MultiGridDataSeries(self, other_series)
 
     def __add__(self, other_series: "GridDataSeries") -> "MultiGridDataSeries":
-        """GridDataSeriesを結合する.
+        """Chain this series with another via the ``+`` operator.
 
         Parameters
         ----------
         other_series : GridDataSeries
-            結合するGridDataSeries
+            Series to append.
 
         Returns
         -------
         MultiGridDataSeries
-            結合したGridDataSeries
+            Concatenated series.
         """
         if not isinstance(other_series, GridDataSeries):
             raise TypeError()
@@ -263,52 +263,52 @@ class GridDataSeries:
         return self.chain(other_series)
 
     def __iter__(self):
-        """イテレータを返します。
+        """Return an iterator over timesteps.
 
         Returns
         -------
         Iterator[Data3d]
-            時系列順に `Data3d` を返すイテレータです。
+            Iterator yielding `Data3d` instances in time order.
         """
         indexes = sorted(self._index2key.keys())
         for index in indexes:
             yield self[index]
 
     def __len__(self):
-        """要素数を返す。
-        
+        """Return the number of timesteps.
+
         Returns
         -------
         int
-            要素数。
+            Number of timesteps.
         """
         return len(self._index2key)
 
 
 class MultiGridDataSeries(GridDataSeries):
-    """連続する複数の3次元時系列データを管理する.
+    """Manage multiple concatenated 3-D time-series datasets.
 
     Attributes
     ----------
     datafile : DataFileInfo
-        データファイル情報
+        Data file metadata.
     name : str
-        データセット名
+        Dataset name.
     tunit : UnitTranslator
-        時間の単位変換器
+        Time unit translator.
     axisunit : UnitTranslator
-        空間軸の単位変換器
+        Spatial axis unit translator.
     valunit : UnitTranslator
-        値の単位変換器
+        Value unit translator.
     """
 
     def __init__(self, *series):
-        """インスタンスを初期化します。
-        
+        """Initialize from one or more GridDataSeries.
+
         Parameters
         ----------
-        *series : tuple
-            追加の位置引数です。委譲先の関数へそのまま渡されます。
+        *series : GridDataSeries or MultiGridDataSeries
+            Series to concatenate.
         """
         self.series = []
         for data in series:
@@ -324,29 +324,29 @@ class MultiGridDataSeries(GridDataSeries):
     def __expand(
         self, data_series: Union["GridDataSeries", "MultiGridDataSeries"]
     ) -> List[GridDataSeries]:
-        """与えられたオブジェクトがMultiGridDataSeriesなら展開してGridDataSeriesのリストとして返す.
+        """Flatten a (Multi)GridDataSeries into a list of GridDataSeries.
 
         Parameters
         ----------
         data_series : GridDataSeries or MultiGridDataSeries
-            オブジェクト
+            Object to expand.
 
         Returns
         -------
-        list(GridDataSeries)
-            GridDataSeriesのリスト
+        list of GridDataSeries
+            Flattened list.
 
         Raises
         ------
         TypeError
-            オブジェクトがGridDataSeriesでない場合の例外
+            If the object is not a GridDataSeries.
         """
         if not isinstance(data_series, GridDataSeries):
             raise TypeError()
         if not isinstance(data_series, MultiGridDataSeries):
             return [data_series]
 
-        # data_seriesがMultiGridDataSeriesならデータを展開して結合する.
+        # If data_series is MultiGridDataSeries, expand and merge.
         expanded = []
         for data in data_series.series:
             expanded += self.__expand(data)
@@ -354,100 +354,100 @@ class MultiGridDataSeries(GridDataSeries):
         return expanded
 
     def close(self) -> None:
-        """hdf5ファイルを閉じる."""
+        """Close the HDF5 file."""
         for data in self.series:
             data.h5.close()
 
     def time_series(
         self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice]
     ):
-        """指定した範囲の時系列データを取得する.
+        """Return the time series for the specified spatial range.
 
         Parameters
         ----------
         x : int or slice
-            x座標
+            X coordinate or range.
         y : int or slice
-            y座標
+            Y coordinate or range.
         z : int or slice
-            z座標
+            Z coordinate or range.
 
         Returns
         -------
         numpy.ndarray
-            指定した範囲の時系列データ
+            Time-series data for the specified range.
         """
         series = np.concatenate([data.time_series(x, y, z) for data in self.series])
         return series
 
     @property
     def filename(self) -> Path:
-        """先頭データのファイル名を返す.
+        """Return the file name of the first series.
 
         Returns
         -------
         Path
-            ファイル名
+            File name.
         """
         return self.series[0].datafile.filename
 
     @property
     def filenames(self) -> List[Path]:
-        """ファイル名のリストを返す.
+        """Return the list of file names.
 
         Returns
         -------
-        list(Path)
-            ファイル名のリスト
+        list of Path
+            File names.
         """
         return [data.filename for data in self.series]
 
     @property
     def directory(self) -> Path:
-        """先頭データのディレクトリ名を返す.
+        """Return the directory of the first series.
 
         Returns
         -------
         Path
-            ディレクトリ名
+            Directory path.
         """
         return self.series[0].datafile.directory
 
     @property
     def directories(self) -> List[Path]:
-        """ディレクトリ名のリストを返す.
+        """Return the list of directories.
 
         Returns
         -------
-        list(Path)
-            ディレクトリ名のリスト
+        list of Path
+            Directory paths.
         """
         return [data.directory for data in self.series]
 
     def _create_data_with_index(self, index: int) -> Data3d:
-        """時間が指定された場合に、その時間におけるData3dを生成する.
+        """Create a Data3d snapshot for the given time index.
 
         Parameters
         ----------
         index : int
-            時間インデックス
+            Time index.
 
         Returns
         -------
         Data3d
-            生成したData3d
+            3-D data at the specified timestep.
 
         Raises
         ------
         IndexError
-            指定した時間が存在しない場合の例外
+            If the specified time index does not exist.
         """
         if index < len(self.series[0]):
             return self.series[0][index]
 
         length = len(self.series[0])
         for series in self.series[1:]:
-            # 先頭データは前のデータの最後尾と重複しているためカウントしない
+            # The first entry overlaps with the last of the previous series
             series_len = len(series) - 1
 
             if index < series_len + length:
@@ -459,27 +459,27 @@ class MultiGridDataSeries(GridDataSeries):
         raise IndexError()
 
     def __iter__(self):
-        """イテレータを返す。
-        
+        """Return an iterator over all timesteps.
+
         Returns
         -------
         Iterator
-            イテレータ。
+            Chained iterator across all sub-series.
         """
         iters = [iter(self.series[0])]
         for data in self.series[1:]:
             it = iter(data)
-            next(it)  # 先頭データを捨てる
+            next(it)  # skip the first entry (overlaps with previous series)
             iters.append(it)
         return chain.from_iterable(iters)
 
     def __len__(self) -> int:
-        # 先頭データは前のデータの最後尾と重複しているためカウントしない
-        """要素数を返す。
-        
+        # First entry of each appended series overlaps with the last of the previous
+        """Return the total number of timesteps.
+
         Returns
         -------
         int
-            要素数。
+            Total number of timesteps.
         """
         return np.sum([len(data) for data in self.series]) - (len(self.series) - 1)

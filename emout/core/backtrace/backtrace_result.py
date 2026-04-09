@@ -12,32 +12,26 @@ from .xy_data import XYData
 
 
 class BacktraceResult:
-    """
-    get_backtrace の返り値をまとめて管理するクラス。
-    - ts           : shape = (N_steps,)
-    - probability  : shape = (N_steps,)
-    - positions    : shape = (N_steps, 3)  # (x, y, z)
-    - velocities   : shape = (N_steps, 3)  # (vx, vy, vz)
+    """Container for a single-particle backtrace result.
 
-    以下の方法でアクセス・可視化できます：
+    Attributes (all NumPy arrays):
 
-      ts, prob, pos, vel = result
-        → タプルアンパック
+    - ``ts``         -- shape ``(N_steps,)``
+    - ``probability`` -- shape ``(N_steps,)``
+    - ``positions``  -- shape ``(N_steps, 3)``  (x, y, z)
+    - ``velocities`` -- shape ``(N_steps, 3)``  (vx, vy, vz)
 
-      result.pair("x", "y").plot()
-        → x vs y
+    Usage::
 
-      result.pair("t", "x").plot()
-        → t vs x
+        ts, prob, pos, vel = result      # tuple unpacking
 
-      result.tx.plot()
-        → x軸に t, y軸に x (= pair("t","x") と同義)
-
-      result.yvz.plot()
-        → y vs vz (= pair("y","vz"))
+        result.pair("x", "y").plot()     # x vs y
+        result.pair("t", "x").plot()     # t vs x
+        result.tx.plot()                 # shorthand for pair("t", "x")
+        result.yvz.plot()               # shorthand for pair("y", "vz")
     """
 
-    # サポートするキー
+    # Supported variable keys
     _VALID_KEYS = {"t", "x", "y", "z", "vx", "vy", "vz"}
 
     def __init__(
@@ -59,11 +53,11 @@ class BacktraceResult:
         N = ts.shape[0]
         if positions.ndim != 2 or positions.shape != (N, 3):
             raise ValueError(
-                "positions は shape=(N_steps, 3) の配列である必要があります"
+                "positions must be an array of shape (N_steps, 3)"
             )
         if velocities.ndim != 2 or velocities.shape != (N, 3):
             raise ValueError(
-                "velocities は shape=(N_steps, 3) の配列である必要があります"
+                "velocities must be an array of shape (N_steps, 3)"
             )
 
         self.ts = ts
@@ -74,22 +68,19 @@ class BacktraceResult:
         self.unit = unit
 
     def __iter__(self) -> Iterator[Any]:
-        """
-        タプルアンパック対応:
-          ts, prob, pos, vel = result
-        """
+        """Support tuple unpacking: ``ts, prob, pos, vel = result``."""
         yield self.ts
         yield self.probability
         yield self.positions
         yield self.velocities
 
     def __repr__(self) -> str:
-        """文字列表現を返す。
-        
+        """Return a string representation.
+
         Returns
         -------
         str
-            文字列表現。
+            Human-readable summary.
         """
         N = len(self.ts)
         return (
@@ -98,15 +89,16 @@ class BacktraceResult:
         )
 
     def pair(self, var1: str, var2: str) -> XYData:
-        """
-        任意 2 変数を取り出し、XYData を返す。
-        var1, var2 は以下のいずれか：
-          't', 'x', 'y', 'z', 'vx', 'vy', 'vz'
+        """Extract two variables and return an XYData.
 
-        例:
-          result.pair("x", "y")     → x vs y
-          result.pair("t", "x")     → t vs x
-          result.pair("z", "vy")    → z vs vy
+        Parameters *var1* and *var2* must each be one of
+        ``'t'``, ``'x'``, ``'y'``, ``'z'``, ``'vx'``, ``'vy'``, ``'vz'``.
+
+        Examples::
+
+            result.pair("x", "y")   # x vs y
+            result.pair("t", "x")   # t vs x
+            result.pair("z", "vy")  # z vs vy
         """
         if (
             var1 not in BacktraceResult._VALID_KEYS
@@ -117,16 +109,17 @@ class BacktraceResult:
             )
 
         def _get_array(key: str) -> np.ndarray:
-            """array を取得する。
-            
+            """Return the data array and unit for the given key.
+
             Parameters
             ----------
             key : str
-                取得・設定対象のキーです。
+                Variable key (e.g. ``"t"``, ``"x"``, ``"vx"``).
+
             Returns
             -------
-            np.ndarray
-                処理結果です。
+            tuple of (np.ndarray, UnitTranslator or None)
+                Data array and associated unit translator.
             """
             if key == "t":
                 u = self.unit.t if self.unit else None
@@ -166,17 +159,17 @@ class BacktraceResult:
         )
 
     def __getattr__(self, name: str) -> Any:
-        """
-        属性アクセスを「ペア名」として解釈。以下のルールで pair() を返す。
+        """Interpret attribute access as a pair name.
 
-        1)「前方 → 後方」の順に _VALID_KEYS からマッチを探す
+        Matches the longest prefix in ``_VALID_KEYS`` and delegates to
+        :meth:`pair`.
 
-        例:
-          - result.tx           → pair("t","x")
-          - result.tz           → pair("t","z")
-          - result.tvx          → pair("t","vx")
-          - result.xvy          → pair("x","vy")
-          - result.yz           → pair("y","z")
+        Examples::
+
+            result.tx   # -> pair("t", "x")
+            result.tvx  # -> pair("t", "vx")
+            result.xvy  # -> pair("x", "vy")
+            result.yz   # -> pair("y", "z")
         """
         for key1 in BacktraceResult._VALID_KEYS:
             if name.startswith(key1):

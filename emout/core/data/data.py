@@ -22,22 +22,22 @@ _REMOTE_PLOT_HANDLED = object()
 
 
 class Data(np.ndarray):
-    """3次元データを管理する.
+    """Dimensioned ndarray subclass for EMSES grid data.
 
     Attributes
     ----------
     datafile : DataFileInfo
-        データファイル情報
+        Data file metadata.
     name : str
-        データ名
-    slices : list(slice)
-        管理するデータのxyz方向それぞれの範囲
-    slice_axes : list(int)
-        データ軸がxyzのどの方向に対応しているか表すリスト(0: t, 1: z, 2: y, 3: x)
-    axisunits : list(UnitTranslator) or None
-        軸の単位変換器
+        Field name.
+    slices : list of slice
+        Sub-range on each axis (t, z, y, x).
+    slice_axes : list of int
+        Mapping from array dimensions to original axes (0: t, 1: z, 2: y, 3: x).
+    axisunits : list of UnitTranslator or None
+        Per-axis unit translators.
     valunit : UnitTranslator or None
-        値の単位変換器
+        Value unit translator.
     """
 
     def __new__(
@@ -53,35 +53,36 @@ class Data(np.ndarray):
         axisunits=None,
         valunit=None,
     ):
-        """インスタンスを生成する。
-        
+        """Create a new Data instance.
+
         Parameters
         ----------
-        input_array : object
-            元となる NumPy 配列です。
-        filename : object, optional
-            保存先または読み込み対象のファイル名です。
-        name : object, optional
-            対象データ名またはキー名です。
-        xslice : object, optional
-            x 軸スライスです。
-        yslice : object, optional
-            y 軸スライスです。
-        zslice : object, optional
-            z 軸スライスです。
-        tslice : object, optional
-            時間方向スライスです。
-        slice_axes : object, optional
-            配列軸が元データのどの軸に対応するかを示す index リストです
-            （`0:t, 1:z, 2:y, 3:x`）。
-        axisunits : object, optional
-            各軸（`t,z,y,x`）に対応する単位変換器のリストです。
-        valunit : object, optional
-            値の単位変換器です。
+        input_array : array_like
+            Source NumPy array
+        filename : path-like, optional
+            Path to the originating HDF5 file
+        name : str, optional
+            Field name
+        xslice : slice, optional
+            Sub-range along the x axis
+        yslice : slice, optional
+            Sub-range along the y axis
+        zslice : slice, optional
+            Sub-range along the z axis
+        tslice : slice, optional
+            Sub-range along the time axis
+        slice_axes : list of int, optional
+            Mapping from array dimensions to original axes
+            (0: t, 1: z, 2: y, 3: x)
+        axisunits : list of UnitTranslator, optional
+            Per-axis (t, z, y, x) unit translators
+        valunit : UnitTranslator, optional
+            Value unit translator
+
         Returns
         -------
-        object
-            処理結果です。
+        Data
+            Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
         obj.datafile = DataFileInfo(filename)
@@ -107,16 +108,17 @@ class Data(np.ndarray):
         return obj
 
     def __getitem__(self, item):
-        """要素を取得する。
-        
+        """Retrieve an element or sub-array by index or slice.
+
         Parameters
         ----------
-        item : object
-            代入または更新する値です。
+        item : int, slice, or tuple
+            Index expression
+
         Returns
         -------
-        object
-            処理結果です。
+        Data or scalar
+            Sliced data or scalar value.
         """
         if not isinstance(item, tuple):
             item = (item,)
@@ -160,14 +162,14 @@ class Data(np.ndarray):
             return new_obj
 
     def __add_slices(self, new_obj, item):
-        """管理するデータの範囲を新しいオブジェクトに追加する.
+        """Propagate sub-range metadata to a newly sliced object.
 
         Parameters
         ----------
         new_obj : Data
-            新しく生成されたデータオブジェクト
-        item : int or slice or tuple(int or slice)
-            スライス
+            Newly created data object
+        item : int or slice or tuple of (int or slice)
+            Index expression used for slicing
         """
         slices = [*self.slices]
         axes = [*self.slice_axes]
@@ -209,16 +211,12 @@ class Data(np.ndarray):
         setattr(new_obj, "slice_axes", axes)
 
     def __array_finalize__(self, obj):
-        """NumPy 配列のメタ情報を引き継ぐ。
-        
+        """Inherit metadata from the source array during view casting.
+
         Parameters
         ----------
-        obj : object
-            対象オブジェクトです。
-        Returns
-        -------
-        None
-            戻り値はありません。
+        obj : ndarray or None
+            Source array whose attributes are copied
         """
         if obj is None:
             return
@@ -233,82 +231,82 @@ class Data(np.ndarray):
 
     @property
     def filename(self) -> Path:
-        """ファイル名を返す.
+        """Return the source file path.
 
         Returns
         -------
         Path
-            ファイル名.
+            Path to the originating HDF5 file.
         """
         return self.datafile.filename
 
     @property
     def directory(self) -> Path:
-        """ディレクトリ名を返す
+        """Return the parent directory of the source file.
 
         Returns
         -------
         Path
-            ディレクトリ名
+            Parent directory path.
         """
         return self.datafile.directory
 
     @property
     def xslice(self) -> slice:
-        """管理するx方向の範囲を返す.
+        """Return the sub-range along the x axis.
 
         Returns
         -------
         slice
-            管理するx方向の範囲
+            Sub-range along the x axis.
         """
         return self.slices[3]
 
     @property
     def yslice(self) -> slice:
-        """管理するy方向の範囲を返す.
+        """Return the sub-range along the y axis.
 
         Returns
         -------
         slice
-            管理するy方向の範囲
+            Sub-range along the y axis.
         """
         return self.slices[2]
 
     @property
     def zslice(self) -> slice:
-        """管理するz方向の範囲を返す.
+        """Return the sub-range along the z axis.
 
         Returns
         -------
         slice
-            管理するz方向の範囲
+            Sub-range along the z axis.
         """
         return self.slices[1]
 
     @property
     def tslice(self) -> slice:
-        """管理するt方向の範囲を返す.
+        """Return the sub-range along the time axis.
 
         Returns
         -------
         slice
-            管理するt方向の範囲
+            Sub-range along the time axis.
         """
         return self.slices[0]
 
     def axis(self, ax: int) -> np.ndarray:
-        """対象軸の情報を返す。
-        
+        """Return the coordinate array for the given array dimension.
+
         Parameters
         ----------
         ax : int
-            描画先の Axes。
-        
+            Array dimension index
+
         Returns
         -------
         np.ndarray
-            処理結果です。
+            1-D coordinate array for the requested axis.
         """
         index = self.slice_axes[ax]
         axis_slice = self.slices[index]
@@ -316,45 +314,45 @@ class Data(np.ndarray):
 
     @property
     def x(self) -> np.ndarray:
-        """x軸.
+        """X-axis coordinate array in grid units.
 
         Returns
         -------
         np.ndarray
-            x軸
+            X-axis coordinates.
         """
         return np.arange(*utils.slice2tuple(self.xslice))
 
     @property
     def y(self) -> np.ndarray:
-        """y軸.
+        """Y-axis coordinate array in grid units.
 
         Returns
         -------
         np.ndarray
-            y軸
+            Y-axis coordinates.
         """
         return np.arange(*utils.slice2tuple(self.yslice))
 
     @property
     def z(self) -> np.ndarray:
-        """z軸.
+        """Z-axis coordinate array in grid units.
 
         Returns
         -------
         np.ndarray
-            z軸
+            Z-axis coordinates.
         """
         return np.arange(*utils.slice2tuple(self.zslice))
 
     @property
     def t(self) -> np.ndarray:
-        """t軸.
+        """Time-axis coordinate array in grid units.
 
         Returns
         -------
         np.ndarray
-            t軸
+            Time-axis coordinates.
         """
         slc = self.tslice
         maxlen = (slc.stop - slc.start) // slc.step
@@ -362,67 +360,67 @@ class Data(np.ndarray):
 
     @property
     def x_si(self) -> np.ndarray:
-        """SI単位系でのx軸.
+        """X-axis coordinate array in SI units.
 
         Returns
         -------
         np.ndarray
-            SI単位系でのx軸
+            X-axis coordinates in SI units.
         """
         return self.axisunits[3].reverse(self.x)
 
     @property
     def y_si(self) -> np.ndarray:
-        """SI単位系でのy軸.
+        """Y-axis coordinate array in SI units.
 
         Returns
         -------
         np.ndarray
-            SI単位系でのy軸
+            Y-axis coordinates in SI units.
         """
         return self.axisunits[2].reverse(self.y)
 
     @property
     def z_si(self) -> np.ndarray:
-        """SI単位系でのz軸.
+        """Z-axis coordinate array in SI units.
 
         Returns
         -------
         np.ndarray
-            SI単位系でのz軸
+            Z-axis coordinates in SI units.
         """
         return self.axisunits[1].reverse(self.z)
 
     @property
     def t_si(self) -> np.ndarray:
-        """SI単位系でのt軸.
+        """Time-axis coordinate array in SI units.
 
         Returns
         -------
         np.ndarray
-            SI単位系でのt軸
+            Time-axis coordinates in SI units.
         """
         return self.axisunits[0].reverse(self.t)
 
     @property
     def val_si(self) -> "Data":
-        """SI単位系での値.
+        """Field values converted to SI units.
 
         Returns
         -------
         Data
-            SI単位系での値
+            Field values in SI units.
         """
         return self.valunit.reverse(self)
 
     @property
     def use_axes(self) -> List[str]:
-        """データ軸がxyzのどの方向に対応しているか表すリストを返す.
+        """Return axis labels corresponding to each array dimension.
 
         Returns
         -------
-        list(str)
-            データ軸がxyzのどの方向に対応しているか表すリスト(['x'], ['x', 'z'], etc)
+        list of str
+            Axis labels such as ``['x']``, ``['x', 'z']``, etc.
         """
         to_axis = {3: "x", 2: "y", 1: "z", 0: "t"}
         return [to_axis[a] for a in self.slice_axes]
@@ -430,17 +428,17 @@ class Data(np.ndarray):
     def masked(
         self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]
     ) -> "Data":
-        """マスクされたデータを返す.
+        """Return a copy with masked elements set to NaN.
 
         Parameters
         ----------
-        mask : numpy.ndarray or predicate
-            マスク行列またはマスクを返す関数
+        mask : numpy.ndarray or callable
+            Boolean mask array, or a callable that returns one
 
         Returns
         -------
-        SlicedData
-            マスクされたデータ
+        Data
+            Copy of the data with masked elements replaced by NaN.
         """
         masked = self.copy()
         if isinstance(mask, np.ndarray):
@@ -450,11 +448,11 @@ class Data(np.ndarray):
         return masked
 
     def to_numpy(self) -> np.ndarray:
-        """numpyのndarrayに変換する."""
+        """Convert to a plain NumPy ndarray."""
         return np.array(self)
 
     def _to_recipe_index(self):
-        """slices から GridDataSeries[index] 形式のタプルを復元する。"""
+        """Reconstruct a GridDataSeries[index]-style tuple from slices."""
         result = []
         for s in self.slices:
             if s.stop - s.start == s.step:  # single element
@@ -474,10 +472,10 @@ class Data(np.ndarray):
         return {"directory": str(emout_dir)}
 
     def _try_remote_plot(self, **plot_kwargs):
-        """remote_figure() 記録中ならコマンド記録、そうでなければデータ転送モード。"""
+        """Record a plot command if inside remote_figure(); otherwise use data transfer mode."""
         remote_kwargs = self._get_remote_open_kwargs()
 
-        # --- remote_figure() コンテキスト内: コマンド記録のみ ---
+        # --- Inside remote_figure() context: record command only ---
         from emout.distributed.remote_figure import (
             is_recording,
             record_field_plot,
@@ -489,7 +487,7 @@ class Data(np.ndarray):
             record_field_plot(self.name, recipe_index, plot_kwargs, emout_kwargs=remote_kwargs)
             return _REMOTE_PLOT_HANDLED
 
-        # --- remote_figure 外 + Dask session あり: データ転送モード ---
+        # --- Outside remote_figure + Dask session available: data transfer mode ---
         if remote_kwargs is None:
             return None
         from emout.distributed.remote_render import get_or_create_session
@@ -508,12 +506,12 @@ class Data(np.ndarray):
         )
         local_data.slices = payload["slices"]
         local_data.slice_axes = payload["slice_axes"]
-        local_data._emout_dir = None  # 再帰防止
+        local_data._emout_dir = None  # prevent recursion
         local_data._emout_open_kwargs = None
         return local_data.plot(**plot_kwargs)
 
     def plot(self, **kwargs):
-        """データをプロットする."""
+        """Plot the data (subclass-specific)."""
         raise NotImplementedError()
 
     def build_frame_updater(
@@ -529,24 +527,26 @@ class Data(np.ndarray):
         vmax: float = None,
         **kwargs,
     ) -> FrameUpdater:
-        """アニメーション描画処理を構築する.
+        """Build a frame updater for animation.
 
         Parameters
         ----------
         axis : int, optional
-            アニメーションする軸, by default 0
+            Axis along which to animate, by default 0
         title : str, optional
-            タイトル(Noneの場合データ名(phisp等)), by default None
+            Plot title (uses the field name when None), by default None
         notitle : bool, optional
-            タイトルを付けない場合True, by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+            If True, suppress the automatic title, by default False
+        offsets : tuple of (float or str), optional
+            Axis offsets for x, y, z ('left': start at 0, 'center': centre
+            at 0, 'right': end at 0, float: shift by value), by default None
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+            If True, use SI units; otherwise use EMSES grid units,
+            by default False
         vmin : float, optional
-            最小値, by default None
+            Colour-map minimum, by default None
         vmax : float, optional
-            最大値, by default None
+            Colour-map maximum, by default None
         """
         if use_si:
             vmin = vmin if vmin is not None else self.valunit.reverse(self.min())
@@ -584,53 +584,51 @@ class Data(np.ndarray):
         return_updater: bool = False,
         **kwargs,
     ):
-        """アニメーション描画を実行する。
-        
+        """Create and run an animation over one axis.
+
         Parameters
         ----------
-        fig : Union[plt.Figure, None], optional
-            描画先の Figure。
+        fig : plt.Figure or None, optional
+            Target figure
         axis : int, optional
-            対象軸。
+            Axis to animate along
         mode : str, optional
-            処理モード。
+            Plot mode forwarded to the frame updater
         action : ANIMATER_PLOT_MODE, optional
-            出力アクション種別です。
-        filename : PathLike, optional
-            保存先または読み込み対象のファイル名です。
+            Output action type
+        filename : path-like, optional
+            Destination file path for saving the animation
         show : bool, optional
-            True の場合は描画を表示。
-        savefilename : PathLike, optional
-            保存先ファイル名です。
+            If True, display the animation interactively
+        savefilename : path-like, optional
+            Destination file name (deprecated alias for *filename*)
         interval : int, optional
-            フレーム間隔 [ms] です。
+            Frame interval in milliseconds
         repeat : bool, optional
-            `True` の場合、アニメーションをループ再生します。
-        title : Union[str, None], optional
-            タイトル文字列。
+            If True, loop the animation
+        title : str or None, optional
+            Plot title
         notitle : bool, optional
-            `True` の場合、フレーム番号由来の自動タイトル追記を行いません。
-        offsets : Union[, optional
-                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-                ], optional
-            軸方向のオフセット。
+            If True, suppress the automatic frame-number title
+        offsets : tuple of (float or str) or None, optional
+            Per-axis offsets for x, y, z
         use_si : bool, optional
-            True の場合は SI 単位系を使用。
+            If True, use SI units
         vmin : float, optional
-            表示範囲の最小値。
+            Colour-map minimum
         vmax : float, optional
-            表示範囲の最大値。
+            Colour-map maximum
         to_html : bool, optional
-            非推奨オプションです。`True` の場合 `action='to_html'` と同等です。
+            Deprecated. Equivalent to ``action='to_html'``.
         return_updater : bool, optional
-            非推奨オプションです。`True` の場合 `action='frames'` と同等です。
+            Deprecated. Equivalent to ``action='frames'``.
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
         object
-            処理結果です。
+            Animation object, HTML string, or FrameUpdater depending on *action*.
         """
         if to_html:
             warnings.warn(
@@ -675,22 +673,22 @@ class Data(np.ndarray):
 
 
 class Data4d(Data):
-    """4次元データを管理する."""
+    """Four-dimensional (t, z, y, x) grid data container."""
 
     def __new__(cls, input_array, **kwargs):
-        """インスタンスを生成する。
-        
+        """Create a new Data4d instance.
+
         Parameters
         ----------
-        input_array : object
-            元となる NumPy 配列です。
+        input_array : array_like
+            Source NumPy array
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to ``Data.__new__``.
+
         Returns
         -------
-        object
-            処理結果です。
+        Data4d
+            Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
 
@@ -708,40 +706,40 @@ class Data4d(Data):
         return super().__new__(cls, input_array, **kwargs)
 
     def plot(self, mode: Literal["auto"] = "auto", **kwargs):
-        """4 次元データをプロットする（未実装）。
+        """Plot four-dimensional data (not yet implemented).
 
         Parameters
         ----------
         mode : {'auto'}, optional
-            プロットモードです。現在は未実装のため `'auto'` のみ受け付けます。
+            Plot mode. Currently only ``'auto'`` is accepted.
         **kwargs : dict
-            将来拡張のためのキーワード引数です。現在は使用しません。
+            Reserved for future extensions; currently unused.
 
         Returns
         -------
         None
-            戻り値はありません。
+            Not implemented.
         """
         raise NotImplementedError("Data4d.plot() is not yet implemented.")
 
 
 class Data3d(Data):
-    """3次元データを管理する."""
+    """Three-dimensional (z, y, x) grid data container."""
 
     def __new__(cls, input_array, **kwargs):
-        """インスタンスを生成する。
-        
+        """Create a new Data3d instance.
+
         Parameters
         ----------
-        input_array : object
-            元となる NumPy 配列です。
+        input_array : array_like
+            Source NumPy array
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to ``Data.__new__``.
+
         Returns
         -------
-        object
-            処理結果です。
+        Data3d
+            Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
 
@@ -768,39 +766,35 @@ class Data3d(Data):
         *args,
         **kwargs,
     ):
-        """3 次元データをプロットする。
+        """Plot three-dimensional data.
 
-        現在は `mode='cont'` のみ実装されており、内部で
-        :func:`emout.plot.contour3d.contour3d` を呼び出します。
+        Currently only ``mode='cont'`` is implemented, which delegates to
+        :func:`emout.plot.contour3d.contour3d`.
 
         Parameters
         ----------
         mode : {'auto', 'cont'}, optional
-            プロットモードです。`'auto'` の場合は `'cont'` が選択されます。
+            Plot mode. ``'auto'`` selects ``'cont'``.
         use_si : bool, optional
-            `True` の場合は SI 単位系へ変換して描画します。
-        offsets : Union[
-                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-                ], optional
-            描画原点のオフセット `(x, y, z)` です。
-            文字列 `'left'`, `'center'`, `'right'` も指定できます。
+            If True, convert to SI units before plotting.
+        offsets : tuple of (float or str) or None, optional
+            Origin offsets ``(x, y, z)``. Strings ``'left'``,
+            ``'center'``, ``'right'`` are also accepted.
         *args : tuple
-            `contour3d` へ渡す追加の位置引数です。
-            先頭要素として等値面レベル `levels`（`Sequence[float]`）を指定します。
+            Positional arguments forwarded to ``contour3d``.
+            Typically the first element is ``levels`` (a sequence of
+            iso-surface values).
         **kwargs : dict
-            `contour3d` へ渡すキーワード引数です。
-            主な引数は `ax`, `bounds_xyz`, `roi_zyx`, `opacity`, `step`,
-            `title`, `save`, `show`, `xlabel`, `ylabel`, `zlabel`,
-            `clabel`, `clabel_fmt`, `clabel_fontsize`, `clabel_sigfigs`,
-            `clabel_shared_exponent`, `clabel_text_kwargs`,
-            `clabel_exponent_pos`, `clabel_exponent_text`,
-            `clabel_exponent_kwargs` です。
+            Keyword arguments forwarded to ``contour3d``, including
+            ``ax``, ``bounds_xyz``, ``roi_zyx``, ``opacity``, ``step``,
+            ``title``, ``save``, ``show``, ``xlabel``, ``ylabel``,
+            ``zlabel``, ``clabel``, etc.
 
         Returns
         -------
-        tuple(matplotlib.figure.Figure, matplotlib.axes.Axes) or None
-            `mode='cont'` の場合は `(fig, ax)` を返します。
-            未対応モードでは `None` を返します。
+        tuple of (Figure, Axes) or None
+            ``(fig, ax)`` for ``mode='cont'``; ``None`` for unsupported
+            modes.
         """
         if mode == "auto":
             mode = "cont"
@@ -847,7 +841,7 @@ class Data3d(Data):
         add_scalar_bar: bool = True,
         **kwargs,
     ):
-        """pyvista で 3 次元データを描画する。"""
+        """Render three-dimensional data with PyVista."""
         from emout.plot.pyvista_plot import plot_scalar_volume
 
         if self.valunit is None:
@@ -871,7 +865,7 @@ class Data3d(Data):
         )
 
     def plot3d(self, *args, **kwargs):
-        """`plot_pyvista` のエイリアス。"""
+        """Alias for :meth:`plot_pyvista`."""
         return self.plot_pyvista(*args, **kwargs)
 
     def plot_surfaces(
@@ -884,48 +878,45 @@ class Data3d(Data):
         vmax: Union[float, None] = None,
         **kwargs,
     ):
-        """3D スカラー場に明示メッシュ境界を重ねて描画する。
+        """Overlay explicit mesh boundaries on a 3-D scalar field.
 
-        :func:`emout.plot.surface_cut.plot_surfaces` に ``self`` を
-        :class:`emout.plot.surface_cut.Field3D` としてラップして渡します。
-        ``data.phisp[-1].plot_surfaces(data.boundaries.mesh().render(), vmin=0, vmax=10)``
-        のような 1 行呼び出しを意図しています。
+        Wraps ``self`` as a :class:`~emout.plot.surface_cut.Field3D` and
+        passes it to :func:`emout.plot.surface_cut.plot_surfaces`.
+        Designed for one-line calls such as
+        ``data.phisp[-1].plot_surfaces(data.boundaries.mesh().render(), vmin=0, vmax=10)``.
 
         Parameters
         ----------
         surfaces
-            :class:`emout.plot.surface_cut.RenderItem` か
-            :class:`emout.plot.surface_cut.MeshSurface3D` 、または
-            :class:`emout.emout.boundaries.Boundary` /
-            :class:`emout.emout.boundaries.BoundaryCollection`、
-            あるいはそれらのシーケンス。
-            ``MeshSurface3D`` 単体が渡された場合は ``render()`` 相当の
-            デフォルトスタイルで包みます。``Boundary`` /
-            ``BoundaryCollection`` が渡された場合は ``mesh(use_si=use_si)``
-            を呼んでから ``render()`` でラップするので、
-            ``data.phisp[-1].plot_surfaces(data.boundaries)`` のように
-            一行で渡せます。
+            A :class:`~emout.plot.surface_cut.RenderItem`,
+            :class:`~emout.plot.surface_cut.MeshSurface3D`,
+            :class:`~emout.core.boundaries.Boundary`,
+            :class:`~emout.core.boundaries.BoundaryCollection`, or a
+            sequence thereof.  A bare ``MeshSurface3D`` is wrapped with
+            default render style.  A ``Boundary`` / ``BoundaryCollection``
+            is converted via ``mesh(use_si=use_si)`` then ``render()``,
+            so ``data.phisp[-1].plot_surfaces(data.boundaries)`` works
+            directly.
         ax : matplotlib.axes.Axes, optional
-            描画先 Axes です。未指定の場合は新たに 3D 軸を作成します。
+            Target 3-D axes.  Created automatically if not supplied.
         use_si : bool, optional
-            `True` (デフォルト) の場合、データと格子間隔を SI 単位に
-            変換してから描画します。``Boundary`` を渡した場合の境界
-            メッシュ生成にもこの値が伝播します。
-            単位変換キーが無い場合は自動で `False` 扱いとなります。
+            If True (default), convert data and grid spacing to SI units
+            before plotting.  Also propagated to boundary mesh generation.
+            Falls back to False when no unit conversion key is available.
         vmin, vmax : float, optional
-            カラーマップの範囲です。
+            Colour-map range.
         **kwargs : dict
-            :func:`emout.plot.surface_cut.plot_surfaces` に転送される
-            追加のキーワード引数です (`bounds`, `cmap_name`,
-            `contour_levels` など)。
+            Additional keyword arguments forwarded to
+            :func:`~emout.plot.surface_cut.plot_surfaces` (e.g.
+            ``bounds``, ``cmap_name``, ``contour_levels``).
 
         Returns
         -------
         tuple
-            ``plot_surfaces`` が返す ``(cmap, norm)`` のタプル。
+            ``(cmap, norm)`` returned by ``plot_surfaces``.
         """
-        # Dask session が起動中なら worker から 3D 配列を取得してローカル描画
-        # （ax.set_xlabel() 等を後から重ねられる）
+        # If a Dask session is running, fetch the 3-D array from the worker
+        # and render locally (so ax.set_xlabel() etc. can be applied afterwards)
         remote_kwargs = self._get_remote_open_kwargs()
         if remote_kwargs is not None:
             from emout.distributed.remote_render import get_or_create_session
@@ -941,7 +932,7 @@ class Data3d(Data):
                 )
                 local_data.slices = payload["slices"]
                 local_data.slice_axes = payload["slice_axes"]
-                local_data._emout_dir = None  # 再帰防止
+                local_data._emout_dir = None  # prevent recursion
                 local_data._emout_open_kwargs = None
                 return local_data.plot_surfaces(
                     surfaces, ax=ax, use_si=use_si, vmin=vmin, vmax=vmax, **kwargs,
@@ -1005,22 +996,22 @@ class Data3d(Data):
 
 
 class Data2d(Data):
-    """2次元データの2次元面を管理する."""
+    """Two-dimensional grid data container."""
 
     def __new__(cls, input_array, **kwargs):
-        """インスタンスを生成する。
-        
+        """Create a new Data2d instance.
+
         Parameters
         ----------
-        input_array : object
-            元となる NumPy 配列です。
+        input_array : array_like
+            Source NumPy array
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to ``Data.__new__``.
+
         Returns
         -------
-        object
-            処理結果です。
+        Data2d
+            Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
 
@@ -1048,61 +1039,63 @@ class Data2d(Data):
         mode: Literal["cm", "cm+cont", "cont"] = "cm",
         **kwargs,
     ):
-        """2次元データをプロットする.
+        """Plot two-dimensional data.
 
         Parameters
         ----------
         axes : str, optional
-            プロットする軸('xy', 'zx', etc), by default 'auto'
+            Axis pair to plot ('xy', 'zx', etc.), by default 'auto'
         show : bool
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+            If True, display the plot (suppresses file output), by default False
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default True
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+            If True, use SI units; otherwise use EMSES grid units,
+            by default True
+        offsets : tuple of (float or str), optional
+            Per-axis offsets for x, y, z ('left': start at 0, 'center':
+            centre at 0, 'right': end at 0, float: shift by value),
+            by default None
         mode : str
-            プロットの種類('cm': カラーマップ, 'cont': 等高線プロット, 'surf': サーフェースプロット)
+            Plot type ('cm': colour map, 'cont': contour, 'surf': surface)
         **kwargs : dict
-            低レベル描画関数へ渡す追加引数です。
-            `mode='cm'` / `mode='cm+cont'` では `plot_2dmap`、
-            `mode='cont'` では `plot_2d_contour`、
-            `mode='surf'` では `plot_surface` の引数を指定できます。
-        mesh : (numpy.ndarray, numpy.ndarray), optional
-            メッシュ, by default None
+            Additional arguments forwarded to the low-level plot function
+            (``plot_2dmap`` for 'cm'/'cm+cont', ``plot_2d_contour`` for
+            'cont', ``plot_surface`` for 'surf').
+        mesh : tuple of numpy.ndarray, optional
+            Mesh grid, by default None
         savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
+            Output file name (None to skip saving), by default None
         cmap : matplotlib.Colormap or str or None, optional
-            カラーマップ, by default cm.coolwarm
+            Colour map, by default cm.coolwarm
         vmin : float, optional
-            最小値, by default None
+            Minimum value, by default None
         vmax : float, optional
-            最大値, by default None
-        figsize : (float, float), optional
-            図のサイズ, by default None
+            Maximum value, by default None
+        figsize : tuple of float, optional
+            Figure size, by default None
         xlabel : str, optional
-            x軸のラベル, by default None
+            X-axis label, by default None
         ylabel : str, optional
-            y軸のラベル, by default None
+            Y-axis label, by default None
         title : str, optional
-            タイトル, by default None
+            Title, by default None
         interpolation : str, optional
-            用いる補間方法, by default 'bilinear'
+            Interpolation method, by default 'bilinear'
         dpi : int, optional
-            解像度(figsizeが指定された場合は無視される), by default 10
+            Resolution (ignored when figsize is set), by default 10
 
         Returns
         -------
         AxesImage or None
-            プロットしたimageデータ(保存またはshowした場合None)
+            Plot image data (None when saved or shown)
 
         Raises
         ------
-        Exception
-            プロットする軸のパラメータが間違っている場合の例外
-        Exception
-            プロットする軸がデータにない場合の例外
-        Exception
-            データの次元が2でない場合の例外
+        ValueError
+            If the axes parameter is invalid.
+        ValueError
+            If the requested axis does not exist in the data.
+        ValueError
+            If the data is not two-dimensional.
         """
         remote = self._try_remote_plot(
             axes=axes, show=show, use_si=use_si, offsets=offsets, mode=mode, **kwargs,
@@ -1139,7 +1132,7 @@ class Data2d(Data):
 
         x = np.arange(*utils.slice2tuple(self.slices[axis1]))
         y = np.arange(*utils.slice2tuple(self.slices[axis2]))
-        z = self if axis1 > axis2 else self.T  # 'xz'等の場合は転置
+        z = self if axis1 > axis2 else self.T  # transpose for 'xz' etc.
 
         if use_si:
             xunit = self.axisunits[axis1]
@@ -1216,17 +1209,16 @@ class Data2d(Data):
             return imgs[0] if len(imgs) == 1 else imgs
 
     def cmap(self, **kwargs):
-        """2次元データをカラーマップとして描画する。
+        """Plot two-dimensional data as a colour map.
 
-        :py:meth:`plot` の ``mode='cm'`` と等価なショートカット。
-        ``data.cmap(...)`` の形で直接呼び出せるように用意されている。
-        引数は :py:meth:`plot` とまったく同じで、 ``mode`` だけは
-        受け付けない（指定すると :class:`TypeError`）。
+        Shortcut equivalent to ``plot(mode='cm')``.  Accepts the same
+        arguments as :py:meth:`plot` except ``mode`` (raises
+        :class:`TypeError` if supplied).
 
         Returns
         -------
         matplotlib.image.AxesImage or list or None
-            :py:meth:`plot` と同じ返値。
+            Same as :py:meth:`plot`.
         """
         if "mode" in kwargs:
             raise TypeError(
@@ -1235,17 +1227,16 @@ class Data2d(Data):
         return self.plot(mode="cm", **kwargs)
 
     def contour(self, **kwargs):
-        """2次元データを等高線として描画する。
+        """Plot two-dimensional data as contour lines.
 
-        :py:meth:`plot` の ``mode='cont'`` と等価なショートカット。
-        ``data.contour(...)`` の形で直接呼び出せるように用意されている。
-        引数は :py:meth:`plot` とまったく同じで、 ``mode`` だけは
-        受け付けない（指定すると :class:`TypeError`）。
+        Shortcut equivalent to ``plot(mode='cont')``.  Accepts the same
+        arguments as :py:meth:`plot` except ``mode`` (raises
+        :class:`TypeError` if supplied).
 
         Returns
         -------
         matplotlib.contour.QuadContourSet or list or None
-            :py:meth:`plot` と同じ返値。
+            Same as :py:meth:`plot`.
         """
         if "mode" in kwargs:
             raise TypeError(
@@ -1267,7 +1258,7 @@ class Data2d(Data):
         add_scalar_bar: bool = True,
         **kwargs,
     ):
-        """pyvista で 2 次元データを 3D 空間上の平面として描画する。"""
+        """Render two-dimensional data as a plane in 3-D space with PyVista."""
         from emout.plot.pyvista_plot import plot_scalar_plane
 
         if self.valunit is None:
@@ -1287,27 +1278,27 @@ class Data2d(Data):
         )
 
     def plot3d(self, *args, **kwargs):
-        """`plot_pyvista` のエイリアス。"""
+        """Alias for :meth:`plot_pyvista`."""
         return self.plot_pyvista(*args, **kwargs)
 
 
 class Data1d(Data):
-    """3次元データの1次元直線を管理する."""
+    """One-dimensional line data container."""
 
     def __new__(cls, input_array, **kwargs):
-        """インスタンスを生成する。
-        
+        """Create a new Data1d instance.
+
         Parameters
         ----------
-        input_array : object
-            元となる NumPy 配列です。
+        input_array : array_like
+            Source NumPy array
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to ``Data.__new__``.
+
         Returns
         -------
-        object
-            処理結果です。
+        Data1d
+            Newly created instance.
         """
         obj = np.asarray(input_array).view(cls)
 
@@ -1331,42 +1322,45 @@ class Data1d(Data):
         offsets: Union[Tuple[Union[float, str], Union[float, str]], None] = None,
         **kwargs,
     ):
-        """1次元データをプロットする.
+        """Plot one-dimensional data as a line.
 
         Parameters
         ----------
         show : bool
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+            If True, display the plot (suppresses return value), by default False
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default True
-        offsets : (float or str, float or str)
-            プロットのx,y軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+            If True, use SI units; otherwise use EMSES grid units,
+            by default True
+        offsets : tuple of (float or str), optional
+            Offsets for the x and y axes ('left': start at 0, 'center':
+            centre at 0, 'right': end at 0, float: shift by value),
+            by default None
         savefilename : str, optional
-            保存するファイル名, by default None
+            Output file name, by default None
         vmin : float, optional
-            最小値, by default None
+            Minimum value, by default None
         vmax : float, optional
-            最大値, by default None
-        figsize : (float, float), optional
-            図のサイズ, by default None
+            Maximum value, by default None
+        figsize : tuple of float, optional
+            Figure size, by default None
         xlabel : str, optional
-            横軸のラベル, by default None
+            Horizontal axis label, by default None
         ylabel : str, optional
-            縦軸のラベル, by default None
+            Vertical axis label, by default None
         label : str, optional
-            ラベル, by default None
+            Series label, by default None
         title : str, optional
-            タイトル, by default None
+            Title, by default None
 
         Returns
         -------
         Line2D or None
-            プロットデータを表す線オブジェクト(保存または show した場合None)
+            Line object (None when saved or shown)
 
         Raises
         ------
-        Exception
-            データの次元が1でない場合の例外
+        ValueError
+            If the data is not one-dimensional.
         """
         remote = self._try_remote_plot(show=show, use_si=use_si, offsets=offsets, **kwargs)
         if remote is _REMOTE_PLOT_HANDLED:

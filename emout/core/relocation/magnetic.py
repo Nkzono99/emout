@@ -10,37 +10,40 @@ Btype = Literal["periodic", "dirichlet", "neumann"]
 def relocated_magnetic_field(
     bf: np.array, axis: int, btypes: Tuple[Btype, Btype] 
 ):
-    """磁場をセル中心位置へ再配置する。
-    
+    """Relocate the magnetic field to cell-centre positions.
+
     Parameters
     ----------
     bf : np.array
-        磁場配列です。
+        Magnetic field array.
     axis : int
-        対象軸。
+        Target axis.
     btypes : Tuple[Btype, Btype]
-        対象軸に直交する 2 方向の境界条件です（`periodic`/`dirichlet`/`neumann`）。
+        Boundary conditions for the two directions orthogonal to *axis*
+        (``"periodic"`` / ``"dirichlet"`` / ``"neumann"``).
+
     Returns
     -------
-    object
-        処理結果です。
+    np.ndarray
+        Relocated magnetic field array.
     """
     axis1 = (axis + 1) % 3
     axis2 = (axis + 2) % 3
 
     def slc(s1, s2=slice(None, None)):
-        """対象軸に応じたスライスを構築する。
-        
+        """Build a slice tuple for the target axis.
+
         Parameters
         ----------
         s1 : object
-            開始インデックスです。
+            Slice for the first orthogonal axis.
         s2 : object, optional
-            終了インデックスです。
+            Slice for the second orthogonal axis.
+
         Returns
         -------
-        object
-            処理結果です。
+        tuple
+            Slice tuple addressing the target axis.
         """
         slices = [None, None, None]
 
@@ -54,7 +57,7 @@ def relocated_magnetic_field(
     # Relocated electric field buffer
     rbf = np.zeros_like(bf)
 
-    # xy平面に1グリッド覆うように拡張する
+    # Extend by one grid cell in the orthogonal plane
     bfe = np.empty(
         np.array(bf.shape) + np.array([0 if i == axis else 1 for i in range(3)])
     )

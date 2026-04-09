@@ -73,19 +73,14 @@ class VectorData(utils.Group):
             self.z_data = z_data
 
     def __setattr__(self, key, value):
-        """属性を設定する。
-        
+        """Set an attribute, routing component data to the internal dict.
+
         Parameters
         ----------
-        key : object
-            取得・設定対象のキーです。
+        key : str
+            Attribute name
         value : object
-            値。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
+            Value to set
         """
         if key in ("x_data", "y_data", "z_data"):
             super().__dict__[key] = value
@@ -160,7 +155,7 @@ class VectorData(utils.Group):
 
     @property
     def ndim(self) -> int:
-        """ベクトル成分を除いたデータ次元数を返す。"""
+        """Return the number of spatial dimensions (excluding vector components)."""
         return self.objs[0].ndim
 
     def build_frame_updater(
@@ -174,20 +169,22 @@ class VectorData(utils.Group):
         use_si: bool = True,
         **kwargs,
     ):
-        """アニメーション描画処理を構築する.
+        """Build a frame updater for animation.
 
         Parameters
         ----------
         axis : int, optional
-            アニメーションする軸, by default 0
+            Axis along which to animate, by default 0
         title : str, optional
-            タイトル(Noneの場合データ名(phisp等)), by default None
+            Plot title (uses the field name when None), by default None
         notitle : bool, optional
-            タイトルを付けない場合True, by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
+            If True, suppress the automatic title, by default False
+        offsets : tuple of (float or str), optional
+            Axis offsets for x, y, z ('left': start at 0, 'center': centre
+            at 0, 'right': end at 0, float: shift by value), by default None
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
+            If True, use SI units; otherwise use EMSES grid units,
+            by default False
         """
         updater = FrameUpdater(
             self, axis, title, notitle, offsets, use_si, **kwargs
@@ -215,47 +212,45 @@ class VectorData(utils.Group):
         return_updater: bool = False,
         **kwargs,
     ):
-        """アニメーション描画を実行する。
-        
+        """Create and run an animation over one axis.
+
         Parameters
         ----------
-        fig : Union[plt.Figure, None], optional
-            描画先の Figure。
+        fig : plt.Figure or None, optional
+            Target figure
         axis : int, optional
-            対象軸。
+            Axis to animate along
         action : ANIMATER_PLOT_MODE, optional
-            出力アクション種別です。
-        filename : PathLike, optional
-            保存先または読み込み対象のファイル名です。
+            Output action type
+        filename : path-like, optional
+            Destination file path for saving the animation
         interval : int, optional
-            フレーム間隔 [ms] です。
+            Frame interval in milliseconds
         repeat : bool, optional
-            `True` の場合、アニメーションをループ再生します。
-        title : Union[str, None], optional
-            タイトル文字列。
+            If True, loop the animation
+        title : str or None, optional
+            Plot title
         notitle : bool, optional
-            `True` の場合、フレーム番号由来の自動タイトル追記を行いません。
-        offsets : Union[, optional
-                    Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-                ], optional
-            軸方向のオフセット。
+            If True, suppress the automatic frame-number title
+        offsets : tuple of (float or str) or None, optional
+            Per-axis offsets for x, y, z
         use_si : bool, optional
-            True の場合は SI 単位系を使用。
+            If True, use SI units
         show : bool, optional
-            True の場合は描画を表示。
-        savefilename : PathLike, optional
-            保存先ファイル名です。
+            If True, display the animation interactively
+        savefilename : path-like, optional
+            Destination file name (deprecated alias for *filename*)
         to_html : bool, optional
-            非推奨オプションです。`True` の場合 `action='to_html'` と同等です。
+            Deprecated. Equivalent to ``action='to_html'``.
         return_updater : bool, optional
-            非推奨オプションです。`True` の場合 `action='frames'` と同等です。
+            Deprecated. Equivalent to ``action='frames'``.
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to the underlying function.
+
         Returns
         -------
         object
-            処理結果です。
+            Animation object, HTML string, or FrameUpdater depending on *action*.
         """
         if return_updater:
             warnings.warn(
@@ -290,27 +285,28 @@ class VectorData(utils.Group):
         *args,
         **kwargs,
     ):
-        """ベクトルデータをプロットする。
+        """Plot vector data.
 
-        2 次元データの場合は :meth:`plot2d`、
-        3 次元データの場合は :meth:`plot3d` を呼び出します。
+        Delegates to :meth:`plot2d` for 2-D data and :meth:`plot3d` for
+        3-D data.
 
         Parameters
         ----------
         *args : tuple
-            :meth:`plot2d` へ渡す位置引数です。
-            利用可能な主な引数は `mode`, `axes`, `show`, `use_si`, `offsets` です。
+            Positional arguments forwarded to :meth:`plot2d`.
+            Common arguments: *mode*, *axes*, *show*, *use_si*, *offsets*.
         **kwargs : dict
-            :meth:`plot2d` へ渡すキーワード引数です。
-            さらに内部で `plot_2d_vector` または `plot_2d_streamline` に委譲されるため、
-            `mesh`, `savefilename`, `scale`, `scaler`, `skip`, `easy_to_read`,
-            `color`, `cmap`, `norm`, `vmin`, `vmax`, `density`, `figsize`,
-            `xlabel`, `ylabel`, `title`, `dpi` などを指定できます。
+            Keyword arguments forwarded to :meth:`plot2d`, which in turn
+            delegates to ``plot_2d_vector`` or ``plot_2d_streamline``.
+            Accepts ``mesh``, ``savefilename``, ``scale``, ``scaler``,
+            ``skip``, ``easy_to_read``, ``color``, ``cmap``, ``norm``,
+            ``vmin``, ``vmax``, ``density``, ``figsize``, ``xlabel``,
+            ``ylabel``, ``title``, ``dpi``, etc.
 
         Returns
         -------
         object
-            委譲先の描画メソッドが返すオブジェクトです。
+            Return value of the delegated plotting method.
         """
         if self.x_data.ndim == 2:
             return self.plot2d(
@@ -337,56 +333,58 @@ class VectorData(utils.Group):
         ] = None,
         **kwargs,
     ):
-        """2次元データをプロットする.
+        """Plot two-dimensional vector data.
 
         Parameters
         ----------
         mode : str
-            プロットの種類('vec': quiver plot, 'stream': streamline plot), by default 'stream'
+            Plot type ('vec': quiver, 'stream': streamline), by default 'stream'
         axes : str, optional
-            プロットする軸('xy', 'zx', etc), by default 'auto'
+            Axis pair to plot ('xy', 'zx', etc.), by default 'auto'
         show : bool
-            プロットを表示する場合True(ファイルに保存する場合は非表示), by default False
+            If True, display the plot, by default False
         use_si : bool
-            SI単位系を用いる場合True(そうでない場合EMSES単位系を用いる), by default False
-        offsets : (float or str, float or str, float or str)
-            プロットのx,y,z軸のオフセット('left': 最初を0, 'center': 中心を0, 'right': 最後尾を0, float: 値だけずらす), by default None
-        mesh : (numpy.ndarray, numpy.ndarray), optional
-            メッシュ, by default None
+            If True, use SI units; otherwise use EMSES grid units,
+            by default False
+        offsets : tuple of (float or str), optional
+            Per-axis offsets ('left', 'center', 'right', or float),
+            by default None
+        mesh : tuple of numpy.ndarray, optional
+            Mesh grid, by default None
         savefilename : str, optional
-            保存するファイル名(Noneの場合保存しない), by default None
+            Output file name (None to skip saving), by default None
         cmap : matplotlib.Colormap or str or None, optional
-            カラーマップ, by default cm.coolwarm
+            Colour map, by default cm.coolwarm
         vmin : float, optional
-            最小値, by default None
+            Minimum value, by default None
         vmax : float, optional
-            最大値, by default None
-        figsize : (float, float), optional
-            図のサイズ, by default None
+            Maximum value, by default None
+        figsize : tuple of float, optional
+            Figure size, by default None
         xlabel : str, optional
-            x軸のラベル, by default None
+            X-axis label, by default None
         ylabel : str, optional
-            y軸のラベル, by default None
+            Y-axis label, by default None
         title : str, optional
-            タイトル, by default None
+            Title, by default None
         interpolation : str, optional
-            用いる補間方法, by default 'bilinear'
+            Interpolation method, by default 'bilinear'
         dpi : int, optional
-            解像度(figsizeが指定された場合は無視される), by default 10
+            Resolution (ignored when figsize is set), by default 10
 
         Returns
         -------
         AxesImage or None
-            プロットしたimageデータ(保存またはshowした場合None)
+            Plot image data (None when saved or shown)
 
         Raises
         ------
-        Exception
-            プロットする軸のパラメータが間違っている場合の例外
-        Exception
-            プロットする軸がデータにない場合の例外
-        Exception
-            データの次元が2でない場合の例外
+        ValueError
+            If the axes parameter is invalid.
+        ValueError
+            If the requested axis does not exist in the data.
+        ValueError
+            If the data is not two-dimensional.
         """
         if self.objs[0].valunit is None:
             use_si = False
@@ -467,7 +465,7 @@ class VectorData(utils.Group):
         plotter=None,
         **kwargs,
     ):
-        """pyvista で 3 次元ベクトル場を描画する。"""
+        """Render three-dimensional vector field with PyVista."""
         if self.x_data.ndim != 3:
             raise ValueError(
                 "plot_pyvista on VectorData requires 3D component data."
@@ -515,7 +513,7 @@ class VectorData(utils.Group):
         mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
         **kwargs,
     ):
-        """`plot_pyvista` のエイリアス。"""
+        """Alias for :meth:`plot_pyvista`."""
         return self.plot_pyvista(mode=mode, **kwargs)
 
 

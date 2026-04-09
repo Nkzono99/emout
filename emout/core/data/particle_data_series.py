@@ -24,20 +24,20 @@ from .particle_data import ParticleData
 
 
 # ============================================================
-# 1) 1ファイル=1成分 の時系列
+# 1) One-file-per-component time series
 # ============================================================
 IndexLike = Union[int, slice, List[int]]
 GetItemType = Union[int, slice, List[int], Tuple[IndexLike]]
 
 
 class ParticleDataSeries:
-    """
-    粒子1成分（x, vx, tid 等）の時系列データ（単一HDF5）を管理する。
+    """Time-series data for a single particle component (x, vx, tid, etc.).
 
-    想定するHDF5構造：
-      - 先頭グループ self.h5[list(self.h5.keys())[0]]
-      - その配下に時刻キー（例: "0","1","2",...）が並ぶ
-      - 各キーの dataset が shape=(nparticle,) の1D配列
+    Manages one HDF5 file with the expected structure:
+
+    - Top-level group: ``self.h5[list(self.h5.keys())[0]]``
+    - Time-step keys underneath (e.g. ``"0"``, ``"1"``, ``"2"``, ...)
+    - Each key holds a dataset of shape ``(nparticle,)``
     """
 
     def __init__(
@@ -47,24 +47,24 @@ class ParticleDataSeries:
         tunit: UnitTranslator = None,
         valunit: UnitTranslator = None,
     ):
-        """インスタンスを初期化する。
-        
+        """Initialize the series from a single HDF5 file.
+
         Parameters
         ----------
-        filename : PathLike
-            保存先または読み込み対象のファイル名です。
+        filename : path-like
+            Path to the HDF5 file
         name : str
-            対象データ名またはキー名です。
+            Component name (e.g. ``'x'``, ``'vx'``, ``'tid'``)
         tunit : UnitTranslator, optional
-            時間軸の単位変換器です。
+            Time-axis unit translator
         valunit : UnitTranslator, optional
-            値の単位変換器です。
+            Value unit translator
         """
         self.datafile = DataFileInfo(filename)
         self.h5 = h5py.File(str(filename), "r")
         self.group = self.h5[list(self.h5.keys())[0]]
 
-        # 時刻キーが整数文字列であることを想定
+        # Assumes time-step keys are integer strings
         self._index2key = {int(key[-4:]): key for key in self.group.keys()}
 
         self.tunit = tunit
@@ -72,58 +72,53 @@ class ParticleDataSeries:
         self.name = name
 
     def close(self) -> None:
-        """関連リソースをクローズする。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
-        """
+        """Close the underlying HDF5 file handle."""
         self.h5.close()
 
     @property
     def filename(self) -> Path:
-        """読み込み元ファイルパスを返す。
-        
+        """Return the source HDF5 file path.
+
         Returns
         -------
         Path
-            処理結果です。
+            Source file path.
         """
         return self.datafile.filename
 
     @property
     def directory(self) -> Path:
-        """対象ディレクトリを返す。
-        
+        """Return the parent directory of the source file.
+
         Returns
         -------
         Path
-            処理結果です。
+            Parent directory path.
         """
         return self.datafile.directory
 
     def _sorted_timekeys(self) -> List[int]:
-        """時刻キーを昇順で返す。
-        
+        """Return time-step keys sorted in ascending order.
+
         Returns
         -------
         List[int]
-            処理結果です。
+            Sorted time-step keys.
         """
         return sorted(self._index2key.keys())
 
     def _create_data_with_timekey(self, timekey: int) -> ParticleData:
-        """data with timekey を生成する。
-        
+        """Create a ParticleData for the given time-step key.
+
         Parameters
         ----------
         timekey : int
-            時間 index に対応するキー値です。
+            Time-step key value
+
         Returns
         -------
         ParticleData
-            処理結果です。
+            Particle data at the specified time step.
         """
         if timekey not in self._index2key:
             raise IndexError(timekey)
@@ -132,17 +127,18 @@ class ParticleDataSeries:
         return ParticleData(arr, name=self.name, valunit=self.valunit)
 
     def __getitem__(self, item: Union[int, slice, List[int], Tuple[IndexLike]]):
-        # tuple は未サポート（元設計互換）
-        """要素を取得する。
-        
+        # Tuple indexing is not supported (kept for design compatibility)
+        """Retrieve particle data by time index.
+
         Parameters
         ----------
-        item : Union[int, slice, List[int], Tuple[IndexLike]]
-            代入または更新する値です。
+        item : int, slice, or list of int
+            Time-step index expression
+
         Returns
         -------
-        object
-            処理結果です。
+        ParticleData or list of ParticleData
+            Data for the requested time step(s).
         """
         if isinstance(item, tuple):
             raise IndexError("Tuple indexing is not supported for ParticleDataSeries.")
@@ -150,16 +146,17 @@ class ParticleDataSeries:
         timekeys = self._sorted_timekeys()
 
         def pick_one(pos: int) -> ParticleData:
-            """指定位置の `ParticleData` を返す。
-            
+            """Return the ParticleData at the given position.
+
             Parameters
             ----------
             pos : int
-                取得したい時系列位置 index です（負 index 対応）。
+                Time-series position index (negative indexing supported)
+
             Returns
             -------
             ParticleData
-                処理結果です。
+                Particle data at the specified position.
             """
             if pos < 0:
                 pos = len(timekeys) + pos
@@ -180,51 +177,53 @@ class ParticleDataSeries:
         raise TypeError(type(item))
 
     def __iter__(self) -> Iterable[ParticleData]:
-        """イテレータを返す。
-        
+        """Iterate over all time steps.
+
         Returns
         -------
         Iterable[ParticleData]
-            処理結果です。
+            Iterator yielding ParticleData for each time step.
         """
         for i in range(len(self)):
             yield self[i]
 
     def __len__(self) -> int:
-        """要素数を返す。
-        
+        """Return the number of time steps.
+
         Returns
         -------
         int
-            要素数。
+            Number of time steps.
         """
         return len(self._index2key)
 
     def chain(self, other: "ParticleDataSeries") -> "MultiParticleDataSeries":
-        """別系列を連結した複合系列を返す。
-        
+        """Concatenate with another series and return a combined series.
+
         Parameters
         ----------
-        other : "ParticleDataSeries"
-            演算または比較の相手となる値です。
+        other : ParticleDataSeries
+            Series to concatenate
+
         Returns
         -------
-        "MultiParticleDataSeries"
-            処理結果です。
+        MultiParticleDataSeries
+            Combined series.
         """
         return MultiParticleDataSeries(self, other)
 
     def __add__(self, other: "ParticleDataSeries") -> "MultiParticleDataSeries":
-        """加算演算を適用する。
-        
+        """Concatenate two series using the ``+`` operator.
+
         Parameters
         ----------
-        other : "ParticleDataSeries"
-            演算または比較の相手となる値です。
+        other : ParticleDataSeries
+            Series to concatenate
+
         Returns
         -------
-        "MultiParticleDataSeries"
-            処理結果です。
+        MultiParticleDataSeries
+            Combined series.
         """
         if not isinstance(other, ParticleDataSeries):
             raise TypeError()
@@ -232,23 +231,24 @@ class ParticleDataSeries:
 
 
 class MultiParticleDataSeries(ParticleDataSeries):
-    """
-    連続する複数の ParticleDataSeries を結合して管理する。
+    """Concatenation of multiple ParticleDataSeries.
 
-    drop_head_of_later=True の場合：
-      - 2本目以降の先頭1ステップは前ファイル末尾と重複するとみなし捨てる
+    When ``drop_head_of_later=True``, the first time step of each
+    subsequent series is assumed to duplicate the last step of the
+    preceding series and is therefore skipped.
     """
 
     def __init__(self, *series: ParticleDataSeries, drop_head_of_later: bool = True):
-        """インスタンスを初期化する。
-        
+        """Initialize from one or more particle data series.
+
         Parameters
         ----------
         *series : ParticleDataSeries
-            追加の位置引数。内部で呼び出す関数へ渡されます。
+            Series to concatenate
         drop_head_of_later : bool, optional
-            `True` の場合、2 本目以降の系列の先頭 1 ステップを
-            重複データとみなして除外します。
+            If True, drop the first time step of each series after the
+            first, treating it as a duplicate of the previous series' last
+            step.
         """
         self.series: List[ParticleDataSeries] = []
         for s in series:
@@ -267,16 +267,17 @@ class MultiParticleDataSeries(ParticleDataSeries):
     def _expand(
         self, s: Union["ParticleDataSeries", "MultiParticleDataSeries"]
     ) -> List[ParticleDataSeries]:
-        """複合系列を `ParticleDataSeries` のリストへ展開する。
-        
+        """Flatten a (possibly nested) series into a list of leaf series.
+
         Parameters
         ----------
-        s : Union["ParticleDataSeries", "MultiParticleDataSeries"]
-            展開対象の系列です。
+        s : ParticleDataSeries or MultiParticleDataSeries
+            Series to expand
+
         Returns
         -------
         List[ParticleDataSeries]
-            フラット化した `ParticleDataSeries` のリストです。
+            Flattened list of leaf ParticleDataSeries objects.
         """
         if not isinstance(s, ParticleDataSeries):
             raise TypeError()
@@ -288,39 +289,34 @@ class MultiParticleDataSeries(ParticleDataSeries):
         return out
 
     def close(self) -> None:
-        """関連リソースをクローズする。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
-        """
+        """Close all underlying HDF5 file handles."""
         for s in self.series:
             s.close()
 
     def __len__(self) -> int:
-        """要素数を返す。
-        
+        """Return the total number of time steps across all series.
+
         Returns
         -------
         int
-            要素数。
+            Total number of time steps.
         """
         if not self.drop_head_of_later:
             return int(np.sum([len(s) for s in self.series]))
         return len(self.series[0]) + int(np.sum([max(0, len(s) - 1) for s in self.series[1:]]))
 
     def _locate(self, index: int) -> Tuple[ParticleDataSeries, int]:
-        """全体 index に対応する系列とローカル index を特定する。
-        
+        """Map a global index to its owning series and local index.
+
         Parameters
         ----------
         index : int
-            参照する index 値です。
+            Global time-step index (negative indexing supported)
+
         Returns
         -------
         Tuple[ParticleDataSeries, int]
-            処理結果です。
+            ``(series, local_index)`` pair.
         """
         if index < 0:
             index = len(self) + index
@@ -336,7 +332,7 @@ class MultiParticleDataSeries(ParticleDataSeries):
             if self.drop_head_of_later:
                 usable = max(0, len(s) - 1)
                 if index < offset + usable:
-                    local = (index - offset) + 1  # 先頭を飛ばす
+                    local = (index - offset) + 1  # skip the first entry
                     return s, local
                 offset += usable
             else:
@@ -349,16 +345,17 @@ class MultiParticleDataSeries(ParticleDataSeries):
         raise IndexError(index)
 
     def __getitem__(self, item):
-        """要素を取得する。
-        
+        """Retrieve particle data by time index.
+
         Parameters
         ----------
-        item : object
-            代入または更新する値です。
+        item : int, slice, or list of int
+            Time-step index expression
+
         Returns
         -------
-        object
-            処理結果です。
+        ParticleData or list of ParticleData
+            Data for the requested time step(s).
         """
         if isinstance(item, tuple):
             raise IndexError("Tuple indexing is not supported for MultiParticleDataSeries.")
@@ -377,37 +374,37 @@ class MultiParticleDataSeries(ParticleDataSeries):
         raise TypeError(type(item))
 
     def __iter__(self) -> Iterable[ParticleData]:
-        """イテレータを返す。
-        
+        """Iterate over all time steps.
+
         Returns
         -------
         Iterable[ParticleData]
-            処理結果です。
+            Iterator yielding ParticleData for each time step.
         """
         for i in range(len(self)):
             yield self[i]
 
 
 # ============================================================
-# 2) スナップショット（t固定で x,y,z,vx,vy,vz,tid を束ねる）
+# 2) Snapshot (fixed t, bundling x, y, z, vx, vy, vz, tid)
 # ============================================================
 @dataclass(slots=True)
 class ParticleSnapshot:
-    """ParticleSnapshot クラス。
-    """
+    """Single-timestep snapshot bundling all particle components."""
     fields: Dict[str, ParticleData]
 
     def __getattr__(self, name: str) -> ParticleData:
-        """属性アクセスを解決する。
-        
+        """Resolve attribute access to a particle component.
+
         Parameters
         ----------
         name : str
-            対象データ名またはキー名です。
+            Component name (e.g. ``'x'``, ``'vx'``, ``'tid'``)
+
         Returns
         -------
         ParticleData
-            処理結果です。
+            Particle data for the requested component.
         """
         try:
             return self.fields[name]
@@ -415,47 +412,48 @@ class ParticleSnapshot:
             raise AttributeError(name) from e
 
     def keys(self) -> Iterable[str]:
-        """利用可能なキー一覧を返す。
-        
+        """Return the available component names.
+
         Returns
         -------
         Iterable[str]
-            処理結果です。
+            Component name keys.
         """
         return self.fields.keys()
 
     def as_dict(self) -> Dict[str, ParticleData]:
-        """内容を辞書形式で返す。
-        
+        """Return the snapshot contents as a plain dictionary.
+
         Returns
         -------
         Dict[str, ParticleData]
-            処理結果です。
+            Mapping from component name to ParticleData.
         """
         return dict(self.fields)
 
 
 # ============================================================
-# 3) 束ねクラス：ディレクトリを走査して成分ごとにseriesを構築
+# 3) Aggregator: scan directory and build per-component series
 # ============================================================
 class ParticlesSeries:
-    """
-    成分ごとに分割された粒子HDF5群を束ねる管理クラス。
+    """Aggregate per-component particle HDF5 files for a single species.
 
-    API:
-      p = ParticlesSeries(dir, species=1)
-      p.x, p.vx, p.tid ... -> ParticleDataSeries or MultiParticleDataSeries
-      p[t] -> ParticleSnapshot（x,y,z,vx,vy,vz,tid をまとめて取得）
+    Usage::
 
-    ファイル名例:
-      p1xe00_0000.h5
-      p1vxe00_0000.h5
-      p1tid00_0000.h5
+        p = ParticlesSeries(dir, species=1)
+        p.x, p.vx, p.tid  # -> ParticleDataSeries or MultiParticleDataSeries
+        p[t]               # -> ParticleSnapshot (x, y, z, vx, vy, vz, tid)
+
+    Typical file names::
+
+        p1xe00_0000.h5
+        p1vxe00_0000.h5
+        p1tid00_0000.h5
     """
 
     _DEFAULT_COMPONENTS = ("x", "y", "z", "vx", "vy", "vz", "tid")
 
-    # compの後に "e" が入るケースと入らないケースを両対応
+    # Handle both cases: with and without "e" after the component name
     _FILE_RE = re.compile(
         r"^p(?P<sp>\d+)"
         r"(?P<comp>tid|vx|vy|vz|x|y|z)"
@@ -474,25 +472,25 @@ class ParticlesSeries:
         drop_head_of_later: bool = True,
         strict_length: bool = True,
     ):
-        """インスタンスを初期化する。
-        
+        """Initialize from a directory and species identifier.
+
         Parameters
         ----------
-        directory : PathLike
-            処理対象ディレクトリのパスです。
+        directory : path-like
+            Directory containing particle HDF5 files
         species : int
-            粒子種別を表す文字列です。
-        components : Tuple[str, ...], optional
-            読み込む粒子成分名の一覧です。
+            Particle species number (1-based)
+        components : tuple of str, optional
+            Component names to load
         tunit : UnitTranslator, optional
-            時間軸の単位変換器です。
-        vunits : Optional[Dict[str, UnitTranslator]], optional
-            粒子量ごとの単位変換器マップです。
+            Time-axis unit translator
+        vunits : dict of {str: UnitTranslator}, optional
+            Per-component unit translator mapping
         drop_head_of_later : bool, optional
-            `True` の場合、後続ファイル系列の先頭 1 ステップを
-            重複とみなして除外します。
+            If True, drop the first step of subsequent file series as a
+            duplicate
         strict_length : bool, optional
-            `True` の場合、全成分系列の長さが一致することを検証します。
+            If True, verify that all component series have equal length
         """
         self.directory = Path(directory)
         self.species = int(species)
@@ -510,13 +508,7 @@ class ParticlesSeries:
             self._validate_lengths()
 
     def _build(self) -> None:
-        """粒子データ系列を構築する。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
-        """
+        """Scan the directory and build per-component data series."""
         buckets: Dict[str, List[Tuple[Tuple[int, int], Path]]] = {c: [] for c in self.components}
 
         for fp in self.directory.glob("*.h5"):
@@ -555,13 +547,7 @@ class ParticlesSeries:
                 )
 
     def _validate_lengths(self) -> None:
-        """成分系列の長さ整合性を検証する。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
-        """
+        """Verify that all component series have equal length."""
         lengths = {k: len(v) for k, v in self._series.items()}
         if not lengths:
             raise ValueError("No particle component series were found.")
@@ -570,14 +556,9 @@ class ParticlesSeries:
             raise ValueError(f"Component lengths are inconsistent: {lengths}")
 
     def close(self) -> None:
-        # MultiParticleDataSeries.close() も正しく実装してあるが、念のため分岐で閉じる
-        """関連リソースをクローズする。
-        
-        Returns
-        -------
-        None
-            戻り値はありません。
-        """
+        # MultiParticleDataSeries.close() handles its own sub-series, but
+        # we close each entry explicitly just in case.
+        """Close all underlying HDF5 file handles."""
         for s in self._series.values():
             if isinstance(s, MultiParticleDataSeries):
                 s.close()
@@ -585,68 +566,65 @@ class ParticlesSeries:
                 s.close()
 
     def __enter__(self) -> "ParticlesSeries":
-        """コンテキストに入る。
-        
+        """Enter the context manager.
+
         Returns
         -------
-        "ParticlesSeries"
-            処理結果です。
+        ParticlesSeries
+            This instance.
         """
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
-        """コンテキストを終了する。
-        
+        """Exit the context manager and close resources.
+
         Parameters
         ----------
-        exc_type : object
-            例外型です。
-        exc : object
-            例外インスタンスです。
-        tb : object
-            トレースバック情報です。
-        Returns
-        -------
-        None
-            戻り値はありません。
+        exc_type : type or None
+            Exception type, if any
+        exc : BaseException or None
+            Exception instance, if any
+        tb : traceback or None
+            Traceback object, if any
         """
         self.close()
 
     def __getattr__(self, name: str):
-        # p.x / p.vx / p.tid で series を返す
-        """属性アクセスを解決する。
-        
+        # p.x / p.vx / p.tid returns the corresponding series
+        """Resolve attribute access to a component series.
+
         Parameters
         ----------
         name : str
-            対象データ名またはキー名です。
+            Component name (e.g. ``'x'``, ``'vx'``, ``'tid'``)
+
         Returns
         -------
-        object
-            処理結果です。
+        ParticleDataSeries or MultiParticleDataSeries
+            Data series for the requested component.
         """
         if name in self._series:
             return self._series[name]
         raise AttributeError(name)
 
     def available_components(self) -> Tuple[str, ...]:
-        """利用可能な粒子成分名を返す。
-        
+        """Return the names of loaded particle components.
+
         Returns
         -------
-        Tuple[str, ...]
-            処理結果です。
+        tuple of str
+            Available component names.
         """
         return tuple(self._series.keys())
 
     def __len__(self) -> int:
-        # 代表成分で返す（tid優先）
-        """要素数を返す。
-        
+        # Use a representative component (tid preferred)
+        """Return the number of time steps.
+
         Returns
         -------
         int
-            要素数。
+            Number of time steps.
         """
         for key in ("tid", "x", "vx"):
             if key in self._series:
@@ -656,16 +634,17 @@ class ParticlesSeries:
         return len(self._series[any_key])
 
     def __getitem__(self, tindex: int) -> ParticleSnapshot:
-        """要素を取得する。
-        
+        """Return a snapshot bundling all components at a given time step.
+
         Parameters
         ----------
         tindex : int
-            時間方向の index です。
+            Time-step index
+
         Returns
         -------
         ParticleSnapshot
-            処理結果です。
+            Snapshot containing all loaded particle components.
         """
         fields: Dict[str, ParticleData] = {}
         for comp, s in self._series.items():
@@ -673,12 +652,12 @@ class ParticlesSeries:
         return ParticleSnapshot(fields)
 
     def __iter__(self) -> Iterable[ParticleSnapshot]:
-        """イテレータを返す。
-        
+        """Iterate over all time steps, yielding snapshots.
+
         Returns
         -------
         Iterable[ParticleSnapshot]
-            処理結果です。
+            Iterator yielding ParticleSnapshot for each time step.
         """
         for i in range(len(self)):
             yield self[i]

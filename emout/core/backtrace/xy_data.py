@@ -22,27 +22,27 @@ class XYData:
         title: Optional[str] = None,
         units=None,
     ):
-        """インスタンスを初期化する。
-        
+        """Initialize the x-y curve data.
+
         Parameters
         ----------
         x : np.ndarray
-            x 座標または x 成分。
+            X coordinates or X component values
         y : np.ndarray
-            y 座標または y 成分。
+            Y coordinates or Y component values
         xlabel : str, optional
-            x 軸ラベル。
+            X-axis label
         ylabel : str, optional
-            y 軸ラベル。
-        title : Optional[str], optional
-            タイトル文字列。
+            Y-axis label
+        title : str or None, optional
+            Plot title
         units : object, optional
-            単位変換情報です。
+            Unit conversion information
         """
         if x.ndim != 1 or y.ndim != 1:
-            raise ValueError("XYData: x, y はいずれも一次元配列である必要があります")
+            raise ValueError("XYData: x and y must both be 1-D arrays")
         if len(x) != len(y):
-            raise ValueError("XYData: x, y は同じ長さである必要があります")
+            raise ValueError("XYData: x and y must have the same length")
 
         self.x = x
         self.y = y
@@ -52,23 +52,23 @@ class XYData:
         self.units = units
 
     def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
-        """イテレータを返す。
-        
+        """Iterate, yielding ``(x, y)`` arrays for tuple unpacking.
+
         Returns
         -------
         Iterator[Tuple[np.ndarray, np.ndarray]]
-            要素を順に返すイテレータです。
+            Iterator yielding (x, y) arrays.
         """
         yield self.x
         yield self.y
 
     def __repr__(self) -> str:
-        """文字列表現を返す。
-        
+        """Return a string representation.
+
         Returns
         -------
         str
-            文字列表現。
+            Human-readable summary.
         """
         return (
             f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
@@ -141,31 +141,31 @@ class MultiXYData:
         title: Optional[str] = None,
         units=None,
     ):
-        """インスタンスを初期化する。
-        
+        """Initialize the multi-series x-y data.
+
         Parameters
         ----------
         x : np.ndarray
-            x 座標または x 成分。
+            X coordinate array, shape ``(N_series, N_points)``
         y : np.ndarray
-            y 座標または y 成分。
+            Y coordinate array, shape ``(N_series, N_points)``
         last_indexes : np.ndarray
-            各系列の有効データ終端 index（終端は含まない）です。
+            End index (exclusive) of valid data for each series
         xlabel : str, optional
-            x 軸ラベル。
+            X-axis label
         ylabel : str, optional
-            y 軸ラベル。
-        title : Optional[str], optional
-            タイトル文字列。
+            Y-axis label
+        title : str or None, optional
+            Plot title
         units : object, optional
-            単位変換情報です。
+            Unit conversion information
         """
         if x.ndim != 2 or y.ndim != 2:
             raise ValueError(
-                "MultiXYData: x, y は 2D 配列 (N_series, N_points) である必要があります"
+                "MultiXYData: x and y must be 2-D arrays of shape (N_series, N_points)"
             )
         if x.shape != y.shape:
-            raise ValueError("MultiXYData: x, y は同じ形状である必要があります")
+            raise ValueError("MultiXYData: x and y must have the same shape")
 
         self.x = x
         self.y = y
@@ -176,23 +176,23 @@ class MultiXYData:
         self.units = units
 
     def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
-        """イテレータを返す。
-        
+        """Iterate, yielding ``(x, y)`` arrays for tuple unpacking.
+
         Returns
         -------
         Iterator[Tuple[np.ndarray, np.ndarray]]
-            要素を順に返すイテレータです。
+            Iterator yielding (x, y) arrays.
         """
         yield self.x
         yield self.y
 
     def __repr__(self) -> str:
-        """文字列表現を返す。
+        """Return a string representation.
         
         Returns
         -------
         str
-            文字列表現。
+            Human-readable summary.
         """
         return (
             f"<MultiXYData: n_series={self.x.shape[0]}, n_points={self.x.shape[1]}, "
@@ -271,20 +271,21 @@ class MultiXYData:
 
 
 def _insert_nans_for_gaps(x: np.ndarray, y: np.ndarray, gap: float):
-    """ギャップ閾値を超える区間に NaN を挿入する。
-    
+    """Insert NaN breaks where consecutive-point distance exceeds the gap threshold.
+
     Parameters
     ----------
     x : np.ndarray
-        x 座標または x 成分。
+        X coordinate array
     y : np.ndarray
-        y 座標または y 成分。
+        Y coordinate array
     gap : float
-        軌跡の不連続とみなす閾値です。
+        Distance threshold above which a trajectory gap is assumed.
+
     Returns
     -------
-    object
-        処理結果です。
+    tuple of (np.ndarray, np.ndarray)
+        ``(x, y)`` arrays with NaN breaks inserted at gaps.
     """
     x = np.asarray(x)
     y = np.asarray(y)

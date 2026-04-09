@@ -12,31 +12,28 @@ from .xy_data import MultiXYData
 
 
 class MultiBacktraceResult:
-    """
-    get_backtraces の返り値をまとめて管理するクラス。
+    """Container for multiple particle backtrace results.
 
-    - ts_list         : shape = (N_traj, N_steps)
-    - probabilities   : shape = (N_traj,)
-    - positions_list  : shape = (N_traj, N_steps, 3)
-    - velocities_list : shape = (N_traj, N_steps, 3)
-    - last_indexes    : shape = (N_traj,)
+    Attributes (all NumPy arrays):
 
-    以下の方法でアクセス・可視化できます：
+    - ``ts_list``         -- shape ``(N_traj, N_steps)``
+    - ``probabilities``   -- shape ``(N_traj,)``
+    - ``positions_list``  -- shape ``(N_traj, N_steps, 3)``
+    - ``velocities_list`` -- shape ``(N_traj, N_steps, 3)``
+    - ``last_indexes``    -- shape ``(N_traj,)``
 
-      ts_list, probs, pos_list, vel_list = result   # タプルアンパック
+    Usage::
 
-      # 任意の 2 変数ペア (var1, var2) を MultiXYData で取得
-      result.pair("x", "y")    → 各 trajectory の x vs y
-      result.pair("t", "x")    → 各 trajectory の t vs x
-      result.tvx               → pair("t","vx") 省略形
-      result.yvz               → pair("y","vz")
+        ts_list, probs, pos_list, vel_list = result  # tuple unpacking
 
-      # サンプリング: ランダムまたはインデックス指定
-      result.sample(10)        → ランダムに 10 本だけ抽出
-      result.sample([0,2,5])   → インデックス 0, 2, 5 の 3 本だけ抽出
+        result.pair("x", "y")  # MultiXYData: x vs y per trajectory
+        result.pair("t", "x")  # t vs x per trajectory
+        result.tvx             # shorthand for pair("t", "vx")
 
-      # プロット
-      result.yvz.plot()
+        result.sample(10)      # randomly sample 10 trajectories
+        result.sample([0,2,5]) # pick specific trajectory indices
+
+        result.yvz.plot()
     """
 
     _VALID_KEYS = {"t", "x", "y", "z", "vx", "vy", "vz"}
@@ -61,21 +58,21 @@ class MultiBacktraceResult:
         """
         if ts_list.ndim != 2:
             raise ValueError(
-                "ts_list は 2D 配列 (N_traj, N_steps) である必要があります"
+                "ts_list must be a 2-D array of shape (N_traj, N_steps)"
             )
         N, T = ts_list.shape
 
         if probabilities.shape != (N,):
             raise ValueError(
-                "probabilities は shape=(N_traj, N_steps) である必要があります"
+                "probabilities must have shape (N_traj,)"
             )
         if positions_list.ndim != 3 or positions_list.shape != (N, T, 3):
             raise ValueError(
-                "positions_list は shape=(N_traj, N_steps, 3) である必要があります"
+                "positions_list must have shape (N_traj, N_steps, 3)"
             )
         if velocities_list.ndim != 3 or velocities_list.shape != (N, T, 3):
             raise ValueError(
-                "velocities_list は shape=(N_traj, N_steps, 3) である必要があります"
+                "velocities_list must have shape (N_traj, N_steps, 3)"
             )
 
         self.ts_list = ts_list
@@ -87,9 +84,9 @@ class MultiBacktraceResult:
         self.unit = unit
 
     def __iter__(self) -> Iterator[Any]:
-        """
-        タプルアンパック対応:
-          ts_list, probabilities, positions_list, velocities_list, last_indexes = result
+        """Support tuple unpacking::
+
+            ts_list, probabilities, positions_list, velocities_list, last_indexes = result
         """
         yield self.ts_list
         yield self.probabilities
@@ -98,12 +95,12 @@ class MultiBacktraceResult:
         yield self.last_indexes
 
     def __repr__(self) -> str:
-        """文字列表現を返す。
-        
+        """Return a string representation.
+
         Returns
         -------
         str
-            文字列表現。
+            Human-readable summary.
         """
         N, T = self.ts_list.shape
         return (
@@ -116,17 +113,16 @@ class MultiBacktraceResult:
         indices: Union[int, Sequence[int], range, slice],
         random_state: Optional[int] = None,
     ) -> "MultiBacktraceResult":
-        """
-        ランダム／インデックス指定で一部トラジェクトリを抽出し、新しい MultiBacktraceResult を返す。
+        """Sample a subset of trajectories and return a new result.
 
         Parameters
         ----------
         indices : int
-            正の整数 k を渡すと「全 N_traj 本からランダムに k 本抽出」。
-        indices : Sequence[int], range, slice
-            int のリスト／range／slice を渡すと「指定されたインデックス群だけ抽出」。
+            Positive integer *k*: randomly sample *k* trajectories.
+        indices : Sequence[int], range, or slice
+            Explicit index selection.
         random_state : int, optional
-            ランダムサンプリングのシード
+            Random seed for reproducible sampling.
         """
         N, T = self.ts_list.shape
 
@@ -134,7 +130,7 @@ class MultiBacktraceResult:
             k = indices
             if not (0 <= k <= N):
                 raise ValueError(
-                    "sample(int) の k は 0 ≤ k ≤ N_traj の範囲である必要があります"
+                    "sample(int): k must satisfy 0 <= k <= N_traj"
                 )
             rng = np.random.RandomState(random_state)
             chosen = rng.choice(N, size=k, replace=False)
@@ -150,11 +146,11 @@ class MultiBacktraceResult:
 
         else:
             raise TypeError(
-                "sample() の引数は int, slice, range, Sequence[int] のいずれかである必要があります"
+                "sample() argument must be int, slice, range, or Sequence[int]"
             )
 
         if any((i < 0 or i >= N) for i in chosen):
-            raise IndexError("sample() で指定されたインデックスが範囲外です")
+            raise IndexError("sample(): index out of range")
 
         ts_sub = self.ts_list[chosen, :]
         prob_sub = self.probabilities[chosen]
@@ -167,14 +163,16 @@ class MultiBacktraceResult:
         )
 
     def pair(self, var1: str, var2: str) -> MultiXYData:
-        """
-        任意の 2 変数を取り出し、MultiXYData を返す。
-        var1, var2 は 't','x','y','z','vx','vy','vz' のいずれか。
+        """Extract two variables and return a MultiXYData.
 
-        例:
-          result.pair("x","y")     → 各 trajectory の x vs y
-          result.pair("t","x")     → 各 trajectory の t vs x
-          result.tvy               → pair("t","vy")
+        Parameters *var1* and *var2* must each be one of
+        ``'t'``, ``'x'``, ``'y'``, ``'z'``, ``'vx'``, ``'vy'``, ``'vz'``.
+
+        Examples::
+
+            result.pair("x", "y")  # x vs y per trajectory
+            result.pair("t", "x")  # t vs x per trajectory
+            result.tvy             # shorthand for pair("t", "vy")
         """
         if (
             var1 not in MultiBacktraceResult._VALID_KEYS
@@ -185,16 +183,17 @@ class MultiBacktraceResult:
             )
 
         def _get_array_list(key: str) -> np.ndarray:
-            """array list を取得する。
-            
+            """Return the data array and unit for the given key.
+
             Parameters
             ----------
             key : str
-                取得・設定対象のキーです。
+                Variable key (e.g. ``"t"``, ``"x"``, ``"vx"``).
+
             Returns
             -------
-            np.ndarray
-                処理結果です。
+            tuple of (np.ndarray, UnitTranslator or None)
+                Data array and associated unit translator.
             """
             if key == "t":
                 u = self.unit.t if self.unit else None
@@ -236,13 +235,13 @@ class MultiBacktraceResult:
         )
 
     def __getattr__(self, name: str) -> Any:
-        """
-        属性アクセスを「ペア名」と解釈。
+        """Interpret attribute access as a pair name.
 
-        例:
-          result.xvy   → pair("x","vy")
-          result.tz    → pair("t","z")
-          result.tvx   → pair("t","vx")
+        Examples::
+
+            result.xvy  # -> pair("x", "vy")
+            result.tz   # -> pair("t", "z")
+            result.tvx  # -> pair("t", "vx")
         """
 
         for key1 in MultiBacktraceResult._VALID_KEYS:

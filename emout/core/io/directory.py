@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class DirectoryInspector:
-    """
-    Emout 用のディレクトリ探索＆ .inp 読み込みヘルパークラス。
-    Emout からはこのクラスを経由して 'main_directory', 'append_directories',
-    'inp' (InpFile), 'unit' (Units) を参照できるようにする。
+    """Directory discovery and input-file loading helper for Emout.
+
+    Provides ``main_directory``, ``append_directories``, ``inp``
+    (InpFile), and ``unit`` (Units) to the facade layer.
     """
 
     def __init__(
@@ -36,30 +36,32 @@ class DirectoryInspector:
         input_path: Union[Path, str, None] = None,
         output_directory: Union[Path, str, None] = None,
     ):
-        # 1. ディレクトリを Path に変換
-        """DirectoryInspector を初期化する。
+        # 1. Convert directory to Path
+        """Initialize the DirectoryInspector.
 
         Parameters
         ----------
-        directory : Union[Path, str]
-            基準ディレクトリです。`input_path` / `output_directory` 未指定時は
-            入力ファイル・出力ファイルの両方をこのディレクトリから探索します。
-        append_directories : Union[List[Union[Path, str]], str, None], optional
-            追加で参照するディレクトリ群です。`'auto'` では連番サフィックス付きディレクトリを自動探索します。
-        inpfilename : Union[Path, str], optional
-            読み込む入力ファイル名です。`None` を指定すると `.inp` の読み込みをスキップします。
-            `input_path` が指定されている場合は無視されます。
-        input_path : Union[Path, str, None], optional
-            入力パラメータファイルへのフルパスです（例: ``/path/to/plasma.toml``）。
-            指定すると `directory` / `inpfilename` の代わりにこのパスが使われます。
-        output_directory : Union[Path, str, None], optional
-            シミュレーション出力ファイル（h5, icur, pbody 等）を格納したディレクトリです。
-            未指定時は `directory` が使われます。
+        directory : Path or str
+            Base directory. When *input_path* and *output_directory* are
+            not given, both input and output files are looked up here.
+        append_directories : list of (Path or str), str, or None, optional
+            Additional directories.  ``'auto'`` triggers numbered-suffix
+            auto-discovery.
+        inpfilename : Path or str, optional
+            Input parameter file name.  ``None`` skips ``.inp`` loading.
+            Ignored when *input_path* is set.
+        input_path : Path or str or None, optional
+            Full path to the input parameter file (e.g.
+            ``/path/to/plasma.toml``).  Overrides *directory* /
+            *inpfilename* when given.
+        output_directory : Path or str or None, optional
+            Directory containing simulation output files (h5, icur, pbody,
+            etc.).  Defaults to *directory*.
         """
         if not isinstance(directory, Path):
             directory = Path(directory)
 
-        # input_path が指定された場合、そこから入力ディレクトリとファイル名を決定
+        # When input_path is given, derive input directory and filename from it
         if input_path is not None:
             input_path = Path(input_path)
             self._input_directory: Path = input_path.parent
@@ -71,7 +73,7 @@ class DirectoryInspector:
         self._input_directory = self._input_directory.resolve()
         self.inpfilename = None if inpfilename is None else str(inpfilename)
 
-        # 出力ディレクトリ (h5, icur, pbody 等)
+        # Output directory (h5, icur, pbody, etc.)
         if output_directory is not None:
             self.main_directory: Path = Path(output_directory)
         else:
@@ -83,7 +85,7 @@ class DirectoryInspector:
             f"output directory = {self.main_directory.resolve()}"
         )
 
-        # 2. append_dirs の決定
+        # 2. Determine append directories
         self.append_directories: List[Path] = []
         if append_directories == "auto":
             append_directories_list = self._fetch_append_directories(self.main_directory)
@@ -94,27 +96,27 @@ class DirectoryInspector:
             p = Path(ad) if not isinstance(ad, Path) else ad
             self.append_directories.append(p.resolve())
 
-        # 3. inp 読み込み + Units 初期化
+        # 3. Load inp + initialise Units
         self._inp: Optional[InpFile] = None
         self._unit: Optional[Units] = None
-        self._toml_data = None  # TomlData (plasma.toml が存在する場合に設定)
+        self._toml_data = None  # TomlData (set when plasma.toml exists)
         self._load_inpfile(inpfilename)
 
     def _fetch_append_directories(self, directory: Path) -> List[Path]:
-        """連番サフィックス付き追加ディレクトリを探索する。
+        """Discover numbered-suffix append directories.
 
-        `<directory>_2`, `<directory>_3`, ... を順に確認し、
-        `is_valid()` が `False` になった時点で探索を終了します。
+        Check ``<directory>_2``, ``<directory>_3``, ... in order and stop
+        when a candidate does not exist or fails ``is_valid()``.
 
         Parameters
         ----------
         directory : Path
-            探索起点となるメインディレクトリです。
+            Main directory used as the discovery root
 
         Returns
         -------
         List[Path]
-            有効と判定された追加ディレクトリ一覧です。
+            Valid append directories found.
         """
         logger.info(f"Fetching append directories for: {directory}")
         result: List[Path] = []
@@ -126,13 +128,13 @@ class DirectoryInspector:
                 logger.debug(f"Append directory not found: {candidate}")
                 break
 
-            # 再帰的に DirectoryInspector を呼び出して妥当性チェック
+            # Recursively call DirectoryInspector for validity check
             helper = DirectoryInspector(
                 candidate, append_directories=None, inpfilename=None
             )
             if not helper.is_valid():
                 logger.warning(
-                    f"{candidate.resolve()} は存在するが有効ではないため終了"
+                    f"{candidate.resolve()} exists but is not valid; stopping discovery"
                 )
                 break
 
@@ -141,27 +143,22 @@ class DirectoryInspector:
         return result
 
     def _load_inpfile(self, inpfilename: Union[Path, str]) -> None:
-        """パラメータファイルを読み込み、単位変換情報を初期化する。
+        """Load the parameter file and initialise unit conversion.
 
-        ``plasma.toml`` が存在する場合は ``toml2inp`` コマンドで
-        ``plasma.inp`` を生成・更新してから読み込む。
+        When ``plasma.toml`` exists, ``toml2inp`` is invoked to
+        generate/update ``plasma.inp`` before loading.
 
         Parameters
         ----------
-        inpfilename : Union[Path, str]
-            `_input_directory` からの相対ファイル名です。`None` の場合は読み込みません。
-
-        Returns
-        -------
-        None
-            戻り値はありません。
+        inpfilename : Path or str
+            File name relative to *_input_directory*.  ``None`` skips loading.
         """
         if inpfilename is None:
             return
 
         inpfilename_str = str(inpfilename)
 
-        # デフォルト "plasma.inp" の場合
+        # Default case: "plasma.inp"
         if inpfilename_str == "plasma.inp":
             toml_path = self._input_directory / "plasma.toml"
             inp_path = self._input_directory / "plasma.inp"
@@ -174,7 +171,7 @@ class DirectoryInspector:
                 self._load_from_inp(inp_path)
             return
 
-        # 明示指定: .toml が指定された場合も toml2inp で変換
+        # Explicit path: convert via toml2inp even when .toml is specified
         path = self._input_directory / inpfilename
         if not path.exists():
             return
@@ -189,7 +186,7 @@ class DirectoryInspector:
             self._load_from_inp(path)
 
     def _load_from_inp(self, inp_path: Path) -> None:
-        """plasma.inp 形式のファイルを読み込む。"""
+        """Load a plasma.inp-format parameter file."""
         logger.info(f"Loading parameter file: {inp_path.resolve()}")
         self._inp = InpFile(inp_path)
         convkey = UnitConversionKey.load(inp_path)
@@ -197,10 +194,11 @@ class DirectoryInspector:
             self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
 
     def _store_toml_data(self, toml_path: Path) -> None:
-        """``plasma.toml`` を :class:`TomlData` として保持する。
+        """Store ``plasma.toml`` as a :class:`TomlData` instance.
 
-        ``group_id`` を用いる ``*_groups`` は、この時点で各 entry に展開し、
-        返却用の `data.toml` からは group table を除外する。
+        ``*_groups`` tables using ``group_id`` are expanded into each
+        entry at this point, and group tables are removed from the
+        returned ``data.toml``.
         """
         from emout.utils.toml_converter import load_toml
 
@@ -212,7 +210,7 @@ class DirectoryInspector:
 
     @staticmethod
     def _run_toml2inp(toml_path: Path, inp_path: Path) -> None:
-        """``toml2inp`` コマンドで plasma.toml から plasma.inp を生成する。"""
+        """Generate plasma.inp from plasma.toml via the ``toml2inp`` command."""
         toml2inp = shutil.which("toml2inp")
         if toml2inp is None:
             logger.warning(
@@ -239,48 +237,48 @@ class DirectoryInspector:
 
     @property
     def inp(self) -> Optional[InpFile]:
-        """読み込まれた `InpFile` を返す。
+        """Return the parsed input parameter file.
 
         Returns
         -------
-        Optional[InpFile]
-            `.inp` 読み込み済みなら `InpFile`、未読込なら `None`。
+        InpFile or None
+            Parsed ``plasma.inp`` if loaded, otherwise ``None``.
         """
         return self._inp
 
     @property
     def toml(self):
-        """TOML データを返す。
+        """Return the parsed TOML configuration.
 
-        ``plasma.toml`` が存在する場合のみ有効。
-        ``data.toml.species[0].wp`` のように属性アクセスで
-        構造化 TOML に直接アクセスできる。
-        `group_id` ベースの group default は各 entry に展開済み。
+        Only available when ``plasma.toml`` exists. Provides attribute
+        access to the structured TOML, e.g. ``data.toml.species[0].wp``.
+        Group defaults (``group_id``) are expanded into each entry.
 
         Returns
         -------
         TomlData or None
-            TOML 読み込み時は `TomlData`、それ以外は `None`。
+            Parsed TOML data, or ``None`` if unavailable.
         """
         return self._toml_data
 
     @property
     def unit(self) -> Optional[Units]:
-        """読み込まれた単位変換情報を返す。
+        """Return the unit conversion object.
 
         Returns
         -------
-        Optional[Units]
-            変換キーが取得できた場合は `Units`、未設定なら `None`。
+        Units or None
+            Unit translators if a conversion key was found, otherwise ``None``.
         """
         return self._unit
 
     def is_valid(self) -> bool:
+        """Check whether the simulation completed successfully.
+
+        Compare the last step in the ``icur`` file against ``nstep`` from
+        the input parameters.
         """
-        シミュレーションが正常終了しているかどうか判定する。
-        最後に出力された 'icur' の最後のステップと .inp の nstep を比較する。
-        """
-        # append_directories があれば最後尾、そうでなければ main_directory
+        # Use the last append directory if available, otherwise main_directory
         dirpath = (
             self.append_directories[-1]
             if self.append_directories
@@ -291,17 +289,17 @@ class DirectoryInspector:
             return False
 
         def read_last_line(fname: Path) -> str:
-            """ファイル末尾行を読み込む。
+            """Read the last line of a file.
 
             Parameters
             ----------
             fname : Path
-                対象ファイルパス。
+                Target file path
 
             Returns
             -------
             str
-                末尾行（UTF-8 デコード済み文字列）。
+                Last line (UTF-8 decoded).
             """
             with open(fname, "rb") as f:
                 f.seek(-2, 2)
@@ -325,15 +323,15 @@ class DirectoryInspector:
         return int(last_line.split()[0]) == int(self._inp.nstep)
 
     def read_icur_as_dataframe(self) -> pd.DataFrame:
-        """`icur` ファイルを `DataFrame` として読み込む。
+        """Read the ``icur`` diagnostic file as a DataFrame.
 
         Returns
         -------
         pandas.DataFrame
-            ステップ列と各粒子種/ボディ電流列を持つテーブルです。
+            Table with step and per-species/per-body current columns.
         """
         if self._inp is None:
-            raise RuntimeError("read_icur: .inp が読み込まれていません")
+            raise RuntimeError("read_icur: .inp has not been loaded")
 
         names = []
         for ispec in range(self._inp.nspec):
@@ -344,24 +342,24 @@ class DirectoryInspector:
 
         icur_path = self.main_directory / "icur"
         if not icur_path.exists():
-            raise FileNotFoundError(f"'icur' ファイルが見つかりません: {icur_path}")
+            raise FileNotFoundError(f"'icur' file not found: {icur_path}")
 
         return pd.read_csv(icur_path, sep=r"\s+", header=None, names=names)
 
     def read_pbody_as_dataframe(self) -> pd.DataFrame:
-        """`pbody` ファイルを `DataFrame` として読み込む。
+        """Read the ``pbody`` diagnostic file as a DataFrame.
 
         Returns
         -------
         pandas.DataFrame
-            `step` と各ボディ列からなるテーブルです。
+            Table with ``step`` and per-body particle-count columns.
         """
         if self._inp is None:
-            raise RuntimeError("read_pbody: .inp が読み込まれていません")
+            raise RuntimeError("read_pbody: .inp has not been loaded")
 
         names = ["step"] + [f"body{i+1}" for i in range(self._inp.npc + 1)]
         pbody_path = self.main_directory / "pbody"
         if not pbody_path.exists():
-            raise FileNotFoundError(f"'pbody' ファイルが見つかりません: {pbody_path}")
+            raise FileNotFoundError(f"'pbody' file not found: {pbody_path}")
 
         return pd.read_csv(pbody_path, sep=r"\s+", names=names)
