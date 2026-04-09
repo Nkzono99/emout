@@ -238,11 +238,19 @@ client = connect("tcp://10.10.64.2:8786")  # explicit address
 | Variable | Description | Default |
 | --- | --- | --- |
 | `EMOUT_DASK_SCHED_IP` | Scheduler IP (overrides auto-detection) | InfiniBand auto |
-| `EMOUT_DASK_SCHED_PORT` | Scheduler port | `8786` |
+| `EMOUT_DASK_SCHED_PORT` | Scheduler port | `10000 + (UID % 50000)` |
 | `EMOUT_DASK_PARTITION` | SLURM partition | `gr20001a` |
 | `EMOUT_DASK_CORES` | Worker cores | `60` |
 | `EMOUT_DASK_MEMORY` | Worker memory | `60G` |
 | `EMOUT_DASK_WALLTIME` | Job wall time | `03:00:00` |
+
+### Port selection
+
+The scheduler port defaults to `10000 + (UID % 50000)`, so each user on
+the same login node gets a different port automatically (e.g. UID 36291
+→ port 46291).  If that port is already in use, up to 20 consecutive
+ports are probed until a free one is found.  Set
+`EMOUT_DASK_SCHED_PORT` to override.
 
 ### Limitations
 
