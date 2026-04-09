@@ -73,6 +73,7 @@ data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
 | **単位変換** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ 単位変換](https://nkzono99.github.io/emout/guide/units.ja.html) |
 | **境界メッシュ** | `data.boundaries.mesh()`, `plot_surfaces` へのオーバーレイ | [→ 境界メッシュ](https://nkzono99.github.io/emout/guide/boundaries.ja.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ クイックスタート](https://nkzono99.github.io/emout/guide/quickstart.ja.html) |
+| **リモート実行** | Dask Actor で計算ノードに処理を委譲、ローカルは画像だけ | [→ リモート実行](https://nkzono99.github.io/emout/guide/distributed.ja.html) |
 
 ---
 
@@ -131,8 +132,35 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 
 </details>
 
+### リモート実行 (Dask) — 実験的
+
+HPC の計算ノードにデータ処理を委譲し、ログインノードにはプロット画像だけを返します。
+**コードの書き方はローカル実行と全く同じ**で、サーバーが起動していれば自動的にリモートになります。
+
+```bash
+# ターミナルでサーバーを起動（1 回だけ）
+emout server start --partition gr20001a --memory 60G
+```
+
+```python
+# スクリプト / Jupyter — サーバーがあれば自動リモート、なければローカル
+data.phisp[-1, :, 100, :].plot()    # 2D スライスだけ転送
+plt.xlabel("x [m]")                 # ローカル matplotlib で追記可能
+
+# 全操作をサーバーで実行（ローカルにはPNG画像のみ）
+from emout.distributed import remote_figure
+
+with remote_figure():
+    data.phisp[-1, :, 100, :].plot()
+    plt.axhline(y=50, color="red")
+    plt.title("カスタムタイトル")
+```
+
+backtrace の重い計算もサーバーで実行し、可視化パラメータだけ変えて何度でも再描画できます。
+→ [リモート実行ガイド](https://nkzono99.github.io/emout/guide/distributed.ja.html)
+
 <details>
-<summary>実験的機能（ポアソン方程式 / バックトレース / Dask クラスタ）</summary>
+<summary>実験的機能（ポアソン方程式 / バックトレース）</summary>
 
 ```python
 # ポアソン方程式
@@ -140,12 +168,8 @@ from emout.utils import poisson
 phi = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
 
 # バックトレース（要 vdist-solver-fortran）
-result = data.backtrace.get_probabilities(ix, iy, iz, vx_range, vy_center, vz_range, ispec=0)
+result = data.backtrace.get_probabilities(x, y, z, vx, vy, vz, ispec=0)
 result.vxvz.plot()
-
-# Dask クラスタ連携
-from emout.distributed import start_cluster, stop_cluster
-client = start_cluster(partition="gr20001a", processes=1, cores=112, memory="60G", walltime="03:00:00")
 ```
 
 </details>

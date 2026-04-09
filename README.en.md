@@ -73,6 +73,7 @@ See the user guide for detailed usage of each feature.
 | **Unit conversion** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ Units](https://nkzono99.github.io/emout/guide/units.html) |
 | **Boundary meshes** | `data.boundaries.mesh()`, overlay on `plot_surfaces` | [→ Boundaries](https://nkzono99.github.io/emout/guide/boundaries.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ Quick Start](https://nkzono99.github.io/emout/guide/quickstart.html) |
+| **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
 
 ---
 
@@ -131,8 +132,36 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 
 </details>
 
+### Remote Execution (Dask) — Experimental
+
+Offload data processing to HPC compute nodes; only plot images are returned to your login node.
+**The API is identical to local execution** — if a server is running, it's automatic.
+
+```bash
+# Start the server once in a terminal
+emout server start --partition gr20001a --memory 60G
+```
+
+```python
+# Script / Jupyter — auto-remote if server is running, local otherwise
+data.phisp[-1, :, 100, :].plot()    # only 2D slice transferred
+plt.xlabel("x [m]")                 # local matplotlib annotation
+
+# Run everything on the server (only PNG comes back)
+from emout.distributed import remote_figure
+
+with remote_figure():
+    data.phisp[-1, :, 100, :].plot()
+    plt.axhline(y=50, color="red")
+    plt.title("Custom title")
+```
+
+Heavy backtrace computations run on the server and stay in server memory;
+re-render with different parameters without recomputation.
+→ [Remote Execution Guide](https://nkzono99.github.io/emout/guide/distributed.html)
+
 <details>
-<summary>Experimental features (Poisson solver / backtrace / Dask cluster)</summary>
+<summary>Experimental features (Poisson solver / backtrace)</summary>
 
 ```python
 # Poisson solver
@@ -140,12 +169,8 @@ from emout.utils import poisson
 phi = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
 
 # Backtrace (requires vdist-solver-fortran)
-result = data.backtrace.get_probabilities(ix, iy, iz, vx_range, vy_center, vz_range, ispec=0)
+result = data.backtrace.get_probabilities(x, y, z, vx, vy, vz, ispec=0)
 result.vxvz.plot()
-
-# Dask cluster integration
-from emout.distributed import start_cluster, stop_cluster
-client = start_cluster(partition="gr20001a", processes=1, cores=112, memory="60G", walltime="03:00:00")
 ```
 
 </details>

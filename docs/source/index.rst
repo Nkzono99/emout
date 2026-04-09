@@ -17,6 +17,7 @@ emout
    guide/inp
    guide/units
    guide/boundaries
+   guide/distributed
 
 .. toctree::
    :maxdepth: 2
@@ -28,6 +29,7 @@ emout
    guide/inp.ja
    guide/units.ja
    guide/boundaries.ja
+   guide/distributed.ja
 
 .. toctree::
    :maxdepth: 2
