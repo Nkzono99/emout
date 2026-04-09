@@ -18,18 +18,18 @@ import emout.utils as utils
 
 
 def flatten_list(l):
-    """入れ子のイテラブルを 1 次元に平坦化して順に返す。
+    """Flatten a nested iterable into a 1-D sequence.
 
     Parameters
     ----------
     l : object
-        任意に入れ子になったイテラブルです。
-        文字列と bytes は 1 要素として扱います。
+        Arbitrarily nested iterable.
+        Strings and bytes are treated as single elements.
 
     Returns
     -------
     Iterator
-        平坦化された要素を順に返すイテレータです。
+        Iterator that yields elements in flattened order.
     """
     for el in l:
         if isinstance(el, collections.abc.Iterable) and not isinstance(
@@ -44,18 +44,18 @@ ANIMATER_PLOT_MODE = Literal["return", "show", "to_html", "save"]
 
 
 class Animator:
-    """複数の FrameUpdater を束ねてアニメーション描画を行うクラス。"""
+    """Orchestrate multiple FrameUpdaters into an animated plot."""
     def __init__(
         self,
         layout: List[List[List[Union["FrameUpdater", Callable[[int], None], None]]]],
     ):
-        """インスタンスを初期化する。
+        """Initialize the animator.
 
         Parameters
         ----------
         layout : List[List[List[Union["FrameUpdater", Callable[[int], None], None]]]]
-            3 重リストで定義したレイアウトです。
-            `layout[row][col]` に複数 updater を配置できます。
+            Layout defined as a triply-nested list.
+            `layout[row][col]` can hold multiple updaters.
         """
         self._layout = layout
 
@@ -70,35 +70,35 @@ class Animator:
         savefilename: PathLike = None,
         to_html: bool = False,
     ):
-        """GIF アニメーションを作成する。
+        """Create a GIF animation.
 
         Parameters
         ----------
         fig : Union[plt.Figure, None], optional
-            描画に使用する Figure。`None` の場合は現在の Figure を使います。
+            Figure to use for rendering. If `None`, the current figure is used.
         action : ANIMATER_PLOT_MODE, optional
-            アニメーション生成後の処理モードです。
-            `'return'` は `(fig, animation)` を返し、
-            `'show'` は表示、
-            `'to_html'` は HTML を返し、
-            `'save'` は `filename` に保存します。
+            Post-generation action mode.
+            `'return'` returns `(fig, animation)`,
+            `'show'` displays the animation,
+            `'to_html'` returns HTML,
+            `'save'` saves to `filename`.
         filename : PathLike, optional
-            `action='save'` のときの保存先ファイル名です。
+            Output file path when `action='save'`.
         interval : int, optional
-            フレーム間隔 [ms]。
+            Frame interval in milliseconds.
         repeat : bool, optional
-            ループ再生するかどうか。
+            Whether to loop the animation.
         show : bool, optional
-            非推奨。`True` の場合は `action='show'` と同等に扱います。
+            Deprecated. If `True`, treated as `action='show'`.
         savefilename : PathLike, optional
-            非推奨。指定時は `action='save'` として扱います。
+            Deprecated. When given, treated as `action='save'`.
         to_html : bool, optional
-            非推奨。`True` の場合は `action='to_html'` と同等に扱います。
+            Deprecated. If `True`, treated as `action='to_html'`.
 
         Returns
         -------
         object
-            `action` に応じた描画結果を返します。
+            Rendering result depending on `action`.
         """
         if show:
             warnings.warn(
@@ -129,16 +129,15 @@ class Animator:
             fig = plt.gcf()
 
         def _update_all(i):
-            """全 updater を 1 フレーム分更新する。
-            
+            """Update all updaters for one frame.
+
             Parameters
             ----------
             i : object
-                反復 index です。
+                Iteration index.
             Returns
             -------
             None
-                戻り値はありません。
             """
             plt.clf()
             j = 0
@@ -179,12 +178,12 @@ class Animator:
 
     @property
     def frames(self):
-        """管理いているFrameUpdaterの最小フレーム数."""
+        """Minimum frame count among managed FrameUpdaters."""
         updaters = list(flatten_list(self._layout))
         if not updaters:
             raise ValueError("Updaters have no elements")
 
-        # フレーム数の最小値を返す
+        # Return the minimum frame count
         frames = min(
             len(updater) for updater in updaters if isinstance(updater, FrameUpdater)
         )
@@ -192,7 +191,7 @@ class Animator:
 
     @property
     def shape(self):
-        """レイアウトの形状."""
+        """Layout shape as (nrows, ncols)."""
         nrows = len(self._layout)
 
         ncols = 1
@@ -203,8 +202,7 @@ class Animator:
 
 
 class FrameUpdater:
-    """FrameUpdater クラス。
-    """
+    """Single data series frame updater for animation."""
     def __init__(
         self,
         data,
@@ -217,26 +215,26 @@ class FrameUpdater:
         use_si: bool = True,
         **kwargs,
     ):
-        """インスタンスを初期化する。
-        
+        """Initialize the frame updater.
+
         Parameters
         ----------
         data : object
-            フレームごとにスライスして描画するデータ。
+            Data to slice per frame for rendering.
         axis : int, optional
-            アニメーションさせる軸 index。
+            Axis index to animate along.
         title : Union[str, None], optional
-            タイトルのプレフィックス。
+            Title prefix.
         notitle : bool, optional
-            `True` の場合、フレーム位置をタイトルに追記しません。
+            If `True`, do not append the frame position to the title.
         offsets : Union[, optional
                     Tuple[Union[float, str], Union[float, str], Union[float, str]], None
                 ], optional
-            座標オフセット。`'left'` / `'center'` / `'right'` も指定できます。
+            Coordinate offsets. `'left'` / `'center'` / `'right'` are also accepted.
         use_si : bool, optional
-            `True` の場合は SI 単位系で表示します。
+            If `True`, display in SI units.
         **kwargs : dict
-            `val.plot(...)` に渡す追加引数です。
+            Extra arguments forwarded to `val.plot(...)`.
         """
         if data.valunit is None:
             use_si = False
@@ -253,32 +251,30 @@ class FrameUpdater:
         self.kwargs = kwargs
 
     def __call__(self, i: int):
-        """呼び出し可能オブジェクトとして実行する。
-        
+        """Invoke the updater as a callable.
+
         Parameters
         ----------
         i : int
-            フレーム番号。
-        
+            Frame number.
+
         Returns
         -------
         None
-            戻り値はありません。
         """
         self.update(i)
 
     def update(self, i: int):
-        """指定フレームのスライスを描画する。
+        """Render the slice for the specified frame.
 
         Parameters
         ----------
         i : int
-            フレーム番号。
-        
+            Frame number.
+
         Returns
         -------
         None
-            戻り値はありません。
         """
         data = self.data
         axis = self.axis
@@ -288,12 +284,12 @@ class FrameUpdater:
         use_si = self.use_si
         kwargs = self.kwargs
 
-        # 指定した軸でスライス
+        # Slice along the specified axis
         slices = [slice(None)] * len(data.shape)
         slices[axis] = i
         val = data[tuple(slices)]
 
-        # タイトルの設定
+        # Set the title
         if notitle:
             _title = title if len(title) > 0 else None
         else:
@@ -308,11 +304,11 @@ class FrameUpdater:
 
             index = line[i]
 
-            if use_si:  # SI単位系を用いる場合
+            if use_si:  # Use SI units
                 axisunit = data.axisunits[ax]
                 _title = f"{title}({axisunit.reverse(index):.4e} {axisunit.unit}"
 
-            else:  # EMSES単位系を用いる場合
+            else:  # Use EMSES units
                 _title = f"{title}({index})"
 
         if offsets is not None:
@@ -328,19 +324,19 @@ class FrameUpdater:
         )
 
     def _offseted(self, line: List, offset: Union[str, float]):
-        """配列にオフセットを適用した結果を返す。
+        """Return the array with an offset applied.
 
         Parameters
         ----------
         line : List
-            座標配列。
+            Coordinate array.
         offset : Union[str, float]
-            オフセット指定。`'left'` / `'center'` / `'right'` または数値。
+            Offset specification. `'left'` / `'center'` / `'right'` or a numeric value.
 
         Returns
         -------
         object
-            オフセット適用後の配列。
+            Offset-adjusted array.
         """
         if offset == "left":
             line -= line[0]
@@ -353,12 +349,12 @@ class FrameUpdater:
         return line
 
     def to_animator(self, layout=None):
-        """アニメーターに変換する.
+        """Convert to an Animator.
 
         Parameters
         ----------
         layout: List[List[List[FrameUpdater]]]
-            アニメーションプロットのレイアウト
+            Layout for the animation plot.
         """
         if layout is None:
             layout = [[[self]]]
@@ -366,11 +362,11 @@ class FrameUpdater:
         return Animator(layout=layout)
 
     def __len__(self):
-        """要素数を返す。
-        
+        """Return the number of elements.
+
         Returns
         -------
         int
-            要素数。
+            Number of elements.
         """
         return self.data.shape[self.axis]

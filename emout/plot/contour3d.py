@@ -15,17 +15,17 @@ LevelFormatter = Union[str, Callable[[float], str]]
 
 
 def _as_spacing_xyz(dx: DxLike) -> Tuple[float, float, float]:
-    """格子間隔を `(dx, dy, dz)` 形式へ正規化する。
-    
+    """Normalize grid spacing to `(dx, dy, dz)` form.
+
     Parameters
     ----------
     dx : DxLike
-        格子間隔です。スカラーなら `(dx, dx, dx)`、3 要素なら
-        `(dx, dy, dz)` として解釈します。
+        Grid spacing. If scalar, interpreted as `(dx, dx, dx)`;
+        if 3-element, interpreted as `(dx, dy, dz)`.
     Returns
     -------
     Tuple[float, float, float]
-        `(dx, dy, dz)` の 3 要素タプルです。
+        A 3-element tuple `(dx, dy, dz)`.
     """
     if np.isscalar(dx):
         d = float(dx)
@@ -37,16 +37,16 @@ def _as_spacing_xyz(dx: DxLike) -> Tuple[float, float, float]:
 
 
 def _sanitize_volume(vol: np.ndarray) -> np.ndarray:
-    """3 次元ボリューム配列を描画可能な値へ正規化する。
-    
+    """Sanitize a 3-D volume array for rendering.
+
     Parameters
     ----------
     vol : np.ndarray
-        3 次元ボリューム配列です。
+        3-D volume array.
     Returns
     -------
     np.ndarray
-        NaN/Inf を処理した浮動小数型の `(nz, ny, nx)` 配列です。
+        A float-type `(nz, ny, nx)` array with NaN/Inf replaced.
     """
     vol = np.asarray(vol)
     if vol.ndim != 3:
@@ -66,20 +66,20 @@ def _format_level_value(
     fmt: Optional[LevelFormatter] = None,
     sigfigs: Optional[int] = None,
 ) -> str:
-    """等値面レベル値を表示文字列に整形する。
-    
+    """Format an iso-surface level value as a display string.
+
     Parameters
     ----------
     value : float
-        値。
+        The numeric value to format.
     fmt : Optional[LevelFormatter], optional
-        フォーマット指定文字列です。
+        Format specifier string or callable.
     sigfigs : Optional[int], optional
-        `fmt` 未指定時に使う有効桁数です。
+        Number of significant figures used when `fmt` is not given.
     Returns
     -------
     str
-        文字列表現です。
+        Formatted string representation.
     """
     if callable(fmt):
         return str(fmt(value))
@@ -110,18 +110,18 @@ def _format_level_value(
 
 
 def _resolve_shared_exponent(levels: Sequence[float], shared_exponent: Union[str, int, None]) -> int:
-    """ラベル表示用の共通指数を決定する。
-    
+    """Determine the shared exponent for label display.
+
     Parameters
     ----------
     levels : Sequence[float]
-        等値面ラベルに使うレベル値の配列です。
+        Array of level values used for iso-surface labels.
     shared_exponent : Union[str, int, None]
-        共通指数の設定値です。
+        Shared exponent setting.
     Returns
     -------
     int
-        使用する共通指数です。
+        The shared exponent to use.
     """
     if shared_exponent is None:
         return 0
@@ -149,26 +149,26 @@ def _slice_from_bounds_1d(
     n: int,
     axis_name: str,
 ) -> Tuple[slice, float]:
-    """1 次元境界指定からインデックス範囲を計算する。
-    
+    """Compute an index range from 1-D boundary specification.
+
     Parameters
     ----------
     vmin : Optional[float]
-        表示範囲の最小値。
+        Minimum value of the display range.
     vmax : Optional[float]
-        表示範囲の最大値。
+        Maximum value of the display range.
     origin : float
-        回転・平行移動の基準点です。
+        Reference point for the axis origin.
     d : float
-        格子間隔です。
+        Grid spacing.
     n : int
-        サンプル数または格子点数です。
+        Number of samples or grid points.
     axis_name : str
-        軸名（`x`/`y`/`z`）です。
+        Axis name (`x`/`y`/`z`).
     Returns
     -------
     Tuple[slice, float]
-        `(インデックススライス, 新しい軸原点)` を返します。
+        `(index_slice, new_axis_origin)`.
     """
     if (vmin is not None) and (vmax is not None) and (vmax < vmin):
         raise ValueError(f"{axis_name} bounds invalid: max < min")
@@ -196,26 +196,26 @@ def _apply_roi(
     bounds_xyz: Optional[Bounds],
     roi_zyx: Optional[Tuple[slice, slice, slice]],
 ) -> Tuple[np.ndarray, Tuple[float, float, float], Tuple[float, float, float]]:
-    """ROI 指定に基づいて配列と原点を切り出す。
-    
+    """Crop the array and origin based on the ROI specification.
+
     Parameters
     ----------
     vol_zyx : np.ndarray
-        (z, y, x) 順のボリューム配列です。
+        Volume array in `(z, y, x)` order.
     dx_xyz : Tuple[float, float, float]
-        (x, y, z) 順の格子間隔です。
+        Grid spacing in `(x, y, z)` order.
     origin_xyz : Tuple[float, float, float]
-        (x, y, z) 順の原点座標です。
+        Origin coordinates in `(x, y, z)` order.
     bounds_xyz : Optional[Bounds]
-        `((xmin, xmax), (ymin, ymax), (zmin, zmax))` 形式の切り出し範囲です。
-        各要素に `None` を指定するとその軸方向は全範囲を使用します。
+        Crop range in `((xmin, xmax), (ymin, ymax), (zmin, zmax))` form.
+        Use `None` for any element to include the full range along that axis.
     roi_zyx : Optional[Tuple[slice, slice, slice]]
-        配列 index で直接指定する `(z, y, x)` 順のスライスです。
-        指定した場合は `bounds_xyz` より優先されます。
+        Direct index slices in `(z, y, x)` order.
+        Takes precedence over `bounds_xyz` when given.
     Returns
     -------
     Tuple[np.ndarray, Tuple[float, float, float], Tuple[float, float, float]]
-        `(切り出し後のボリューム, 格子間隔 dx_xyz, 更新後の原点 origin_xyz)` を返します。
+        `(cropped_volume, dx_xyz, updated_origin_xyz)`.
     """
     nz, ny, nx = vol_zyx.shape
     dx, dy, dz = dx_xyz
@@ -275,66 +275,67 @@ def contour3d(
     clabel_exponent_text: Optional[str] = None,
     clabel_exponent_kwargs: Optional[Dict[str, Any]] = None,
 ):
-    """3 次元ボリュームの等値面を Matplotlib で描画する。
+    """Render iso-surfaces of a 3-D volume with Matplotlib.
 
-    入力配列の軸順序は `(z, y, x)` を想定します。`bounds_xyz`（物理座標）または
-    `roi_zyx`（インデックススライス）で描画範囲を切り出せます。
+    The input array is expected in `(z, y, x)` axis order. Use `bounds_xyz`
+    (physical coordinates) or `roi_zyx` (index slices) to crop the render
+    region.
 
     Parameters
     ----------
     data3d : np.ndarray
-        描画対象の 3 次元配列。形状は `(nz, ny, nx)`。
+        3-D array to render, shaped `(nz, ny, nx)`.
     dx : DxLike
-        格子間隔。スカラー指定時は `(dx, dy, dz)` として扱います。
+        Grid spacing. When scalar, treated as `(dx, dy, dz)`.
     levels : Sequence[float]
-        描画する等値面レベルの配列です。
+        Array of iso-surface levels to render.
     ax : object, optional
-        描画先の 3D Axes。`None` の場合は新規作成します。
+        Target 3-D Axes. If `None`, a new one is created.
     origin_xyz : Tuple[float, float, float], optional
-        物理座標系での原点オフセット `(x0, y0, z0)`。
+        Origin offset in physical coordinates `(x0, y0, z0)`.
     bounds_xyz : Optional[Bounds], optional
-        物理座標での ROI。`((xmin, xmax), (ymin, ymax), (zmin, zmax))`。
+        Physical-coordinate ROI. `((xmin, xmax), (ymin, ymax), (zmin, zmax))`.
     roi_zyx : Optional[Tuple[slice, slice, slice]], optional
-        インデックスでの ROI。`(slice_z, slice_y, slice_x)`。
+        Index-based ROI. `(slice_z, slice_y, slice_x)`.
     opacity : float, optional
-        等値面の透過率（0.0〜1.0）。
+        Iso-surface opacity (0.0 to 1.0).
     step : int, optional
-        ROI 後の間引きステップ。`step=2` なら各軸 2 点ごとにサンプリングします。
+        Down-sampling step after ROI. `step=2` samples every 2 points per axis.
     title : Optional[str], optional
-        グラフタイトル。
+        Plot title.
     save : Optional[str], optional
-        保存先ファイルパス。指定時は `fig.savefig` を実行します。
+        Output file path. When specified, `fig.savefig` is called.
     show : bool, optional
-        `True` の場合は `plt.show()` を呼び出します。
+        If `True`, call `plt.show()`.
     xlabel : str, optional
-        x 軸ラベル。
+        X-axis label.
     ylabel : str, optional
-        y 軸ラベル。
+        Y-axis label.
     zlabel : str, optional
-        z 軸ラベル。
+        Z-axis label.
     clabel : bool, optional
-        `True` の場合は等値面近傍にレベル値ラベルを描画します。
+        If `True`, draw level-value labels near each iso-surface.
     clabel_fmt : Optional[LevelFormatter], optional
-        ラベル文字列のフォーマット指定。
+        Format specifier for label strings.
     clabel_fontsize : float, optional
-        等値面ラベルのフォントサイズ。
+        Font size for iso-surface labels.
     clabel_sigfigs : Optional[int], optional
-        ラベル表示の有効桁数（`clabel_fmt` 未指定時）。
+        Number of significant figures for labels (when `clabel_fmt` is not set).
     clabel_shared_exponent : Union[str, int, None], optional
-        ラベルで共通指数を使う指定。`'auto'` で自動決定します。
+        Shared exponent for labels. `'auto'` determines it automatically.
     clabel_text_kwargs : Optional[Dict[str, Any]], optional
-        各等値面ラベル文字の `ax.text` 追加引数。
+        Extra keyword arguments forwarded to `ax.text` for each label.
     clabel_exponent_pos : Tuple[float, float], optional
-        共通指数テキストの 2D 軸座標位置 `(x, y)`。
+        2-D axes-coordinate position `(x, y)` for the shared exponent text.
     clabel_exponent_text : Optional[str], optional
-        共通指数表示のテキスト。`None` の場合は自動生成します。
+        Text for the shared exponent display. If `None`, auto-generated.
     clabel_exponent_kwargs : Optional[Dict[str, Any]], optional
-        共通指数テキスト描画時の `ax.text2D` 追加引数。
+        Extra keyword arguments forwarded to `ax.text2D` for the exponent text.
 
     Returns
     -------
     tuple(matplotlib.figure.Figure, matplotlib.axes.Axes)
-        描画に使用した `(fig, ax)` を返します。
+        The `(fig, ax)` pair used for rendering.
     """
     if not levels:
         raise ValueError("levels must be non-empty.")

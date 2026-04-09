@@ -18,28 +18,28 @@ def plot_cross_sections(
     use_si: bool = True,
     **kwargs,
 ) -> plt.Axes:
-    """プロット処理を行う。
-    
+    """Plot cross-sections of boundary objects.
+
     Parameters
     ----------
     data : object
-        処理対象のデータ。
+        Data to process.
     axis : str, optional
-        対象軸。
+        Target axis.
     coord : float, optional
-        断面を取る位置です。`axis='z'` なら z 座標、
-        `axis='x'`/`'y'` なら対応する x/y 座標を指定します。
+        Position at which to take the cross-section. For `axis='z'` this
+        is a z coordinate; for `axis='x'`/`'y'` the corresponding coordinate.
     ax : Optional[plt.Axes], optional
-        描画先の Axes。
+        Target Axes for drawing.
     use_si : bool, optional
-        True の場合は SI 単位系を使用。
+        If True, use SI units.
     **kwargs : dict
-        追加のキーワード引数。内部で呼び出す関数へ渡されます。
-    
+        Extra keyword arguments forwarded to internal drawing functions.
+
     Returns
     -------
     plt.Axes
-        描画オブジェクト。
+        The Axes object with the rendered cross-sections.
     """
     # Early exit if no complex boundaries
     inp = getattr(data, "inp", None)

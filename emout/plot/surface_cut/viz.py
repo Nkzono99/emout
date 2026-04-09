@@ -41,37 +41,36 @@ class RenderItem:
 
 @dataclass(frozen=True)
 class Bounds3D:
-    """Bounds3D クラス。
-    """
+    """Axis-aligned 3-D bounding box."""
     x: Tuple[float, float]
     y: Tuple[float, float]
     z: Tuple[float, float]
 
     def expanded(self, frac: float = 0.05) -> "Bounds3D":
-        """境界を指定割合だけ拡張した Bounds を返す。
-        
+        """Return a new Bounds expanded by the given fraction.
+
         Parameters
         ----------
         frac : float, optional
-            区間内補間係数です。
+            Fraction by which to expand each interval.
         Returns
         -------
         "Bounds3D"
-            処理結果です。
+            Expanded bounding box.
         """
         def ex(a, b):
-            """1 次元区間を指定割合で拡張する。
-            
+            """Expand a 1-D interval by the given fraction.
+
             Parameters
             ----------
             a : object
-                始点側の値です。
+                Lower bound of the interval.
             b : object
-                終点側の値です。
+                Upper bound of the interval.
             Returns
             -------
             object
-                処理結果です。
+                Expanded interval endpoints.
             """
             w = b - a
             return (a - frac * w, b + frac * w)
@@ -98,20 +97,20 @@ def _as_list(surfaces) -> list[RenderItem]:
 def _make_norm(
     vmin=None, vmax=None, *, robust_data: Optional[np.ndarray] = None
 ) -> Normalize:
-    """カラーマップ用の正規化オブジェクトを作成する。
-    
+    """Create a colormap normalization object.
+
     Parameters
     ----------
     vmin : object, optional
-        表示範囲の最小値。
+        Minimum of the display range.
     vmax : object, optional
-        表示範囲の最大値。
+        Maximum of the display range.
     robust_data : Optional[np.ndarray], optional
-        外れ値除去に使う参照データです。
+        Reference data used for robust (outlier-resistant) range estimation.
     Returns
     -------
     Normalize
-        処理結果です。
+        Matplotlib color normalization object.
     """
     if vmin is None or vmax is None:
         if robust_data is None:
@@ -215,18 +214,18 @@ def _clip_faces_to_bounds(V: np.ndarray, F: np.ndarray, bounds: Bounds3D) -> np.
 
 
 def _face_values_from_vertex_values(F: np.ndarray, vval: np.ndarray) -> np.ndarray:
-    """頂点値から各面の代表値を計算する。
-    
+    """Compute a representative value for each face from vertex values.
+
     Parameters
     ----------
     F : np.ndarray
-        三角形面インデックス配列です。
+        Triangle face index array.
     vval : np.ndarray
-        頂点ごとのスカラー値です（`V` と同じ頂点順）。
+        Per-vertex scalar values (same vertex order as `V`).
     Returns
     -------
     np.ndarray
-        各三角形面の平均スカラー値です。
+        Mean scalar value for each triangle face.
     """
     return np.nanmean(vval[F], axis=1)
 
@@ -240,26 +239,26 @@ def _poly_collection(
     norm: Normalize,
     alpha: float = 1.0,
 ) -> Poly3DCollection:
-    """面値で着色したポリゴンコレクションを生成する。
-    
+    """Create a polygon collection colored by face values.
+
     Parameters
     ----------
     V : np.ndarray
-        頂点座標配列です。
+        Vertex coordinate array.
     F : np.ndarray
-        三角形面インデックス配列です。
+        Triangle face index array.
     face_values : np.ndarray
-        面ごとのスカラー値です。`F` の行順と対応します。
+        Per-face scalar values, aligned with rows of `F`.
     cmap : object
-        カラーマップ。
+        Colormap.
     norm : Normalize
-        色正規化設定です。
+        Color normalization.
     alpha : float, optional
-        透過率です。
+        Opacity.
     Returns
     -------
     Poly3DCollection
-        カラーマップを適用した三角形ポリゴンコレクションです。
+        Colormap-applied triangle polygon collection.
     """
     tris = V[F]
     fc = cmap(norm(face_values))
@@ -278,26 +277,26 @@ def _solid_poly_collection(
     edge_color: Optional[str] = None,
     edge_lw: float = 0.4,
 ) -> Poly3DCollection:
-    """単色のポリゴンコレクションを生成する。
-    
+    """Create a solid-color polygon collection.
+
     Parameters
     ----------
     V : np.ndarray
-        頂点座標配列です。
+        Vertex coordinate array.
     F : np.ndarray
-        三角形面インデックス配列です。
+        Triangle face index array.
     color : object
-        面色です。Matplotlib の色指定形式（名前、RGB(A)、HEX など）を受け付けます。
+        Face color. Accepts any Matplotlib color specification (name, RGB(A), hex, etc.).
     alpha : float, optional
-        透過率です。
+        Opacity.
     edge_color : Optional[str], optional
-        輪郭線の色です。`None` の場合は輪郭線を描画しません。
+        Edge color. If `None`, edges are not drawn.
     edge_lw : float, optional
-        輪郭線の線幅です。
+        Edge line width.
     Returns
     -------
     Poly3DCollection
-        描画に使う三角形ポリゴンコレクションです。
+        Triangle polygon collection for rendering.
     """
     tris = V[F]
     rgba = list(to_rgba(color))
@@ -856,28 +855,28 @@ def plot_surfaces(
 
 
 def add_colorbar(fig, ax, *, cmap, norm, label=r"$\phi$ (V)", cax=None, fraction=0.03, pad=0.08):
-    """描画に対応するカラーバーを追加する。
-    
+    """Add a colorbar corresponding to the rendered plot.
+
     Parameters
     ----------
     fig : object
-        描画先の Figure。
+        Target Figure.
     ax : object
-        描画先の Axes。
+        Target Axes.
     cmap : object
-        カラーマップ。
+        Colormap.
     norm : object
-        色正規化設定です。
+        Color normalization.
     label : str, optional
-        カラーバーのラベル文字列です。
+        Label string for the colorbar.
     fraction : float, optional
-        カラーバーの幅比率です（`Figure.colorbar` の `fraction`）。
+        Width ratio of the colorbar (`Figure.colorbar`'s `fraction`).
     pad : float, optional
-        プロット本体とカラーバーの間隔です（`Figure.colorbar` の `pad`）。
+        Spacing between the plot and the colorbar (`Figure.colorbar`'s `pad`).
     Returns
     -------
     object
-        追加したカラーバーオブジェクトです。
+        The added colorbar object.
     """
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array([])

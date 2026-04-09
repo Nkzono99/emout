@@ -51,19 +51,19 @@ mycmap = mcolors.LinearSegmentedColormap(
 
 
 def figsize_with_2d(data2d, dpi=10):
-    """2次元データから図のサイズを計算する.
+    """Compute figure size from 2-D data shape.
 
     Parameters
     ----------
     data2d : numpy.ndarray
-        2次元データ
+        2-D data array.
     dpi : int, optional
-        1データを何pixelで表すか, by default 10
+        Pixels per data point, by default 10.
 
     Returns
     -------
     (float, float)
-        図のサイズ
+        Figure size in inches.
     """
     px = 1 / plt.rcParams["figure.dpi"] * dpi
     figsize = (data2d.shape[1] * px, data2d.shape[0] * px)
@@ -89,43 +89,43 @@ def plot_2dmap(
     add_colorbar=True,
     **kwargs,
 ):
-    """2次元カラーマップをプロットする.
+    """Plot a 2-D colormap.
 
     Parameters
     ----------
     data2d : numpy.ndarray
-        2次元データ
+        2-D data array.
     mesh : (numpy.ndarray, numpy.ndarray), optional
-        メッシュ, by default None
+        Mesh grid, by default None.
     savefilename : str, optional
-        保存するファイル名(Noneの場合保存しない), by default None
+        Output file path (None to skip saving), by default None.
     cmap : matplotlib.Colormap or str or None, optional
-        カラーマップ, by default cm.coolwarm
+        Colormap, by default cm.coolwarm.
     mask_color : str
-        マスクされた位置の色, by default 'gray'
+        Color for masked positions, by default 'gray'.
     vmin : float, optional
-        最小値, by default None
+        Minimum value, by default None.
     vmax : float, optional
-        最大値, by default None
+        Maximum value, by default None.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        x軸のラベル, by default None
+        X-axis label, by default None.
     ylabel : str, optional
-        y軸のラベル, by default None
+        Y-axis label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
     interpolation : str, optional
-        用いる補間方法, by default 'bilinear'
+        Interpolation method, by default 'bilinear'.
     dpi : int, optional
-        解像度(figsizeが指定された場合は無視される), by default 10
+        Resolution (ignored when figsize is specified), by default 10.
     add_colorbar: bool, optional
-        カラーバーを追加する場合True, by default True
+        If True, add a colorbar, by default True.
 
     Returns
     -------
     AxesImage or None
-        プロットしたimageデータ(保存した場合None)
+        Plotted image data (None when saved to file).
     """
     if cbargs is None:
         cbargs = {}
@@ -197,49 +197,49 @@ def plot_2d_contour(
     fontsize=12,
     **kwargs,
 ):
-    """2次元等高線をプロットする.
+    """Plot 2-D contour lines.
 
     Parameters
     ----------
     data2d : numpy.ndarray
-        2次元データ
+        2-D data array.
     mesh : (numpy.ndarray, numpy.ndarray), optional
-        メッシュ, by default None
+        Mesh grid, by default None.
     levels : int
-        等高線数, by default None
+        Number of contour levels, by default None.
     alpha : float
-        透明度(0.0~1.0), by default 1
+        Opacity (0.0 to 1.0), by default 1.
     savefilename : str, optional
-        保存するファイル名(Noneの場合保存しない), by default None
+        Output file path (None to skip saving), by default None.
     cmap : matplotlib.Colormap or str or None, optional
-        カラーマップ, by default None
+        Colormap, by default None.
     mask_color : str
-        マスクされた位置の色, by default 'gray'
+        Color for masked positions, by default 'gray'.
     vmin : float, optional
-        最小値, by default None
+        Minimum value, by default None.
     vmax : float, optional
-        最大値, by default None
+        Maximum value, by default None.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        x軸のラベル, by default None
+        X-axis label, by default None.
     ylabel : str, optional
-        y軸のラベル, by default None
+        Y-axis label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
     interpolation : str, optional
-        用いる補間方法, by default 'bilinear'
+        Interpolation method, by default 'bilinear'.
     dpi : int, optional
-        解像度(figsizeが指定された場合は無視される), by default 10
+        Resolution (ignored when figsize is specified), by default 10.
     fmt : str
-        clabelの形式, by default '%1.1f'
+        Contour label format, by default '%1.1f'.
     fontsize : str
-        clabelのフォントサイズ, by default 12
+        Contour label font size, by default 12.
 
     Returns
     -------
     AxesImage or None
-        プロットしたimageデータ(保存した場合None)
+        Plotted image data (None when saved to file).
     """
     if mesh is None:
         x = list(range(data2d.shape[1]))
@@ -298,45 +298,45 @@ def plot_surface(
     colorbar_label="",
     **kwargs,
 ):
-    """3次元表面プロットをする.
+    """Plot a 3-D surface.
 
     Parameters
     ----------
     x : (numpy.ndarray, numpy.ndarray), optional
-        x座標のメッシュ
+        X-coordinate mesh.
     y : (numpy.ndarray, numpy.ndarray), optional
-        y座標のメッシュ
+        Y-coordinate mesh.
     z : (numpy.ndarray, numpy.ndarray), optional
-        z座標のメッシュ
+        Z-coordinate mesh.
     val : (numpy.ndarray, numpy.ndarray), optional
-        値のメッシュ
+        Value mesh.
     ax3d : Axes3D
-        Axes3Dオブジェクト, by default None
+        Axes3D object, by default None.
     savefilename : str, optional
-        保存するファイル名(Noneの場合保存しない), by default None
+        Output file path (None to skip saving), by default None.
     cmap : matplotlib.Colormap or str or None, optional
-        カラーマップ, by default cm.coolwarm
+        Colormap, by default cm.coolwarm.
     vmin : float, optional
-        最小値, by default None
+        Minimum value, by default None.
     vmax : float, optional
-        最大値, by default None
+        Maximum value, by default None.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        x軸のラベル, by default None
+        X-axis label, by default None.
     ylabel : str, optional
-        y軸のラベル, by default None
+        Y-axis label, by default None.
     zlabel : str, optional
-        z軸のラベル, by default None
+        Z-axis label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
     dpi : int, optional
-        解像度(figsizeが指定された場合は無視される), by default 10
+        Resolution (ignored when figsize is specified), by default 10.
 
     Returns
     -------
     AxesImage or None
-        プロットしたimageデータ(保存した場合None)
+        Plotted image data (None when saved to file).
     """
     if savefilename is not None:
         if figsize is None:
@@ -417,35 +417,35 @@ def plot_line(
     title=None,
     **kwargs,
 ):
-    """1次元データをプロットする.
+    """Plot 1-D data.
 
     Parameters
     ----------
     data1d : array-like or scalar
-        プロットする1次元データ
+        1-D data to plot.
     x : array-like or scalar
-        横軸となる1次元データ, by default None
+        1-D data for the horizontal axis, by default None.
     savefilename : str, optional
-        保存するファイル名, by default None
+        Output file path, by default None.
     vmin : float, optional
-        最小値, by default None
+        Minimum value, by default None.
     vmax : float, optional
-        最大値, by default None
+        Maximum value, by default None.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        横軸のラベル, by default None
+        Horizontal axis label, by default None.
     ylabel : str, optional
-        縦軸のラベル, by default None
+        Vertical axis label, by default None.
     label : str, optional
-        ラベル, by default None
+        Legend label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
 
     Returns
     -------
     Line2D or None
-        プロットデータを表す線オブジェクト(保存した場合None)
+        Line object representing the plotted data (None when saved to file).
     """
     if savefilename is not None:
         if figsize is None:
@@ -491,41 +491,41 @@ def plot_2d_vector(
     cmap=None,
     **kwargs,
 ):
-    """2次元ベクトル図をプロットする.
+    """Plot a 2-D vector field.
 
     Parameters
     ----------
     x_data2d, y_data2d : numpy.ndarray
-        2次元データ
+        2-D data arrays for vector components.
     mesh : (numpy.ndarray, numpy.ndarray), optional
-        メッシュ, by default None
+        Mesh grid, by default None.
     savefilename : str, optional
-        保存するファイル名(Noneの場合保存しない), by default None
+        Output file path (None to skip saving), by default None.
     color : str
-        ベクトルの色, by default None
+        Vector color, by default None.
     scale : float
-        ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1
+        Vector magnitude scale factor (multiplied to final size), by default 1.
     skip : int
-        プロットするデータ間隔, by default 1
+        Plotting data interval, by default 1.
     easy_to_read : bool
-        ベクトルを見やすい大きさにスケーリングするならTrue, by default True
+        If True, scale vectors to a legible size, by default True.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        x軸のラベル, by default None
+        X-axis label, by default None.
     ylabel : str, optional
-        y軸のラベル, by default None
+        Y-axis label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
     interpolation : str, optional
-        用いる補間方法, by default 'bilinear'
+        Interpolation method, by default 'bilinear'.
     dpi : int, optional
-        解像度(figsizeが指定された場合は無視される), by default 10
+        Resolution (ignored when figsize is specified), by default 10.
 
     Returns
     -------
     AxesImage or None
-        プロットしたimageデータ(保存した場合None)
+        Plotted image data (None when saved to file).
     """
     fig = None
     if savefilename is not None:
@@ -568,7 +568,7 @@ def plot_2d_vector(
         U = U / norm * np.log(norm + 1)
         V = V / norm * np.log(norm + 1)
 
-    # 見やすい大きさに線形スケーリングを行う
+    # Linear scaling to a legible size
     if easy_to_read:
         dx = (x.max() - x.min()) / x.shape[0]
         multiplier = dx * 1.2
@@ -635,41 +635,41 @@ def plot_2d_streamline(
     density=1,
     **kwargs,
 ):
-    """2次元ベクトル図をプロットする.
+    """Plot a 2-D streamline field.
 
     Parameters
     ----------
     x_data2d, y_data2d : numpy.ndarray
-        2次元データ
+        2-D data arrays for vector components.
     mesh : (numpy.ndarray, numpy.ndarray), optional
-        メッシュ, by default None
+        Mesh grid, by default None.
     savefilename : str, optional
-        保存するファイル名(Noneの場合保存しない), by default None
+        Output file path (None to skip saving), by default None.
     color : str
-        ベクトルの色, by default None
+        Streamline color, by default None.
     scale : float
-        ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1
+        Vector magnitude scale factor (multiplied to final size), by default 1.
     skip : int
-        プロットするデータ間隔, by default 1
+        Plotting data interval, by default 1.
     easy_to_read : bool
-        ベクトルを見やすい大きさにスケーリングするならTrue, by default True
+        If True, scale vectors to a legible size, by default True.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        x軸のラベル, by default None
+        X-axis label, by default None.
     ylabel : str, optional
-        y軸のラベル, by default None
+        Y-axis label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
     interpolation : str, optional
-        用いる補間方法, by default 'bilinear'
+        Interpolation method, by default 'bilinear'.
     dpi : int, optional
-        解像度(figsizeが指定された場合は無視される), by default 10
+        Resolution (ignored when figsize is specified), by default 10.
 
     Returns
     -------
     AxesImage or None
-        プロットしたimageデータ(保存した場合None)
+        Plotted image data (None when saved to file).
     """
     fig = None
     if savefilename is not None:
@@ -767,41 +767,41 @@ def plot_3d_quiver(
     cmap=None,
     **kwargs,
 ):
-    """2次元ベクトル図をプロットする.
+    """Plot a 3-D quiver (vector) field.
 
     Parameters
     ----------
     x_data2d, y_data2d : numpy.ndarray
-        2次元データ
+        3-D data arrays for vector components.
     mesh : (numpy.ndarray, numpy.ndarray), optional
-        メッシュ, by default None
+        Mesh grid, by default None.
     savefilename : str, optional
-        保存するファイル名(Noneの場合保存しない), by default None
+        Output file path (None to skip saving), by default None.
     color : str
-        ベクトルの色, by default None
+        Vector color, by default None.
     scale : float
-        ベクトルの大きさ係数(最終的な大きさにこの値を掛ける), by default 1
+        Vector magnitude scale factor (multiplied to final size), by default 1.
     skip : int
-        プロットするデータ間隔, by default 1
+        Plotting data interval, by default 1.
     easy_to_read : bool
-        ベクトルを見やすい大きさにスケーリングするならTrue, by default True
+        If True, scale vectors to a legible size, by default True.
     figsize : (float, float), optional
-        図のサイズ, by default None
+        Figure size, by default None.
     xlabel : str, optional
-        x軸のラベル, by default None
+        X-axis label, by default None.
     ylabel : str, optional
-        y軸のラベル, by default None
+        Y-axis label, by default None.
     title : str, optional
-        タイトル, by default None
+        Title, by default None.
     interpolation : str, optional
-        用いる補間方法, by default 'bilinear'
+        Interpolation method, by default 'bilinear'.
     dpi : int, optional
-        解像度(figsizeが指定された場合は無視される), by default 10
+        Resolution (ignored when figsize is specified), by default 10.
 
     Returns
     -------
     AxesImage or None
-        プロットしたimageデータ(保存した場合None)
+        Plotted image data (None when saved to file).
     """
     fig = None
     if savefilename is not None:
@@ -856,7 +856,7 @@ def plot_3d_quiver(
         V = V / norm * np.log(norm + 1)
         W = W / norm * np.log(norm + 1)
 
-    # 見やすい大きさに線形スケーリングを行う
+    # Linear scaling to a legible size
     if easy_to_read:
         dx = (x.max() - x.min()) / x.shape[0]
         multiplier = dx * 1.2

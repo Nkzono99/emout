@@ -15,34 +15,33 @@ from emout.utils.units import Units
 def plot_surface_with_hole(
     data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", **kwargs
 ):
-    """矩形ホール付きの 3D サーフェスを描画する。
+    """Render a 3-D surface with a rectangular hole.
 
-    内部では `data_xyz[...].plot(mode="surf", **kwargs)` を複数回呼び出して
-    上面・側面・底面を描画します。
+    Internally calls `data_xyz[...].plot(mode="surf", **kwargs)` multiple
+    times to draw the top, side, and bottom surfaces.
 
     Parameters
     ----------
     data_xyz : Data3d
-        描画対象の 3 次元データです。
+        3-D data to render.
     inp : InpFile
-        ホール形状（`xlrechole` など）を含む入力パラメータです。
+        Input parameters containing hole geometry (`xlrechole`, etc.).
     add_colorbar : bool, optional
-        最後の底面描画時にカラーバーを追加するかどうか。
+        Whether to add a colorbar on the last (bottom) surface plot.
     show : bool, optional
-        `True` の場合は最後に `plt.show()` を呼び出します。
+        If `True`, call `plt.show()` at the end.
     vrange : {'minmax', 'center'}, optional
-        カラースケール範囲の決定方法です。
-        `'center'` の場合は 0 中心の対称レンジにします。
+        Method for determining the color-scale range.
+        `'center'` uses a symmetric range centered at 0.
     **kwargs : dict
-        `Data2d.plot(mode="surf")` へ渡す引数です。
-        主に `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`, `ylabel`,
-        `zlabel`, `title`, `ninterp`, `function`, `figsize`, `dpi`,
-        および `mpl_toolkits.mplot3d.Axes3D.plot_surface` の追加引数を指定できます。
+        Arguments forwarded to `Data2d.plot(mode="surf")`.
+        Primarily `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`,
+        `ylabel`, `zlabel`, `title`, `ninterp`, `function`, `figsize`, `dpi`,
+        and additional `mpl_toolkits.mplot3d.Axes3D.plot_surface` arguments.
 
     Returns
     -------
     None
-        戻り値はありません。
     """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
@@ -98,31 +97,31 @@ def plot_hole_line(
     linewidth=None,
     fix_lims=True,
 ):
-    """矩形ホール輪郭線を 2D 平面上に描画する。
+    """Draw a rectangular hole outline on a 2-D plane.
 
     Parameters
     ----------
     inp_or_data : Union[InpFile, "Emout"]
-        `InpFile` または `Emout` オブジェクト。
+        `InpFile` or `Emout` object.
     unit : Units, optional
-        単位変換オブジェクト。`inp_or_data` が `Emout` の場合は自動取得します。
+        Unit conversion object. Auto-detected when `inp_or_data` is `Emout`.
     use_si : bool, optional
-        `True` の場合は SI 単位系で描画します。
+        If `True`, draw in SI units.
     offsets : Tuple[int, int], optional
-        `(x, y)` 方向の表示オフセット。
+        Display offset in `(x, y)` directions.
     axis : str, optional
-        描画する断面軸。現在は `"xz"` のみ対応しています。
+        Cross-section axis to draw. Currently only `"xz"` is supported.
     color : str, optional
-        線色。
+        Line color.
     linewidth : float, optional
-        線幅。
+        Line width.
     fix_lims : bool, optional
-        `True` の場合は描画前の軸範囲を固定します。
+        If `True`, fix axis limits before drawing.
 
     Returns
     -------
     list[matplotlib.lines.Line2D]
-        `plt.plot` が返す線オブジェクト。
+        Line objects returned by `plt.plot`.
     """
     if isinstance(inp_or_data, InpFile):
         inp: InpFile = inp_or_data
@@ -159,21 +158,20 @@ def plot_hole_line(
 
 
 def plot_line_of_hole_half(inp, off, unit):
-    """半断面ホール形状の補助線を 3D 軸に描画する。
+    """Draw auxiliary lines for a half-section hole shape on a 3-D axis.
 
     Parameters
     ----------
     inp : InpFile
-        ホール定義を含む入力パラメータ。
+        Input parameters containing hole definition.
     off : int
-        拡張表示に使うオフセット幅。
+        Offset width for extended display.
     unit : UnitTranslator
-        単位変換オブジェクト。
+        Unit conversion object.
 
     Returns
     -------
     None
-        戻り値はありません。
     """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
@@ -238,19 +236,19 @@ def plot_line_of_hole_half(inp, off, unit):
     lines = unit.reverse(lines)
 
     def parse(points, offsets):
-        """点群にオフセットを適用して x, y, z を返す。
-        
+        """Apply offsets to a point array and return x, y, z.
+
         Parameters
         ----------
         points : object
-            `(N, 3)` 形式の座標配列です。
+            Coordinate array of shape `(N, 3)`.
         offsets : object
-            軸方向のオフセット。
-        
+            Per-axis offsets.
+
         Returns
         -------
         object
-            処理結果です。
+            Offset-adjusted x, y, z arrays.
         """
         x = points[:, 0] + offsets[0]
         y = points[:, 1] + offsets[1]
@@ -269,37 +267,36 @@ def plot_line_of_hole_half(inp, off, unit):
 def plot_surface_with_hole_half(
     data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", **kwargs
 ):
-    """矩形ホールの半断面サーフェスを描画する。
+    """Render a half cross-section surface of a rectangular hole.
 
     Parameters
     ----------
     data_xyz : Data3d
-        描画対象の 3 次元データです。
+        3-D data to render.
     inp : InpFile
-        ホール形状（`xlrechole` など）を含む入力パラメータです。
+        Input parameters containing hole geometry (`xlrechole`, etc.).
     off : int, optional
-        断面のオフセット幅です。
+        Offset width for the cross-section.
     add_colorbar : bool, optional
-        最後の底面描画時にカラーバーを追加するかどうか。
+        Whether to add a colorbar on the last (bottom) surface plot.
     show : bool, optional
-        `True` の場合は最後に `plt.show()` を呼び出します。
+        If `True`, call `plt.show()` at the end.
     vrange : {'minmax', 'center'}, optional
-        カラースケール範囲の決定方法です。
+        Method for determining the color-scale range.
     **kwargs : dict
-        `Data2d.plot(mode="surf")` へ渡す引数です。
-        主に `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`, `ylabel`,
-        `zlabel`, `title`, `ninterp`, `function`, `figsize`, `dpi`,
-        および `mpl_toolkits.mplot3d.Axes3D.plot_surface` の追加引数を指定できます。
+        Arguments forwarded to `Data2d.plot(mode="surf")`.
+        Primarily `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`,
+        `ylabel`, `zlabel`, `title`, `ninterp`, `function`, `figsize`, `dpi`,
+        and additional `mpl_toolkits.mplot3d.Axes3D.plot_surface` arguments.
 
     Returns
     -------
     None
-        戻り値はありません。
 
     Notes
     -----
-    本関数内で `ax3d` は自動生成され、`kwargs["ax3d"]` に設定されます。
-    そのため、呼び出し側で `ax3d` を渡した場合は上書きされます。
+    An `ax3d` is created internally and set to `kwargs["ax3d"]`.
+    Any `ax3d` passed by the caller will be overwritten.
     """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
@@ -353,17 +350,17 @@ def plot_surface_with_hole_half(
 
     # innner wall
     def alltrue(x):
-        """有限値をそのまま通すマスク関数を返す。
-        
+        """Return a mask that passes all finite values through.
+
         Parameters
         ----------
         x : object
-            x 座標または x 成分。
-        
+            Input array or coordinate.
+
         Returns
         -------
         object
-            処理結果です。
+            Boolean mask where all values are True.
         """
         return x == x
 
