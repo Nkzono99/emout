@@ -178,13 +178,15 @@ class GridDataLoader:
                 self.dir_inspector
             )
 
-        return GridDataSeries(
+        series = GridDataSeries(
             h5file_path,
             h5file_path.name.replace("00_0000.h5", ""),
             tunit=tunit,
             axisunit=axisunit,
             valunit=valunit,
         )
+        series._emout_dir = str(self.dir_inspector.main_directory)
+        return series
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:
         """補間済み（relocated）場データ HDF5 を全対象ディレクトリに生成する。

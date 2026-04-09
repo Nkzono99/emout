@@ -53,6 +53,7 @@ class GridDataSeries:
         self.valunit = valunit
 
         self.name = name
+        self._emout_dir = None  # set by GridLoader to enable remote rendering
 
     def close(self) -> None:
         """hdf5ファイルを閉じる."""
@@ -129,13 +130,15 @@ class GridDataSeries:
 
         axisunits = [self.tunit] + [self.axisunit] * 3
 
-        return Data3d(
+        data = Data3d(
             np.array(self.group[key]),
             filename=self.filename,
             name=self.name,
             axisunits=axisunits,
             valunit=self.valunit,
         )
+        data._emout_dir = self._emout_dir
+        return data
 
     def __create_data_with_indexes(
         self, indexes: List[int], tslice: slice = None

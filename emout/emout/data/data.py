@@ -219,6 +219,7 @@ class Data(np.ndarray):
         self.slice_axes = getattr(obj, "slice_axes", None)
         self.axisunits = getattr(obj, "axisunits", None)
         self.valunit = getattr(obj, "valunit", None)
+        self._emout_dir = getattr(obj, "_emout_dir", None)
 
     @property
     def filename(self) -> Path:
@@ -441,6 +442,31 @@ class Data(np.ndarray):
     def to_numpy(self) -> np.ndarray:
         """numpyのndarrayに変換する."""
         return np.array(self)
+
+    def _to_recipe_index(self):
+        """slices から GridDataSeries[index] 形式のタプルを復元する。"""
+        result = []
+        for s in self.slices:
+            if s.stop - s.start == s.step:  # single element
+                result.append(s.start)
+            else:
+                result.append(s)
+        return tuple(result)
+
+    def _try_remote_plot(self, **plot_kwargs):
+        """Dask session があれば worker 側でレンダリングして表示。なければ None を返す。"""
+        emout_dir = getattr(self, "_emout_dir", None)
+        if emout_dir is None:
+            return None
+        from emout.distributed.remote_render import get_or_create_session, display_image
+        session = get_or_create_session(emout_dir)
+        if session is None:
+            return None
+        recipe_index = self._to_recipe_index()
+        img = session.render_field(
+            self.name, recipe_index, **plot_kwargs,
+        ).result()
+        return display_image(img)
 
     def plot(self, **kwargs):
         """データをプロットする."""
@@ -1028,6 +1054,12 @@ class Data2d(Data):
         Exception
             データの次元が2でない場合の例外
         """
+        remote = self._try_remote_plot(
+            axes=axes, show=show, use_si=use_si, offsets=offsets, mode=mode, **kwargs,
+        )
+        if remote is not None:
+            return remote
+
         import emout.plot.basic_plot as emplt
 
         if self.valunit is None:
@@ -1307,6 +1339,10 @@ class Data1d(Data):
         Exception
             データの次元が1でない場合の例外
         """
+        remote = self._try_remote_plot(show=show, use_si=use_si, offsets=offsets, **kwargs)
+        if remote is not None:
+            return remote
+
         import emout.plot.basic_plot as emplt
 
         if self.valunit is None:
