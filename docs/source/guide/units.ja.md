@@ -1,3 +1,5 @@
+Lang: [日本語](units.ja.md) | [English](units.md)
+
 # 単位変換 (`data.unit`)
 
 emout は EMSES 内部（規格化）単位と SI 単位の双方向変換を提供します。

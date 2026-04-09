@@ -1,3 +1,5 @@
+Lang: [English](units.md) | [日本語](units.ja.md)
+
 # Unit Conversion (`data.unit`)
 
 emout provides bidirectional conversion between EMSES internal (normalized) units and SI units.

@@ -1,3 +1,5 @@
+Lang: [English](quickstart.md) | [日本語](quickstart.ja.md)
+
 # Quick Start
 
 ## Installation

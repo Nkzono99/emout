@@ -1,3 +1,5 @@
+Lang: [English](animation.md) | [日本語](animation.ja.md)
+
 # Animations (`gifplot`)
 
 `gifplot()` creates time-series animations from multi-dimensional data. It is the second most frequently used feature after `plot()`.

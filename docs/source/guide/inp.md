@@ -1,3 +1,5 @@
+Lang: [English](inp.md) | [日本語](inp.ja.md)
+
 # Parameter File (`data.inp`)
 
 emout reads the EMSES parameter file (`plasma.inp` or `plasma.toml`) and exposes it as a dictionary-like object with attribute access.

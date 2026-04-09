@@ -1,3 +1,5 @@
+Lang: [日本語](inp.ja.md) | [English](inp.md)
+
 # パラメータファイル (`data.inp`)
 
 emout は EMSES のパラメータファイル（`plasma.inp` または `plasma.toml`）を読み込み、辞書風オブジェクトとして属性アクセスできるようにします。

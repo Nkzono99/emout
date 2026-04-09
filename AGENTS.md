@@ -60,9 +60,6 @@ pytest tests/plot/test_surface_cut_mesh.py -q
 pytest tests/test_boundaries.py -q
 pytest tests/data/test_data.py -q
 
-# TOML 系のこわれた統合テストを除外して実行（通常ローカル開発用）
-pytest -q --ignore=tests/utils/test_toml_converter.py --ignore=tests/utils/test_toml_integration.py
-
 # ドキュメントビルド
 sphinx-build -b html docs/source docs/build/html
 
@@ -72,8 +69,11 @@ python -m build
 
 ## 6. 実装時の必須ルール
 
-- **互換性を最優先にする。**
+- **後方互換性を最優先にする。** 利用者がまずまずいる前提で、公開 API の削除・改名・挙動変更は原則行わない。
   - `Emout.__getattr__` の動的解決（`p{species}`, `r[eb][xyz]`, `{name}{axis1}{axis2}`）は既存ユーザーコードに直結するため破壊しない。
+  - 整理が必要な場合は旧名をラッパーとして残し、 `warnings.warn(..., DeprecationWarning, stacklevel=2)` を出してから新実装へ委譲する。少なくとも 1 マイナーリリースは共存させ、削除時期はユーザーに確認する。
+  - 「新メソッドを追加して既存メソッドを温存する」パターンは推奨。例: 2026-04-09 に `Data2d.cmap()` / `Data2d.contour()` を `plot(mode=...)` と並存させて追加した。`plot()` 側は変更していない。
+  - 挙動を変えるときは新キーワード引数（デフォルトは旧挙動）として追加し、デフォルトを切り替える前にアナウンスする。
 - **軸順序を崩さない。**
   - グリッドデータは基本 `(t, z, y, x)`、3D ボリュームは `(z, y, x)` 前提。
   - `Data3d.axisunits` は末尾が x、`[-1]`/`[-2]`/`[-3]` がそれぞれ x/y/z の `UnitTranslator`。
@@ -126,8 +126,13 @@ python -m build
 ## 9. 変更時チェックリスト
 
 - 変更した機能に対応するテストを追加・更新したか。
-- `pytest -q --ignore=tests/utils/test_toml_converter.py --ignore=tests/utils/test_toml_integration.py` を実行し、既知失敗以外の赤を増やしていないか確認したか。
+- `pytest -q` を実行し、グリーンを維持しているか確認したか（現ベースラインは §10 参照。`toml2inp` 未インストール環境では 19 件が skipped になる想定）。
+- 公開 API を変えるときは §6 の後方互換ルールに従っているか。旧名は `DeprecationWarning` ラッパーとして残したか。
 - 公開 API や挙動を変えた場合、`README.md` / `README.en.md` と `docs/source/` を更新したか。
+- **ドキュメントの日英ペアを同じ PR で両方更新すること。** 対象は以下:
+  - `README.md` ⇔ `README.en.md`
+  - `docs/source/guide/*.md` ⇔ `docs/source/guide/*.ja.md`（`quickstart` / `plotting` / `animation` / `inp` / `units` の 5 ペア）
+  - どちらか片方しか更新しない状態でコミットしないこと。新規ページを作る場合も最初から両方作る。
 - optional 依存機能（`vdsolverf`, `dask`, `scikit-image`, `pyvista`）を触る場合、依存未導入時に import で壊れないか確認したか。
 - `emout.plot.surface_cut` の `viz.py` 経由の機能（`plot_surfaces` など）は `scikit-image` / `matplotlib` 必須。`import` を守るガードを壊さないこと。
 

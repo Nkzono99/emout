@@ -36,13 +36,7 @@ Agent(
 
 ## 5. よく使うコマンド
 
-→ `AGENTS.md §5` を参照。Claude Code では以下の形で `Bash` から呼ぶ（`TOML` 系の統合テストが壊れているため通常は除外する）:
-
-```bash
-python -m pytest tests/ -q \
-  --ignore=tests/utils/test_toml_converter.py \
-  --ignore=tests/utils/test_toml_integration.py
-```
+→ `AGENTS.md §5` を参照。Claude Code では `Bash` から `python -m pytest tests/ -q` を直接呼べばよい（2026-04-09 に TOML 系テストを修復済みで、`--ignore` は不要。ショートカットとして `Skill(skill="run-tests")` も使える）。
 
 ## 6. 実装時の必須ルール
 
