@@ -23,6 +23,35 @@ with remote_figure():
                                    ← only PNG bytes (~50 KB)
 ```
 
+### Shared Session Architecture
+
+A single `RemoteSession` Dask Actor manages all Emout instances on one
+worker.  When you access data from different simulations, the session
+lazily loads each `Emout` instance on first use and caches it for
+subsequent calls.
+
+This means **results from different simulations can be freely mixed** in
+the same `remote_figure()` block:
+
+```python
+data_a = emout.Emout("/path/to/sim_a")
+data_b = emout.Emout("/path/to/sim_b")
+
+result_a = data_a.backtrace.get_probabilities(...)
+result_b = data_b.backtrace.get_probabilities(...)
+
+with remote_figure(figsize=(12, 5)):
+    plt.subplot(1, 2, 1)
+    data_a.phisp[-1, :, 100, :].plot()
+    plt.title("Sim A: potential")
+
+    plt.subplot(1, 2, 2)
+    result_b.vxvz.plot(cmap="plasma")
+    plt.title("Sim B: backtrace")
+```
+
+All commands are replayed on the same worker — no data is transferred to the client.
+
 ## Setup
 
 ### 1. Start the server (once, in a terminal)
@@ -170,6 +199,19 @@ with remote_figure():
 result.drop()
 ```
 
+#### Local customisation with fetch()
+
+If you need full matplotlib control (e.g. custom annotations, shared colour bars),
+use `fetch()` to transfer the small result arrays to the client:
+
+```python
+heatmap = result.vxvz.fetch()   # → local HeatmapData
+fig, ax = plt.subplots()
+heatmap.plot(ax=ax, cmap="plasma")
+ax.axhline(y=0, color="red", linestyle="--")
+ax.set_title("Custom annotation")
+```
+
 ### Boundary meshes
 
 ```python
@@ -202,8 +244,10 @@ client = connect("tcp://10.10.64.2:8786")  # explicit address
 | `EMOUT_DASK_MEMORY` | Worker memory | `60G` |
 | `EMOUT_DASK_WALLTIME` | Job wall time | `03:00:00` |
 
-## Limitations
+### Limitations
 
-- Requires Python ≥ 3.10 (`dask` / `distributed` dependency)
-- Inside `remote_figure()`, matplotlib return values (`AxesImage` etc.) are not available
-- `plot3d()` (PyVista) remote execution is not yet supported
+- Python >= 3.10 with `dask` and `distributed` installed.
+- All simulation directories must be accessible from the worker node
+  (shared filesystem required).
+- Worker memory grows with each loaded Emout instance.  For very large
+  campaigns, call `result.drop()` to free cached computation results.

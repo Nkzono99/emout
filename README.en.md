@@ -171,6 +171,22 @@ rf.close()
 
 Heavy backtrace computations run on the server and stay in server memory;
 re-render with different parameters without recomputation.
+
+**Cross-simulation comparison** is also supported:
+
+```python
+data_a = emout.Emout("/sim_a")
+data_b = emout.Emout("/sim_b")
+result_a = data_a.backtrace.get_probabilities(...)
+result_b = data_b.backtrace.get_probabilities(...)
+
+with remote_figure(figsize=(12, 5)):
+    plt.subplot(1, 2, 1)
+    result_a.vxvz.plot()
+    plt.subplot(1, 2, 2)
+    result_b.vxvz.plot()
+```
+
 → [Remote Execution Guide](https://nkzono99.github.io/emout/guide/distributed.html)
 
 <details>

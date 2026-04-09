@@ -23,6 +23,35 @@ with remote_figure():
                                    ←  PNG bytes (~50 KB) だけ返る
 ```
 
+### 共有セッション アーキテクチャ
+
+1 つの `RemoteSession` Dask Actor が、すべての Emout インスタンスを 1 つの
+worker 上で管理します。異なるシミュレーションのデータにアクセスすると、
+セッションはその `Emout` を初回使用時に遅延ロードし、以降の呼び出しに備えて
+キャッシュします。
+
+つまり、**異なるシミュレーションの結果を同一の `remote_figure()` ブロック内で
+自由に混在**できます:
+
+```python
+data_a = emout.Emout("/path/to/sim_a")
+data_b = emout.Emout("/path/to/sim_b")
+
+result_a = data_a.backtrace.get_probabilities(...)
+result_b = data_b.backtrace.get_probabilities(...)
+
+with remote_figure(figsize=(12, 5)):
+    plt.subplot(1, 2, 1)
+    data_a.phisp[-1, :, 100, :].plot()
+    plt.title("Sim A: potential")
+
+    plt.subplot(1, 2, 2)
+    result_b.vxvz.plot(cmap="plasma")
+    plt.title("Sim B: backtrace")
+```
+
+すべてのコマンドは同一の worker 上で再生されます。クライアントにデータは転送されません。
+
 ## セットアップ
 
 ### 1. サーバー起動（ターミナルで 1 回だけ）
@@ -170,6 +199,19 @@ with remote_figure():
 result.drop()
 ```
 
+#### fetch() によるローカル加工
+
+matplotlib で自由にカスタマイズしたい場合（独自アノテーション、共有カラーバーなど）、
+`fetch()` で小さな結果配列をクライアントに転送できます:
+
+```python
+heatmap = result.vxvz.fetch()   # → ローカルの HeatmapData
+fig, ax = plt.subplots()
+heatmap.plot(ax=ax, cmap="plasma")
+ax.axhline(y=0, color="red", linestyle="--")
+ax.set_title("カスタムアノテーション")
+```
+
 ### 境界メッシュ
 
 ```python
@@ -204,6 +246,8 @@ client = connect("tcp://10.10.64.2:8786")  # アドレス指定
 
 ## 制限事項
 
-- Python ≥ 3.10 が必要（`dask` / `distributed` の依存）
-- `remote_figure()` 内では matplotlib の戻り値（`AxesImage` 等）は使えない
-- `plot3d()` (PyVista) のリモート実行は未対応
+- Python >= 3.10 で `dask` と `distributed` がインストールされている必要があります。
+- すべてのシミュレーションディレクトリが worker ノードからアクセス可能でなければ
+  なりません（共有ファイルシステムが必要）。
+- worker のメモリはロードされた Emout インスタンスごとに増加します。
+  大規模なキャンペーンでは `result.drop()` でキャッシュされた計算結果を解放してください。

@@ -170,6 +170,22 @@ rf.close()
 ```
 
 backtrace の重い計算もサーバーで実行し、可視化パラメータだけ変えて何度でも再描画できます。
+
+**複数シミュレーションの比較**も可能です:
+
+```python
+data_a = emout.Emout("/sim_a")
+data_b = emout.Emout("/sim_b")
+result_a = data_a.backtrace.get_probabilities(...)
+result_b = data_b.backtrace.get_probabilities(...)
+
+with remote_figure(figsize=(12, 5)):
+    plt.subplot(1, 2, 1)
+    result_a.vxvz.plot()
+    plt.subplot(1, 2, 2)
+    result_b.vxvz.plot()
+```
+
 → [リモート実行ガイド](https://nkzono99.github.io/emout/guide/distributed.ja.html)
 
 <details>
