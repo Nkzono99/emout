@@ -154,6 +154,19 @@ with remote_figure():
     data.phisp[-1, :, 100, :].plot()
     plt.axhline(y=50, color="red")
     plt.title("カスタムタイトル")
+
+# open/close 形式 — 既存コードへの導入が容易
+from emout.distributed import RemoteFigure
+
+rf = RemoteFigure()
+rf.open()
+data.phisp[-1, :, 100, :].plot()
+rf.close()
+
+# Jupyter セルマジック — セル先頭に書くだけ
+# %load_ext emout.distributed.remote_figure
+# %%remote_figure
+# data.phisp[-1, :, 100, :].plot()
 ```
 
 backtrace の重い計算もサーバーで実行し、可視化パラメータだけ変えて何度でも再描画できます。

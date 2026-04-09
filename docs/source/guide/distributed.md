@@ -92,6 +92,57 @@ with remote_figure():
 # ← PNG displayed in Jupyter here
 ```
 
+#### `open()` / `close()` style
+
+When adding `with` blocks to existing code is cumbersome, use `RemoteFigure`
+with explicit `open()` / `close()`:
+
+```python
+from emout.distributed import RemoteFigure
+
+rf = RemoteFigure()
+rf.open()
+data.phisp[-1, :, 100, :].plot()
+plt.xlabel("x [m]")
+rf.close()   # ← commands replayed on server, PNG displayed
+```
+
+`RemoteFigure` also works as a context manager (`with RemoteFigure() as rf: ...`).
+
+> **Note:** If you forget to call `close()`, matplotlib stays monkey-patched
+> and a `ResourceWarning` is emitted at garbage collection.
+
+#### Jupyter cell magic (`%%remote_figure`)
+
+Register the magic once per session, then use `%%remote_figure` at the top
+of any cell:
+
+```python
+# Register (once)
+%load_ext emout.distributed.remote_figure
+# or: from emout.distributed import register_magics; register_magics()
+```
+
+```python
+%%remote_figure
+data.phisp[-1, :, 100, :].plot()
+plt.xlabel("x [m]")
+```
+
+Options can be passed on the magic line:
+
+```python
+%%remote_figure --dpi 300 --fmt svg --figsize 12,6
+data.phisp[-1, :, 100, :].plot()
+```
+
+| Option | Short | Description | Default |
+| --- | --- | --- | --- |
+| `--dpi` | `-d` | Output resolution | `150` |
+| `--fmt` | `-f` | Image format (`png`, `svg`, …) | `png` |
+| `--figsize` | | `width,height` | matplotlib default |
+| `--emout-dir` | | Emout directory for session lookup | auto |
+
 ### Backtrace integration
 
 Heavy computation runs once on the server; results stay in server memory.

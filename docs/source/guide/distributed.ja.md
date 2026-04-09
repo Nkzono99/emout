@@ -93,6 +93,56 @@ with remote_figure():
 # ← ここで PNG が Jupyter に表示される
 ```
 
+#### `open()` / `close()` 形式
+
+既存コードに `with` ブロックを追加するのが面倒な場合、`RemoteFigure` の
+`open()` / `close()` を使えます:
+
+```python
+from emout.distributed import RemoteFigure
+
+rf = RemoteFigure()
+rf.open()
+data.phisp[-1, :, 100, :].plot()
+plt.xlabel("x [m]")
+rf.close()   # ← コマンドがサーバーで再生され、PNG が表示される
+```
+
+`RemoteFigure` は `with` 文でもそのまま使えます（`with RemoteFigure() as rf: ...`）。
+
+> **注意:** `close()` を呼び忘れると matplotlib がモンキーパッチされたままになり、
+> ガベージコレクション時に `ResourceWarning` が発生します。
+
+#### Jupyter セルマジック（`%%remote_figure`）
+
+セッションで 1 回マジックを登録すれば、セル先頭に `%%remote_figure` と書くだけで使えます:
+
+```python
+# 登録（1 回だけ）
+%load_ext emout.distributed.remote_figure
+# または: from emout.distributed import register_magics; register_magics()
+```
+
+```python
+%%remote_figure
+data.phisp[-1, :, 100, :].plot()
+plt.xlabel("x [m]")
+```
+
+マジック行にオプションを渡すこともできます:
+
+```python
+%%remote_figure --dpi 300 --fmt svg --figsize 12,6
+data.phisp[-1, :, 100, :].plot()
+```
+
+| オプション | 短縮 | 説明 | デフォルト |
+| --- | --- | --- | --- |
+| `--dpi` | `-d` | 出力解像度 | `150` |
+| `--fmt` | `-f` | 画像フォーマット（`png`, `svg`, …） | `png` |
+| `--figsize` | | `幅,高さ` | matplotlib デフォルト |
+| `--emout-dir` | | セッション検索用ディレクトリ | 自動 |
+
 ### backtrace 連携
 
 重い計算はサーバーで 1 回だけ実行し、結果をサーバーメモリに保持。

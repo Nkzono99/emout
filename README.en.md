@@ -154,6 +154,19 @@ with remote_figure():
     data.phisp[-1, :, 100, :].plot()
     plt.axhline(y=50, color="red")
     plt.title("Custom title")
+
+# open/close style — easy to retrofit existing code
+from emout.distributed import RemoteFigure
+
+rf = RemoteFigure()
+rf.open()
+data.phisp[-1, :, 100, :].plot()
+rf.close()
+
+# Jupyter cell magic — just add to the top of a cell
+# %load_ext emout.distributed.remote_figure
+# %%remote_figure
+# data.phisp[-1, :, 100, :].plot()
 ```
 
 Heavy backtrace computations run on the server and stay in server memory;
