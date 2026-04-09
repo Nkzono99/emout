@@ -469,6 +469,136 @@ class Data(np.ndarray):
         """Convert to a plain NumPy ndarray."""
         return np.array(self)
 
+    def _resolve_axis(self, axis) -> int:
+        """Convert an axis name or index to an array dimension index.
+
+        Parameters
+        ----------
+        axis : int or str
+            Array dimension index, or axis name (``'x'``, ``'y'``,
+            ``'z'``, ``'t'``).
+
+        Returns
+        -------
+        int
+            Array dimension index.
+        """
+        if isinstance(axis, str):
+            return self.use_axes.index(axis)
+        return axis
+
+    def mirror(self, axis=0) -> "Data":
+        """Append a reflected copy along the specified axis.
+
+        Simulates a reflection (Neumann / symmetry) boundary by
+        concatenating the array with its reverse along *axis*.  The
+        boundary point is **not** duplicated, so the length changes
+        from *n* to *2n - 1*.
+
+        Parameters
+        ----------
+        axis : int or str
+            Array dimension index, or axis name (``'x'``, ``'y'``,
+            ``'z'``, ``'t'``).
+
+        Returns
+        -------
+        Data
+            New Data object with reflected data appended.
+
+        Examples
+        --------
+        >>> d = data.phisp[-1, :, ny//2, :]
+        >>> d.mirror('z').plot()  # 2x domain with reflection
+        """
+        ax = self._resolve_axis(axis)
+        flipped = np.flip(self, axis=ax)
+        # Trim the first element of the flipped part to avoid duplicating
+        # the boundary point
+        trimmed = flipped[(slice(None),) * ax + (slice(1, None),)]
+        result = np.concatenate([np.asarray(self), trimmed], axis=ax)
+        return self._rebuild(result, ax, result.shape[ax])
+
+    def tile(self, n=1, axis=0, *, include_edge: bool = False) -> "Data":
+        """Tile (repeat) the data along the specified axis.
+
+        Simulates a periodic boundary by concatenating *n* additional
+        copies.  By default the first element of each appended copy is
+        dropped (``include_edge=False``), giving
+        ``[d0, ..., dn, d1, ..., dn, d1, ..., dn]``.
+
+        Parameters
+        ----------
+        n : int, default 1
+            Number of **additional** copies to append.
+        axis : int or str
+            Array dimension index, or axis name.
+        include_edge : bool, default False
+            If ``True``, keep the first element of each copy
+            (``[d0, ..., dn, d0, ..., dn]``).  If ``False`` (default),
+            drop it to avoid duplicating the boundary point.
+
+        Returns
+        -------
+        Data
+            New Data object with tiled data.
+
+        Examples
+        --------
+        >>> d = data.phisp[-1, :, ny//2, :]
+        >>> d.tile(1, 'z').plot()   # 2x periodic domain
+        >>> d.mirror('z').tile(1, 'z').plot()  # 4x (reflect + periodic)
+        """
+        ax = self._resolve_axis(axis)
+        arr = np.asarray(self)
+        if include_edge:
+            reps = [1] * self.ndim
+            reps[ax] = n + 1
+            result = np.tile(arr, reps)
+        else:
+            # Drop the first element of each appended copy
+            trimmed = arr[(slice(None),) * ax + (slice(1, None),)]
+            parts = [arr] + [trimmed] * n
+            result = np.concatenate(parts, axis=ax)
+        return self._rebuild(result, ax, result.shape[ax])
+
+    def _rebuild(self, new_array, changed_ax, new_len):
+        """Construct a new Data of the same subclass with updated slices.
+
+        Parameters
+        ----------
+        new_array : np.ndarray
+            The expanded array.
+        changed_ax : int
+            Array dimension that was modified.
+        new_len : int
+            New length along the changed axis.
+        """
+        # Map array dim → original axis index (t=0, z=1, y=2, x=3)
+        orig_axis = self.slice_axes[changed_ax]
+        old_slice = self.slices[orig_axis]
+        step = old_slice.step or 1
+
+        new_slices = list(self.slices)
+        new_slices[orig_axis] = slice(old_slice.start, old_slice.start + new_len * step, step)
+
+        cls = type(self)
+        obj = cls(
+            new_array,
+            filename=self.datafile.filename if self.datafile else None,
+            name=self.name,
+            xslice=new_slices[3],
+            yslice=new_slices[2],
+            zslice=new_slices[1],
+            tslice=new_slices[0],
+            slice_axes=list(self.slice_axes),
+            axisunits=self.axisunits,
+            valunit=self.valunit,
+        )
+        obj._emout_dir = getattr(self, "_emout_dir", None)
+        obj._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
+        return obj
+
     def _to_recipe_index(self):
         """Reconstruct a GridDataSeries[index]-style tuple from slices."""
         result = []
