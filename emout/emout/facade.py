@@ -194,7 +194,7 @@ class Emout:
 
         try:
             return self._grid_loader.load(name)
-        except Exception as e:
+        except (KeyError, FileNotFoundError, OSError) as e:
             raise AttributeError(f"属性 '{name}' の読み込みに失敗しました: {e}")
 
     @property

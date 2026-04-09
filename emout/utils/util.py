@@ -153,7 +153,7 @@ class RegexDict(dict):
         """
         try:
             return self[key]
-        except Exception:
+        except (KeyError, IndexError):
             return default
 
 

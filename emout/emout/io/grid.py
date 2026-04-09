@@ -90,7 +90,7 @@ class GridDataLoader:
                     arr3 = self.load(f"{dname}{axis3}")
                     vd = VectorData3d([arr1, arr2, arr3], name=name)
                     return vd
-                except Exception:
+                except (KeyError, FileNotFoundError, OSError):
                     logger.debug(
                         "VectorData3d 解決に失敗したため通常の GridDataSeries 読み込みへフォールバックします。",
                         exc_info=True,

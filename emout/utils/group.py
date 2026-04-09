@@ -54,10 +54,8 @@ class Group:
         """
         if isinstance(arg, Group):
             if len(self) != len(arg):
-                raise Exception(
-                    "Error: group size is not match (self:{}, arg:{})".format(
-                        len(self), len(arg)
-                    )
+                raise ValueError(
+                    f"group size mismatch: self has {len(self)} elements, arg has {len(arg)}"
                 )
             args = arg
         else:

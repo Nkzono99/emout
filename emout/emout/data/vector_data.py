@@ -374,20 +374,16 @@ class VectorData(utils.Group):
             axes = "".join(sorted(self.objs[0].use_axes))
 
         if not re.match(r"x[yzt]|y[xzt]|z[xyt]|t[xyz]", axes):
-            raise Exception(
-                'Error: axes "{axes}" cannot be used with Data2d'.format(axes=axes)
+            raise ValueError(
+                f'axes "{axes}" cannot be used with 2D vector data'
             )
         if axes[0] not in self.objs[0].use_axes or axes[1] not in self.objs[0].use_axes:
-            raise Exception(
-                'Error: axes "{axes}" cannot be used because {axes}-axis does not exist in this data.'.format(
-                    axes=axes
-                )
+            raise ValueError(
+                f'axes "{axes}" cannot be used because the axis does not exist in this data'
             )
         if len(self.objs[0].shape) != 2:
-            raise Exception(
-                'Error: axes "{axes}" cannot be used because data is not 2dim shape.'.format(
-                    axes=axes
-                )
+            raise ValueError(
+                f'axes "{axes}" cannot be used because data is not 2-dimensional'
             )
 
         # x: 3, y: 2, z:1 t:0

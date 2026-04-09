@@ -52,6 +52,6 @@ try:
     from .viz import Bounds3D, RenderItem, plot_surfaces, add_colorbar
 
     __all__ += ["Bounds3D", "RenderItem", "plot_surfaces", "add_colorbar"]
-except Exception:
-    # Keep the package importable without viz deps.
+except ImportError:
+    # Keep the package importable without viz deps (matplotlib etc.).
     pass

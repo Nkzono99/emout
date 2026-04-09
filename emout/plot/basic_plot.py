@@ -78,7 +78,7 @@ def plot_2dmap(
     interpolation="bilinear",
     dpi=10,
     colorbar_label="",
-    cbargs={},
+    cbargs=None,
     add_colorbar=True,
     **kwargs,
 ):
@@ -120,6 +120,9 @@ def plot_2dmap(
     AxesImage or None
         プロットしたimageデータ(保存した場合None)
     """
+    if cbargs is None:
+        cbargs = {}
+
     if mesh is None:
         x = list(range(data2d.shape[1]))
         y = list(range(data2d.shape[0]))
@@ -150,7 +153,7 @@ def plot_2dmap(
         else:
             cb = plt.colorbar(label=colorbar_label)
 
-    if "others" in cbargs and "yticklabels" in cbargs["others"]:
+    if add_colorbar and "others" in cbargs and "yticklabels" in cbargs["others"]:
         cb.ax.set_yticklabels(cbargs["others"]["yticklabels"])
 
     if title is not None:
@@ -172,7 +175,7 @@ def plot_2d_contour(
     data2d,
     mesh=None,
     levels=None,
-    colors=["black"],
+    colors=None,
     cmap=None,
     alpha=1,
     vmin=None,
@@ -242,7 +245,7 @@ def plot_2d_contour(
         "vmax": vmax,
     }
     if cmap is None:
-        kwargs["colors"] = colors
+        kwargs["colors"] = colors if colors is not None else ["black"]
     else:
         kwargs["cmap"] = cmap
     if levels is not None:
@@ -536,8 +539,8 @@ def plot_2d_vector(
     U = np.array(x_data2d)
     V = np.array(y_data2d)
 
-    x_skip = skip if type(skip) == int else skip[0]
-    y_skip = skip if type(skip) == int else skip[1]
+    x_skip = skip if isinstance(skip, int) else skip[0]
+    y_skip = skip if isinstance(skip, int) else skip[1]
     x = x[::y_skip, ::x_skip]
     y = y[::y_skip, ::x_skip]
     U = U[::y_skip, ::x_skip]
@@ -680,8 +683,8 @@ def plot_2d_streamline(
     U = np.array(x_data2d)
     V = np.array(y_data2d)
 
-    x_skip = skip if type(skip) == int else skip[0]
-    y_skip = skip if type(skip) == int else skip[1]
+    x_skip = skip if isinstance(skip, int) else skip[0]
+    y_skip = skip if isinstance(skip, int) else skip[1]
     x = x[::y_skip, ::x_skip]
     y = y[::y_skip, ::x_skip]
     U = U[::y_skip, ::x_skip]
@@ -818,9 +821,9 @@ def plot_3d_quiver(
     V = np.array(y_data3d)
     W = np.array(z_data3d)
 
-    x_skip = skip if type(skip) == int else skip[0]
-    y_skip = skip if type(skip) == int else skip[1]
-    z_skip = skip if type(skip) == int else skip[2]
+    x_skip = skip if isinstance(skip, int) else skip[0]
+    y_skip = skip if isinstance(skip, int) else skip[1]
+    z_skip = skip if isinstance(skip, int) else skip[2]
     x = x[::z_skip, ::y_skip, ::x_skip]
     y = y[::z_skip, ::y_skip, ::x_skip]
     z = z[::z_skip, ::y_skip, ::x_skip]

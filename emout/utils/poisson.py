@@ -10,8 +10,8 @@ import scipy.fft
 def poisson(
     rho: np.ndarray,
     dx: float,
-    boundary_types: List[str] = ["periodic", "periodic", "periodic"],
-    boundary_values: Tuple[Tuple[float]] = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)],
+    boundary_types: List[str] = None,
+    boundary_values: Tuple[Tuple[float]] = None,
     btypes: str = None,
     epsilon_0=cn.epsilon_0,
 ):
@@ -40,6 +40,11 @@ def poisson(
         3-dimentional of the potential [V].
 
     """
+    if boundary_types is None:
+        boundary_types = ["periodic", "periodic", "periodic"]
+    if boundary_values is None:
+        boundary_values = [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]
+
     # If a boundary condition is specified in abbreviated form by btypes, revert to the original notation.
     if btypes:
         btypes_dict = {

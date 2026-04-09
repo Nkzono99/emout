@@ -160,9 +160,7 @@ class GridDataSeries:
             step = tslice.step or 1
             tslice = slice(start, stop, step)
 
-        array = []
-        for i in indexes:
-            array.append(self[i])
+        array = [self[i] for i in indexes]
 
         axisunits = [self.tunit] + [self.axisunit] * 3
 
@@ -347,7 +345,7 @@ class MultiGridDataSeries(GridDataSeries):
     def close(self) -> None:
         """hdf5ファイルを閉じる."""
         for data in self.series:
-            self.series.h5.close()
+            data.h5.close()
 
     def time_series(
         self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice]

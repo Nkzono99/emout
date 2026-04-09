@@ -414,7 +414,7 @@ class Data(np.ndarray):
             データ軸がxyzのどの方向に対応しているか表すリスト(['x'], ['x', 'z'], etc)
         """
         to_axis = {3: "x", 2: "y", 1: "z", 0: "t"}
-        return list(map(lambda a: to_axis[a], self.slice_axes))
+        return [to_axis[a] for a in self.slice_axes]
 
     def masked(
         self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]
@@ -1037,20 +1037,16 @@ class Data2d(Data):
             axes = "".join(sorted(self.use_axes))
 
         if not re.match(r"x[yzt]|y[xzt]|z[xyt]|t[xyz]", axes):
-            raise Exception(
-                'Error: axes "{axes}" cannot be used with Data2d'.format(axes=axes)
+            raise ValueError(
+                f'axes "{axes}" cannot be used with Data2d'
             )
         if axes[0] not in self.use_axes or axes[1] not in self.use_axes:
-            raise Exception(
-                'Error: axes "{axes}" cannot be used because {axes}-axis does not exist in this data.'.format(
-                    axes=axes
-                )
+            raise ValueError(
+                f'axes "{axes}" cannot be used because the axis does not exist in this data'
             )
         if len(self.shape) != 2:
-            raise Exception(
-                'Error: axes "{axes}" cannot be used because data is not 2dim shape.'.format(
-                    axes=axes
-                )
+            raise ValueError(
+                f'axes "{axes}" cannot be used because data is not 2-dimensional (shape={self.shape})'
             )
 
         # x: 3, y: 2, z:1 t:0
@@ -1317,7 +1313,7 @@ class Data1d(Data):
             use_si = False
 
         if len(self.shape) != 1:
-            raise Exception("Error: cannot plot because data is not 1dim shape.")
+            raise ValueError("cannot plot because data is not 1-dimensional")
 
         axis = self.slice_axes[0]
         x = np.arange(*utils.slice2tuple(self.slices[axis]))
