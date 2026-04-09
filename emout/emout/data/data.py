@@ -454,19 +454,34 @@ class Data(np.ndarray):
         return tuple(result)
 
     def _try_remote_plot(self, **plot_kwargs):
-        """Dask session があれば worker 側でレンダリングして表示。なければ None を返す。"""
+        """Dask session があれば worker からスライスデータを取得しローカル描画。
+
+        ローカル matplotlib で描画するため、呼び出し後に plt.axhline() 等を
+        重ねることができる。フル 3D 配列はクライアントに転送されず、
+        スライス済みの小さな配列（2D: 数 KB〜数 MB）のみが渡される。
+        """
         emout_dir = getattr(self, "_emout_dir", None)
         if emout_dir is None:
             return None
-        from emout.distributed.remote_render import get_or_create_session, display_image
+        from emout.distributed.remote_render import get_or_create_session
         session = get_or_create_session(emout_dir)
         if session is None:
             return None
+
         recipe_index = self._to_recipe_index()
-        img = session.render_field(
-            self.name, recipe_index, **plot_kwargs,
-        ).result()
-        return display_image(img)
+        payload = session.fetch_field(self.name, recipe_index).result()
+
+        # Worker から受け取ったデータでローカル Data を再構成 → 通常の plot()
+        local_data = type(self)(
+            payload["array"],
+            name=payload["name"],
+            axisunits=payload["axisunits"],
+            valunit=payload["valunit"],
+        )
+        local_data.slices = payload["slices"]
+        local_data.slice_axes = payload["slice_axes"]
+        local_data._emout_dir = None  # 再帰防止
+        return local_data.plot(**plot_kwargs)
 
     def plot(self, **kwargs):
         """データをプロットする."""

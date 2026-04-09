@@ -83,6 +83,39 @@ def start_cluster(
     return _global_cluster.get_client()
 
 
+def connect(address: str | None = None):
+    """起動済みの emout server に接続する。
+
+    ``address`` を省略すると ``~/.emout/server.json`` から自動検出する。
+
+    Parameters
+    ----------
+    address : str | None, optional
+        Dask スケジューラのアドレス (例: ``"tcp://10.0.0.1:32332"``)。
+        ``None`` の場合は ``emout server start`` が書き出した状態ファイルから読む。
+
+    Returns
+    -------
+    dask.distributed.Client
+        接続済みの Dask クライアント。
+    """
+    from dask.distributed import Client
+    from pathlib import Path
+    import json
+
+    if address is None:
+        state_file = Path.home() / ".emout" / "server.json"
+        if not state_file.exists():
+            raise RuntimeError(
+                "emout server が起動していません。"
+                "'emout server start' を実行するか、address を明示してください。"
+            )
+        state = json.loads(state_file.read_text())
+        address = state["address"]
+
+    return Client(address)
+
+
 def stop_cluster():
     """起動済み Dask クラスタを停止する。
     

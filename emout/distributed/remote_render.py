@@ -111,7 +111,7 @@ class RemoteSession:
         self, attr_name: str, index: tuple,
         fmt: str = "png", dpi: int = 150, **plot_kwargs,
     ) -> bytes:
-        """フィールドデータ (data.phisp[-1, :, 100, :] 等) を描画して返す。"""
+        """フィールドデータ (data.phisp[-1, :, 100, :] 等) を描画して PNG bytes で返す。"""
         import matplotlib.pyplot as plt
         from io import BytesIO
 
@@ -125,6 +125,22 @@ class RemoteSession:
         fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
         return buf.getvalue()
+
+    def fetch_field(self, attr_name: str, index: tuple) -> dict:
+        """フィールドのスライス済みデータ + メタデータを返す（ローカル描画用）。
+
+        全 3D 配列ではなく、スライス済みの小さな配列（2D: 数 KB〜数 MB）だけを
+        転送するので、ローカルで plt.axhline() 等を重ねられる。
+        """
+        arr = getattr(self._data, attr_name)[index]
+        return {
+            "array": np.asarray(arr),
+            "name": arr.name,
+            "slices": arr.slices,
+            "slice_axes": arr.slice_axes,
+            "axisunits": arr.axisunits,
+            "valunit": arr.valunit,
+        }
 
     def drop(self, key: str) -> None:
         """キャッシュから結果を削除してメモリを解放する。"""
