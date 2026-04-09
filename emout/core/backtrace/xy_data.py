@@ -74,17 +74,33 @@ class XYData:
             f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
 
-    def plot(self, ax: Any = None, use_si=True, gap=None, **plot_kwargs) -> Any:
+    def plot(self, ax: Any = None, use_si=True, gap=None, offsets=None, **plot_kwargs) -> Any:
+        """Plot the x-y curve.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Target axes. If ``None``, uses the current axes.
+        use_si : bool, default True
+            Convert to SI units when available.
+        gap : float, optional
+            Insert NaN breaks where consecutive-point distance exceeds *gap*.
+        offsets : tuple of (float or str), optional
+            ``(x_offset, y_offset)`` applied after unit conversion.
+        **plot_kwargs
+            Forwarded to :func:`matplotlib.axes.Axes.plot`.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
         """
-        折れ線プロット: x vs y
-        - ax: matplotlib.axes.Axes を渡すとその上にプロット
-        - plot_kwargs: matplotlib.pyplot.plot に渡すキーワード (例: color, linestyle, label, alpha, など)
-        """
+        from emout.utils.util import apply_offset
+
         if ax is None:
             ax = plt.gca()
 
-        xs = self.x
-        ys = self.y
+        xs = self.x.copy()
+        ys = self.y.copy()
 
         xlabel = self.xlabel
         ylabel = self.ylabel
@@ -94,6 +110,10 @@ class XYData:
             ys = self.units[1].reverse(ys)
             xlabel = f"{xlabel} [{self.units[0].unit}]"
             ylabel = f"{ylabel} [{self.units[1].unit}]"
+
+        if offsets is not None:
+            xs = apply_offset(xs, offsets[0])
+            ys = apply_offset(ys, offsets[1])
 
         if gap:
             xs, ys = _insert_nans_for_gaps(xs, ys, gap)
@@ -179,14 +199,29 @@ class MultiXYData:
             f"xlabel={self.xlabel}, ylabel={self.ylabel}>"
         )
 
-    def plot(self, ax: Any = None, use_si=True, gap=None, **plot_kwargs) -> Any:
+    def plot(self, ax: Any = None, use_si=True, gap=None, offsets=None, **plot_kwargs) -> Any:
+        """Plot all series as overlaid line plots.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Target axes.
+        use_si : bool, default True
+            Convert to SI units when available.
+        gap : float, optional
+            Insert NaN breaks where consecutive-point distance exceeds *gap*.
+        offsets : tuple of (float or str), optional
+            ``(x_offset, y_offset)`` applied after unit conversion.
+        **plot_kwargs
+            Forwarded to :func:`matplotlib.axes.Axes.plot`.
+            ``alpha`` may be a scalar or a per-series array of length *N*.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
         """
-        複数シリーズを重ねて折れ線プロットする。
-        - ax: matplotlib.axes.Axes を渡すとその上にプロット
-        - plot_kwargs: matplotlib.pyplot.plot に渡す追加キーワード
-            * color, linestyle, label, etc.
-            * alpha: スカラー値 OR 各系列ごと (長さ N_series の 1D array)
-        """
+        from emout.utils.util import apply_offset
+
         if ax is None:
             ax = plt.gca()
 
@@ -195,12 +230,16 @@ class MultiXYData:
 
         for i in range(n_series):
             iend = self.last_indexes[i]
-            xs = self.x[i, :iend]
-            ys = self.y[i, :iend]
+            xs = self.x[i, :iend].copy()
+            ys = self.y[i, :iend].copy()
 
             if self.units and use_si:
                 xs = self.units[0].reverse(xs)
                 ys = self.units[1].reverse(ys)
+
+            if offsets is not None:
+                xs = apply_offset(xs, offsets[0])
+                ys = apply_offset(ys, offsets[1])
 
             if gap:
                 xs, ys = _insert_nans_for_gaps(xs, ys, gap)

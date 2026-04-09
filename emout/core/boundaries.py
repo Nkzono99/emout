@@ -768,6 +768,36 @@ SUPPORTED_BOUNDARY_TYPES: Tuple[str, ...] = tuple(sorted(_BOUNDARY_CLASS_MAP))
 # ---------------------------------------------------------------------------
 
 
+def _offset_mesh(mesh_surface, offsets):
+    """Return a copy of *mesh_surface* with vertices shifted by *offsets*.
+
+    Parameters
+    ----------
+    mesh_surface : MeshSurface3D
+        Source mesh.
+    offsets : tuple of (float or str)
+        ``(x_offset, y_offset, z_offset)``.
+
+    Returns
+    -------
+    MeshSurface3D
+        Shifted mesh (a lightweight wrapper).
+    """
+    from emout.utils.util import apply_offset
+
+    V, F = mesh_surface.mesh()
+    V = V.copy()
+    for axis_idx in range(min(3, len(offsets))):
+        if offsets[axis_idx] is not None:
+            V[:, axis_idx] = apply_offset(V[:, axis_idx].copy(), offsets[axis_idx])
+
+    class _OffsetMesh(MeshSurface3D):
+        def mesh(self):
+            return V, F
+
+    return _OffsetMesh()
+
+
 class BoundaryCollection:
     """Collection of boundaries discovered in ``data.inp``'s finbound config.
 
@@ -936,16 +966,31 @@ class BoundaryCollection:
         *,
         ax=None,
         use_si: bool = True,
+        offsets=None,
         per: Optional[Mapping[int, Mapping[str, Any]]] = None,
         style: str = "solid",
         solid_color="0.7",
         alpha: float = 0.6,
         **kwargs,
     ):
-        """境界メッシュを 3D で簡易表示する。
+        """Plot boundary meshes in 3-D.
 
-        フィールドなしで境界形状だけを確認したい場合に使う。
-        フィールドと重ねたい場合は ``Data3d.plot_surfaces(data.boundaries)`` を使う。
+        Use this to inspect boundary geometry without a field overlay.
+        To overlay on field data, use ``Data3d.plot_surfaces(data.boundaries)``.
+
+        Parameters
+        ----------
+        ax : Axes3D, optional
+            Target 3-D axes. Created if ``None``.
+        use_si : bool, default True
+            Convert to SI metres.
+        offsets : tuple of (float or str), optional
+            ``(x_offset, y_offset, z_offset)`` applied to mesh vertices.
+            Accepts ``"left"``, ``"center"``, ``"right"`` or numeric values.
+        per : dict, optional
+            Per-boundary mesh overrides.
+        style, solid_color, alpha
+            Rendering style forwarded to :class:`RenderItem`.
         """
         from emout.distributed.remote_figure import (
             is_recording,
@@ -961,6 +1006,7 @@ class BoundaryCollection:
             record_boundary_plot(
                 {
                     "use_si": use_si,
+                    "offsets": offsets,
                     "per": per,
                     "style": style,
                     "solid_color": solid_color,
@@ -976,6 +1022,10 @@ class BoundaryCollection:
             ax = fig.add_subplot(111, projection="3d")
 
         composite = self.mesh(use_si=use_si, per=per)
+
+        if offsets is not None:
+            composite = _offset_mesh(composite, offsets)
+
         item = RenderItem(composite, style=style, solid_color=solid_color, alpha=alpha, **kwargs)
         _plot_surfaces(ax, field=None, surfaces=item)
         return ax

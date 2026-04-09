@@ -77,18 +77,34 @@ class HeatmapData:
         """
         return f"<HeatmapData: shape={self.Z.shape}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
 
-    def plot(self, ax=None, cmap="viridis", use_si=True, **plot_kwargs):
+    def plot(self, ax=None, cmap="viridis", use_si=True, offsets=None, **plot_kwargs):
+        """Plot the heatmap with :func:`pcolormesh`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Target axes. If ``None``, uses the current axes.
+        cmap : str, default ``"viridis"``
+            Colormap name.
+        use_si : bool, default True
+            Convert axes to SI units when unit info is available.
+        offsets : tuple of (float or str), optional
+            ``(x_offset, y_offset)`` applied to the grid axes.
+            Accepts ``"left"``, ``"center"``, ``"right"`` or a numeric shift.
+        **plot_kwargs
+            Forwarded to :func:`matplotlib.axes.Axes.pcolormesh`.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
         """
-        pcolormesh によるヒートマップを描画する。
-        - ax: matplotlib.axes.Axes を渡すか、None の場合は新規 Figure/Axes を作成
-        - cmap: カラーマップ（例：'viridis', 'plasma', etc.）
-        - plot_kwargs: pcolormesh に渡す追加キーワード (例：shading="auto")
-        """
+        from emout.utils.util import apply_offset
+
         if ax is None:
             ax = plt.gca()
 
-        X = self.X
-        Y = self.Y
+        X = self.X.copy()
+        Y = self.Y.copy()
 
         xlabel = self.xlabel
         ylabel = self.ylabel
@@ -99,6 +115,10 @@ class HeatmapData:
 
             xlabel = f"{xlabel} [{self.units[0].unit}]"
             ylabel = f"{ylabel} [{self.units[1].unit}]"
+
+        if offsets is not None:
+            X = apply_offset(X, offsets[0])
+            Y = apply_offset(Y, offsets[1])
 
         mesh = ax.pcolormesh(X, Y, self.Z, cmap=cmap, **plot_kwargs)
 
