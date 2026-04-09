@@ -99,7 +99,13 @@ class DaskConfig:
 
     @property
     def scheduler_port(self) -> int:
-        return int(os.environ.get("EMOUT_DASK_SCHED_PORT", "8786"))
+        env_port = os.environ.get("EMOUT_DASK_SCHED_PORT")
+        if env_port:
+            return int(env_port)
+        # Hash the UID into a port range (10000-60000) to avoid collisions
+        # when multiple users run 'emout server start' on the same node.
+        uid = os.getuid()
+        return 10000 + (uid % 50000)
 
     @property
     def partition(self) -> str:
