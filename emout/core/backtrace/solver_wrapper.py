@@ -321,7 +321,7 @@ class BacktraceWrapper:
                     x=x, y=y, z=z, vx=vx, vy=vy, vz=vz,
                     ispec=ispec, istep=istep, dt=dt,
                     max_step=max_step, use_adaptive_dt=use_adaptive_dt,
-                    n_threads=n_threads, remote=False,  # worker 側では再帰しない
+                    n_threads=n_threads, remote=False,  # no recursion on the worker side
                     **kwargs,
                 ).result()
                 return RemoteProbabilityResult(session, key)
