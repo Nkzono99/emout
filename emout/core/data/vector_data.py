@@ -17,6 +17,7 @@ import emout.plot.basic_plot as emplt
 import emout.utils as utils
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import UnitTranslator
+from emout.utils.util import apply_offset
 
 
 class VectorData(utils.Group):
@@ -435,34 +436,9 @@ class VectorData(utils.Group):
             x_data = self.x_data
             y_data = self.y_data
 
-        def _offseted(line, offset):
-            """位置指定を実座標オフセットへ変換する。
-            
-            Parameters
-            ----------
-            line : object
-                オフセット適用対象の座標列です。
-            offset : object
-                適用するオフセット値またはキーワードです。
-            Returns
-            -------
-            object
-                処理結果です。
-            """
-            line = line.astype(float)
-            if offset == "left":
-                line -= line[0]
-            elif offset == "center":
-                line -= line[len(line) // 2]
-            elif offset == "right":
-                line -= line[-1]
-            else:
-                line += offset
-            return line
-
         if offsets is not None:
-            x = _offseted(x, offsets[0])
-            y = _offseted(y, offsets[1])
+            x = apply_offset(x.astype(float), offsets[0])
+            y = apply_offset(y.astype(float), offsets[1])
 
         kwargs["xlabel"] = kwargs.get("xlabel", None) or _xlabel
         kwargs["ylabel"] = kwargs.get("ylabel", None) or _ylabel

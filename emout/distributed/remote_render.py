@@ -98,45 +98,37 @@ class RemoteSession:
 
     # -- rendering (PNG bytes returned to client) ----------------------------
 
-    def render_pair(
-        self, key: str, var1: str, var2: str,
-        fmt: str = "png", dpi: int = 150, **plot_kwargs,
-    ) -> bytes:
-        """Render a 2-D heatmap of a cached probability result and return image bytes.
+    @staticmethod
+    def _render_to_bytes(draw_fn, fmt: str = "png", dpi: int = 150) -> bytes:
+        """Run *draw_fn* on a fresh figure and return the image bytes.
 
         Parameters
         ----------
-        key : str
-            Cache key referencing a previously computed probability result.
-        var1 : str
-            Name of the first axis variable (e.g. ``"vx"``).
-        var2 : str
-            Name of the second axis variable (e.g. ``"vz"``).
-        fmt : str, optional
-            Image format (``"png"``, ``"svg"``, etc.), by default ``"png"``.
-        dpi : int, optional
-            Output resolution in dots per inch, by default 150.
-        **plot_kwargs
-            Additional keyword arguments forwarded to ``HeatmapData.plot()``.
-
-        Returns
-        -------
-        bytes
-            Rendered image as raw bytes in the requested format.
+        draw_fn : callable(fig, ax)
+            Function that draws onto *fig* / *ax*.
+        fmt, dpi : str, int
+            Output format and resolution.
         """
         import matplotlib.pyplot as plt
         from io import BytesIO
 
-        result = self._cache[key]
-        heatmap = result.pair(var1, var2)
-
         fig, ax = plt.subplots()
-        heatmap.plot(ax=ax, **plot_kwargs)
-
+        draw_fn(fig, ax)
         buf = BytesIO()
         fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
         return buf.getvalue()
+
+    def render_pair(
+        self, key: str, var1: str, var2: str,
+        fmt: str = "png", dpi: int = 150, **plot_kwargs,
+    ) -> bytes:
+        """Render a 2-D heatmap of a cached probability result and return image bytes."""
+        result = self._cache[key]
+        heatmap = result.pair(var1, var2)
+        return self._render_to_bytes(
+            lambda fig, ax: heatmap.plot(ax=ax, **plot_kwargs), fmt, dpi,
+        )
 
     def fetch_heatmap_data(self, key: str, var1: str, var2: str) -> dict:
         """Return serialised HeatmapData arrays for local plotting.
@@ -215,55 +207,40 @@ class RemoteSession:
         self, key: str, energy_bins=None, scale: str = "log",
         fmt: str = "png", dpi: int = 150,
     ) -> bytes:
+        """Render energy spectrum of a cached probability result."""
         import matplotlib.pyplot as plt
-        from io import BytesIO
-
         result = self._cache[key]
-        fig, ax = plt.subplots()
-        plt.sca(ax)
-        result.plot_energy_spectrum(energy_bins=energy_bins, scale=scale)
 
-        buf = BytesIO()
-        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-        return buf.getvalue()
+        def _draw(fig, ax):
+            plt.sca(ax)
+            result.plot_energy_spectrum(energy_bins=energy_bins, scale=scale)
+
+        return self._render_to_bytes(_draw, fmt, dpi)
 
     def render_backtrace_pair(
         self, key: str, var1: str, var2: str,
         fmt: str = "png", dpi: int = 150, **plot_kwargs,
     ) -> bytes:
-        import matplotlib.pyplot as plt
-        from io import BytesIO
-
+        """Render a backtrace XY pair as a line plot."""
         result = self._cache[key]
         xy = result.pair(var1, var2)
-
-        fig, ax = plt.subplots()
-        xy.plot(ax=ax, **plot_kwargs)
-
-        buf = BytesIO()
-        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-        return buf.getvalue()
+        return self._render_to_bytes(
+            lambda fig, ax: xy.plot(ax=ax, **plot_kwargs), fmt, dpi,
+        )
 
     def render_field(
         self, attr_name: str, index: tuple,
         fmt: str = "png", dpi: int = 150, **plot_kwargs,
     ) -> bytes:
-        """フィールドデータ (data.phisp[-1, :, 100, :] 等) を描画して PNG bytes で返す。"""
+        """Render a sliced field (e.g. data.phisp[-1, :, 100, :]) as image bytes."""
         import matplotlib.pyplot as plt
-        from io import BytesIO
-
         arr = getattr(self._data, attr_name)[index]
 
-        fig, ax = plt.subplots()
-        plt.sca(ax)
-        arr.plot(**plot_kwargs)
+        def _draw(fig, ax):
+            plt.sca(ax)
+            arr.plot(**plot_kwargs)
 
-        buf = BytesIO()
-        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-        return buf.getvalue()
+        return self._render_to_bytes(_draw, fmt, dpi)
 
     def fetch_field(self, attr_name: str, index: tuple) -> dict:
         """フィールドのスライス済みデータ + メタデータを返す（ローカル描画用）。
@@ -286,40 +263,29 @@ class RemoteSession:
         use_si: bool = True, fmt: str = "png", dpi: int = 150,
         **plot_kwargs,
     ) -> bytes:
-        """Data3d.plot_surfaces を worker 上で実行し PNG bytes を返す。"""
-        import matplotlib.pyplot as plt
-        from io import BytesIO
-
+        """Render Data3d.plot_surfaces on the worker and return image bytes."""
         data3d = getattr(self._data, attr_name)[t_index]
         boundaries = self._data.boundaries
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        data3d.plot_surfaces(
-            surfaces=boundaries, ax=ax, use_si=use_si, **plot_kwargs,
-        )
+        def _draw(fig, ax):
+            import matplotlib.pyplot as plt
+            ax = fig.add_subplot(111, projection="3d")
+            data3d.plot_surfaces(
+                surfaces=boundaries, ax=ax, use_si=use_si, **plot_kwargs,
+            )
 
-        buf = BytesIO()
-        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-        return buf.getvalue()
+        return self._render_to_bytes(_draw, fmt, dpi)
 
     def render_boundaries(
         self, use_si: bool = True, fmt: str = "png", dpi: int = 150,
         **plot_kwargs,
     ) -> bytes:
-        """BoundaryCollection.plot() を worker 上で実行し PNG bytes を返す。"""
-        import matplotlib.pyplot as plt
-        from io import BytesIO
+        """Render BoundaryCollection.plot() on the worker and return image bytes."""
+        def _draw(fig, ax):
+            ax = fig.add_subplot(111, projection="3d")
+            self._data.boundaries.plot(ax=ax, use_si=use_si, **plot_kwargs)
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        self._data.boundaries.plot(ax=ax, use_si=use_si, **plot_kwargs)
-
-        buf = BytesIO()
-        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-        return buf.getvalue()
+        return self._render_to_bytes(_draw, fmt, dpi)
 
     def replay_figure(self, commands: list, fmt: str = "png", dpi: int = 150) -> bytes:
         """コマンドリストを順に再生し、レンダリング結果を返す。

@@ -16,6 +16,7 @@ import numpy as np
 import emout.utils as utils
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo
+from emout.utils.util import apply_offset
 
 _REMOTE_PLOT_HANDLED = object()
 
@@ -798,29 +799,6 @@ class Data3d(Data):
         if mode == "auto":
             mode = "cont"
 
-        def _offseted(line, offset):
-            """位置指定を実座標オフセットへ変換する。
-            
-            Parameters
-            ----------
-            line : object
-                オフセット適用対象の座標列です。
-            offset : object
-                適用するオフセット値またはキーワードです。
-            Returns
-            -------
-            object
-                処理結果です。
-            """
-            if offset == "left":
-                line -= line.ravel()[0]
-            elif offset == "center":
-                line -= line.ravel()[line.size // 2]
-            elif offset == "right":
-                line -= line.ravel()[-1]
-            else:
-                line += offset
-            return line
 
         if mode == "cont":
             from emout.plot.contour3d import contour3d
@@ -834,9 +812,9 @@ class Data3d(Data):
 
             if offsets is not None:
                 origin_xyz = (
-                    _offseted(0.0, offsets[0]),
-                    _offseted(0.0, offsets[1]),
-                    _offseted(0.0, offsets[2]),
+                    apply_offset(0.0, offsets[0]),
+                    apply_offset(0.0, offsets[1]),
+                    apply_offset(0.0, offsets[2]),
                 )
             else:
                 origin_xyz = (0.0, 0.0, 0.0)
@@ -1173,29 +1151,6 @@ class Data2d(Data):
             _ylabel = axes[1]
             _title = self.name
 
-        def _offseted(line, offset):
-            """位置指定を実座標オフセットへ変換する。
-            
-            Parameters
-            ----------
-            line : object
-                オフセット適用対象の座標列です。
-            offset : object
-                適用するオフセット値またはキーワードです。
-            Returns
-            -------
-            object
-                処理結果です。
-            """
-            if offset == "left":
-                line -= line.ravel()[0]
-            elif offset == "center":
-                line -= line.ravel()[line.size // 2]
-            elif offset == "right":
-                line -= line.ravel()[-1]
-            else:
-                line += offset
-            return line
 
         kwargs["xlabel"] = kwargs.get("xlabel", None) or _xlabel
         kwargs["ylabel"] = kwargs.get("ylabel", None) or _ylabel
@@ -1220,17 +1175,17 @@ class Data2d(Data):
                 z = np.zeros_like(mesh[0]) + z
 
             if offsets is not None:
-                x = _offseted(x, offsets[0])
-                y = _offseted(y, offsets[1])
-                z = _offseted(z, offsets[2])
-                val = _offseted(val, offsets[3])
+                x = apply_offset(x, offsets[0])
+                y = apply_offset(y, offsets[1])
+                z = apply_offset(z, offsets[2])
+                val = apply_offset(val, offsets[3])
 
             imgs = [emplt.plot_surface(x, y, z, val, **kwargs)]
         else:
             if offsets is not None:
-                x = _offseted(x, offsets[0])
-                y = _offseted(y, offsets[1])
-                z = _offseted(z, offsets[2])
+                x = apply_offset(x, offsets[0])
+                y = apply_offset(y, offsets[1])
+                z = apply_offset(z, offsets[2])
             mesh = np.meshgrid(x, y)
 
             imgs = []
@@ -1438,33 +1393,9 @@ class Data1d(Data):
             _xlabel = self.use_axes[0]
             _ylabel = self.name
 
-        def _offseted(line, offset):
-            """位置指定を実座標オフセットへ変換する。
-            
-            Parameters
-            ----------
-            line : object
-                オフセット適用対象の座標列です。
-            offset : object
-                適用するオフセット値またはキーワードです。
-            Returns
-            -------
-            object
-                処理結果です。
-            """
-            if offset == "left":
-                line -= line[0]
-            elif offset == "center":
-                line -= line[len(line) // 2]
-            elif offset == "right":
-                line -= line[-1]
-            else:
-                line += offset
-            return line
-
         if offsets is not None:
-            x = _offseted(x, offsets[0])
-            y = _offseted(y, offsets[1])
+            x = apply_offset(x, offsets[0])
+            y = apply_offset(y, offsets[1])
 
         kwargs["xlabel"] = kwargs.get("xlabel", None) or _xlabel
         kwargs["ylabel"] = kwargs.get("ylabel", None) or _ylabel

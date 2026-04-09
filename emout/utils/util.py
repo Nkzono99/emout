@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import scipy.interpolate as interp
@@ -92,6 +93,38 @@ def range_with_slice(slice_obj, maxlen):
 
     step = slice_obj.step or 1
     return range(start, stop, step)
+
+
+def apply_offset(
+    line: "np.ndarray",
+    offset: Union[float, str],
+) -> "np.ndarray":
+    """Apply a positional offset to a coordinate array.
+
+    Parameters
+    ----------
+    line : numpy.ndarray
+        Coordinate values to shift.
+    offset : float or str
+        ``"left"`` sets the first element to 0, ``"center"`` centres on
+        the middle element, ``"right"`` sets the last element to 0.
+        A numeric value is added directly.
+
+    Returns
+    -------
+    numpy.ndarray
+        Shifted array (modified in-place when possible).
+    """
+    flat = line.ravel()
+    if offset == "left":
+        line -= flat[0]
+    elif offset == "center":
+        line -= flat[len(flat) // 2]
+    elif offset == "right":
+        line -= flat[-1]
+    else:
+        line += offset
+    return line
 
 
 class RegexDict(dict):
