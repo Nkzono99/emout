@@ -8,7 +8,6 @@ exposes them as attributes, handling sparse-array indexing and the
 import re
 
 import f90nml
-from numpy import isin
 
 from emout.utils.units import Units
 

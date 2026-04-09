@@ -392,15 +392,4 @@ class Units:
         self.EC = EC.set_name("Electric conductivity", unit="S/m")
         """Unit translator for Electric conductivity [S/m]"""
 
-    def translators(self):
-        """変換器一覧を返す（現状は未実装）。
 
-        Returns
-        -------
-        None
-            現在の実装では `None` を返します。
-        """
-        return
-        # translators = inspect.getmembers(
-        #     self, lambda x: isinstance(x, UnitTranslator))
-        # return list(map(lambda x: x[1], translators))

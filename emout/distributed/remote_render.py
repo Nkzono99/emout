@@ -665,7 +665,7 @@ def get_or_create_session(
     スクリプトに明示的に書かなくても、``emout server start`` しておけば
     透過的にリモート実行される。
     """
-    if sys.version_info.minor < 10:
+    if sys.version_info < (3, 10):
         return None
 
     try:

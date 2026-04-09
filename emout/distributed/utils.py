@@ -23,7 +23,7 @@ def run_backend(func, *args, **kwargs):
     object
         The return value of *func*.
     """
-    if sys.version_info.minor < 10:
+    if sys.version_info < (3, 10):
         return func(*args, **kwargs)
 
     from dask import delayed

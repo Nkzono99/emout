@@ -62,7 +62,7 @@ class VectorData(utils.Group):
         elif "name" in attrs:
             pass
         elif hasattr(x_data, "name"):
-            attrs["name"] = name
+            attrs["name"] = x_data.name
         else:
             attrs["name"] = ""
 

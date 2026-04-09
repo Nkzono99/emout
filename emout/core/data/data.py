@@ -312,7 +312,7 @@ class Data(np.ndarray):
         """
         index = self.slice_axes[ax]
         axis_slice = self.slices[index]
-        return np.array(*utils.slice2tuple(axis_slice))
+        return np.arange(*utils.slice2tuple(axis_slice))
 
     @property
     def x(self) -> np.ndarray:
@@ -549,11 +549,11 @@ class Data(np.ndarray):
             最大値, by default None
         """
         if use_si:
-            vmin = vmin or self.valunit.reverse(self.min())
-            vmax = vmax or self.valunit.reverse(self.max())
+            vmin = vmin if vmin is not None else self.valunit.reverse(self.min())
+            vmax = vmax if vmax is not None else self.valunit.reverse(self.max())
         else:
-            vmin = vmin or self.min()
-            vmax = vmax or self.max()
+            vmin = vmin if vmin is not None else self.min()
+            vmax = vmax if vmax is not None else self.max()
 
         updater = FrameUpdater(
             self, axis, title, notitle, offsets, use_si, vmin=vmin, vmax=vmax, **kwargs
@@ -632,11 +632,19 @@ class Data(np.ndarray):
         object
             処理結果です。
         """
+        if to_html:
+            warnings.warn(
+                "The 'to_html' flag is deprecated. "
+                "Please use gifplot(action='to_html') instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if return_updater:
             warnings.warn(
                 "The 'return_updater' flag is deprecated. "
                 "Please use gifplot(action='frames') instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             action = "frames"
 
@@ -714,9 +722,7 @@ class Data4d(Data):
         None
             戻り値はありません。
         """
-        if mode == "auto":
-            mode = "".join(sorted(self.use_axes))
-        pass
+        raise NotImplementedError("Data4d.plot() is not yet implemented.")
 
 
 class Data3d(Data):

@@ -471,7 +471,7 @@ class MultiGridDataSeries(GridDataSeries):
             it = iter(data)
             next(it)  # 先頭データを捨てる
             iters.append(it)
-        return chain(iters)
+        return chain.from_iterable(iters)
 
     def __len__(self) -> int:
         # 先頭データは前のデータの最後尾と重複しているためカウントしない

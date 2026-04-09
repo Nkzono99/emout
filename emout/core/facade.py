@@ -234,7 +234,7 @@ class Emout:
         try:
             return self._grid_loader.load(name)
         except (KeyError, FileNotFoundError, OSError) as e:
-            raise AttributeError(f"属性 '{name}' の読み込みに失敗しました: {e}")
+            raise AttributeError(f"属性 '{name}' の読み込みに失敗しました: {e}") from e
 
     @property
     def boundaries(self):
