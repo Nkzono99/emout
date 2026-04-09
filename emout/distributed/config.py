@@ -81,6 +81,22 @@ def _get_local_ip() -> str:
     return best_ip
 
 
+def _pick_port(ip: str, max_retries: int = 20) -> int:
+    """Choose a free port derived from the user's UID.
+
+    Starts with ``10000 + (UID % 50000)`` and increments until a port
+    that is not already in use is found.
+    """
+    base = 10000 + (os.getuid() % 50000)
+    for i in range(max_retries):
+        port = base + i
+        if port > 65535:
+            break
+        if not _is_port_open(ip, port, timeout=0.3):
+            return port
+    return base  # fallback: return the original even if probe failed
+
+
 def _is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
     """指定 IP:port に TCP 接続できるか簡易チェック。"""
     try:
@@ -102,10 +118,7 @@ class DaskConfig:
         env_port = os.environ.get("EMOUT_DASK_SCHED_PORT")
         if env_port:
             return int(env_port)
-        # Hash the UID into a port range (10000-60000) to avoid collisions
-        # when multiple users run 'emout server start' on the same node.
-        uid = os.getuid()
-        return 10000 + (uid % 50000)
+        return _pick_port(self.scheduler_ip)
 
     @property
     def partition(self) -> str:
