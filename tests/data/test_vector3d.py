@@ -1,6 +1,6 @@
 import emout
 
-from emout.emout.data import GridDataSeries
+from emout.core.data import GridDataSeries
 from tests.conftest import create_h5file, create_inpfile
 
 

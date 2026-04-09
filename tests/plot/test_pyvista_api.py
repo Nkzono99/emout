@@ -1,7 +1,7 @@
 import numpy as np
 
-from emout.emout.data.data import Data2d, Data3d
-from emout.emout.data.vector_data import VectorData
+from emout.core.data.data import Data2d, Data3d
+from emout.core.data.vector_data import VectorData
 import emout.plot.pyvista_plot as pvplot
 
 

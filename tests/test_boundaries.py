@@ -1,8 +1,8 @@
-"""Tests for :mod:`emout.emout.boundaries`.
+"""Tests for :mod:`emout.core.boundaries`.
 
 These tests build an :class:`emout.utils.InpFile` from a temporary namelist
 file (matching the MPIEMSES3D finbound format) and instantiate
-:class:`emout.emout.boundaries.BoundaryCollection` directly, without going
+:class:`emout.core.boundaries.BoundaryCollection` directly, without going
 through the full ``Emout`` facade. That keeps the tests independent of the
 output-file discovery logic and lets us cover sparse/indexed parameter
 access, per-boundary overrides, unit conversion, and composite mesh
@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from emout.emout.boundaries import (
+from emout.core.boundaries import (
     BoundaryCollection,
     CircleBoundary,
     CuboidBoundary,

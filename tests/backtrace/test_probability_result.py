@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from emout.emout.backtrace import probability_result as probability_result_module
-from emout.emout.backtrace.probability_result import ProbabilityResult
+from emout.core.backtrace import probability_result as probability_result_module
+from emout.core.backtrace.probability_result import ProbabilityResult
 
 
 class _IdentityConverter:

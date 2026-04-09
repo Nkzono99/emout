@@ -301,7 +301,7 @@ def test_resolution_scale_rejects_non_positive():
 
 def test_collection_mesh_broadcasts_resolution_scale_to_every_boundary(tmp_path):
     """data.boundaries.mesh(resolution_scale=N) hits every entry."""
-    from emout.emout.boundaries import BoundaryCollection
+    from emout.core.boundaries import BoundaryCollection
     from emout.utils import InpFile, Units
 
     inp_path = tmp_path / "plasma.inp"
@@ -814,8 +814,8 @@ def test_data3d_plot_surfaces_accepts_boundary_collection(tmp_path):
     or
         data.phisp[-1].plot_surfaces(data.boundaries[0] + data.boundaries[1])
     """
-    from emout.emout.boundaries import BoundaryCollection
-    from emout.emout.data.data import Data3d
+    from emout.core.boundaries import BoundaryCollection
+    from emout.core.data.data import Data3d
     from emout.utils import InpFile, Units
     from emout.utils.units import UnitTranslator
 
@@ -874,7 +874,7 @@ def test_data3d_plot_surfaces_accepts_boundary_collection(tmp_path):
 
 
 def test_data3d_plot_surfaces_wraps_field_and_mesh():
-    from emout.emout.data.data import Data3d
+    from emout.core.data.data import Data3d
     from emout.utils.units import UnitTranslator
 
     nx, ny, nz = 8, 7, 6

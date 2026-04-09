@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import emout.plot.basic_plot as basic_plot
-from emout.emout.data.data import Data2d
+from emout.core.data.data import Data2d
 
 
 def _make_data2d():

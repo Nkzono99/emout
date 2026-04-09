@@ -24,7 +24,7 @@ class FakeFuture:
 
 def test_fetch_field_returns_numpy_payload():
     from emout.distributed.remote_render import RemoteSession
-    from emout.emout.data.data import Data2d
+    from emout.core.data.data import Data2d
 
     data = Data2d(np.arange(4).reshape(2, 2), filename="dummy.h5", name="phisp")
 
@@ -48,7 +48,7 @@ def test_fetch_field_returns_numpy_payload():
 def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch):
     from emout.distributed import remote_figure
     from emout.distributed import remote_render
-    from emout.emout.data.data import Data2d
+    from emout.core.data.data import Data2d
 
     commands_seen = []
     displayed = []
@@ -144,7 +144,7 @@ def test_get_or_create_session_cache_key_includes_input_path(monkeypatch):
 
 def test_backtrace_wrapper_remote_uses_full_emout_open_kwargs(monkeypatch):
     from emout.distributed import remote_render
-    from emout.emout.backtrace.solver_wrapper import BacktraceWrapper
+    from emout.core.backtrace.solver_wrapper import BacktraceWrapper
 
     calls = []
 

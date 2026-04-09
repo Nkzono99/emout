@@ -959,7 +959,7 @@ class Data3d(Data):
 
         import matplotlib.pyplot as plt
 
-        from emout.emout.boundaries import Boundary, BoundaryCollection
+        from emout.core.boundaries import Boundary, BoundaryCollection
         from emout.plot.surface_cut import (
             Field3D,
             MeshSurface3D,
