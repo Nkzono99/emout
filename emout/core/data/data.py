@@ -890,6 +890,57 @@ class Data3d(Data):
         """Alias for :meth:`plot_pyvista`."""
         return self.plot_pyvista(*args, **kwargs)
 
+    def to_vtk(
+        self,
+        filename: PathLike,
+        use_si: bool = True,
+        array_name: str = None,
+    ) -> Path:
+        """Export to VTK ImageData format (``.vti``).
+
+        Parameters
+        ----------
+        filename : path-like
+            Destination file path. The ``.vti`` extension is appended
+            automatically when missing.
+        use_si : bool, default True
+            Convert values and grid spacing to SI units.
+        array_name : str, optional
+            Name of the scalar array in the VTK file.
+            Defaults to :attr:`name`.
+
+        Returns
+        -------
+        Path
+            Path to the written file.
+        """
+        filepath = Path(filename)
+        if filepath.suffix != ".vti":
+            filepath = filepath.with_suffix(".vti")
+
+        array_name = array_name or self.name or "data"
+
+        if use_si and self.valunit is not None:
+            data = np.asarray(self.val_si, dtype=np.float64)
+            dx = float(self.axisunits[-1].reverse(1.0))
+            dy = float(self.axisunits[-2].reverse(1.0))
+            dz = float(self.axisunits[-3].reverse(1.0))
+        else:
+            data = np.asarray(self, dtype=np.float64)
+            dx = dy = dz = 1.0
+
+        try:
+            import pyvista as pv
+
+            nz, ny, nx = data.shape
+            grid = pv.ImageData(dimensions=(nx + 1, ny + 1, nz + 1), spacing=(dx, dy, dz))
+            grid.cell_data[array_name] = data.ravel(order="F")
+            grid.save(str(filepath))
+        except ImportError:
+            _write_vti_xml(filepath, data, dx, dy, dz, array_name)
+
+        return filepath
+
     def plot_surfaces(
         self,
         surfaces,
@@ -1429,3 +1480,48 @@ class Data1d(Data):
             return None
         else:
             return line
+
+
+def _write_vti_xml(filepath, data, dx, dy, dz, array_name):
+    """Write a VTK ImageData (.vti) XML file without PyVista.
+
+    Parameters
+    ----------
+    filepath : Path
+        Destination file path.
+    data : np.ndarray
+        3-D data array in (z, y, x) order.
+    dx, dy, dz : float
+        Grid spacing.
+    array_name : str
+        Scalar array name.
+    """
+    import base64
+    import struct
+
+    nz, ny, nx = data.shape
+    flat = data.astype(np.float64).ravel(order="F")
+    raw = flat.tobytes()
+    nbytes = len(raw)
+    header = struct.pack("<I", nbytes)
+    encoded = base64.b64encode(header + raw).decode("ascii")
+
+    xml = (
+        '<?xml version="1.0"?>\n'
+        '<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian">\n'
+        f'  <ImageData WholeExtent="0 {nx} 0 {ny} 0 {nz}" '
+        f'Origin="0 0 0" Spacing="{dx} {dy} {dz}">\n'
+        f'    <Piece Extent="0 {nx} 0 {ny} 0 {nz}">\n'
+        '      <CellData>\n'
+        f'        <DataArray type="Float64" Name="{array_name}" '
+        f'format="binary">\n'
+        f'          {encoded}\n'
+        '        </DataArray>\n'
+        '      </CellData>\n'
+        '    </Piece>\n'
+        '  </ImageData>\n'
+        '</VTKFile>\n'
+    )
+
+    with open(filepath, "w") as f:
+        f.write(xml)

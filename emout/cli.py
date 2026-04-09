@@ -175,6 +175,99 @@ def cmd_server_status(_args):
 
 
 # ---------------------------------------------------------------------------
+# inspect
+# ---------------------------------------------------------------------------
+
+
+def cmd_inspect(args):
+    """Print a summary of available simulation data in a directory.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments including directory and optional flags.
+    """
+    from emout import Emout
+
+    directory = args.directory
+
+    try:
+        data = Emout(directory)
+    except Exception as exc:
+        print(f"Error loading directory: {exc}")
+        sys.exit(1)
+
+    print(f"Directory: {data.directory}")
+
+    # Input file
+    if data.inp is not None:
+        inp = data.inp
+        print(f"Input file: plasma.inp")
+        nstep = getattr(inp, "nstep", None)
+        if nstep is not None:
+            print(f"  nstep = {nstep}")
+        nx = getattr(inp, "nx", None)
+        ny = getattr(inp, "ny", None)
+        nz = getattr(inp, "nz", None)
+        if nx is not None:
+            print(f"  grid  = {nx} x {ny} x {nz}")
+        nspec = getattr(inp, "nspec", None)
+        if nspec is not None:
+            print(f"  nspec = {nspec}")
+    else:
+        print("Input file: not found")
+
+    if data.toml is not None:
+        print("TOML config: plasma.toml")
+
+    # Unit info
+    if data.unit is not None:
+        print(f"Unit conversion: available")
+    else:
+        print("Unit conversion: not available (no conversion key in inp)")
+
+    # Simulation validity
+    print(f"Completed: {data.is_valid()}")
+
+    # Scan HDF5 files
+    print()
+    h5_files = sorted(data.directory.glob("*00_0000.h5"))
+    if h5_files:
+        print(f"Grid data files ({len(h5_files)}):")
+        for f in h5_files:
+            name = f.name.replace("00_0000.h5", "")
+            try:
+                import h5py
+                with h5py.File(str(f), "r") as hf:
+                    grp = hf[list(hf.keys())[0]]
+                    n_steps = len(grp.keys())
+                    first_key = sorted(grp.keys())[0]
+                    shape = grp[first_key].shape
+                    print(f"  {name:12s}  steps={n_steps:4d}  shape={shape}")
+            except Exception:
+                print(f"  {name:12s}  (unreadable)")
+    else:
+        print("Grid data files: none found")
+
+    # Particle files
+    p_files = sorted(data.directory.glob("p*00_0000.h5"))
+    if p_files:
+        species = sorted(set(
+            f.name[1] for f in p_files if f.name[1].isdigit()
+        ))
+        print(f"\nParticle species: {', '.join(species)}")
+
+    # Diagnostic files
+    diag_files = []
+    for name in ("icur", "pbody"):
+        candidate = data.directory / name
+        if candidate.exists():
+            diag_files.append(name)
+    if diag_files:
+        print(f"Diagnostic files: {', '.join(diag_files)}")
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -183,6 +276,14 @@ def main():
     """Entry point for the ``emout`` CLI."""
     parser = argparse.ArgumentParser(prog="emout", description="emout CLI")
     sub = parser.add_subparsers(dest="command")
+
+    # inspect
+    inspect_parser = sub.add_parser("inspect", help="Show simulation metadata")
+    inspect_parser.add_argument(
+        "directory", nargs="?", default="./",
+        help="Simulation output directory (default: current directory)",
+    )
+    inspect_parser.set_defaults(func=cmd_inspect)
 
     # server
     server = sub.add_parser("server", help="Manage the Dask render server")
