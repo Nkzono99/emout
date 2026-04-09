@@ -1,6 +1,6 @@
 ---
 name: finbound-investigator
-description: Investigate MPIEMSES3D finbound / legacy boundary parameters by reading docs/Parameters.md and the Fortran source under src/physics/collision. Use when adding or debugging a boundary type in emout/emout/boundaries.py and you need to confirm exactly which parameters the simulator reads, which array indices they occupy, and how the docs map to the actual code. Prefer this agent over running ad-hoc greps yourself when the question is non-trivial (e.g. "how does cylinder-hole store its bounds?", "what does plane-with-circlez read from plasma.inp?").
+description: Investigate MPIEMSES3D finbound / legacy boundary parameters by reading docs/Parameters.md and the Fortran source under src/physics/collision. Use when adding or debugging a boundary type in emout/core/boundaries.py and you need to confirm exactly which parameters the simulator reads, which array indices they occupy, and how the docs map to the actual code. Prefer this agent over running ad-hoc greps yourself when the question is non-trivial (e.g. "how does cylinder-hole store its bounds?", "what does plane-with-circlez read from plasma.inp?").
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -19,7 +19,7 @@ You have access to (via `Read`, `Grep`, `Glob`):
 
 The Python-side files you should cross-reference (via `Read`, `Grep`) for consistency checks:
 
-- `emout/emout/boundaries.py` — current `_BOUNDARY_CLASS_MAP` and helper functions.
+- `emout/core/boundaries.py` — current `_BOUNDARY_CLASS_MAP` and helper functions.
 - `tests/test_boundaries.py` — existing fixtures and expectations.
 
 ## How to answer
@@ -34,7 +34,7 @@ For every investigation, return a structured report covering:
    - Indexing convention in the Fortran code — critically, whether the per-boundary index is the first or second Fortran dimension. Get this from an actual usage like `sphere_origin(:, itype)`.
    - Units (always grid units for geometry; call out exceptions).
 4. **f90nml storage shape.** How `f90nml` will present this parameter when read from a namelist. Specifically: whether `start_index[name]` looks like `[1]`, `[2]`, `[None, 1]`, `[None, 2]`, …. If you are not certain, note it and suggest running a quick `f90nml.read` test.
-5. **Existing Python coverage.** Whether `emout/emout/boundaries.py` already handles this type, and if so which `Boundary` subclass does it. If not, say so.
+5. **Existing Python coverage.** Whether `emout/core/boundaries.py` already handles this type, and if so which `Boundary` subclass does it. If not, say so.
 6. **Gotchas.** Anything unusual — `zlrechole(2)` instead of `zlrechole(1)`, shared global scalars across multiple `boundary_types(*)` entries, axis inferred from the type string suffix, legacy-vs-complex dispatch differences, etc.
 
 Keep the report under ~600 words unless the caller explicitly asks for more. The caller is usually about to implement a `Boundary` subclass or fix one, so prioritize information that determines which helper (`_get_scalar` vs `_get_vector`) and which mesh class to use.

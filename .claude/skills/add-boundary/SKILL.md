@@ -1,6 +1,6 @@
 ---
 name: add-boundary
-description: Add a new MPIEMSES finbound boundary type to emout/emout/boundaries.py so data.boundaries[i] handles it. Use when the user asks for support of a new boundary_types(*) entry (e.g. hyperboloid-hole, plane-with-circle-hole, an extension type) or a legacy single-body boundary_type. Covers parameter reading, use_si conversion, _BOUNDARY_CLASS_MAP registration, and the testing pattern.
+description: Add a new MPIEMSES finbound boundary type to emout/core/boundaries.py so data.boundaries[i] handles it. Use when the user asks for support of a new boundary_types(*) entry (e.g. hyperboloid-hole, plane-with-circle-hole, an extension type) or a legacy single-body boundary_type. Covers parameter reading, use_si conversion, _BOUNDARY_CLASS_MAP registration, and the testing pattern.
 ---
 
 # add-boundary
@@ -16,7 +16,7 @@ Teach `data.boundaries` about a new MPIEMSES finbound (or legacy) boundary type.
 
 ## Boundary class skeleton
 
-Place the new class in `emout/emout/boundaries.py` near other boundaries of a similar shape (closed solids, planes, legacy pits, …).
+Place the new class in `emout/core/boundaries.py` near other boundaries of a similar shape (closed solids, planes, legacy pits, …).
 
 ```python
 class NewBoundary(Boundary):
