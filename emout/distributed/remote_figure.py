@@ -83,9 +83,13 @@ def remote_figure(
     """
     global _recording, _commands
 
-    if session is None and emout_dir is not None:
-        from .remote_render import get_or_create_session
-        session = get_or_create_session(emout_dir)
+    if session is None:
+        from .remote_render import get_or_create_session, _session_cache
+        if emout_dir is not None:
+            session = get_or_create_session(emout_dir)
+        elif _session_cache:
+            # 既存のセッションがあれば最初のものを使う
+            session = next(iter(_session_cache.values()))
 
     _recording = True
     _commands = []

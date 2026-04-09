@@ -222,6 +222,11 @@ class RemoteSession:
                 ax = plt.gca()
                 heatmap.plot(ax=ax, **plot_kwargs)
 
+            elif kind == "energy_spectrum":
+                _, cache_key, spec_kwargs = cmd
+                result = self._cache[cache_key]
+                result.plot_energy_spectrum(**spec_kwargs)
+
         buf = BytesIO()
         plt.gcf().savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
         plt.close("all")
@@ -273,6 +278,10 @@ class RemoteXYData:
         self._var2 = var2
 
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
+        from .remote_figure import is_recording, record_backtrace_render
+        if is_recording():
+            record_backtrace_render(self._key, self._var1, self._var2, plot_kwargs)
+            return None
         img = self._session.render_backtrace_pair(
             self._key, self._var1, self._var2, fmt=fmt, dpi=dpi, **plot_kwargs,
         ).result()
@@ -301,6 +310,15 @@ class RemoteProbabilityResult:
     def plot_energy_spectrum(
         self, energy_bins=None, scale: str = "log", fmt: str = "png", dpi: int = 150,
     ):
+        from .remote_figure import is_recording, record_plt_call
+        if is_recording():
+            # energy_spectrum は特殊コマンドとして記録
+            from .remote_figure import _commands
+            _commands.append((
+                "energy_spectrum", self._key,
+                {"energy_bins": energy_bins, "scale": scale},
+            ))
+            return None
         img = self._session.render_energy_spectrum(
             self._key, energy_bins=energy_bins, scale=scale, fmt=fmt, dpi=dpi,
         ).result()
