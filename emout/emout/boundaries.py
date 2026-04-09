@@ -927,6 +927,34 @@ class BoundaryCollection:
         """
         return self.mesh(use_si=use_si, per=per).render(**style_kwargs)
 
+    def plot(
+        self,
+        *,
+        ax=None,
+        use_si: bool = True,
+        per: Optional[Mapping[int, Mapping[str, Any]]] = None,
+        style: str = "solid",
+        solid_color="0.7",
+        alpha: float = 0.6,
+        **kwargs,
+    ):
+        """境界メッシュを 3D で簡易表示する。
+
+        フィールドなしで境界形状だけを確認したい場合に使う。
+        フィールドと重ねたい場合は ``Data3d.plot_surfaces(data.boundaries)`` を使う。
+        """
+        import matplotlib.pyplot as plt
+        from emout.plot.surface_cut import plot_surfaces as _plot_surfaces, RenderItem
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+
+        composite = self.mesh(use_si=use_si, per=per)
+        item = RenderItem(composite, style=style, solid_color=solid_color, alpha=alpha, **kwargs)
+        _plot_surfaces(ax, field=None, surfaces=item)
+        return ax
+
     # -- composite mesh ------------------------------------------------------
 
     def mesh(

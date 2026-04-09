@@ -912,6 +912,28 @@ class Data3d(Data):
         tuple
             ``plot_surfaces`` が返す ``(cmap, norm)`` のタプル。
         """
+        # Dask session が起動中なら worker から 3D 配列を取得してローカル描画
+        # （ax.set_xlabel() 等を後から重ねられる）
+        emout_dir = getattr(self, "_emout_dir", None)
+        if emout_dir is not None:
+            from emout.distributed.remote_render import get_or_create_session
+            session = get_or_create_session(emout_dir)
+            if session is not None:
+                recipe_index = self._to_recipe_index()
+                payload = session.fetch_field(self.name, recipe_index).result()
+                local_data = Data3d(
+                    payload["array"],
+                    name=payload["name"],
+                    axisunits=payload["axisunits"],
+                    valunit=payload["valunit"],
+                )
+                local_data.slices = payload["slices"]
+                local_data.slice_axes = payload["slice_axes"]
+                local_data._emout_dir = None  # 再帰防止
+                return local_data.plot_surfaces(
+                    surfaces, ax=ax, use_si=use_si, vmin=vmin, vmax=vmax, **kwargs,
+                )
+
         import matplotlib.pyplot as plt
 
         from emout.emout.boundaries import Boundary, BoundaryCollection

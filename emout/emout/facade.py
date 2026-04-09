@@ -249,3 +249,7 @@ class Emout:
             inp=self._dir_inspector.inp,
             unit=self.unit,
         )
+
+    @property
+    def _emout_dir(self) -> str:
+        return str(self._dir_inspector.main_directory)

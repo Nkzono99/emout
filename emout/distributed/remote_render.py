@@ -142,6 +142,46 @@ class RemoteSession:
             "valunit": arr.valunit,
         }
 
+    def render_plot_surfaces(
+        self, attr_name: str, t_index: int,
+        use_si: bool = True, fmt: str = "png", dpi: int = 150,
+        **plot_kwargs,
+    ) -> bytes:
+        """Data3d.plot_surfaces を worker 上で実行し PNG bytes を返す。"""
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+
+        data3d = getattr(self._data, attr_name)[t_index]
+        boundaries = self._data.boundaries
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        data3d.plot_surfaces(
+            surfaces=boundaries, ax=ax, use_si=use_si, **plot_kwargs,
+        )
+
+        buf = BytesIO()
+        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
+        plt.close(fig)
+        return buf.getvalue()
+
+    def render_boundaries(
+        self, use_si: bool = True, fmt: str = "png", dpi: int = 150,
+        **plot_kwargs,
+    ) -> bytes:
+        """BoundaryCollection.plot() を worker 上で実行し PNG bytes を返す。"""
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        self._data.boundaries.plot(ax=ax, use_si=use_si, **plot_kwargs)
+
+        buf = BytesIO()
+        fig.savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
+        plt.close(fig)
+        return buf.getvalue()
+
     def drop(self, key: str) -> None:
         """キャッシュから結果を削除してメモリを解放する。"""
         self._cache.pop(key, None)
