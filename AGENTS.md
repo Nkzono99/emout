@@ -131,11 +131,11 @@ python -m build
 - optional 依存機能（`vdsolverf`, `dask`, `scikit-image`, `pyvista`）を触る場合、依存未導入時に import で壊れないか確認したか。
 - `emout.plot.surface_cut` の `viz.py` 経由の機能（`plot_surfaces` など）は `scikit-image` / `matplotlib` 必須。`import` を守るガードを壊さないこと。
 
-## 10. 現在のテストベースライン（2026-04-08 更新）
+## 10. 現在のテストベースライン（2026-04-09 更新）
 
 対象: `pytest -q --ignore=tests/utils/test_toml_converter.py --ignore=tests/utils/test_toml_integration.py`
 
-結果: **103 passed**
+結果: **135 passed**
 
 既知の壊れ:
 - `tests/utils/test_toml_converter.py` — `load_toml_as_namelist` が未実装でコレクションエラー
