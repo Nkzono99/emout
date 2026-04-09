@@ -68,6 +68,17 @@ class GridDataSeries:
             f"timesteps={len(self)}, file={self.filename.name}>"
         )
 
+    @property
+    def trange(self) -> List[int]:
+        """Return the sorted list of available time-step indices.
+
+        Returns
+        -------
+        list of int
+            Available time-step indices in ascending order.
+        """
+        return sorted(self._index2key.keys())
+
     def close(self) -> None:
         """Close the HDF5 file."""
         self.h5.close()

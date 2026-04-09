@@ -204,6 +204,9 @@ class DataFileInfo:
         filename : str or Path
             File name or path.
         """
+        if filename is None:
+            self._filename = None
+            return
         if not isinstance(filename, Path):
             filename = Path(filename)
         self._filename = filename
@@ -228,6 +231,8 @@ class DataFileInfo:
         Path
             Absolute directory path.
         """
+        if self._filename is None:
+            return None
         return (self._filename / "../").resolve()
 
     @property
@@ -236,9 +241,11 @@ class DataFileInfo:
 
         Returns
         -------
-        Path
-            Absolute file path.
+        Path or None
+            Absolute file path, or ``None`` if no filename was set.
         """
+        if self._filename is None:
+            return None
         return self._filename.resolve()
 
     def __str__(self):

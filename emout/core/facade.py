@@ -146,6 +146,25 @@ class Emout:
         """
         return self._dir_inspector.is_valid()
 
+    def available_fields(self) -> List[str]:
+        """Return the names of available grid data fields.
+
+        Scans the output directory for ``*00_0000.h5`` files and returns
+        the field names (e.g. ``['ex', 'ey', 'ez', 'phisp']``).
+
+        Returns
+        -------
+        list of str
+            Sorted field names.
+        """
+        pattern = "*00_0000.h5"
+        names = []
+        for f in sorted(self._dir_inspector.main_directory.glob(pattern)):
+            name = f.name.replace("00_0000.h5", "")
+            if name and not name[0].isdigit():
+                names.append(name)
+        return names
+
     @property
     def icur(self) -> pd.DataFrame:
         """Return the ``icur`` diagnostic file as a DataFrame.

@@ -60,6 +60,6 @@ def test_vector_plot_dispatches_to_plot3d(monkeypatch):
     vz = Data3d(np.zeros((3, 4, 5)), name="vz", filename="dummy.h5")
     vec = VectorData([vx, vy, vz], name="vxyz")
 
-    monkeypatch.setattr(VectorData, "plot3d", lambda *args, **kwargs: "delegated")
+    monkeypatch.setattr(VectorData, "plot3d_mpl", lambda *args, **kwargs: "delegated")
 
     assert vec.plot(mode="stream", show=False) == "delegated"

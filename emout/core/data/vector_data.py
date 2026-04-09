@@ -321,7 +321,7 @@ class VectorData(utils.Group):
                 **kwargs,
             )
         if self.x_data.ndim == 3:
-            return self.plot3d(
+            return self.plot3d_mpl(
                 *args,
                 **kwargs,
             )
@@ -515,13 +515,134 @@ class VectorData(utils.Group):
 
         raise ValueError(f'Unsupported mode "{mode}" for VectorData.plot_pyvista.')
 
+    def plot3d_mpl(
+        self,
+        mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
+        use_si: bool = True,
+        offsets: Union[
+            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
+        ] = None,
+        ax=None,
+        **kwargs,
+    ):
+        """Plot a 3-D vector field with matplotlib.
+
+        For ``mode='stream'`` (default), field lines are traced using
+        :func:`scipy.integrate.solve_ivp` and drawn on a
+        :class:`mpl_toolkits.mplot3d.Axes3D`.
+
+        Parameters
+        ----------
+        mode : {'stream', 'streamline', 'vec', 'quiver'}
+            Plot type.
+        use_si : bool, default True
+            Convert to SI units when available.
+        offsets : tuple of (float or str), optional
+            Per-axis offsets.
+        ax : Axes3D, optional
+            Target axes.
+        **kwargs
+            Forwarded to the underlying plot function
+            (e.g. ``n_seeds``, ``seed_points``, ``max_length``,
+            ``step_size``, ``color``, ``cmap``, ``linewidth``).
+
+        Returns
+        -------
+        Axes3D
+        """
+        if self.x_data.ndim != 3:
+            raise ValueError("plot3d_mpl requires 3-D component data.")
+        if len(self.objs) < 3 or not hasattr(self, "z_data"):
+            raise ValueError("plot3d_mpl requires 3 components (x, y, z).")
+
+        if self.objs[0].valunit is None:
+            use_si = False
+
+        if use_si:
+            xunit = self.objs[0].axisunits[-1]
+            yunit = self.objs[0].axisunits[-2]
+            zunit = self.objs[0].axisunits[-3]
+
+            x = xunit.reverse(np.arange(*utils.slice2tuple(self.objs[0].slices[3]), dtype=float))
+            y = yunit.reverse(np.arange(*utils.slice2tuple(self.objs[0].slices[2]), dtype=float))
+            z = zunit.reverse(np.arange(*utils.slice2tuple(self.objs[0].slices[1]), dtype=float))
+
+            valunit = self.objs[0].valunit
+            _xlabel = f"x [{xunit.unit}]"
+            _ylabel = f"y [{yunit.unit}]"
+            _zlabel = f"z [{zunit.unit}]"
+            _title = f"{self.name} [{valunit.unit}]"
+
+            x_data = self.x_data.val_si
+            y_data = self.y_data.val_si
+            z_data = self.z_data.val_si
+        else:
+            x = np.arange(self.x_data.shape[2], dtype=float)
+            y = np.arange(self.x_data.shape[1], dtype=float)
+            z = np.arange(self.x_data.shape[0], dtype=float)
+
+            _xlabel = "x"
+            _ylabel = "y"
+            _zlabel = "z"
+            _title = self.name
+
+            x_data = self.x_data
+            y_data = self.y_data
+            z_data = self.z_data
+
+        if offsets is not None:
+            x = apply_offset(x.astype(float), offsets[0])
+            y = apply_offset(y.astype(float), offsets[1])
+            z = apply_offset(z.astype(float), offsets[2])
+
+        X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+        mesh = (
+            np.transpose(X, (2, 1, 0)),
+            np.transpose(Y, (2, 1, 0)),
+            np.transpose(Z, (2, 1, 0)),
+        )
+
+        kwargs["xlabel"] = kwargs.get("xlabel") or _xlabel
+        kwargs["ylabel"] = kwargs.get("ylabel") or _ylabel
+        kwargs["zlabel"] = kwargs.get("zlabel") or _zlabel
+        kwargs["title"] = kwargs.get("title") or _title
+
+        if mode in ("stream", "streamline"):
+            return emplt.plot_3d_streamline(
+                x_data, y_data, z_data, ax=ax, mesh=mesh, **kwargs,
+            )
+        elif mode in ("vec", "quiver"):
+            return emplt.plot_3d_quiver(
+                x_data, y_data, z_data, ax3d=ax, mesh=mesh, **kwargs,
+            )
+        else:
+            raise ValueError(f'Unsupported mode "{mode}" for plot3d_mpl.')
+
     def plot3d(
         self,
         mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
+        backend: Literal["mpl", "pyvista"] = "mpl",
         **kwargs,
     ):
-        """Alias for :meth:`plot_pyvista`."""
-        return self.plot_pyvista(mode=mode, **kwargs)
+        """Plot a 3-D vector field.
+
+        Parameters
+        ----------
+        mode : {'stream', 'streamline', 'vec', 'quiver'}
+            Plot type.
+        backend : {'mpl', 'pyvista'}, default 'mpl'
+            ``'mpl'`` uses matplotlib 3-D axes;
+            ``'pyvista'`` uses the PyVista renderer.
+        **kwargs
+            Forwarded to :meth:`plot3d_mpl` or :meth:`plot_pyvista`.
+
+        Returns
+        -------
+        object
+        """
+        if backend == "pyvista":
+            return self.plot_pyvista(mode=mode, **kwargs)
+        return self.plot3d_mpl(mode=mode, **kwargs)
 
 
 VectorData2d = VectorData

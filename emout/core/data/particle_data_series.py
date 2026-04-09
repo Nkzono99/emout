@@ -463,6 +463,29 @@ class ParticleSnapshot:
         """
         return dict(self.fields)
 
+    def to_dataframe(self, use_si: bool = False):
+        """Convert the snapshot to a :class:`pandas.DataFrame`.
+
+        Parameters
+        ----------
+        use_si : bool, default False
+            If True, convert values to SI units.
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with one column per loaded component.
+        """
+        import pandas as pd
+
+        cols = {}
+        for name, pdata in self.fields.items():
+            if use_si and pdata.valunit is not None:
+                cols[name] = pdata.val_si.values
+            else:
+                cols[name] = pdata.values
+        return pd.DataFrame(cols)
+
     # ---- Phase-space plotting ----
 
     _PHASE_KEYS = ("x", "y", "z", "vx", "vy", "vz")
