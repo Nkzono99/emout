@@ -454,12 +454,15 @@ class Data(np.ndarray):
         return tuple(result)
 
     def _try_remote_plot(self, **plot_kwargs):
-        """Dask session があれば worker からスライスデータを取得しローカル描画。
+        """remote_figure() 記録中ならコマンド記録、そうでなければデータ転送モード。"""
+        # --- remote_figure() コンテキスト内: コマンド記録のみ ---
+        from emout.distributed.remote_figure import is_recording, record_field_plot
+        if is_recording():
+            recipe_index = self._to_recipe_index()
+            record_field_plot(self.name, recipe_index, plot_kwargs)
+            return True  # sentinel: "handled"
 
-        ローカル matplotlib で描画するため、呼び出し後に plt.axhline() 等を
-        重ねることができる。フル 3D 配列はクライアントに転送されず、
-        スライス済みの小さな配列（2D: 数 KB〜数 MB）のみが渡される。
-        """
+        # --- remote_figure 外 + Dask session あり: データ転送モード ---
         emout_dir = getattr(self, "_emout_dir", None)
         if emout_dir is None:
             return None
@@ -471,7 +474,6 @@ class Data(np.ndarray):
         recipe_index = self._to_recipe_index()
         payload = session.fetch_field(self.name, recipe_index).result()
 
-        # Worker から受け取ったデータでローカル Data を再構成 → 通常の plot()
         local_data = type(self)(
             payload["array"],
             name=payload["name"],

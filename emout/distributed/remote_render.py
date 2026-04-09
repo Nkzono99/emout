@@ -182,6 +182,51 @@ class RemoteSession:
         plt.close(fig)
         return buf.getvalue()
 
+    def replay_figure(self, commands: list, fmt: str = "png", dpi: int = 150) -> bytes:
+        """コマンドリストを順に再生し、レンダリング結果を返す。
+
+        ``remote_figure()`` コンテキストが収集したコマンドを worker 上の
+        matplotlib で再生する。コマンド形式:
+
+        - ``("field_plot", attr_name, recipe_index, plot_kwargs)``
+        - ``("plt", method_name, args, kwargs)``
+        - ``("boundary_plot", plot_kwargs)``
+        - ``("backtrace_render", cache_key, var1, var2, plot_kwargs)``
+        """
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+
+        for cmd in commands:
+            kind = cmd[0]
+            if kind == "field_plot":
+                _, attr_name, recipe_index, plot_kwargs = cmd
+                arr = getattr(self._data, attr_name)[recipe_index]
+                arr.plot(**plot_kwargs)
+
+            elif kind == "plt":
+                _, method_name, args, kwargs = cmd
+                func = getattr(plt, method_name)
+                func(*args, **kwargs)
+
+            elif kind == "boundary_plot":
+                _, plot_kwargs = cmd
+                ax = plt.gca()
+                self._data.boundaries.plot(ax=ax, **plot_kwargs)
+
+            elif kind == "backtrace_render":
+                _, cache_key, var1, var2, plot_kwargs = cmd
+                result = self._cache[cache_key]
+                heatmap = result.pair(var1, var2)
+                ax = plt.gca()
+                heatmap.plot(ax=ax, **plot_kwargs)
+
+        buf = BytesIO()
+        plt.gcf().savefig(buf, format=fmt, dpi=dpi, bbox_inches="tight")
+        plt.close("all")
+        return buf.getvalue()
+
     def drop(self, key: str) -> None:
         """キャッシュから結果を削除してメモリを解放する。"""
         self._cache.pop(key, None)
@@ -205,6 +250,10 @@ class RemoteHeatmap:
         self._var2 = var2
 
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
+        from .remote_figure import is_recording, record_backtrace_render
+        if is_recording():
+            record_backtrace_render(self._key, self._var1, self._var2, plot_kwargs)
+            return None
         img = self._session.render_pair(
             self._key, self._var1, self._var2, fmt=fmt, dpi=dpi, **plot_kwargs,
         ).result()
