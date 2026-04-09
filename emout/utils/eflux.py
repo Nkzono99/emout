@@ -1,6 +1,6 @@
 """
-エネルギーフラックス計算およびピッチ角分類の機能をまとめたライブラリ。
-エネルギーは eV 単位で扱う。
+Energy-flux computation and pitch-angle classification library.
+Energies are handled in eV.
 """
 
 from typing import Union
@@ -19,34 +19,34 @@ def get_indices_in_pitch_range(
     direction: str = 'both',
 ) -> np.ndarray:
     """
-    速度ベクトル群と磁場ベクトルから、ピッチ角が [a_deg, b_deg] の範囲にある粒子のインデックスを返す。
+    Return the indices of particles whose pitch angle falls within [a_deg, b_deg].
 
     Parameters
     ----------
     velocities : np.ndarray, shape (N, 3)
-        各粒子の速度ベクトル (m/s)。N はサンプル数。
+        Velocity vectors for each particle (m/s). N is the number of samples.
     B : np.ndarray, shape (3,)
-        磁場ベクトル (T) または方向ベクトル。大きさが 0 でないこと。
+        Magnetic field vector (T) or direction vector. Must be non-zero.
     a_deg : float
-        ピッチ角の下限 (度)。0° ≤ a_deg < b_deg ≤ 180° の範囲で指定。
+        Lower bound of the pitch angle (degrees). 0 <= a_deg < b_deg <= 180.
     b_deg : float
-        ピッチ角の上限 (度)。
+        Upper bound of the pitch angle (degrees).
     direction : str, default='both'
-        ピッチ角の符号方向を指定:
-          - 'both': 内積の符号にかかわらずすべての粒子
-          - 'pos' : 磁場と同方向のみ (v·B > 0)
-          - 'neg' : 磁場と逆方向のみ (v·B < 0)
+        Sign direction of the pitch angle:
+          - 'both': all particles regardless of the sign of v dot B
+          - 'pos' : only particles with v dot B > 0 (parallel to B)
+          - 'neg' : only particles with v dot B < 0 (anti-parallel to B)
 
     Returns
     -------
     idx : np.ndarray
-        指定した角度範囲かつ方向条件を満たす粒子のインデックス配列。
+        Index array of particles satisfying the angle range and direction condition.
     """
 
     if not (0.0 <= a_deg < b_deg <= 180.0):
-        raise ValueError(f"a_deg={a_deg}, b_deg={b_deg} の指定が不適切です。0 ≤ a < b ≤ 180")
+        raise ValueError(f"Invalid a_deg={a_deg}, b_deg={b_deg}. Required: 0 <= a < b <= 180")
     if direction not in ('both', 'pos', 'neg'):
-        raise ValueError(f"direction='{direction}' は 'both','pos','neg' のいずれかで指定してください。")
+        raise ValueError(f"direction='{direction}' must be one of 'both', 'pos', 'neg'.")
 
     a_rad = np.deg2rad(a_deg)
     b_rad = np.deg2rad(b_deg)
@@ -56,7 +56,7 @@ def get_indices_in_pitch_range(
     speeds = np.linalg.norm(velocities, axis=1)
     B_norm = np.linalg.norm(B)
     if B_norm == 0:
-        raise ValueError("磁場ベクトル B の大きさがゼロです。")
+        raise ValueError("Magnetic field vector B has zero magnitude.")
 
     dot_vB = velocities.dot(B)
     cos_theta = np.zeros_like(dot_vB)
@@ -82,22 +82,23 @@ def compute_energy_flux_histogram(
     mass: float,
     energy_bins: Union[int, np.ndarray],
 ):
-    """energy flux histogram を計算する。
-    
+    """Compute an energy-flux histogram.
+
     Parameters
     ----------
     velocities : np.ndarray
-        粒子速度配列です。
+        Particle velocity array.
     probs : np.ndarray
-        各粒子の重み（確率・寄与率）配列です。
+        Weight (probability / contribution) array for each particle.
     mass : float
-        粒子質量 [kg] です。
+        Particle mass [kg].
     energy_bins : Union[int, np.ndarray]
-        ヒストグラムのビン設定です。整数ならビン数、配列ならビン境界を指定します。
+        Histogram bin specification. An integer sets the number of bins;
+        an array sets the bin edges explicitly.
     Returns
     -------
     object
-        処理結果です。
+        Tuple of ``(hist, bin_edges)``.
     """
     speeds = np.linalg.norm(velocities, axis=1)
     energies_J = 0.5 * mass * speeds**2
@@ -117,7 +118,7 @@ def compute_energy_flux_histogram(
     E_cls = energies_eV
     w_cls = energy_flux
     hist, bin_edges = np.histogram(E_cls, bins=bins, weights=w_cls)
-    
+
     return hist, bin_edges
 
 
@@ -130,48 +131,48 @@ def compute_energy_flux_histograms(
     pitch_ranges: Union[list[tuple[float, float, str]], None] = None,
 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     """
-    速度ベクトル群と存在確率配列から、ユーザーが指定するピッチ角区間および方向ごとに
-    エネルギー x エネルギーフラックスのヒストグラムを返す。
-    エネルギーは eV 単位で計算する。
+    Compute energy x energy-flux histograms for user-specified pitch-angle
+    ranges and directions, from velocity vectors and a probability array.
+    Energies are computed in eV.
 
     Parameters
     ----------
     velocities : np.ndarray, shape (N, 3)
-        各粒子の速度ベクトル (m/s)。N はサンプル数。
+        Velocity vectors for each particle (m/s). N is the number of samples.
     probs : np.ndarray, shape (N,)
-        各速度ベクトルに対応する存在確率や重み。
+        Probability or weight corresponding to each velocity vector.
     B : np.ndarray, shape (3,)
-        磁場ベクトル (T) または方向ベクトル。
+        Magnetic field vector (T) or direction vector.
     mass : float
-        粒子質量 (kg)。
+        Particle mass (kg).
     energy_bins : int or np.ndarray, shape (M+1,)
-        - int の場合: numpy.histogram に自動生成を任せる。
-        - np.ndarray の場合: ビン境界をそのまま使う。
+        - int: let numpy.histogram auto-generate bin edges.
+        - np.ndarray: use these bin edges directly.
     pitch_ranges : list of (a_deg, b_deg, direction) | None
-        ピッチ角範囲および方向を指定するリスト。各タプルは
-          (a_deg, b_deg, direction)
-        の形式で、 direction は 'both','pos','neg' のいずれか。
-        None を指定するとデフォルトの 6 クラス分けを使用。
+        List specifying pitch-angle ranges and directions. Each tuple has
+        the form ``(a_deg, b_deg, direction)`` where direction is one of
+        ``'both'``, ``'pos'``, ``'neg'``.
+        If ``None``, the default 6-class decomposition is used.
 
     Returns
     -------
     histograms : dict[str, (hist, bin_edges)]
-        キーは f"{a_deg:02.0f}-{b_deg:02.0f}_{direction}" の形式。
-        値は (hist, bin_edges) のタプルで、
-        - hist: 各ビンにおけるエネルギーフラックス(eV x v x prob)の合計。shape=(M,)
-        - bin_edges: eV 単位のビン境界配列。shape=(M+1,)
+        Keys have the format ``f"{a_deg:02d}-{b_deg:02d}_{direction}"``.
+        Values are ``(hist, bin_edges)`` tuples where:
+        - hist: total energy flux (eV x v x prob) per bin, shape=(M,)
+        - bin_edges: bin boundaries in eV, shape=(M+1,)
     """
 
     N = velocities.shape[0]
     if probs.shape[0] != N:
-        raise ValueError("`velocities` と `probs` の長さが一致しません。")
+        raise ValueError("`velocities` and `probs` must have the same length.")
 
-    # 速さとエネルギー (eV) を計算
+    # Compute speeds and energies (eV)
     speeds = np.linalg.norm(velocities, axis=1)
     energies_J = 0.5 * mass * speeds**2
     energies_eV = energies_J / e_charge
 
-    # energy_bins が int の場合は、numpy.histogram に自動で bin_edges を生成させる
+    # If energy_bins is int, let numpy.histogram auto-generate bin_edges
     if isinstance(energy_bins, int):
         _, bin_edges = np.histogram(energies_eV, bins=energy_bins)
         bins = bin_edges
@@ -179,7 +180,7 @@ def compute_energy_flux_histograms(
         bins = energy_bins.copy()
     M = len(bins) - 1
 
-    # 各粒子のエネルギーフラックス重み = eV  x  speed  x  prob
+    # Energy-flux weight per particle = eV x speed x prob
     energy_flux = energies_eV * speeds * probs
 
     if pitch_ranges is None:
@@ -225,44 +226,46 @@ def plot_energy_fluxes(
     cmap: str = 'viridis',
 ) -> tuple[plt.Figure, plt.Axes]:
     """
-    複数系列にわたる速度ベクトルリストから、2D ヒートマップ(x vs Energy、カラースケールはエネルギーフラックス)を描画する。
-    各系列のエネルギーフラックスは eV x v x (prob) の合計としてヒストグラム化する。
+    Plot a 2-D heatmap (x vs Energy, colour scale = energy flux) from
+    velocity vector lists across multiple series. The energy flux for each
+    series is histogrammed as the sum of eV x v x (prob).
 
     Parameters
     ----------
     velocities_list : list[np.ndarray]
-        長さ T のリストで、要素は shape=(NT, 3) の速度ベクトル配列。
+        List of length T, each element a velocity array of shape (NT, 3).
     x : np.ndarray, shape (T,)
-        各速度リストに対応する x 軸の値 (汎用的に使用可)。
+        x-axis values corresponding to each velocity list.
     mass : float
-        粒子質量 (kg)。
+        Particle mass (kg).
     energy_bins : int or np.ndarray, shape (M+1,)
-        - int の場合: numpy.histogram に自動生成を任せる (全系列を通じた energies_eV から)。
-        - np.ndarray の場合: ビン境界をそのまま使う。
+        - int: let numpy.histogram auto-generate bin edges across all series.
+        - np.ndarray: use these bin edges directly.
     use_probs : bool, default=False
-        True の場合、probs_list から各系列ごとに存在確率を読み込んでエネルギーフラックス重みに含める。
-        False の場合は probs = np.ones(NT) とみなす (eV x v のみを重みとする)。
+        If True, read per-series probabilities from *probs_list* and
+        include them in the energy-flux weights. If False, assume
+        probs = np.ones(NT) (weight = eV x v only).
     probs_list : list[np.ndarray] | None, default=None
-        長さ T のリストで、要素は shape=(NT,) の存在確率配列。
-        use_probs=True の場合に必須。
+        List of length T, each element a probability array of shape (NT,).
+        Required when use_probs=True.
     cmap : str, default='viridis'
-        Matplotlib のカラーマップ名。
+        Matplotlib colourmap name.
 
     Returns
     -------
     fig, ax : matplotlib.figure.Figure, matplotlib.axes.Axes
-        作成した Figure と Axes を返します。
+        The created Figure and Axes.
     """
 
     T = len(velocities_list)
     if x.shape[0] != T:
-        raise ValueError("`x` の長さと `velocities_list` の長さが一致しません。")
+        raise ValueError("`x` and `velocities_list` must have the same length.")
 
     if use_probs:
         if probs_list is None or len(probs_list) != T:
-            raise ValueError("use_probs=True の場合、probs_list を長さ T のリストで渡してください。")
+            raise ValueError("When use_probs=True, probs_list must be a list of length T.")
 
-    # 全系列の energies_eV をまとめて bin_edges を取得
+    # Collect energies_eV across all series to obtain bin_edges
     all_energies_eV = []
     for v_arr in velocities_list:
         speeds = np.linalg.norm(v_arr, axis=1)
@@ -288,7 +291,7 @@ def plot_energy_fluxes(
         if use_probs:
             probs = probs_list[j]
             if probs.shape[0] != v_arr.shape[0]:
-                raise ValueError(f"probs_list[{j}] の長さが velocities_list[{j}] と一致しません。")
+                raise ValueError(f"probs_list[{j}] and velocities_list[{j}] must have the same length.")
         else:
             probs = np.ones_like(speeds)
 
@@ -326,32 +329,33 @@ def plot_energy_flux(
     cmap: str = 'plasma',
 ) -> tuple[plt.Figure, plt.Axes]:
     """
-    単一データセットの速度データから、全粒子および指定したピッチ角区間ごとの
-    エネルギー x エネルギーフラックス分布を重ねてプロットする。
-    エネルギーは eV 単位で計算する。
+    Plot the energy x energy-flux distribution for all particles and for
+    each specified pitch-angle range, overlaid on a single axis.
+    Energies are computed in eV.
 
     Parameters
     ----------
     velocities : np.ndarray, shape (N, 3)
-        各粒子の速度ベクトル (m/s)。N はサンプル数。
+        Velocity vectors for each particle (m/s). N is the number of samples.
     probs : np.ndarray, shape (N,)
-        각速度벡터에 대응하는存在확률や重み。
+        Probability or weight corresponding to each velocity vector.
     B : np.ndarray, shape (3,)
-        磁場ベクトル (T) または方向ベクトル。
+        Magnetic field vector (T) or direction vector.
     mass : float
-        粒子質量 (kg)。
+        Particle mass (kg).
     energy_bins : int or np.ndarray, shape (M+1,)
-        - int の場合: numpy.histogram に自動生成を任せる。
-        - np.ndarray の場合: ビン境界をそのまま使う。
+        - int: let numpy.histogram auto-generate bin edges.
+        - np.ndarray: use these bin edges directly.
     pitch_ranges : list of (a_deg, b_deg, direction) | None
-        ピッチ角範囲および方向を指定するリスト。None の場合はデフォルトの 6 クラス分け。
+        Pitch-angle ranges and direction specifier list. None uses the
+        default 6-class decomposition.
     cmap : str, default='plasma'
-        Matplotlib のカラーマップ名。
+        Matplotlib colourmap name.
 
     Returns
     -------
     fig, ax : matplotlib.figure.Figure, matplotlib.axes.Axes
-        作成した Figure と Axes を返します。
+        The created Figure and Axes.
     """
     speeds = np.linalg.norm(velocities, axis=1)
     energies_eV = (0.5 * mass * speeds**2) / e_charge
@@ -400,7 +404,7 @@ def plot_energy_flux(
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    # 100 系列分のサンプルデータ
+    # Sample data for 50 series
     T = 50
     x = np.linspace(0.0, 5.0, T)
     velocities_list = []
@@ -416,17 +420,17 @@ if __name__ == "__main__":
     m_e = 9.10938356e-31
     B = np.array([0.0, 0.0, 5e-9])
 
-    # energy_bins に整数を渡した場合の動作テスト
+    # Test with integer energy_bins
     energy_bins_int = 30
 
-    # 1) get_indices_in_pitch_range のテスト
+    # 1) Test get_indices_in_pitch_range
     sample_vels = velocities_list[0]
     idx_20_50_pos = get_indices_in_pitch_range(
         velocities=sample_vels, B=B, a_deg=20.0, b_deg=50.0, direction='pos'
     )
-    print("20°-50° 同向 粒子数:", idx_20_50_pos.size)
+    print("20-50 deg parallel particle count:", idx_20_50_pos.size)
 
-    # 2) compute_energy_flux_histograms のテスト（int 指定）
+    # 2) Test compute_energy_flux_histograms (int bins)
     hists = compute_energy_flux_histograms(
         velocities=sample_vels,
         probs=probs_list[0],
@@ -434,9 +438,9 @@ if __name__ == "__main__":
         mass=m_e,
         energy_bins=energy_bins_int,
     )
-    print("取得できたヒストグラムのキー:", list(hists.keys()))
+    print("Histogram keys:", list(hists.keys()))
 
-    # 3) x vs Energy-Flux Map のテスト（int 指定）
+    # 3) Test x vs Energy-Flux Map (int bins)
     fig1, ax1 = plot_energy_fluxes(
         velocities_list=velocities_list,
         x=x,
@@ -448,7 +452,7 @@ if __name__ == "__main__":
     )
     plt.show(fig1)
 
-    # 4) Energy-Flux Distribution のテスト（int 指定）
+    # 4) Test Energy-Flux Distribution (int bins)
     fig2, ax2 = plot_energy_flux(
         velocities=sample_vels,
         probs=probs_list[0],

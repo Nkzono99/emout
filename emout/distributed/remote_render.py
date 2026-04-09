@@ -1,11 +1,11 @@
-"""Worker 側で可視化をレンダリングし PNG bytes だけを返す Dask Actor 基盤.
+"""Dask Actor infrastructure that renders visualisations on workers and returns only PNG bytes.
 
-設計思想
---------
-- 重い計算（backtrace 等）は worker で 1 回だけ実行し、結果を worker メモリに保持
-- 可視化パラメータ（cmap, vmin, vmax, 射影軸など）を変えて何度でも再レンダリング
-- client に転送されるのは PNG/SVG bytes（数十 KB）だけ
-- ユーザーは ``result.vxvz.plot()`` のように通常どおりのインタフェースで使える
+Design
+------
+- Heavy computations (backtrace, etc.) run once on the worker and stay in worker memory.
+- Visualisation parameters (cmap, vmin, vmax, projection axis, etc.) can be changed freely for re-rendering.
+- Only PNG/SVG bytes (tens of KB) are transferred to the client.
+- Users interact via the same interface as local objects, e.g. ``result.vxvz.plot()``.
 """
 
 from __future__ import annotations
@@ -279,10 +279,11 @@ class RemoteSession:
         return self._render_to_bytes(_draw, fmt, dpi)
 
     def fetch_field(self, attr_name: str, index: tuple, emout_kwargs=None) -> dict:
-        """フィールドのスライス済みデータ + メタデータを返す（ローカル描画用）。
+        """Return sliced field data and metadata for local plotting.
 
-        全 3D 配列ではなく、スライス済みの小さな配列（2D: 数 KB〜数 MB）だけを
-        転送するので、ローカルで plt.axhline() 等を重ねられる。
+        Only the sliced (2-D, a few KB to a few MB) array is transferred
+        instead of the full 3-D volume, enabling local overlay operations
+        such as ``plt.axhline()``.
         """
         data = self._resolve(emout_kwargs)
         arr = getattr(data, attr_name)[index]
@@ -380,7 +381,7 @@ class RemoteSession:
         return buf.getvalue()
 
     def drop(self, key: str) -> None:
-        """キャッシュから結果を削除してメモリを解放する。"""
+        """Remove a cached result and free the associated memory."""
         self._cache.pop(key, None)
 
     def keys(self) -> list[str]:
@@ -393,9 +394,10 @@ class RemoteSession:
 
 
 class RemoteHeatmap:
-    """``HeatmapData.plot()`` と同じインタフェースの proxy。
+    """Proxy with the same interface as ``HeatmapData.plot()``.
 
-    ``remote_figure()`` 内ではコマンド記録、外ではデータ転送＋ローカル描画。
+    Inside ``remote_figure()``, calls are recorded as commands; outside,
+    data is transferred and drawn locally.
     """
 
     def __init__(self, session: RemoteSession, cache_key: str, var1: str, var2: str):
@@ -457,9 +459,10 @@ class RemoteHeatmap:
 
 
 class RemoteXYData:
-    """``XYData.plot()`` / ``MultiXYData.plot()`` と同じインタフェースの proxy。
+    """Proxy with the same interface as ``XYData.plot()`` / ``MultiXYData.plot()``.
 
-    ``remote_figure()`` 内ではコマンド記録、外ではデータ転送＋ローカル描画。
+    Inside ``remote_figure()``, calls are recorded as commands; outside,
+    data is transferred and drawn locally.
     """
 
     def __init__(self, session: RemoteSession, cache_key: str, var1: str, var2: str):
@@ -528,10 +531,11 @@ class RemoteXYData:
 
 
 class RemoteProbabilityResult:
-    """``ProbabilityResult`` と同じインタフェースの proxy。
+    """Proxy with the same interface as ``ProbabilityResult``.
 
-    ``result.vxvz.plot(cmap="plasma")`` のように、ローカルと全く同じ書き方で使える。
-    実際の描画は worker 上で行われ、PNG bytes だけが返る。
+    Use it exactly like the local version, e.g.
+    ``result.vxvz.plot(cmap="plasma")``.  The actual rendering runs on
+    the worker and only PNG bytes are returned.
     """
 
     _AXES = ["x", "y", "z", "vx", "vy", "vz"]
@@ -560,11 +564,11 @@ class RemoteProbabilityResult:
         return display_image(img)
 
     def drop(self) -> None:
-        """worker メモリから結果を解放する。"""
+        """Release the result from worker memory."""
         self._session.drop(self._key)
 
     def __getattr__(self, name: str):
-        # ProbabilityResult.__getattr__ と同じ: result.vxvz → pair("vx","vz")
+        # Same as ProbabilityResult.__getattr__: result.vxvz -> pair("vx","vz")
         for key1 in self._AXES:
             if name.startswith(key1):
                 rest = name[len(key1):]
@@ -577,7 +581,7 @@ class RemoteProbabilityResult:
 
 
 class RemoteBacktraceResult:
-    """``BacktraceResult`` / ``MultiBacktraceResult`` と同じ proxy。"""
+    """Proxy with the same interface as ``BacktraceResult`` / ``MultiBacktraceResult``."""
 
     _AXES = ["x", "y", "z", "vx", "vy", "vz"]
 
@@ -609,7 +613,7 @@ class RemoteBacktraceResult:
 
 
 def display_image(img_bytes: bytes, ax=None):
-    """PNG bytes を Jupyter に表示するか、matplotlib axes に描画する。"""
+    """Display PNG bytes in Jupyter or draw onto a matplotlib axes."""
     if ax is None:
         try:
             from IPython.display import display as ipydisplay, Image

@@ -23,7 +23,7 @@ _ARPHRD_ETHER = 1
 
 
 def _interface_type(name: str) -> int:
-    """``/sys/class/net/<name>/type`` からカーネルインタフェース種別を読む。"""
+    """Read the kernel interface type from ``/sys/class/net/<name>/type``."""
     try:
         return int(Path(f"/sys/class/net/{name}/type").read_text().strip())
     except (OSError, ValueError):
@@ -31,16 +31,17 @@ def _interface_type(name: str) -> int:
 
 
 def _get_local_ip() -> str:
-    """Dask スケジューラに適した IP を自動選択する。
+    """Auto-select an IP address suitable for the Dask scheduler.
 
-    優先順:
-      1. 環境変数 ``EMOUT_DASK_SCHED_IP`` があればそれを使う
-      2. InfiniBand (カーネル type=32) — HPC 高速ネットワーク
-      3. Ethernet (カーネル type=1) — 管理・汎用ネットワーク
-      4. 127.0.0.1 (フォールバック)
+    Priority:
+      1. Environment variable ``EMOUT_DASK_SCHED_IP`` if set
+      2. InfiniBand (kernel type=32) -- HPC high-speed network
+      3. Ethernet (kernel type=1) -- management / general-purpose network
+      4. 127.0.0.1 (fallback)
 
-    インタフェース名 (``ib0``, ``ens2f0`` 等) ではなくカーネルの
-    ``ARPHRD_*`` 定数で判定するため、命名規則が異なる環境でも動く。
+    Interface detection uses the kernel ``ARPHRD_*`` constants rather
+    than interface names (``ib0``, ``ens2f0``, etc.), so it works
+    regardless of the local naming convention.
     """
     env_ip = os.environ.get("EMOUT_DASK_SCHED_IP")
     if env_ip:
@@ -62,11 +63,11 @@ def _get_local_ip() -> str:
                     continue
                 iftype = _interface_type(name)
                 if iftype == _ARPHRD_INFINIBAND:
-                    priority = 0  # InfiniBand 最優先
+                    priority = 0  # InfiniBand -- highest priority
                 elif iftype == _ARPHRD_ETHER:
                     priority = 1  # Ethernet
                 else:
-                    priority = 2  # 不明
+                    priority = 2  # Unknown
                 candidates.append((priority, name, a.address))
     except Exception:
         pass
@@ -98,7 +99,7 @@ def _pick_port(ip: str, max_retries: int = 20) -> int:
 
 
 def _is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
-    """指定 IP:port に TCP 接続できるか簡易チェック。"""
+    """Check whether a TCP connection to the given IP:port can be established."""
     try:
         with socket.create_connection((ip, port), timeout=timeout):
             return True
@@ -107,7 +108,7 @@ def _is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
 
 
 class DaskConfig:
-    """環境変数ベースの Dask クラスタ設定。"""
+    """Environment-variable-based Dask cluster configuration."""
 
     @property
     def scheduler_ip(self) -> str:

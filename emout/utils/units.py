@@ -7,35 +7,35 @@ derived from the simulation parameters.
 
 
 class UnitTranslator:
-    """単位変換器.
+    """Unit converter between two unit systems.
 
     Attributes
     ----------
     from_unit : float
-        変換前の値
+        Value in the source unit system.
     to_unit : float
-        変換後の値
+        Value in the target unit system.
     ratio : float
-        変換係数 (変換後 = 変換係数 * 変換前)
+        Conversion factor (target = ratio * source).
     name : str or None
-        単位の名前(例: "Mass", "Frequency")
+        Name of the quantity (e.g. "Mass", "Frequency").
     unit : str or None
-        単位(例: "kg", "Hz")
+        Unit symbol (e.g. "kg", "Hz").
     """
 
     def __init__(self, from_unit, to_unit, name=None, unit=None):
-        """単位変換器を生成する.
+        """Create a unit converter.
 
         Parameters
         ----------
         from_unit : float
-            変換前の値
+            Value in the source unit system.
         to_unit : float
-            変換後の値
+            Value in the target unit system.
         name : str or None
-            単位の名前(例: "Mass", "Frequency"), by default None
+            Name of the quantity (e.g. "Mass", "Frequency"), by default None.
         unit : str or None
-            単位(例: "kg", "Hz"), by default None
+            Unit symbol (e.g. "kg", "Hz"), by default None.
         """
         self.from_unit = from_unit
         self.to_unit = to_unit
@@ -44,14 +44,14 @@ class UnitTranslator:
         self.unit = unit
 
     def set_name(self, name, unit=None):
-        """名前を設定する.
+        """Set the display name and unit symbol.
 
         Parameters
         ----------
         name : str
-            名前
+            Display name.
         unit : str
-            単位
+            Unit symbol.
 
         Returns
         -------
@@ -63,19 +63,19 @@ class UnitTranslator:
         return self
 
     def trans(self, value, reverse=False):
-        """単位変換を行う.
+        """Perform unit conversion.
 
         Parameters
         ----------
         value : float
-            変換前の値(reverse=Trueの場合変換後の値)
+            Value before conversion (or after conversion if reverse=True).
         reverse : bool, optional
-            逆変換を行う場合True, by default False
+            If True, perform inverse conversion, by default False.
 
         Returns
         -------
         float
-            変換後の値(reverse=Trueの場合変換前の値)
+            Value after conversion (or before conversion if reverse=True).
         """
         if reverse:
             return value / self.ratio
@@ -83,127 +83,127 @@ class UnitTranslator:
             return value * self.ratio
 
     def reverse(self, value):
-        """単位逆変換を行う.
+        """Perform inverse unit conversion.
 
         Parameters
         ----------
         value : float
-            変換後の値
+            Value after conversion.
 
         Returns
         -------
         float
-            変換前の値
+            Value before conversion.
         """
         return self.trans(value, reverse=True)
 
     def __mul__(self, other):
-        """乗算演算を適用する。
-        
+        """Apply the multiplication operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand.
         Returns
         -------
         object
-            処理結果です。
+            New UnitTranslator with combined conversion factors.
         """
         from_unit = self.from_unit * other.from_unit
         to_unit = self.to_unit * other.to_unit
         return UnitTranslator(from_unit, to_unit)
 
     def __rmul__(self, other):
-        """右辺乗算演算を適用する。
-        
+        """Apply the reflected multiplication operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand.
         Returns
         -------
         object
-            処理結果です。
+            New UnitTranslator with combined conversion factors.
         """
         other = UnitTranslator(other, other)
         return other * self
 
     def __truediv__(self, other):
-        """除算演算を適用する。
-        
+        """Apply the true division operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand.
         Returns
         -------
         object
-            処理結果です。
+            New UnitTranslator with combined conversion factors.
         """
         from_unit = self.from_unit / other.from_unit
         to_unit = self.to_unit / other.to_unit
         return UnitTranslator(from_unit, to_unit)
 
     def __rtruediv__(self, other):
-        """右辺除算演算を適用する。
-        
+        """Apply the reflected true division operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand.
         Returns
         -------
         object
-            処理結果です。
+            New UnitTranslator with combined conversion factors.
         """
         other = UnitTranslator(other, other)
         return other / self
 
     def __pow__(self, other):
-        """べき乗演算を適用する。
-        
+        """Apply the power operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Exponent.
         Returns
         -------
         object
-            処理結果です。
+            New UnitTranslator with exponentiated conversion factors.
         """
         from_unit = self.from_unit**other
         to_unit = self.to_unit**other
         return UnitTranslator(from_unit, to_unit)
 
     def __str__(self):
-        """文字列表現を返す。
-        
+        """Return the string representation.
+
         Returns
         -------
         str
-            文字列表現です。
+            String representation of the translator.
         """
         return "{}({:.4}, [{}])".format(self.name, self.ratio, self.unit)
 
     def __repr__(self):
-        """文字列表現を返す。
-        
+        """Return the string representation.
+
         Returns
         -------
         str
-            文字列表現。
+            String representation of the translator.
         """
         return self.__str__()
 
 
 class Units:
-    """EMSES用の単位変換器を管理する.
+    """Manage unit converters for EMSES quantities.
 
-    SI単位系からEMSES単位系への変換を行う.
+    Convert between SI and EMSES unit systems.
     """
 
     def __init__(self, dx: float, to_c: float):
-        """EMSES用の単位変換器を生成する.
+        """Create unit converters for EMSES quantities.
 
         Parameters
         ----------
@@ -391,5 +391,4 @@ class Units:
 
         self.EC = EC.set_name("Electric conductivity", unit="S/m")
         """Unit translator for Electric conductivity [S/m]"""
-
 

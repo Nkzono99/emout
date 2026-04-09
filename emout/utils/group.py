@@ -4,34 +4,34 @@ import math
 
 
 class Group:
-    """Group クラス。
+    """Container that applies operations element-wise to a list of objects.
     """
 
     def __init__(self, objs, attrs=None):
-        """グループを生成する.
+        """Create a group from the given objects.
 
         Parameters
         ----------
         objs : list
-            オブジェクトのリスト
+            List of objects to group.
         """
         self.__dict__ = dict()
         self.objs = objs
         self.attrs = attrs
 
     def __binary_operator(self, callable, other):
-        """各要素に二項演算を適用して新しい Group を返す。
-        
+        """Apply a binary operation to each element and return a new Group.
+
         Parameters
         ----------
         callable : object
-            各要素に適用する関数です。
+            Function to apply to each element.
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         if isinstance(other, Group):
             others = other
@@ -41,18 +41,18 @@ class Group:
         return type(self)(new_objs, attrs=self.attrs)
 
     def __check_and_return_iterable(self, arg):
-        """入力を Group 長に合わせて展開する。
-        
+        """Expand the input to match the Group length.
+
         Parameters
         ----------
         arg : object
-            `Group` もしくは単一値です。`Group` を渡した場合は
-            要素数が `self` と一致することを確認し、単一値を渡した場合は
-            全要素に同じ値を適用できる形へ展開します。
+            A ``Group`` or a single value. If a ``Group`` is given, its
+            length must match ``self``. A single value is broadcast to
+            all elements.
         Returns
         -------
         object
-            `self` と同じ長さの反復可能オブジェクトです。
+            Iterable with the same length as ``self``.
         """
         if isinstance(arg, Group):
             if len(self) != len(arg):
@@ -65,679 +65,679 @@ class Group:
         return args
 
     def map(self, callable):
-        """各要素へ関数を適用した Group を返す。
-        
+        """Apply a function to each element and return a new Group.
+
         Parameters
         ----------
         callable : object
-            各要素に適用する関数です。
+            Function to apply to each element.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         new_objs = list(map(callable, self.objs))
         return type(self)(new_objs, attrs=self.attrs)
 
     def filter(self, predicate):
-        """条件を満たす要素のみを含む Group を返す。
-        
+        """Return a new Group containing only elements that satisfy the predicate.
+
         Parameters
         ----------
         predicate : object
-            要素を採用するか判定する関数です。
+            Function that decides whether to keep an element.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the filtered elements.
         """
         new_objs = list(filter(predicate, self.objs))
         return type(self)(new_objs, attrs=self.attrs)
 
     def foreach(self, callable):
-        """各要素へ関数を順に適用する。
-        
+        """Apply a function to each element for its side effects.
+
         Parameters
         ----------
         callable : object
-            各要素に適用する関数です。
+            Function to apply to each element.
         Returns
         -------
         None
-            戻り値はありません。
+            No return value.
         """
         for obj in self.objs:
             callable(obj)
 
     def __str__(self):
-        """文字列表現を返す。
-        
+        """Return the string representation.
+
         Returns
         -------
         str
-            文字列表現です。
+            String representation of the Group.
         """
         return "Group({})".format(self.objs)
 
     def __repr__(self):
-        """文字列表現を返す。
-        
+        """Return the string representation.
+
         Returns
         -------
         str
-            文字列表現。
+            String representation of the Group.
         """
         return str(self)
 
     def __format__(self, format_spec):
-        """フォーマット済み文字列を返す。
-        
+        """Return the formatted string representation.
+
         Parameters
         ----------
         format_spec : object
-            Python のフォーマット指定子です。
-            現状の実装では値にかかわらず `str(self)` を返します。
+            Python format specification. The current implementation
+            returns ``str(self)`` regardless of the value.
         Returns
         -------
         object
-            `self` の文字列表現です。
+            String representation of ``self``.
         """
         return str(self)
 
     def __len__(self):
-        """要素数を返す。
-        
+        """Return the number of elements.
+
         Returns
         -------
         int
-            要素数。
+            Number of elements in the Group.
         """
         return len(self.objs)
 
     def __iter__(self):
-        """イテレータを返す。
-        
+        """Return an iterator over the group elements.
+
         Returns
         -------
         Iterator
-            イテレータ。
+            Iterator over the group elements.
         """
         return iter(self.objs)
 
     def __contains__(self, obj):
-        """要素の包含判定を行う。
-        
+        """Check whether the Group contains the given object.
+
         Parameters
         ----------
         obj : object
-            対象オブジェクトです。
+            Object to look for.
         Returns
         -------
         object
-            処理結果です。
+            ``True`` if the object is found.
         """
         return obj in self.objs
 
     def __pos__(self):
-        """単項プラス演算を適用する。
-        
+        """Apply the unary positive operator.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(lambda obj: -obj)
 
     def __neg__(self):
-        """単項マイナス演算を適用する。
-        
+        """Apply the unary negation operator.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(lambda obj: -obj)
 
     def __invert__(self):
-        """ビット反転演算を適用する。
-        
+        """Apply the bitwise inversion operator.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(lambda obj: ~obj)
 
     def __add__(self, other):
-        """加算演算を適用する。
-        
+        """Apply the addition operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj + other, other)
 
     def __radd_(self, other):
-        """右辺加算演算を適用する。
-        
+        """Apply the reflected addition operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other + obj, other)
 
     def __sub__(self, other):
-        """減算演算を適用する。
-        
+        """Apply the subtraction operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj - other, other)
 
     def __rsub(self, other):
-        """右辺減算演算を適用する。
-        
+        """Apply the reflected subtraction operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other - obj, other)
 
     def __mul__(self, other):
-        """乗算演算を適用する。
-        
+        """Apply the multiplication operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj * other, other)
 
     def __rmul__(self, other):
-        """右辺乗算演算を適用する。
-        
+        """Apply the reflected multiplication operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other * obj, other)
 
     def __truediv__(self, other):
-        """除算演算を適用する。
-        
+        """Apply the true division operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj / other, other)
 
     def __rtruediv__(self, other):
-        """右辺除算演算を適用する。
-        
+        """Apply the reflected true division operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other / obj, other)
 
     def __floordiv__(self, other):
-        """切り捨て除算演算を適用する。
-        
+        """Apply the floor division operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj // other, other)
 
     def __rfloordiv__(self, other):
-        """右辺切り捨て除算演算を適用する。
-        
+        """Apply the reflected floor division operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other // obj, other)
 
     def __mod__(self, other):
-        """剰余演算を適用する。
-        
+        """Apply the modulo operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj % other, other)
 
     def __rmod__(self, other):
-        """右辺剰余演算を適用する。
-        
+        """Apply the reflected modulo operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other % obj, other)
 
     def __divmod__(self, other):
-        """divmod 演算を適用する。
-        
+        """Apply the divmod operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: divmod(obj, other), other)
 
     def __rdivmod__(self, other):
-        """右辺 divmod 演算を適用する。
-        
+        """Apply the reflected divmod operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: divmod(other, obj), other)
 
     def __pow__(self, other):
-        """べき乗演算を適用する。
-        
+        """Apply the power operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj**other, other)
 
     def __rpow__(self, other):
-        """右辺べき乗演算を適用する。
-        
+        """Apply the reflected power operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other**obj, other)
 
     def __lshift__(self, other):
-        """左シフト演算を適用する。
-        
+        """Apply the left shift operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj << other, other)
 
     def __rlshift__(self, other):
-        """右辺左シフト演算を適用する。
-        
+        """Apply the reflected left shift operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other << obj, other)
 
     def __rshift__(self, other):
-        """右シフト演算を適用する。
-        
+        """Apply the right shift operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj >> other, other)
 
     def __rrshift__(self, other):
-        """右辺右シフト演算を適用する。
-        
+        """Apply the reflected right shift operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other >> obj, other)
 
     def __and__(self, other):
-        """ビット積演算を適用する。
-        
+        """Apply the bitwise AND operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj & other, other)
 
     def __rand__(self, other):
-        """右辺ビット積演算を適用する。
-        
+        """Apply the reflected bitwise AND operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other & obj, other)
 
     def __or__(self, other):
-        """ビット和演算を適用する。
-        
+        """Apply the bitwise OR operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj | other, other)
 
     def __ror__(self, other):
-        """右辺ビット和演算を適用する。
-        
+        """Apply the reflected bitwise OR operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other | obj, other)
 
     def __xor__(self, other):
-        """排他的論理和演算を適用する。
-        
+        """Apply the bitwise XOR operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj ^ other, other)
 
     def __rxor__(self, other):
-        """右辺排他的論理和演算を適用する。
-        
+        """Apply the reflected bitwise XOR operator.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other ^ obj, other)
 
     def __abs__(self):
-        """絶対値演算を適用する。
-        
+        """Apply the absolute value operation.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(abs)
 
     def __eq__(self, other):
-        """等価比較を適用する。
-        
+        """Apply the equality comparison.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj == other, other)
 
     def __ne__(self, other):
-        """非等価比較を適用する。
-        
+        """Apply the inequality comparison.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj != other, other)
 
     def __le__(self, other):
-        """以下比較を適用する。
-        
+        """Apply the less-than-or-equal comparison.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj <= other, other)
 
     def __ge__(self, other):
-        """以上比較を適用する。
-        
+        """Apply the greater-than-or-equal comparison.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj >= other, other)
 
     def __lt__(self, other):
-        """未満比較を適用する。
-        
+        """Apply the less-than comparison.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj < other, other)
 
     def __gt__(self, other):
-        """超過比較を適用する。
-        
+        """Apply the greater-than comparison.
+
         Parameters
         ----------
         other : object
-            演算または比較の相手となる値です。
+            Right-hand operand for the operation or comparison.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: obj > other, other)
 
     def __int__(self):
-        """整数変換を適用する。
-        
+        """Apply integer conversion.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(int)
 
     def __float__(self):
-        """浮動小数変換を適用する。
-        
+        """Apply float conversion.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(float)
 
     def __complex__(self):
-        """複素数変換を適用する。
-        
+        """Apply complex number conversion.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(complex)
 
     def __bool__(self):
-        """真偽値変換を適用する。
-        
+        """Apply boolean conversion.
+
         Returns
         -------
         bool
-            条件判定結果です。
+            Boolean evaluation result.
         """
         return self.map(bool)
 
     def __bytes__(self):
-        """バイト列変換を適用する。
-        
+        """Apply bytes conversion.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(bytes)
 
     def __hash__(self):
-        """ハッシュ値を計算する。
-        
+        """Compute the hash value.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(hash)
 
     def __slice_to_iterable(self, slc):
-        """Group を含む slice 指定を要素ごとの slice に展開する。
-        
+        """Expand a slice containing Group values into per-element slices.
+
         Parameters
         ----------
         slc : object
-            `slice` オブジェクトです。`start`/`stop`/`step` に `Group` や
-            単一値を指定できます。
+            A ``slice`` object whose ``start``/``stop``/``step`` may be
+            ``Group`` instances or single values.
         Returns
         -------
         object
-            各要素に対応する `slice` のリストです。
+            List of ``slice`` objects, one per element.
         """
         start = slc.start
         stop = slc.stop
@@ -751,16 +751,16 @@ class Group:
         return slices
 
     def __expand_key(self, key):
-        """インデックスキーを要素ごとのキー列に展開する。
-        
+        """Expand an index key into per-element keys.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Index key for getting or setting items.
         Returns
         -------
         object
-            処理結果です。
+            List of per-element keys.
         """
         if not isinstance(key, tuple):
             key = (key,)
@@ -783,16 +783,16 @@ class Group:
         return keys
 
     def __getitem__(self, key):
-        """要素を取得する。
-        
+        """Retrieve items by key.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Index key for getting items.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the retrieved items.
         """
         keys = self.__expand_key(key)
 
@@ -801,19 +801,19 @@ class Group:
         return type(self)(new_objs, attrs=self.attrs)
 
     def __setitem__(self, key, value):
-        """要素を設定する。
-        
+        """Set items by key.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Index key for setting items.
         value : object
-            値。
-        
+            Value to assign.
+
         Returns
         -------
         None
-            戻り値はありません。
+            No return value.
         """
         keys = self.__expand_key(key)
         values = self.__check_and_return_iterable(value)
@@ -822,16 +822,16 @@ class Group:
             obj[key] = value
 
     def __delitem__(self, key):
-        """要素を削除する。
-        
+        """Delete items by key.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Index key for deleting items.
         Returns
         -------
         None
-            戻り値はありません。
+            No return value.
         """
         keys = self.__expand_key(key)
 
@@ -839,35 +839,35 @@ class Group:
             del obj[key]
 
     def __getattr__(self, key):
-        """属性アクセスを解決する。
-        
+        """Resolve attribute access across all elements.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Attribute name to retrieve.
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the attribute values.
         """
         keys = self.__check_and_return_iterable(key)
         new_objs = [getattr(obj, key) for obj, key in zip(self.objs, keys)]
         return type(self)(new_objs, attrs=self.attrs)
 
     def __setattr__(self, key, value):
-        """属性を設定する。
-        
+        """Set an attribute on all elements.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Attribute name to set.
         value : object
-            値。
-        
+            Value to assign.
+
         Returns
         -------
         None
-            戻り値はありません。
+            No return value.
         """
         if key in ("objs", "__dict__", "attrs"):
             self.__dict__[key] = value
@@ -880,19 +880,19 @@ class Group:
             setattr(obj, key, value)
 
     def __call__(self, *args, **kwargs):
-        """呼び出し可能オブジェクトとして実行する。
-        
+        """Call each element as a callable.
+
         Parameters
         ----------
         *args : tuple
-            追加の位置引数。内部で呼び出す関数へ渡されます。
+            Positional arguments forwarded to each element's call.
         **kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Keyword arguments forwarded to each element's call.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the call results.
         """
         new_argss = [list() for i in range(len(self.objs))]
         for arg in args:
@@ -915,41 +915,41 @@ class Group:
         return type(self)(new_objs, attrs=self.attrs)
 
     def __round__(self):
-        """丸め演算を適用する。
-        
+        """Apply the rounding operation.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(math.round)
 
     def __trunc__(self):
-        """切り捨て演算を適用する。
-        
+        """Apply the truncation operation.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(math.trunc)
 
     def __floor__(self):
-        """床関数演算を適用する。
-        
+        """Apply the floor operation.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(math.floor)
 
     def __ceil__(self):
-        """天井関数演算を適用する。
-        
+        """Apply the ceiling operation.
+
         Returns
         -------
         object
-            処理結果です。
+            New Group containing the results.
         """
         return self.map(math.ceil)

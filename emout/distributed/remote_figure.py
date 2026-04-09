@@ -1,19 +1,21 @@
-"""pyplot を透過的にサーバー側で実行するコンテキストマネージャ.
+"""Context manager that transparently executes pyplot calls on the server side.
 
-``with remote_figure():`` ブロック内で発行された ``data.plot()`` や
-``plt.xlabel()`` などの呼び出しを全てコマンドとして記録し、ブロック終了時に
-Dask worker 上で一括再生 → PNG bytes だけをクライアントに返す。
+Inside a ``with remote_figure():`` block, all ``data.plot()`` and
+``plt.xlabel()`` calls are recorded as commands. When the block exits,
+the commands are replayed on the Dask worker and only the PNG bytes are
+returned to the client.
 
-ローカルには画像データ以外のメモリを確保しない。
+No memory beyond the image data is allocated locally.
 
-``RemoteFigure`` クラスを使えば ``open()`` / ``close()`` 形式でも同じ機能を
-使える。既存コードに ``with`` ブロックを導入しづらい場合に便利::
+The ``RemoteFigure`` class offers the same functionality via an
+``open()`` / ``close()`` API, which is convenient when a ``with`` block
+is hard to introduce into existing code::
 
     rf = RemoteFigure()
     rf.open()
     data.phisp[-1, :, 100, :].plot()
     plt.xlabel("x [m]")
-    rf.close()   # ← PNG が表示される
+    rf.close()   # <- PNG is displayed
 """
 
 from __future__ import annotations
@@ -115,33 +117,33 @@ _PLT_METHODS = [
 
 
 # ---------------------------------------------------------------------------
-# RemoteFigure class — open/close and context manager
+# RemoteFigure class -- open/close and context manager
 # ---------------------------------------------------------------------------
 
 
 class RemoteFigure:
-    """matplotlib 操作をサーバー側で実行するオブジェクト.
+    """Execute matplotlib operations on the server side.
 
-    ``with`` 文でも ``open()`` / ``close()`` でも使える。
+    Can be used as a ``with`` statement or via ``open()`` / ``close()``.
 
     Parameters
     ----------
     session : RemoteSession, optional
-        使用する Actor。省略時は ``emout_dir`` から自動取得。
+        Actor to use. Auto-detected from *emout_dir* if omitted.
     emout_dir : str, optional
-        ``session`` が未指定のときに Actor を検索するディレクトリ。
+        Directory used to look up the Actor when *session* is not given.
     emout_kwargs : dict, optional
-        ``Emout(...)`` を再構成するための引数セット。
+        Argument set for reconstructing ``Emout(...)``.
     fmt : str
-        出力画像フォーマット。
+        Output image format.
     dpi : int
-        出力解像度。
+        Output resolution.
     figsize : tuple, optional
-        Figure サイズ (width, height)。
+        Figure size (width, height).
 
     Usage::
 
-        # with 文
+        # with statement
         with RemoteFigure() as rf:
             data.phisp[-1, :, 100, :].plot()
             plt.xlabel("x [m]")
@@ -174,16 +176,16 @@ class RemoteFigure:
 
     @property
     def is_open(self) -> bool:
-        """現在 open 状態かどうか。"""
+        """Whether the figure is currently in the open (recording) state."""
         return self._opened
 
     def open(self) -> "RemoteFigure":
-        """記録モードを開始する。
+        """Start recording mode.
 
         Returns
         -------
         self
-            メソッドチェーンまたは ``with`` 文向け。
+            For method chaining or ``with`` statement usage.
         """
         global _recording, _commands, _session
 
@@ -223,7 +225,7 @@ class RemoteFigure:
         return self
 
     def close(self) -> None:
-        """記録を停止し、コマンドを共有 worker で再生して画像を表示する。"""
+        """Stop recording and replay commands on the shared worker to display the image."""
         if not self._opened:
             return
 
@@ -281,23 +283,23 @@ def remote_figure(
     dpi: int = 150,
     figsize: Optional[Tuple[float, float]] = None,
 ):
-    """matplotlib 操作をサーバー側で実行するコンテキストマネージャ.
+    """Context manager that executes matplotlib operations on the server side.
 
     Parameters
     ----------
     session : RemoteSession, optional
-        使用する Actor。省略時は ``emout_dir`` から自動取得。
+        Actor to use. Auto-detected from *emout_dir* if omitted.
     emout_dir : str, optional
-        ``session`` が未指定のときに Actor を検索するディレクトリ。
+        Directory used to look up the Actor when *session* is not given.
     emout_kwargs : dict, optional
-        ``Emout(...)`` を再構成するための引数セット。
-        `input_path` / `output_directory` を含むケースで使われる。
+        Argument set for reconstructing ``Emout(...)``.
+        Used when ``input_path`` / ``output_directory`` are involved.
     fmt : str
-        出力画像フォーマット。
+        Output image format.
     dpi : int
-        出力解像度。
+        Output resolution.
     figsize : tuple, optional
-        Figure サイズ (width, height)。
+        Figure size (width, height).
 
     Usage::
 
@@ -305,7 +307,7 @@ def remote_figure(
             data.phisp[-1, :, 100, :].plot()
             plt.axhline(y=50, color="red")
             plt.xlabel("x [m]")
-        # ← PNG が Jupyter に表示される
+        # <- PNG is displayed in Jupyter
     """
     rf = RemoteFigure(
         session=session, emout_dir=emout_dir, emout_kwargs=emout_kwargs,
@@ -324,7 +326,7 @@ def remote_figure(
 
 
 def _parse_magic_line(line: str) -> dict[str, Any]:
-    """``%%remote_figure`` の引数行をパースする。"""
+    """Parse the argument line of ``%%remote_figure``."""
     import shlex
     tokens = shlex.split(line) if line.strip() else []
     kwargs: dict[str, Any] = {}
@@ -350,19 +352,19 @@ def _parse_magic_line(line: str) -> dict[str, Any]:
 
 
 def register_magics(ipython=None) -> None:
-    """``%%remote_figure`` セルマジックを IPython / Jupyter に登録する.
+    """Register the ``%%remote_figure`` cell magic in IPython / Jupyter.
 
     Usage::
 
         from emout.distributed.remote_figure import register_magics
         register_magics()
 
-    または::
+    or::
 
         %load_ext emout.distributed.remote_figure
 
-    登録後はセル先頭に ``%%remote_figure`` と書くだけで、セル内の
-    ``data.plot()`` / ``plt.*`` が Dask worker 上で実行される::
+    After registration, prepend ``%%remote_figure`` to a cell to have all
+    ``data.plot()`` / ``plt.*`` calls executed on the Dask worker::
 
         %%remote_figure
         data.phisp[-1, :, 100, :].plot()
@@ -383,7 +385,7 @@ def register_magics(ipython=None) -> None:
             raise RuntimeError("No active IPython session found")
 
     @register_cell_magic
-    def remote_figure(line, cell):  # noqa: F811 — shadows module-level name intentionally
+    def remote_figure(line, cell):  # noqa: F811 -- shadows module-level name intentionally
         kwargs = _parse_magic_line(line)
         rf = RemoteFigure(**kwargs)
         rf.open()
@@ -394,5 +396,5 @@ def register_magics(ipython=None) -> None:
 
 
 def load_ipython_extension(ipython) -> None:
-    """``%load_ext emout.distributed.remote_figure`` 用エントリポイント。"""
+    """Entry point for ``%load_ext emout.distributed.remote_figure``."""
     register_magics(ipython)

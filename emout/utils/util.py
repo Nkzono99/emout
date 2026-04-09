@@ -10,21 +10,22 @@ from matplotlib.animation import PillowWriter, writers
 
 
 def interp2d(mesh, n, **kwargs):
-    """2 次元配列上で双線形補間を行う。
-    
+    """Perform bilinear interpolation on a 2-D array.
+
     Parameters
     ----------
     mesh : object
-        描画メッシュ。
+        2-D mesh data to interpolate.
     n : object
-        サンプル数または格子点数です。
+        Upsampling factor for each axis.
     **kwargs : dict
-        追加のキーワード引数。内部で呼び出す関数へ渡されます。
-    
+        Additional keyword arguments forwarded to
+        ``scipy.interpolate.griddata``.
+
     Returns
     -------
     object
-        処理結果です。
+        Interpolated 2-D array.
     """
     ny, nx = mesh.shape
 
@@ -50,17 +51,17 @@ def interp2d(mesh, n, **kwargs):
 
 
 def slice2tuple(slice_obj: slice):
-    """スライスオブジェクトをタプルに変換する.
+    """Convert a slice object to a tuple.
 
     Parameters
     ----------
     slice_obj : slice
-        スライスオブジェクト
+        Slice object.
 
     Returns
     -------
     (start, stop, step) : int
-        スライス情報をもつタプル
+        Tuple containing the slice information.
     """
     start = slice_obj.start
     stop = slice_obj.stop
@@ -69,19 +70,19 @@ def slice2tuple(slice_obj: slice):
 
 
 def range_with_slice(slice_obj, maxlen):
-    """スライスを引数とするrange関数.
+    """Create a range from a slice object.
 
     Parameters
     ----------
     slice_obj : slice
-        スライスオブジェクト
+        Slice object.
     maxlen : int
-        最大数(スライスの値が負である場合に用いる)
+        Maximum length (used when slice values are negative).
 
     Returns
     -------
     generator
-        rangeジェネレータ
+        Range generator.
     """
     start = slice_obj.start or 0
     if start < 0:
@@ -128,19 +129,19 @@ def apply_offset(
 
 
 class RegexDict(dict):
-    """正規表現をキーとする辞書クラス."""
+    """Dictionary that supports regular expression keys."""
 
     def __getitem__(self, key):
-        """要素を取得する。
-        
+        """Retrieve the value for a key, falling back to regex matching.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Literal key or string to match against regex keys.
         Returns
         -------
         object
-            処理結果です。
+            Value associated with the matched key.
         """
         if super().__contains__(key):
             return super().__getitem__(key)
@@ -152,16 +153,16 @@ class RegexDict(dict):
         raise KeyError()
 
     def __contains__(self, key):
-        """要素の包含判定を行う。
-        
+        """Check whether a key matches any literal or regex key.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Key to look up.
         Returns
         -------
         object
-            処理結果です。
+            ``True`` if the key matches.
         """
         if super().__contains__(key):
             return True
@@ -173,18 +174,18 @@ class RegexDict(dict):
         return False
 
     def get(self, key, default=None):
-        """キーに対応する値を取得する。
-        
+        """Return the value for key if present, otherwise return *default*.
+
         Parameters
         ----------
         key : object
-            取得・設定対象のキーです。
+            Key to look up.
         default : object, optional
-            キー未存在時に返す既定値です。
+            Default value returned when the key is not found.
         Returns
         -------
         object
-            処理結果です。
+            Value associated with the key or the default.
         """
         try:
             return self[key]
@@ -193,15 +194,15 @@ class RegexDict(dict):
 
 
 class DataFileInfo:
-    """データファイル情報を管理するクラス."""
+    """Manage metadata about a data file."""
 
     def __init__(self, filename):
-        """データファイル情報を管理するオブジェクトを生成する.
+        """Create a data-file info object.
 
         Parameters
         ----------
         filename : str or Path
-            ファイル名
+            File name or path.
         """
         if not isinstance(filename, Path):
             filename = Path(filename)
@@ -209,82 +210,82 @@ class DataFileInfo:
 
     @property
     def filename(self):
-        """ファイル名を返す.
+        """Return the file name.
 
         Returns
         -------
         Path
-            ファイル名
+            File name.
         """
         return self._filename
 
     @property
     def directory(self):
-        """ディレクトリの絶対パスを返す.
+        """Return the absolute path of the parent directory.
 
         Returns
         -------
         Path
-            ディレクトリの絶対パス
+            Absolute directory path.
         """
         return (self._filename / "../").resolve()
 
     @property
     def abspath(self):
-        """ファイルの絶対パスを返す.
+        """Return the absolute path of the file.
 
         Returns
         -------
         Path
-            ファイルの絶対パス
+            Absolute file path.
         """
         return self._filename.resolve()
 
     def __str__(self):
-        """文字列表現を返す。
-        
+        """Return the string representation.
+
         Returns
         -------
         str
-            文字列表現です。
+            String representation of the file path.
         """
         return str(self._filename)
 
 
 @writers.register("quantized-pillow")
 class QuantizedPillowWriter(PillowWriter):
-    """色数を256としたPillowWriterラッパークラス."""
+    """PillowWriter wrapper that quantises each frame to 256 colours."""
 
     def grab_frame(self, **savefig_kwargs):
-        """フレームを取得して 256 色へ量子化する。
-        
+        """Grab a frame and quantise it to 256 colours.
+
         Parameters
         ----------
         **savefig_kwargs : dict
-            追加のキーワード引数。内部で呼び出す関数へ渡されます。
-        
+            Additional keyword arguments forwarded to ``savefig``.
+
         Returns
         -------
         None
-            戻り値はありません。
+            No return value.
         """
         super().grab_frame(**savefig_kwargs)
         self._frames[-1] = self._frames[-1].convert("RGB").quantize()
 
 
 def hole_mask(inp, reverse=False):
-    """矩形ホール領域のマスク配列を生成する。
-    
+    """Generate a boolean mask for a rectangular hole region.
+
     Parameters
     ----------
     inp : object
-        入力パラメータオブジェクトです。
+        Input parameter object providing grid and hole dimensions.
     reverse : bool, optional
-        `True` の場合、生成したマスクを反転して返します。
+        If ``True``, invert the mask before returning.
     Returns
     -------
     object
-        処理結果です。
+        Boolean mask array.
     """
     shape = (inp.nz + 1, inp.ny + 1, inp.nx + 1)
     xl = int(inp.xlrechole[0])

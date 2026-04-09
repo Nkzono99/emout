@@ -1,6 +1,7 @@
-"""TOML の生データに属性アクセスで直接アクセスするための :class:`TomlData` ラッパー.
+"""Attribute-access wrapper for raw TOML data via :class:`TomlData`.
 
-plasma.toml → plasma.inp の変換は MPIEMSES3D 側の ``toml2inp`` コマンドで行う。
+The plasma.toml to plasma.inp conversion is handled by the MPIEMSES3D
+``toml2inp`` command.
 """
 
 import copy
@@ -31,27 +32,27 @@ _GROUP_TABLE_MAP = {
 
 
 # ---------------------------------------------------------------------------
-# TomlData: TOML 辞書への属性アクセスラッパー
+# TomlData: attribute-access wrapper for TOML dictionaries
 # ---------------------------------------------------------------------------
 
 
 class TomlData:
-    """TOML の辞書構造に属性アクセスできるラッパー.
+    """Attribute-access wrapper for a TOML dictionary structure.
 
-    ``data.species[0].wp`` のようにネストした辞書・リストへ
-    ドットアクセスで到達できる。辞書としてのアクセス
-    (``data["tmgrid"]["nx"]``) も同時にサポートする。
+    Enables dot-access like ``data.species[0].wp`` for nested dicts and
+    lists. Dictionary-style access (``data["tmgrid"]["nx"]``) is also
+    supported.
 
     Parameters
     ----------
     data : dict
-        TOML から読み込んだ辞書。
+        Dictionary loaded from TOML.
     """
 
     def __init__(self, data: Dict[str, Any]):
         object.__setattr__(self, "_data", data)
 
-    # --- dict ライクアクセス ---
+    # --- dict-like access ---
 
     def __getitem__(self, key: str) -> Any:
         return _wrap(self._data[key])
@@ -75,7 +76,7 @@ class TomlData:
         val = self._data.get(key, default)
         return _wrap(val) if val is not default else default
 
-    # --- 属性アクセス ---
+    # --- attribute access ---
 
     def __getattr__(self, key: str) -> Any:
         try:
@@ -85,7 +86,7 @@ class TomlData:
                 f"'{type(self).__name__}' has no attribute '{key}'"
             )
 
-    # --- 表示 ---
+    # --- display ---
 
     def __repr__(self) -> str:
         return f"TomlData({self._data!r})"
@@ -94,12 +95,12 @@ class TomlData:
         return str(self._data)
 
     def to_dict(self) -> Dict[str, Any]:
-        """元の辞書を返す。"""
+        """Return the underlying dictionary."""
         return self._data
 
 
 def _wrap(value: Any) -> Any:
-    """辞書を TomlData に、辞書リストを TomlData リストに再帰的にラップする。"""
+    """Recursively wrap dicts as TomlData and lists of dicts as lists of TomlData."""
     if isinstance(value, dict):
         return TomlData(value)
     if isinstance(value, list):
@@ -108,7 +109,7 @@ def _wrap(value: Any) -> Any:
 
 
 def _deep_merge(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
-    """辞書を再帰的にマージした新しい dict を返す。"""
+    """Return a new dict with *overrides* recursively merged into *base*."""
     merged = copy.deepcopy(base)
     for key, value in overrides.items():
         if (
@@ -126,7 +127,7 @@ def _resolve_group_entries(
     entries: list[dict],
     groups: Any,
 ) -> list[dict]:
-    """group_id を参照して各 entry に group default を展開する。"""
+    """Expand group defaults into each entry by resolving group_id references."""
     resolved: list[dict] = []
     groups_dict = groups if isinstance(groups, dict) else {}
 
@@ -152,7 +153,7 @@ def _resolve_groups_in_data(
     purge_groups: bool = False,
     path: tuple[str, ...] = (),
 ) -> Dict[str, Any]:
-    """TOML データ中の ``*_groups`` を各 entry に展開する。"""
+    """Expand ``*_groups`` in the TOML data into each entry."""
     resolved: Dict[str, Any] = {}
 
     for key, value in data.items():
@@ -196,21 +197,23 @@ def load_toml(
     resolve_groups: bool = False,
     purge_groups: bool = False,
 ) -> TomlData:
-    """plasma.toml を読み込み TomlData として返す.
+    """Load plasma.toml and return it as a TomlData wrapper.
 
     Parameters
     ----------
     toml_path : Path
-        plasma.toml のパス
+        Path to plasma.toml.
     resolve_groups : bool, optional
-        ``group_id`` 参照を解決し、各 ``*_groups`` の既定値を entry に展開する。
+        Resolve ``group_id`` references and expand ``*_groups`` defaults
+        into each entry.
     purge_groups : bool, optional
-        ``resolve_groups=True`` のとき、展開元の ``*_groups`` テーブルを返却データから除外する。
+        When ``resolve_groups=True``, remove the source ``*_groups``
+        tables from the returned data.
 
     Returns
     -------
     TomlData
-        TOML の辞書構造に属性アクセスできるラッパー
+        Attribute-access wrapper for the TOML dictionary.
     """
     with open(toml_path, "rb") as f:
         data = tomllib.load(f)

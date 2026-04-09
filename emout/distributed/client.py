@@ -18,42 +18,42 @@ def start_cluster(
     env_mods: list[str] | None = None,
     logdir: str | None = None,
 ):
-    """Dask クラスタを起動してクライアントを返す。
-    
+    """Start a Dask cluster and return a client.
+
     Parameters
     ----------
     scheduler_ip : str | None, optional
-        Dask スケジューラの IP アドレスです。
+        IP address of the Dask scheduler.
     scheduler_port : int | None, optional
-        Dask スケジューラのポート番号です。
+        Port number of the Dask scheduler.
     partition : str | None, optional
-        投入先ジョブパーティション名です。
+        SLURM partition name for job submission.
     processes : int | None, optional
-        ワーカージョブごとのプロセス数です。
+        Number of processes per worker job.
     threads : int | None, optional
-        1 プロセスあたりのスレッド数です。
+        Number of threads per process.
     cores : int | None, optional
-        ジョブに割り当てる総コア数です。
+        Total number of cores allocated to a job.
     memory : str | None, optional
-        ジョブに割り当てるメモリ量です。
+        Amount of memory allocated to a job.
     walltime : str | None, optional
-        ジョブの実行時間上限です。
+        Maximum wall-clock time for a job.
     env_mods : list[str] | None, optional
-        ジョブ開始時に読み込む環境モジュールです。
+        Environment modules to load at job start.
     logdir : str | None, optional
-        ログ出力先ディレクトリです。
+        Directory for log output.
     Returns
     -------
     object
-        処理結果です。
+        Connected Dask client.
     """
     global _global_cluster
     if _global_cluster is not None:
         return _global_cluster.get_client()
 
     cfg = DaskConfig()
-  
-    # ── config の内容を取得。引数が None でなければ上書きする ──
+
+    # ── Retrieve config values; override with explicit arguments ──
     ip = scheduler_ip if scheduler_ip is not None else cfg.scheduler_ip
     port = scheduler_port if scheduler_port is not None else cfg.scheduler_port
     part = partition if partition is not None else cfg.partition
@@ -80,27 +80,28 @@ def start_cluster(
     cluster.start_scheduler()
     job_ids = cluster.submit_worker(jobs=1)
     print("Submitted worker job IDs:", job_ids)
-    
+
     _global_cluster = cluster
 
     return _global_cluster.get_client()
 
 
 def connect(address: str | None = None):
-    """起動済みの emout server に接続する。
+    """Connect to a running emout server.
 
-    ``address`` を省略すると ``~/.emout/server.json`` から自動検出する。
+    If *address* is omitted, auto-detect from ``~/.emout/server.json``.
 
     Parameters
     ----------
     address : str | None, optional
-        Dask スケジューラのアドレス (例: ``"tcp://10.0.0.1:32332"``)。
-        ``None`` の場合は ``emout server start`` が書き出した状態ファイルから読む。
+        Dask scheduler address (e.g. ``"tcp://10.0.0.1:32332"``).
+        If ``None``, read from the state file written by
+        ``emout server start``.
 
     Returns
     -------
     dask.distributed.Client
-        接続済みの Dask クライアント。
+        Connected Dask client.
     """
     from dask.distributed import Client
     from pathlib import Path
@@ -110,8 +111,8 @@ def connect(address: str | None = None):
         state_file = Path.home() / ".emout" / "server.json"
         if not state_file.exists():
             raise RuntimeError(
-                "emout server が起動していません。"
-                "'emout server start' を実行するか、address を明示してください。"
+                "emout server is not running. "
+                "Run 'emout server start' or specify the address explicitly."
             )
         state = json.loads(state_file.read_text())
         address = state["address"]
@@ -120,17 +121,17 @@ def connect(address: str | None = None):
 
 
 def stop_cluster(address: str | None = None):
-    """起動済み Dask クラスタを停止する。
+    """Stop a running Dask cluster.
 
     Parameters
     ----------
     address : str | None, optional
-        別プロセスで起動した scheduler を停止する場合の接続先。
-    
+        Scheduler address for a cluster started in another process.
+
     Returns
     -------
     None
-        戻り値はありません。
+        No return value.
     """
     global _global_cluster
     if _global_cluster is not None:

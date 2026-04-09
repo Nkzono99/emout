@@ -3,19 +3,19 @@
 """
 simple_dask_cluster.py
 
-京大スパコン(SLURM)向けに、Python コードから
-- Dask Scheduler の起動
-- Dask Worker の sbatch 投入
-- Client 接続
-をすべて自動的に行えるようにするミニマルなラッパーライブラリです。
+Minimal wrapper library for automatically performing the following from
+Python code, targeting SLURM-based supercomputers:
+- Start a Dask Scheduler
+- Submit Dask Workers via sbatch
+- Connect a Client
 
-使い方(例):
+Usage example:
 
 .. code-block:: python
 
     from simple_dask_cluster import SimpleDaskCluster
 
-    # クラスを生成
+    # Create the cluster object
     cluster = SimpleDaskCluster(
         scheduler_ip="10.10.64.1",
         scheduler_port=8786,
@@ -27,21 +27,21 @@ simple_dask_cluster.py
         walltime="01:00:00",
         env_mods=["module load Anaconda3", "conda activate dask_env"],
         logdir="/home/b/b36291/large0/exp_dipole/logs",
-        sbatch_extra=None,  # 追加 sbatch オプションがあればリストで渡す
+        sbatch_extra=None,  # Pass additional sbatch options as a list
     )
 
-    # Scheduler をバックグラウンドで起動
+    # Start the scheduler in the background
     cluster.start_scheduler()
-    # Worker を複数投入(ここでは 2 台)
+    # Submit multiple workers (here 2)
     cluster.submit_worker(jobs=2)
-    # Client を取得して分散計算を実行
+    # Get a client and run distributed computations
     client = cluster.get_client()
-    # ⇒ たとえば dask.array を使った処理を client.compute() で呼べる
+    # e.g. call client.compute() with dask.array operations
 
-    # 最後に後始末
+    # Clean up
     client.close()
     cluster.stop_scheduler()
-    # (SLURM ジョブ自体は SLURM の期限(walltime)が来るか、scancel で落とす)
+    # (SLURM jobs expire at walltime or can be cancelled with scancel)
 """
 
 import os
@@ -54,7 +54,7 @@ from dask.distributed import Client
 
 class SimpleDaskCluster:
     """
-    Dask Scheduler と Worker(sbatch)を Python でまとめて管理するクラス。
+    Manage a Dask Scheduler and Workers (sbatch) together from Python.
     """
 
     def __init__(
@@ -75,28 +75,28 @@ class SimpleDaskCluster:
         Parameters
         ----------
         scheduler_ip : str
-            Dask Scheduler を bind する計算ノードの IP アドレス
+            IP address of the compute node to bind the Dask Scheduler.
         scheduler_port : int, default=8786
-            Dask Scheduler が待ち受ける TCP ポート番号
+            TCP port for the Dask Scheduler.
         partition : str, default="gr20001a"
-            SLURM のパーティション名(例: "gr20001a" など)
+            SLURM partition name (e.g. "gr20001a").
         processes : int, default=1
-            sbatch で投げる dask-worker の「プロセス数」(p=… に対応)
+            Number of processes per dask-worker sbatch job (p=...).
         threads : int, default=1
-            dask-worker の --nthreads に対応
+            Corresponds to dask-worker --nthreads.
         cores : int, default=1
-            sbatch のリソース指定 c=… に対応
+            SLURM resource specification c=... .
         memory : str, default="4G"
-            sbatch のリソース指定 m=… に対応 (例: "4G", "8000M" など)
+            SLURM resource specification m=... (e.g. "4G", "8000M").
         walltime : str, default="01:00:00"
-            sbatch の実行時間 (hh:mm:ss)
+            SLURM walltime (hh:mm:ss).
         env_mods : list[str] | None, default=None
-            ジョブ実行時に実行するシェルコマンド(例: ["module load Anaconda3", "conda activate dask_env"])
+            Shell commands to run at job start (e.g. ["module load Anaconda3", "conda activate dask_env"]).
         logdir : str | Path | None, default=None
-            SLURM ジョブの標準出力・標準エラーを置くディレクトリ。
-            None の場合はカレントディレクトリ
+            Directory for SLURM job stdout/stderr.
+            Uses the current directory if None.
         sbatch_extra : list[str] | None, default=None
-            sbatch に追加で渡したいオプション (例: ["--mem-per-cpu=2000M"])
+            Additional sbatch options (e.g. ["--mem-per-cpu=2000M"]).
         """
         self.scheduler_ip = scheduler_ip
         self.scheduler_port = scheduler_port
@@ -109,28 +109,28 @@ class SimpleDaskCluster:
         self.env_mods = env_mods or []
         self.sbatch_extra = sbatch_extra or []
 
-        # ログディレクトリ
+        # Log directory
         if logdir is None:
             logdir = Path.cwd() / "dask_logs"
         self.logdir = Path(logdir)
         self.logdir.mkdir(parents=True, exist_ok=True)
 
-        # Scheduler プロセス (subprocess.Popen)
+        # Scheduler process (subprocess.Popen)
         self._sched_proc: subprocess.Popen | None = None
-        # 現在投入した Worker ジョブの JOB ID を保持
+        # Track submitted worker JOB IDs
         self.worker_job_ids: list[int] = []
 
-        # Client オブジェクト (後で生成)
+        # Client object (created later)
         self._client: Client | None = None
 
     def start_scheduler(self, no_dashboard: bool = True):
         """
-        バックグラウンドで dask-scheduler を立ち上げる。
-        `self._sched_proc` に Popen オブジェクトを保持する。
+        Start dask-scheduler in the background.
+        Store the Popen object in ``self._sched_proc``.
         """
 
         if self._sched_proc is not None and self._sched_proc.poll() is None:
-            # すでに起動中
+            # Already running
             print("[SimpleDaskCluster] Scheduler is already running.")
             return
 
@@ -145,13 +145,13 @@ class SimpleDaskCluster:
         if no_dashboard:
             cmd.append("--no-dashboard")
 
-        # 出力をログファイルに書き出す
+        # Write output to log files
         sched_out = self.logdir / "scheduler.out"
         sched_err = self.logdir / "scheduler.err"
 
         print(f"[SimpleDaskCluster] Starting scheduler: {' '.join(cmd)}")
         with open(sched_out, "a") as fo, open(sched_err, "a") as fe:
-            # Popen でバックグラウンド起動
+            # Start in the background with Popen
             self._sched_proc = subprocess.Popen(
                 cmd,
                 stdout=fo,
@@ -160,7 +160,7 @@ class SimpleDaskCluster:
                 bufsize=1,
             )
 
-        # 少し待って、起動できたかチェック
+        # Wait briefly and check whether it started successfully
         time.sleep(1.0)
         if self._sched_proc.poll() is not None:
             raise RuntimeError(
@@ -170,7 +170,7 @@ class SimpleDaskCluster:
 
     def stop_scheduler(self):
         """
-        起動中の Scheduler を停止する (kill)。
+        Stop the running Scheduler (kill).
         """
         if self._sched_proc is None:
             print("[SimpleDaskCluster] No scheduler process to stop.")
@@ -196,8 +196,8 @@ class SimpleDaskCluster:
 
     def submit_worker(self, jobs: int = 1):
         """
-        Worker (dask-worker) を sbatch で投げる。
-        `jobs` の数だけ SLURM ジョブを投入し、それぞれの JOBID を返す。
+        Submit Workers (dask-worker) via sbatch.
+        Submit *jobs* SLURM jobs and return their JOBIDs.
         """
         if self._sched_proc is None:
             raise RuntimeError(
@@ -206,10 +206,10 @@ class SimpleDaskCluster:
 
         new_job_ids: list[int] = []
         for _ in range(jobs):
-            # sbatch 用スクリプトを一時ディレクトリに書き出す
+            # Write the sbatch script to a temporary directory
             sbatch_script = self._generate_worker_script()
             job_submit_cmd = ["sbatch", str(sbatch_script)]
-            # 環境変数 DASK_SCHED_IP を与えて sbatch する
+            # Pass the scheduler IP via environment variable
             env = os.environ.copy()
             env["DASK_SCHED_IP"] = self.scheduler_ip
 
@@ -222,7 +222,7 @@ class SimpleDaskCluster:
             if completed.returncode != 0:
                 raise RuntimeError(f"sbatch failed: {completed.stderr.strip()}")
 
-            # sbatch から返ってくる標準出力例: "Submitted batch job 123456"
+            # Parse JOBID from sbatch stdout, e.g. "Submitted batch job 123456"
             stdout = completed.stdout.strip()
             parts = stdout.split()
             try:
@@ -239,12 +239,12 @@ class SimpleDaskCluster:
 
     def _generate_worker_script(self) -> Path:
         """
-        Worker 用の sbatch スクリプトをテンポラリファイルとして書き出す。
-        返り値はスクリプトファイルのパス (Path)。
+        Write the Worker sbatch script to a temporary file.
+        Return the path (Path) to the script file.
         """
         script_lines: list[str] = []
 
-        # ヘッダー
+        # Header
         script_lines.append("#!/bin/bash")
         script_lines.append(f"#SBATCH -p {self.partition}")
         script_lines.append(
@@ -255,49 +255,49 @@ class SimpleDaskCluster:
         script_lines.append(f"#SBATCH -o {self.logdir}/worker_%J.out")
         script_lines.append(f"#SBATCH -e {self.logdir}/worker_%J.err")
 
-        # 追加 sbatch オプションがあれば
+        # Additional sbatch options
         for extra in self.sbatch_extra:
             script_lines.append(extra)
 
-        script_lines.append("")  # 空行
+        script_lines.append("")  # blank line
 
-        # 環境モジュールや conda activate
+        # Environment modules and conda activate
         for cmd in self.env_mods:
             script_lines.append(cmd)
-        script_lines.append("")  # 空行
+        script_lines.append("")  # blank line
 
-        # Scheduler の IP は環境変数 DASK_SCHED_IP から読む
+        # Read scheduler IP from environment variable DASK_SCHED_IP
         script_lines.append("HOST=${DASK_SCHED_IP}")
         script_lines.append(f"PORT={self.scheduler_port}")
         script_lines.append("")
 
-        # dask-worker コマンド本体
+        # dask-worker command
         script_lines.append("dask worker tcp://${HOST}:${PORT} \\")
         script_lines.append(f"    --nthreads {self.threads} \\")
         script_lines.append(f"    --no-dashboard --memory-limit {self.memory}")
         script_lines.append("")
 
-        # 最後に日付表示しておく
+        # Print timestamp
         script_lines.append("date")
 
-        # ファイルに書き出し
+        # Write to file
         tmpdir = Path("/tmp/simple_dask_workers")
         tmpdir.mkdir(parents=True, exist_ok=True)
 
-        # 一意のファイル名を作成
+        # Create a unique file name
         script_path = tmpdir / f"worker_{int(time.time()*1000)}.sh"
         with open(script_path, "w") as f:
             f.write("\n".join(script_lines))
 
-        # sbatch で実行できるように実行権限を付与
+        # Make the script executable
         script_path.chmod(0o744)
         return script_path
 
     def get_client(self, timeout: float = 30.0) -> Client:
         """
-        dask.distributed.Client を返す。初回呼び出し時に実際に接続を試みる。
-        Scheduler にワーカーがまだつながっていなくても、
-        Client が自動的にリトライしてくれる設計です。
+        Return a dask.distributed.Client. On first call, attempt to connect.
+        The Client will automatically retry even if no workers have connected
+        to the scheduler yet.
         """
         if self._sched_proc is None:
             raise RuntimeError("Scheduler is not running.")
@@ -329,7 +329,7 @@ class SimpleDaskCluster:
 
     def close_client(self):
         """
-        もし Client が生きていれば close する。
+        Close the Client if it is alive.
         """
         if self._client:
             self._client.close()
