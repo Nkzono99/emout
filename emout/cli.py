@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import sys
 from pathlib import Path
 
@@ -101,13 +102,27 @@ def cmd_server_stop(_args):
         print("No running server found.")
         return
 
+    stopped_cleanly = True
     try:
-        stop_cluster()
-    except Exception:
-        pass
+        stop_cluster(address=state.get("address"))
+    except Exception as exc:
+        stopped_cleanly = False
+        print(f"Failed to stop server cleanly: {exc}")
+
+    pid = state.get("pid")
+    if isinstance(pid, int) and pid != os.getpid():
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            print(f"Could not signal server process PID {pid}.")
 
     _clear_state()
-    print("Server stopped.")
+    if stopped_cleanly:
+        print("Server stopped.")
+    else:
+        print("Cleared saved server state.")
 
 
 # ---------------------------------------------------------------------------

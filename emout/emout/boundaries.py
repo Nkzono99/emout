@@ -780,9 +780,12 @@ class BoundaryCollection:
     :attr:`skipped` list records the reason per skipped slot for debugging.
     """
 
-    def __init__(self, inp, unit):
+    def __init__(self, inp, unit, remote_open_kwargs: Optional[Mapping[str, Any]] = None):
         self.inp = inp
         self.unit = unit
+        self._emout_open_kwargs = (
+            None if remote_open_kwargs is None else dict(remote_open_kwargs)
+        )
         self.skipped: List[Tuple[int, str, str]] = []
         self._boundaries = self._build()
 
@@ -821,6 +824,7 @@ class BoundaryCollection:
         instance = cls.__new__(cls)
         instance.inp = None
         instance.unit = unit
+        instance._emout_open_kwargs = None
         instance.skipped = []
         instance._boundaries = flat
         return instance
@@ -943,8 +947,27 @@ class BoundaryCollection:
         フィールドなしで境界形状だけを確認したい場合に使う。
         フィールドと重ねたい場合は ``Data3d.plot_surfaces(data.boundaries)`` を使う。
         """
+        from emout.distributed.remote_figure import (
+            is_recording,
+            record_boundary_plot,
+            request_session,
+        )
         import matplotlib.pyplot as plt
         from emout.plot.surface_cut import plot_surfaces as _plot_surfaces, RenderItem
+
+        if is_recording():
+            request_session(getattr(self, "_emout_open_kwargs", None))
+            record_boundary_plot(
+                {
+                    "use_si": use_si,
+                    "per": per,
+                    "style": style,
+                    "solid_color": solid_color,
+                    "alpha": alpha,
+                    **kwargs,
+                }
+            )
+            return None
 
         if ax is None:
             fig = plt.figure()

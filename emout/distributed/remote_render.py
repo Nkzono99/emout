@@ -11,8 +11,12 @@
 from __future__ import annotations
 
 import itertools
+import json
 import sys
+from pathlib import Path
 from typing import Any, Optional, Sequence
+
+import numpy as np
 
 _key_counter = itertools.count()
 
@@ -32,12 +36,22 @@ class RemoteSession:
     ``client.submit(RemoteSession, emout_dir, actor=True)`` で生成する。
     """
 
-    def __init__(self, emout_dir: str, input_path: str | None = None):
+    def __init__(
+        self,
+        emout_dir: str | None = None,
+        input_path: str | None = None,
+        emout_kwargs: dict[str, Any] | None = None,
+    ):
         import matplotlib
         matplotlib.use("Agg")
 
         import emout
-        self._data = emout.Emout(emout_dir, input_path=input_path)
+        self._emout_kwargs = _normalize_emout_kwargs(
+            emout_dir=emout_dir,
+            input_path=input_path,
+            emout_kwargs=emout_kwargs,
+        )
+        self._data = emout.Emout(**self._emout_kwargs)
         self._cache: dict[str, Any] = {}
 
     # -- computation (result stays on worker) --------------------------------
@@ -255,8 +269,9 @@ class RemoteHeatmap:
         self._var2 = var2
 
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
-        from .remote_figure import is_recording, record_backtrace_render
+        from .remote_figure import bind_session, is_recording, record_backtrace_render
         if is_recording():
+            bind_session(self._session)
             record_backtrace_render(self._key, self._var1, self._var2, plot_kwargs)
             return None
         img = self._session.render_pair(
@@ -278,8 +293,9 @@ class RemoteXYData:
         self._var2 = var2
 
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
-        from .remote_figure import is_recording, record_backtrace_render
+        from .remote_figure import bind_session, is_recording, record_backtrace_render
         if is_recording():
+            bind_session(self._session)
             record_backtrace_render(self._key, self._var1, self._var2, plot_kwargs)
             return None
         img = self._session.render_backtrace_pair(
@@ -310,14 +326,13 @@ class RemoteProbabilityResult:
     def plot_energy_spectrum(
         self, energy_bins=None, scale: str = "log", fmt: str = "png", dpi: int = 150,
     ):
-        from .remote_figure import is_recording, record_plt_call
+        from .remote_figure import bind_session, is_recording, record_energy_spectrum
         if is_recording():
-            # energy_spectrum は特殊コマンドとして記録
-            from .remote_figure import _commands
-            _commands.append((
-                "energy_spectrum", self._key,
+            bind_session(self._session)
+            record_energy_spectrum(
+                self._key,
                 {"energy_bins": energy_bins, "scale": scale},
-            ))
+            )
             return None
         img = self._session.render_energy_spectrum(
             self._key, energy_bins=energy_bins, scale=scale, fmt=fmt, dpi=dpi,
@@ -402,8 +417,37 @@ def display_image(img_bytes: bytes, ax=None):
 _session_cache: dict[str, RemoteSession] = {}
 
 
+def _normalize_emout_kwargs(
+    emout_dir=None,
+    input_path=None,
+    emout_kwargs: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if emout_kwargs is None:
+        if emout_dir is None:
+            raise ValueError("emout_dir or emout_kwargs is required")
+        normalized = {"directory": str(Path(emout_dir).resolve())}
+        if input_path is not None:
+            normalized["input_path"] = str(Path(input_path).resolve())
+            normalized["output_directory"] = str(Path(emout_dir).resolve())
+    else:
+        normalized = dict(emout_kwargs)
+
+    for key in ("directory", "input_path", "output_directory"):
+        value = normalized.get(key)
+        if value is not None:
+            normalized[key] = str(Path(value).resolve())
+
+    append_directories = normalized.get("append_directories")
+    if append_directories is not None:
+        normalized["append_directories"] = [
+            str(Path(path).resolve()) for path in append_directories
+        ]
+
+    return normalized
+
+
 def get_or_create_session(
-    emout_dir, input_path=None,
+    emout_dir=None, input_path=None, emout_kwargs: dict[str, Any] | None = None,
 ) -> Optional[RemoteSession]:
     """Dask client が起動していれば RemoteSession actor を返す。なければ None。
 
@@ -428,8 +472,6 @@ def get_or_create_session(
 
     # client が無いが server.json があれば自動接続
     if client is None:
-        from pathlib import Path
-        import json
         state_file = Path.home() / ".emout" / "server.json"
         if state_file.exists():
             try:
@@ -441,10 +483,20 @@ def get_or_create_session(
         else:
             return None
 
-    cache_key = str(emout_dir)
+    if emout_dir is None and emout_kwargs is None:
+        return None
+
+    normalized_kwargs = _normalize_emout_kwargs(
+        emout_dir=emout_dir,
+        input_path=input_path,
+        emout_kwargs=emout_kwargs,
+    )
+    cache_key = json.dumps(normalized_kwargs, sort_keys=True)
     if cache_key not in _session_cache:
         future = client.submit(
-            RemoteSession, str(emout_dir), input_path=input_path, actor=True,
+            RemoteSession,
+            actor=True,
+            emout_kwargs=normalized_kwargs,
         )
         _session_cache[cache_key] = future.result()
     return _session_cache[cache_key]

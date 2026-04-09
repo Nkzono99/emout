@@ -11,6 +11,8 @@ import emout.utils as utils
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo
 
+_REMOTE_PLOT_HANDLED = object()
+
 
 class Data(np.ndarray):
     """3次元データを管理する.
@@ -220,6 +222,7 @@ class Data(np.ndarray):
         self.axisunits = getattr(obj, "axisunits", None)
         self.valunit = getattr(obj, "valunit", None)
         self._emout_dir = getattr(obj, "_emout_dir", None)
+        self._emout_open_kwargs = getattr(obj, "_emout_open_kwargs", None)
 
     @property
     def filename(self) -> Path:
@@ -453,21 +456,37 @@ class Data(np.ndarray):
                 result.append(s)
         return tuple(result)
 
-    def _try_remote_plot(self, **plot_kwargs):
-        """remote_figure() 記録中ならコマンド記録、そうでなければデータ転送モード。"""
-        # --- remote_figure() コンテキスト内: コマンド記録のみ ---
-        from emout.distributed.remote_figure import is_recording, record_field_plot
-        if is_recording():
-            recipe_index = self._to_recipe_index()
-            record_field_plot(self.name, recipe_index, plot_kwargs)
-            return True  # sentinel: "handled"
+    def _get_remote_open_kwargs(self):
+        remote_kwargs = getattr(self, "_emout_open_kwargs", None)
+        if remote_kwargs is not None:
+            return dict(remote_kwargs)
 
-        # --- remote_figure 外 + Dask session あり: データ転送モード ---
         emout_dir = getattr(self, "_emout_dir", None)
         if emout_dir is None:
             return None
+        return {"directory": str(emout_dir)}
+
+    def _try_remote_plot(self, **plot_kwargs):
+        """remote_figure() 記録中ならコマンド記録、そうでなければデータ転送モード。"""
+        remote_kwargs = self._get_remote_open_kwargs()
+
+        # --- remote_figure() コンテキスト内: コマンド記録のみ ---
+        from emout.distributed.remote_figure import (
+            is_recording,
+            record_field_plot,
+            request_session,
+        )
+        if is_recording():
+            request_session(remote_kwargs)
+            recipe_index = self._to_recipe_index()
+            record_field_plot(self.name, recipe_index, plot_kwargs)
+            return _REMOTE_PLOT_HANDLED
+
+        # --- remote_figure 外 + Dask session あり: データ転送モード ---
+        if remote_kwargs is None:
+            return None
         from emout.distributed.remote_render import get_or_create_session
-        session = get_or_create_session(emout_dir)
+        session = get_or_create_session(emout_kwargs=remote_kwargs)
         if session is None:
             return None
 
@@ -483,6 +502,7 @@ class Data(np.ndarray):
         local_data.slices = payload["slices"]
         local_data.slice_axes = payload["slice_axes"]
         local_data._emout_dir = None  # 再帰防止
+        local_data._emout_open_kwargs = None
         return local_data.plot(**plot_kwargs)
 
     def plot(self, **kwargs):
@@ -916,10 +936,10 @@ class Data3d(Data):
         """
         # Dask session が起動中なら worker から 3D 配列を取得してローカル描画
         # （ax.set_xlabel() 等を後から重ねられる）
-        emout_dir = getattr(self, "_emout_dir", None)
-        if emout_dir is not None:
+        remote_kwargs = self._get_remote_open_kwargs()
+        if remote_kwargs is not None:
             from emout.distributed.remote_render import get_or_create_session
-            session = get_or_create_session(emout_dir)
+            session = get_or_create_session(emout_kwargs=remote_kwargs)
             if session is not None:
                 recipe_index = self._to_recipe_index()
                 payload = session.fetch_field(self.name, recipe_index).result()
@@ -932,6 +952,7 @@ class Data3d(Data):
                 local_data.slices = payload["slices"]
                 local_data.slice_axes = payload["slice_axes"]
                 local_data._emout_dir = None  # 再帰防止
+                local_data._emout_open_kwargs = None
                 return local_data.plot_surfaces(
                     surfaces, ax=ax, use_si=use_si, vmin=vmin, vmax=vmax, **kwargs,
                 )
@@ -1096,6 +1117,8 @@ class Data2d(Data):
         remote = self._try_remote_plot(
             axes=axes, show=show, use_si=use_si, offsets=offsets, mode=mode, **kwargs,
         )
+        if remote is _REMOTE_PLOT_HANDLED:
+            return None
         if remote is not None:
             return remote
 
@@ -1379,6 +1402,8 @@ class Data1d(Data):
             データの次元が1でない場合の例外
         """
         remote = self._try_remote_plot(show=show, use_si=use_si, offsets=offsets, **kwargs)
+        if remote is _REMOTE_PLOT_HANDLED:
+            return None
         if remote is not None:
             return remote
 

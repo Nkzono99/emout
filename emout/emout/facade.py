@@ -233,7 +233,11 @@ class Emout:
         """
         from .boundaries import BoundaryCollection
 
-        return BoundaryCollection(self._dir_inspector.inp, self.unit)
+        return BoundaryCollection(
+            self._dir_inspector.inp,
+            self.unit,
+            remote_open_kwargs=self._remote_open_kwargs,
+        )
 
     @property
     def backtrace(self) -> BacktraceWrapper:
@@ -248,8 +252,21 @@ class Emout:
             directory=self._dir_inspector.main_directory,
             inp=self._dir_inspector.inp,
             unit=self.unit,
+            remote_open_kwargs=self._remote_open_kwargs,
         )
 
     @property
     def _emout_dir(self) -> str:
         return str(self._dir_inspector.main_directory)
+
+    @property
+    def _remote_open_kwargs(self) -> dict:
+        kwargs = {
+            "directory": str(self._dir_inspector._input_directory),
+            "append_directories": [str(path) for path in self._dir_inspector.append_directories],
+            "inpfilename": self._dir_inspector.inpfilename,
+            "output_directory": str(self._dir_inspector.main_directory),
+        }
+        if self._dir_inspector.input_path is not None:
+            kwargs["input_path"] = str(self._dir_inspector.input_path)
+        return kwargs

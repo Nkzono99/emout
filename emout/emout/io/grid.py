@@ -186,6 +186,14 @@ class GridDataLoader:
             valunit=valunit,
         )
         series._emout_dir = str(self.dir_inspector.main_directory)
+        series._emout_open_kwargs = {
+            "directory": str(self.dir_inspector._input_directory),
+            "append_directories": [str(path) for path in self.dir_inspector.append_directories],
+            "inpfilename": self.dir_inspector.inpfilename,
+            "output_directory": str(self.dir_inspector.main_directory),
+        }
+        if self.dir_inspector.input_path is not None:
+            series._emout_open_kwargs["input_path"] = str(self.dir_inspector.input_path)
         return series
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:

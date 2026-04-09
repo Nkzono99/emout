@@ -57,14 +57,19 @@ class DirectoryInspector:
             input_path = Path(input_path)
             self._input_directory: Path = input_path.parent
             inpfilename = input_path.name
+            self.input_path: Optional[Path] = input_path.resolve()
         else:
             self._input_directory = directory
+            self.input_path = None
+        self._input_directory = self._input_directory.resolve()
+        self.inpfilename = None if inpfilename is None else str(inpfilename)
 
         # 出力ディレクトリ (h5, icur, pbody 等)
         if output_directory is not None:
             self.main_directory: Path = Path(output_directory)
         else:
             self.main_directory = directory
+        self.main_directory = self.main_directory.resolve()
 
         logger.info(
             f"DirectoryInspector: input directory = {self._input_directory.resolve()}, "

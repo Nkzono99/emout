@@ -12,7 +12,13 @@ from emout.distributed.utils import run_backend
 class BacktraceWrapper:
     """BacktraceWrapper クラス。
     """
-    def __init__(self, directory: Any, inp: Any, unit: Any):
+    def __init__(
+        self,
+        directory: Any,
+        inp: Any,
+        unit: Any,
+        remote_open_kwargs: Any = None,
+    ):
         """
         Parameters
         ----------
@@ -24,6 +30,7 @@ class BacktraceWrapper:
         self.directory = directory
         self.inp = inp
         self.unit = unit
+        self.remote_open_kwargs = remote_open_kwargs
 
     def get_backtrace(
         self,
@@ -291,7 +298,10 @@ class BacktraceWrapper:
                 RemoteProbabilityResult,
                 _next_key,
             )
-            session = get_or_create_session(self.directory)
+            session = get_or_create_session(
+                emout_kwargs=self.remote_open_kwargs,
+                emout_dir=self.directory,
+            )
             if session is not None:
                 key = _next_key("prob")
                 session.compute_probabilities(

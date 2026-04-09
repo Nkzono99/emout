@@ -1,5 +1,6 @@
 from .clusters import SimpleDaskCluster
 from .config import DaskConfig
+from .remote_render import clear_sessions
 
 _global_cluster = None
 
@@ -116,8 +117,13 @@ def connect(address: str | None = None):
     return Client(address)
 
 
-def stop_cluster():
+def stop_cluster(address: str | None = None):
     """起動済み Dask クラスタを停止する。
+
+    Parameters
+    ----------
+    address : str | None, optional
+        別プロセスで起動した scheduler を停止する場合の接続先。
     
     Returns
     -------
@@ -125,5 +131,21 @@ def stop_cluster():
         戻り値はありません。
     """
     global _global_cluster
-    _global_cluster.close_client()
-    _global_cluster.stop_scheduler()
+    if _global_cluster is not None:
+        _global_cluster.close_client()
+        _global_cluster.stop_scheduler()
+        _global_cluster = None
+        clear_sessions()
+        return
+
+    if address is None:
+        raise RuntimeError("No active local cluster and no scheduler address was provided.")
+
+    from dask.distributed import Client
+
+    client = Client(address, timeout="5s")
+    try:
+        client.shutdown()
+    finally:
+        client.close()
+        clear_sessions()

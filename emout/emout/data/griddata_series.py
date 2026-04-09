@@ -54,6 +54,7 @@ class GridDataSeries:
 
         self.name = name
         self._emout_dir = None  # set by GridLoader to enable remote rendering
+        self._emout_open_kwargs = None
 
     def close(self) -> None:
         """hdf5ファイルを閉じる."""
@@ -138,6 +139,7 @@ class GridDataSeries:
             valunit=self.valunit,
         )
         data._emout_dir = self._emout_dir
+        data._emout_open_kwargs = self._emout_open_kwargs
         return data
 
     def __create_data_with_indexes(

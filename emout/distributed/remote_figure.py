@@ -18,6 +18,8 @@ from typing import Any, List, Optional, Tuple
 
 _recording: bool = False
 _commands: List[Tuple[str, Any, ...]] = []
+_recording_session = None
+_session_request: Optional[dict[str, Any]] = None
 
 
 def is_recording() -> bool:
@@ -45,6 +47,35 @@ def record_backtrace_render(cache_key: str, var1: str, var2: str, plot_kwargs: d
     _commands.append(("backtrace_render", cache_key, var1, var2, plot_kwargs))
 
 
+def record_energy_spectrum(cache_key: str, spec_kwargs: dict) -> None:
+    """``RemoteProbabilityResult.plot_energy_spectrum()`` を記録する。"""
+    _commands.append(("energy_spectrum", cache_key, spec_kwargs))
+
+
+def bind_session(session) -> None:
+    """記録済みコマンドの再生先セッションを固定する。"""
+    global _recording_session
+    if session is None:
+        return
+    if _recording_session is None:
+        _recording_session = session
+        return
+    if _recording_session is not session:
+        raise RuntimeError("remote_figure() cannot mix commands from different remote sessions")
+
+
+def request_session(emout_kwargs: Optional[dict[str, Any]]) -> None:
+    """記録されたコマンドからセッション生成条件を登録する。"""
+    global _session_request
+    if emout_kwargs is None:
+        return
+    if _session_request is None:
+        _session_request = dict(emout_kwargs)
+        return
+    if _session_request != emout_kwargs:
+        raise RuntimeError("remote_figure() cannot mix commands from different Emout sources")
+
+
 # ---------------------------------------------------------------------------
 # Context manager
 # ---------------------------------------------------------------------------
@@ -54,6 +85,7 @@ def record_backtrace_render(cache_key: str, var1: str, var2: str, plot_kwargs: d
 def remote_figure(
     session=None,
     emout_dir: Optional[str] = None,
+    emout_kwargs: Optional[dict[str, Any]] = None,
     fmt: str = "png",
     dpi: int = 150,
     figsize: Optional[Tuple[float, float]] = None,
@@ -66,6 +98,9 @@ def remote_figure(
         使用する Actor。省略時は ``emout_dir`` から自動取得。
     emout_dir : str, optional
         ``session`` が未指定のときに Actor を検索するディレクトリ。
+    emout_kwargs : dict, optional
+        ``Emout(...)`` を再構成するための引数セット。
+        `input_path` / `output_directory` を含むケースで使われる。
     fmt : str
         出力画像フォーマット。
     dpi : int
@@ -81,18 +116,17 @@ def remote_figure(
             plt.xlabel("x [m]")
         # ← PNG が Jupyter に表示される
     """
-    global _recording, _commands
+    global _recording, _commands, _recording_session, _session_request
 
     if session is None:
-        from .remote_render import get_or_create_session, _session_cache
-        if emout_dir is not None:
-            session = get_or_create_session(emout_dir)
-        elif _session_cache:
-            # 既存のセッションがあれば最初のものを使う
-            session = next(iter(_session_cache.values()))
+        from .remote_render import get_or_create_session
+        if emout_kwargs is not None or emout_dir is not None:
+            session = get_or_create_session(emout_dir=emout_dir, emout_kwargs=emout_kwargs)
 
     _recording = True
     _commands = []
+    _recording_session = session
+    _session_request = None
     if figsize is not None:
         _commands.append(("plt", "figure", (), {"figsize": figsize}))
 
@@ -132,9 +166,16 @@ def remote_figure(
             setattr(plt, name, orig)
 
         # Flush commands to worker
-        if session is not None and _commands:
-            img_bytes = session.replay_figure(_commands, fmt=fmt, dpi=dpi).result()
+        replay_session = session or _recording_session
+        if replay_session is None and _session_request is not None:
+            from .remote_render import get_or_create_session
+            replay_session = get_or_create_session(emout_kwargs=_session_request)
+
+        if replay_session is not None and _commands:
+            img_bytes = replay_session.replay_figure(_commands, fmt=fmt, dpi=dpi).result()
             from .remote_render import display_image
             display_image(img_bytes)
 
         _commands = []
+        _recording_session = None
+        _session_request = None
