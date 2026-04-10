@@ -52,11 +52,7 @@ All commands are replayed on the same worker — no data is transferred to the c
 
 ## Setup
 
-First install the distributed-runtime dependencies:
-
-```bash
-pip install "emout[distributed]"
-```
+On Python 3.10+, `pip install emout` automatically includes Dask. No extra install step is needed.
 
 ### 1. Start the server (once, in a terminal)
 

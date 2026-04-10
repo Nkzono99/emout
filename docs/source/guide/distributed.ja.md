@@ -52,11 +52,7 @@ with remote_figure(figsize=(12, 5)):
 
 ## セットアップ
 
-まず distributed 関連の依存関係を入れます:
-
-```bash
-pip install "emout[distributed]"
-```
+Python 3.10 以上であれば `pip install emout` で Dask が自動的にインストールされます。追加のインストールは不要です。
 
 ### 1. サーバー起動（ターミナルで 1 回だけ）
 

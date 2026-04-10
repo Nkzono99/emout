@@ -31,10 +31,9 @@ pip install emout
 
 # For 3D visualization with PyVista
 pip install "emout[pyvista]"
-
-# For remote execution (Dask + auto IP detection)
-pip install "emout[distributed]"
 ```
+
+> Dask-based remote execution is automatically available on Python 3.10+ (no extra install needed).
 
 ---
 

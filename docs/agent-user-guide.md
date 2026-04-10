@@ -19,9 +19,8 @@ Import this file via `@docs/agent-user-guide.md` to get the full API context.
 ## Installation
 
 ```bash
-pip install emout                  # Core (requires Python >=3.9)
+pip install emout                  # Core (requires Python >=3.9; Dask included on 3.10+)
 pip install "emout[pyvista]"       # + 3D visualization
-pip install "emout[distributed]"   # + remote execution (Dask, Python >=3.10)
 ```
 
 ---
@@ -541,7 +540,7 @@ data.phisp[-1].to_vtk("output.vti", use_si=True)
 ## Remote execution (Dask) — experimental
 
 Offload heavy data processing to HPC compute nodes. Only plot images or small slices are returned.
-Requires `pip install "emout[distributed]"` (Python ≥ 3.10).
+Automatically available on Python ≥ 3.10 (Dask is included in core dependencies).
 
 ### Server management (CLI)
 
