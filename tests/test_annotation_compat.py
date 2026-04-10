@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
+
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="ast.unparse requires Python 3.9+",
+)
 
 
 def _uses_modern_annotation_syntax(tree: ast.AST) -> bool:
