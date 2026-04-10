@@ -4,11 +4,10 @@
 plot helpers shared by all dimensioned subclasses.
 """
 
-import re
 import warnings
 from os import PathLike
 from pathlib import Path
-from typing import Callable, List, Literal, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +15,6 @@ import numpy as np
 import emout.utils as utils
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo
-from emout.utils.util import apply_offset
 
 _REMOTE_PLOT_HANDLED = object()
 
@@ -443,9 +441,7 @@ class Data(np.ndarray):
         to_axis = {3: "x", 2: "y", 1: "z", 0: "t"}
         return [to_axis[a] for a in self.slice_axes]
 
-    def masked(
-        self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]
-    ) -> "Data":
+    def masked(self, mask: Union[np.ndarray, Callable[[np.ndarray], np.ndarray]]) -> "Data":
         """Return a copy with masked elements set to NaN.
 
         Parameters
@@ -527,9 +523,7 @@ class Data(np.ndarray):
         >>> data.phisp[-1, :, ny//2, :].flip('z').plot()
         """
         ax = self._resolve_axis(axis)
-        return self._rebuild(
-            np.flip(np.asarray(self), axis=ax), changed_ax=ax, new_len=self.shape[ax]
-        )
+        return self._rebuild(np.flip(np.asarray(self), axis=ax), changed_ax=ax, new_len=self.shape[ax])
 
     def _resolve_axis(self, axis) -> int:
         """Convert an axis name or index to an array dimension index.
@@ -691,6 +685,7 @@ class Data(np.ndarray):
             record_field_plot,
             request_session,
         )
+
         if is_recording():
             request_session(remote_kwargs)
             recipe_index = self._to_recipe_index()
@@ -701,6 +696,7 @@ class Data(np.ndarray):
         if remote_kwargs is None:
             return None
         from emout.distributed.remote_render import get_or_create_session
+
         session = get_or_create_session(emout_kwargs=remote_kwargs)
         if session is None:
             return None
@@ -729,9 +725,7 @@ class Data(np.ndarray):
         axis: int = 0,
         title: Union[str, None] = None,
         notitle: bool = False,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         use_si: bool = True,
         vmin: float = None,
         vmax: float = None,
@@ -765,9 +759,7 @@ class Data(np.ndarray):
             vmin = vmin if vmin is not None else self.min()
             vmax = vmax if vmax is not None else self.max()
 
-        updater = FrameUpdater(
-            self, axis, title, notitle, offsets, use_si, vmin=vmin, vmax=vmax, **kwargs
-        )
+        updater = FrameUpdater(self, axis, title, notitle, offsets, use_si, vmin=vmin, vmax=vmax, **kwargs)
 
         return updater
 
@@ -784,9 +776,7 @@ class Data(np.ndarray):
         repeat: bool = True,
         title: Union[str, None] = None,
         notitle: bool = False,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         use_si: bool = True,
         vmin: float = None,
         vmax: float = None,
@@ -842,28 +832,22 @@ class Data(np.ndarray):
         """
         if to_html:
             warnings.warn(
-                "The 'to_html' flag is deprecated. "
-                "Please use gifplot(action='to_html') instead.",
+                "The 'to_html' flag is deprecated. Please use gifplot(action='to_html') instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
         if return_updater:
             warnings.warn(
-                "The 'return_updater' flag is deprecated. "
-                "Please use gifplot(action='frames') instead.",
+                "The 'return_updater' flag is deprecated. Please use gifplot(action='frames') instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
             action = "frames"
 
         if mode is None:
-            updater = self.build_frame_updater(
-                axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs
-            )
+            updater = self.build_frame_updater(axis, title, notitle, offsets, use_si, vmin, vmax, **kwargs)
         else:
-            updater = self.build_frame_updater(
-                axis, title, notitle, offsets, use_si, vmin, vmax, mode=mode, **kwargs
-            )
+            updater = self.build_frame_updater(axis, title, notitle, offsets, use_si, vmin, vmax, mode=mode, **kwargs)
 
         if action == "frames":
             return updater
@@ -880,5 +864,3 @@ class Data(np.ndarray):
             repeat=repeat,
             to_html=to_html,
         )
-
-

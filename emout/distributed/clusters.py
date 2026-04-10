@@ -165,9 +165,7 @@ class SimpleDaskCluster:
         # Wait briefly and check whether it started successfully
         time.sleep(1.0)
         if self._sched_proc.poll() is not None:
-            raise RuntimeError(
-                f"Scheduler failed to start. See {sched_err} for details."
-            )
+            raise RuntimeError(f"Scheduler failed to start. See {sched_err} for details.")
         print("[SimpleDaskCluster] Scheduler started successfully.")
 
     def stop_scheduler(self):
@@ -181,9 +179,7 @@ class SimpleDaskCluster:
             print("[SimpleDaskCluster] Scheduler is not running.")
             return
 
-        print(
-            f"[SimpleDaskCluster] Terminating scheduler (pid={self._sched_proc.pid}) ..."
-        )
+        print(f"[SimpleDaskCluster] Terminating scheduler (pid={self._sched_proc.pid}) ...")
         self._sched_proc.terminate()
         try:
             self._sched_proc.wait(timeout=5)
@@ -202,9 +198,7 @@ class SimpleDaskCluster:
         Submit *jobs* SLURM jobs and return their JOBIDs.
         """
         if self._sched_proc is None:
-            raise RuntimeError(
-                "Scheduler is not running. Call start_scheduler() first."
-            )
+            raise RuntimeError("Scheduler is not running. Call start_scheduler() first.")
 
         new_job_ids: list[int] = []
         for _ in range(jobs):
@@ -215,12 +209,8 @@ class SimpleDaskCluster:
             env = os.environ.copy()
             env["DASK_SCHED_IP"] = self.scheduler_ip
 
-            print(
-                f"[SimpleDaskCluster] Submitting worker job: {' '.join(job_submit_cmd)}"
-            )
-            completed = subprocess.run(
-                job_submit_cmd, capture_output=True, text=True, env=env
-            )
+            print(f"[SimpleDaskCluster] Submitting worker job: {' '.join(job_submit_cmd)}")
+            completed = subprocess.run(job_submit_cmd, capture_output=True, text=True, env=env)
             if completed.returncode != 0:
                 raise RuntimeError(f"sbatch failed: {completed.stderr.strip()}")
 
@@ -230,9 +220,7 @@ class SimpleDaskCluster:
             try:
                 job_id = int(parts[-1])
             except Exception:
-                raise RuntimeError(
-                    f"Could not parse job ID from sbatch output: {stdout}"
-                )
+                raise RuntimeError(f"Could not parse job ID from sbatch output: {stdout}")
             print(f"[SimpleDaskCluster] Worker job submitted; JOBID={job_id}")
             new_job_ids.append(job_id)
 
@@ -249,11 +237,9 @@ class SimpleDaskCluster:
         # Header
         script_lines.append("#!/bin/bash")
         script_lines.append(f"#SBATCH -p {self.partition}")
-        script_lines.append(
-            f"#SBATCH --rsc p={self.processes}:t={self.threads}:c={self.cores}:m={self.memory}"
-        )
+        script_lines.append(f"#SBATCH --rsc p={self.processes}:t={self.threads}:c={self.cores}:m={self.memory}")
         script_lines.append(f"#SBATCH -t {self.walltime}")
-        script_lines.append(f"#SBATCH -J dask-worker")
+        script_lines.append("#SBATCH -J dask-worker")
         script_lines.append(f"#SBATCH -o {self.logdir}/worker_%J.out")
         script_lines.append(f"#SBATCH -e {self.logdir}/worker_%J.err")
 
@@ -287,7 +273,7 @@ class SimpleDaskCluster:
         tmpdir.mkdir(parents=True, exist_ok=True)
 
         # Create a unique file name
-        script_path = tmpdir / f"worker_{int(time.time()*1000)}.sh"
+        script_path = tmpdir / f"worker_{int(time.time() * 1000)}.sh"
         with open(script_path, "w") as f:
             f.write("\n".join(script_lines))
 
@@ -318,12 +304,8 @@ class SimpleDaskCluster:
             except Exception as e:
                 elapsed = time.time() - t0
                 if elapsed > timeout:
-                    raise RuntimeError(
-                        f"Could not connect to scheduler at {sched_addr}: {e}"
-                    )
-                print(
-                    "[SimpleDaskCluster] Waiting for scheduler to accept connections ..."
-                )
+                    raise RuntimeError(f"Could not connect to scheduler at {sched_addr}: {e}")
+                print("[SimpleDaskCluster] Waiting for scheduler to accept connections ...")
                 time.sleep(1)
 
         print("[SimpleDaskCluster] Dask Client connected.")

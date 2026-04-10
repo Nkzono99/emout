@@ -80,8 +80,8 @@ class UnitConversionKey:
 
 
 class AttrDict(dict):
-    """Dictionary subclass that supports attribute-style access.
-    """
+    """Dictionary subclass that supports attribute-style access."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the instance.
 
@@ -298,15 +298,9 @@ class InpFile:
             max_end_index = max(end_index, end_index_init)
 
             new_list = [None] * (max_end_index - min_start_index)
-            for i, index in enumerate(
-                range(
-                    start_index_init - min_start_index, end_index_init - min_start_index
-                )
-            ):
+            for i, index in enumerate(range(start_index_init - min_start_index, end_index_init - min_start_index)):
                 new_list[index] = self.nml[group][name][i]
-            for i, index in enumerate(
-                range(start_index - min_start_index, end_index - min_start_index)
-            ):
+            for i, index in enumerate(range(start_index - min_start_index, end_index - min_start_index)):
                 new_list[index] = value[i]
 
             self.nml[group].start_index[name] = [min_start_index]
@@ -365,6 +359,7 @@ class InpFile:
         None
             No return value.
         """
+
         def conv(group, name, unit_name):
             """Convert a scalar parameter and update it in place.
 

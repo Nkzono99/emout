@@ -52,9 +52,7 @@ class HeatmapData:
             Unit conversion information
         """
         if X.ndim != 2 or Y.ndim != 2 or Z.ndim != 2:
-            raise ValueError(
-                "HeatmapData: X, Y, Z must all be 2-D arrays"
-            )
+            raise ValueError("HeatmapData: X, Y, Z must all be 2-D arrays")
 
         if X.shape != Y.shape or X.shape != Z.shape:
             raise ValueError("HeatmapData: X, Y, Z must have the same shape")
@@ -164,9 +162,7 @@ class ProbabilityResult:
             Number of grid points per axis (nx, ny, nz, nvx, nvy, nvz)
         """
         if len(dims) != 6:
-            raise ValueError(
-                "dims must be a 6-element tuple/list (nx, ny, nz, nvx, nvy, nvz)"
-            )
+            raise ValueError("dims must be a 6-element tuple/list (nx, ny, nz, nvx, nvy, nvz)")
         self.dims = tuple(dims)
 
         self.phases = phases
@@ -191,23 +187,17 @@ class ProbabilityResult:
         str
             Human-readable summary.
         """
-        return (
-            f"<ProbabilityResult: grid_dims={self.dims}, "
-            f"axes={ProbabilityResult._AXES}>"
-        )
+        return f"<ProbabilityResult: grid_dims={self.dims}, axes={ProbabilityResult._AXES}>"
 
     def _phases_nd(self) -> np.ndarray:
         """Reshape the phase grid to ``(nx, ny, nz, nvx, nvy, nvz, 6)``."""
         phases = np.asarray(self.phases)
         expected_size = int(np.prod(self.dims)) * len(ProbabilityResult._AXES)
         if phases.size != expected_size:
-            raise ValueError(
-                "phases element count does not match the 6-D grid defined by dims"
-            )
+            raise ValueError("phases element count does not match the 6-D grid defined by dims")
 
         backend_shape = tuple(
-            self.dims[ProbabilityResult._AXES.index(axis)]
-            for axis in ProbabilityResult._BACKEND_AXES
+            self.dims[ProbabilityResult._AXES.index(axis)] for axis in ProbabilityResult._BACKEND_AXES
         )
         canonical_shape = tuple(self.dims)
 
@@ -217,22 +207,14 @@ class ProbabilityResult:
             if phases.shape == (*backend_shape, len(ProbabilityResult._AXES)):
                 return np.transpose(
                     phases,
-                    axes=[
-                        ProbabilityResult._BACKEND_AXES.index(axis)
-                        for axis in ProbabilityResult._AXES
-                    ]
-                    + [6],
+                    axes=[ProbabilityResult._BACKEND_AXES.index(axis) for axis in ProbabilityResult._AXES] + [6],
                 )
             raise ValueError("phases shape does not match the expected 6-D grid shape")
 
         phases = phases.reshape(*backend_shape, len(ProbabilityResult._AXES))
         return np.transpose(
             phases,
-            axes=[
-                ProbabilityResult._BACKEND_AXES.index(axis)
-                for axis in ProbabilityResult._AXES
-            ]
-            + [6],
+            axes=[ProbabilityResult._BACKEND_AXES.index(axis) for axis in ProbabilityResult._AXES] + [6],
         )
 
     def _probabilities_nd(self) -> np.ndarray:
@@ -240,13 +222,10 @@ class ProbabilityResult:
         probabilities = np.asarray(self.probabilities)
         expected_size = int(np.prod(self.dims))
         if probabilities.size != expected_size:
-            raise ValueError(
-                "probabilities element count does not match the 6-D grid defined by dims"
-            )
+            raise ValueError("probabilities element count does not match the 6-D grid defined by dims")
 
         backend_shape = tuple(
-            self.dims[ProbabilityResult._AXES.index(axis)]
-            for axis in ProbabilityResult._BACKEND_AXES
+            self.dims[ProbabilityResult._AXES.index(axis)] for axis in ProbabilityResult._BACKEND_AXES
         )
         canonical_shape = tuple(self.dims)
 
@@ -256,22 +235,14 @@ class ProbabilityResult:
             if probabilities.shape == backend_shape:
                 return np.transpose(
                     probabilities,
-                    axes=[
-                        ProbabilityResult._BACKEND_AXES.index(axis)
-                        for axis in ProbabilityResult._AXES
-                    ],
+                    axes=[ProbabilityResult._BACKEND_AXES.index(axis) for axis in ProbabilityResult._AXES],
                 )
-            raise ValueError(
-                "probabilities shape does not match the expected 6-D grid shape"
-            )
+            raise ValueError("probabilities shape does not match the expected 6-D grid shape")
 
         probabilities = probabilities.reshape(*backend_shape)
         return np.transpose(
             probabilities,
-            axes=[
-                ProbabilityResult._BACKEND_AXES.index(axis)
-                for axis in ProbabilityResult._AXES
-            ],
+            axes=[ProbabilityResult._BACKEND_AXES.index(axis) for axis in ProbabilityResult._AXES],
         )
 
     def _axis_values(self, axis: str, phases=None) -> np.ndarray:
@@ -309,14 +280,12 @@ class ProbabilityResult:
         Axes not selected are integrated out using the trapezoidal rule.
         """
         if var1 not in ProbabilityResult._AXES or var2 not in ProbabilityResult._AXES:
-            raise KeyError(
-                f"Allowed axes = {ProbabilityResult._AXES}, but got '{var1}', '{var2}'"
-            )
+            raise KeyError(f"Allowed axes = {ProbabilityResult._AXES}, but got '{var1}', '{var2}'")
         if var1 == var2:
             raise ValueError("var1 and var2 must be different axes")
 
-        idx1 = ProbabilityResult._AXES.index(var1)
-        idx2 = ProbabilityResult._AXES.index(var2)
+        ProbabilityResult._AXES.index(var1)  # validate
+        ProbabilityResult._AXES.index(var2)  # validate
 
         if self.unit:
             u1 = self.unit.v if var1.startswith("v") else self.unit.length
@@ -333,9 +302,7 @@ class ProbabilityResult:
         for axis_name in ProbabilityResult._AXES:
             if axis_name in (var1, var2):
                 continue
-            integrated = self._integrate_axis(
-                integrated, axis_name, current_axes, phases=phases
-            )
+            integrated = self._integrate_axis(integrated, axis_name, current_axes, phases=phases)
             current_axes.remove(axis_name)
 
         axis1_values = self._axis_values(var1, phases=phases)
@@ -352,9 +319,7 @@ class ProbabilityResult:
         ylabel = var2
         title = f"{var1} vs {var2} Probability"
 
-        return HeatmapData(
-            X, Y, Z, xlabel=xlabel, ylabel=ylabel, title=title, units=units
-        )
+        return HeatmapData(X, Y, Z, xlabel=xlabel, ylabel=ylabel, title=title, units=units)
 
     def __getattr__(self, name: str) -> Any:
         """Interpret attribute access as a pair name.
@@ -371,9 +336,7 @@ class ProbabilityResult:
                 if rest in ProbabilityResult._AXES and rest != key1:
                     return self.pair(key1, rest)
 
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'"
-        )
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def energy_spectrum(self, energy_bins=None):
         """Compute the energy spectrum.
@@ -430,8 +393,8 @@ class ProbabilityResult:
         centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
         plt.step(centers, hist, color="black", linestyle="solid")
-        
-        plt.xlabel('Energy [eV]')
-        plt.ylabel('Energy flux [$eV m^{-2} s^{-1}$]')
+
+        plt.xlabel("Energy [eV]")
+        plt.ylabel("Energy flux [$eV m^{-2} s^{-1}$]")
 
         plt.xscale(scale)

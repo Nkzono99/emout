@@ -6,7 +6,6 @@ from typing import Literal, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
-import emout.plot.basic_plot as emplt
 import emout.utils as utils
 from emout.utils.util import apply_offset
 
@@ -51,9 +50,7 @@ class Data2d(Data):
         axes: Literal["auto", "xy", "yz", "zx", "yx", "zy", "xy"] = "auto",
         show: bool = False,
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         mode: Literal["cm", "cm+cont", "cont"] = "cm",
         **kwargs,
     ):
@@ -116,7 +113,12 @@ class Data2d(Data):
             If the data is not two-dimensional.
         """
         remote = self._try_remote_plot(
-            axes=axes, show=show, use_si=use_si, offsets=offsets, mode=mode, **kwargs,
+            axes=axes,
+            show=show,
+            use_si=use_si,
+            offsets=offsets,
+            mode=mode,
+            **kwargs,
         )
         if remote is _REMOTE_PLOT_HANDLED:
             return None
@@ -132,17 +134,11 @@ class Data2d(Data):
             axes = "".join(sorted(self.use_axes))
 
         if not re.match(r"x[yzt]|y[xzt]|z[xyt]|t[xyz]", axes):
-            raise ValueError(
-                f'axes "{axes}" cannot be used with Data2d'
-            )
+            raise ValueError(f'axes "{axes}" cannot be used with Data2d')
         if axes[0] not in self.use_axes or axes[1] not in self.use_axes:
-            raise ValueError(
-                f'axes "{axes}" cannot be used because the axis does not exist in this data'
-            )
+            raise ValueError(f'axes "{axes}" cannot be used because the axis does not exist in this data')
         if len(self.shape) != 2:
-            raise ValueError(
-                f'axes "{axes}" cannot be used because data is not 2-dimensional (shape={self.shape})'
-            )
+            raise ValueError(f'axes "{axes}" cannot be used because data is not 2-dimensional (shape={self.shape})')
 
         # x: 3, y: 2, z:1 t:0
         axis1 = self.slice_axes[self.use_axes.index(axes[0])]
@@ -167,7 +163,6 @@ class Data2d(Data):
             _xlabel = axes[0]
             _ylabel = axes[1]
             _title = self.name
-
 
         kwargs["xlabel"] = kwargs.get("xlabel", None) or _xlabel
         kwargs["ylabel"] = kwargs.get("ylabel", None) or _ylabel
@@ -239,9 +234,7 @@ class Data2d(Data):
             Same as :py:meth:`plot`.
         """
         if "mode" in kwargs:
-            raise TypeError(
-                "Data2d.cmap() does not accept 'mode'; call plot(mode=...) directly instead"
-            )
+            raise TypeError("Data2d.cmap() does not accept 'mode'; call plot(mode=...) directly instead")
         return self.plot(mode="cm", **kwargs)
 
     def contour(self, **kwargs):
@@ -257,17 +250,13 @@ class Data2d(Data):
             Same as :py:meth:`plot`.
         """
         if "mode" in kwargs:
-            raise TypeError(
-                "Data2d.contour() does not accept 'mode'; call plot(mode=...) directly instead"
-            )
+            raise TypeError("Data2d.contour() does not accept 'mode'; call plot(mode=...) directly instead")
         return self.plot(mode="cont", **kwargs)
 
     def plot_pyvista(
         self,
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         show: bool = False,
         plotter=None,
         cmap: str = "viridis",
@@ -298,5 +287,3 @@ class Data2d(Data):
     def plot3d(self, *args, **kwargs):
         """Alias for :meth:`plot_pyvista`."""
         return self.plot_pyvista(*args, **kwargs)
-
-

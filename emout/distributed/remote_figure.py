@@ -46,7 +46,9 @@ def is_recording() -> bool:
 
 
 def record_field_plot(
-    attr_name: str, recipe_index: tuple, plot_kwargs: dict,
+    attr_name: str,
+    recipe_index: tuple,
+    plot_kwargs: dict,
     emout_kwargs: Optional[dict[str, Any]] = None,
 ) -> None:
     """Record a ``Data*.plot()`` command with the Emout identity."""
@@ -93,6 +95,7 @@ def request_session(emout_kwargs: Optional[dict[str, Any]]) -> None:
     if emout_kwargs is None:
         return
     from .remote_render import get_or_create_session
+
     session = get_or_create_session(emout_kwargs=emout_kwargs)
     if session is not None:
         _session = session
@@ -103,14 +106,25 @@ def request_session(emout_kwargs: Optional[dict[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 
 _PLT_METHODS = [
-    "xlabel", "ylabel", "title", "suptitle",
-    "xlim", "ylim", "clim",
-    "axhline", "axvline",
-    "legend", "colorbar",
-    "tight_layout", "grid",
-    "text", "annotate",
-    "xticks", "yticks",
-    "subplot", "subplots",
+    "xlabel",
+    "ylabel",
+    "title",
+    "suptitle",
+    "xlim",
+    "ylim",
+    "clim",
+    "axhline",
+    "axvline",
+    "legend",
+    "colorbar",
+    "tight_layout",
+    "grid",
+    "text",
+    "annotate",
+    "xticks",
+    "yticks",
+    "subplot",
+    "subplots",
     "figure",
     "savefig",
 ]
@@ -195,9 +209,11 @@ class RemoteFigure:
         session = self._init_session
         if session is None:
             from .remote_render import get_or_create_session
+
             if self._emout_kwargs is not None or self._emout_dir is not None:
                 session = get_or_create_session(
-                    emout_dir=self._emout_dir, emout_kwargs=self._emout_kwargs,
+                    emout_dir=self._emout_dir,
+                    emout_kwargs=self._emout_kwargs,
                 )
 
         _recording = True
@@ -209,6 +225,7 @@ class RemoteFigure:
 
         # Monkey-patch plt functions to record instead of execute
         import matplotlib.pyplot as plt
+
         self._originals = {}
         for name in _PLT_METHODS:
             orig = getattr(plt, name, None)
@@ -218,7 +235,9 @@ class RemoteFigure:
                 def _make_recorder(n):
                     def _recorder(*args, **kwargs):
                         record_plt_call(n, args, kwargs)
+
                     return _recorder
+
                 setattr(plt, name, _make_recorder(name))
 
         self._opened = True
@@ -234,6 +253,7 @@ class RemoteFigure:
 
         # Restore plt
         import matplotlib.pyplot as plt
+
         for name, orig in self._originals.items():
             setattr(plt, name, orig)
         self._originals = {}
@@ -242,9 +262,12 @@ class RemoteFigure:
         replay_session = self._init_session or _session
         if replay_session is not None and _commands:
             img_bytes = replay_session.replay_figure(
-                _commands, fmt=self.fmt, dpi=self.dpi,
+                _commands,
+                fmt=self.fmt,
+                dpi=self.dpi,
             ).result()
             from .remote_render import display_image
+
             display_image(img_bytes)
 
         _reset_recording_state()
@@ -310,8 +333,12 @@ def remote_figure(
         # <- PNG is displayed in Jupyter
     """
     rf = RemoteFigure(
-        session=session, emout_dir=emout_dir, emout_kwargs=emout_kwargs,
-        fmt=fmt, dpi=dpi, figsize=figsize,
+        session=session,
+        emout_dir=emout_dir,
+        emout_kwargs=emout_kwargs,
+        fmt=fmt,
+        dpi=dpi,
+        figsize=figsize,
     )
     rf.open()
     try:
@@ -328,6 +355,7 @@ def remote_figure(
 def _parse_magic_line(line: str) -> dict[str, Any]:
     """Parse the argument line of ``%%remote_figure``."""
     import shlex
+
     tokens = shlex.split(line) if line.strip() else []
     kwargs: dict[str, Any] = {}
     i = 0
@@ -380,6 +408,7 @@ def register_magics(ipython=None) -> None:
 
     if ipython is None:
         from IPython import get_ipython
+
         ipython = get_ipython()
         if ipython is None:
             raise RuntimeError("No active IPython session found")

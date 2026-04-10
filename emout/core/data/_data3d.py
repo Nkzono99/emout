@@ -1,14 +1,11 @@
 """Three-dimensional (z, y, x) grid data container."""
 
-import warnings
 from os import PathLike
 from pathlib import Path
 from typing import Literal, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 
-import emout.utils as utils
 from emout.utils.util import apply_offset
 
 from ._base import Data
@@ -35,9 +32,7 @@ class Data3d(Data):
         obj = np.asarray(input_array).view(cls)
 
         if obj.ndim != 3:
-            raise ValueError(
-                f"Data3d requires a 3-D array (z, y, x), got shape {obj.shape}"
-            )
+            raise ValueError(f"Data3d requires a 3-D array (z, y, x), got shape {obj.shape}")
 
         if "xslice" not in kwargs:
             kwargs["xslice"] = slice(0, obj.shape[2], 1)
@@ -56,9 +51,7 @@ class Data3d(Data):
         self,
         mode: Literal["auto"] = "auto",
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         *args,
         **kwargs,
     ):
@@ -95,7 +88,6 @@ class Data3d(Data):
         if mode == "auto":
             mode = "cont"
 
-
         if mode == "cont":
             from emout.plot.contour3d import contour3d
 
@@ -123,9 +115,7 @@ class Data3d(Data):
         self,
         mode: Literal["box", "volume", "slice", "contour"] = "box",
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         show: bool = False,
         plotter=None,
         cmap: str = "viridis",
@@ -267,6 +257,7 @@ class Data3d(Data):
         remote_kwargs = self._get_remote_open_kwargs()
         if remote_kwargs is not None:
             from emout.distributed.remote_render import get_or_create_session
+
             session = get_or_create_session(emout_kwargs=remote_kwargs)
             if session is not None:
                 recipe_index = self._to_recipe_index()
@@ -282,7 +273,12 @@ class Data3d(Data):
                 local_data._emout_dir = None  # prevent recursion
                 local_data._emout_open_kwargs = None
                 return local_data.plot_surfaces(
-                    surfaces, ax=ax, use_si=use_si, vmin=vmin, vmax=vmax, **kwargs,
+                    surfaces,
+                    ax=ax,
+                    use_si=use_si,
+                    vmin=vmin,
+                    vmax=vmax,
+                    **kwargs,
                 )
 
         import matplotlib.pyplot as plt
@@ -342,8 +338,6 @@ class Data3d(Data):
         )
 
 
-
-
 def _write_vti_xml(filepath, data, dx, dy, dz, array_name):
     """Write a VTK ImageData (.vti) XML file without PyVista.
 
@@ -374,15 +368,15 @@ def _write_vti_xml(filepath, data, dx, dy, dz, array_name):
         f'  <ImageData WholeExtent="0 {nx} 0 {ny} 0 {nz}" '
         f'Origin="0 0 0" Spacing="{dx} {dy} {dz}">\n'
         f'    <Piece Extent="0 {nx} 0 {ny} 0 {nz}">\n'
-        '      <CellData>\n'
+        "      <CellData>\n"
         f'        <DataArray type="Float64" Name="{array_name}" '
         f'format="binary">\n'
-        f'          {encoded}\n'
-        '        </DataArray>\n'
-        '      </CellData>\n'
-        '    </Piece>\n'
-        '  </ImageData>\n'
-        '</VTKFile>\n'
+        f"          {encoded}\n"
+        "        </DataArray>\n"
+        "      </CellData>\n"
+        "    </Piece>\n"
+        "  </ImageData>\n"
+        "</VTKFile>\n"
     )
 
     with open(filepath, "w") as f:

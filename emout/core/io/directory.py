@@ -129,13 +129,9 @@ class DirectoryInspector:
                 break
 
             # Recursively call DirectoryInspector for validity check
-            helper = DirectoryInspector(
-                candidate, append_directories=None, inpfilename=None
-            )
+            helper = DirectoryInspector(candidate, append_directories=None, inpfilename=None)
             if not helper.is_valid():
-                logger.warning(
-                    f"{candidate.resolve()} exists but is not valid; stopping discovery"
-                )
+                logger.warning(f"{candidate.resolve()} exists but is not valid; stopping discovery")
                 break
 
             result.append(candidate)
@@ -214,8 +210,7 @@ class DirectoryInspector:
         toml2inp = shutil.which("toml2inp")
         if toml2inp is None:
             logger.warning(
-                "toml2inp command not found; "
-                "skipping conversion from %s",
+                "toml2inp command not found; skipping conversion from %s",
                 toml_path,
             )
             return
@@ -279,11 +274,7 @@ class DirectoryInspector:
         the input parameters.
         """
         # Use the last append directory if available, otherwise main_directory
-        dirpath = (
-            self.append_directories[-1]
-            if self.append_directories
-            else self.main_directory
-        )
+        dirpath = self.append_directories[-1] if self.append_directories else self.main_directory
         icur_file = dirpath / "icur"
         if not icur_file.exists():
             return False
@@ -335,10 +326,10 @@ class DirectoryInspector:
 
         names = []
         for ispec in range(self._inp.nspec):
-            names.append(f"{ispec+1}_step")
+            names.append(f"{ispec + 1}_step")
             for ipc in range(self._inp.npc):
-                names.append(f"{ispec+1}_body{ipc+1}")
-                names.append(f"{ispec+1}_body{ipc+1}_ema")
+                names.append(f"{ispec + 1}_body{ipc + 1}")
+                names.append(f"{ispec + 1}_body{ipc + 1}_ema")
 
         icur_path = self.main_directory / "icur"
         if not icur_path.exists():
@@ -357,7 +348,7 @@ class DirectoryInspector:
         if self._inp is None:
             raise RuntimeError("read_pbody: .inp has not been loaded")
 
-        names = ["step"] + [f"body{i+1}" for i in range(self._inp.npc + 1)]
+        names = ["step"] + [f"body{i + 1}" for i in range(self._inp.npc + 1)]
         pbody_path = self.main_directory / "pbody"
         if not pbody_path.exists():
             raise FileNotFoundError(f"'pbody' file not found: {pbody_path}")

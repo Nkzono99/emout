@@ -8,7 +8,7 @@ Provides :class:`RenderItem` for pairing meshes with scalar fields,
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Literal, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,6 +42,7 @@ class RenderItem:
 @dataclass(frozen=True)
 class Bounds3D:
     """Axis-aligned 3-D bounding box."""
+
     x: Tuple[float, float]
     y: Tuple[float, float]
     z: Tuple[float, float]
@@ -58,6 +59,7 @@ class Bounds3D:
         "Bounds3D"
             Expanded bounding box.
         """
+
         def ex(a, b):
             """Expand a 1-D interval by the given fraction.
 
@@ -94,9 +96,7 @@ def _as_list(surfaces) -> list[RenderItem]:
     return out
 
 
-def _make_norm(
-    vmin=None, vmax=None, *, robust_data: Optional[np.ndarray] = None
-) -> Normalize:
+def _make_norm(vmin=None, vmax=None, *, robust_data: Optional[np.ndarray] = None) -> Normalize:
     """Create a colormap normalization object.
 
     Parameters
@@ -139,10 +139,7 @@ def _surface_mesh(surface) -> Tuple[np.ndarray, np.ndarray]:
     """
     mesh_fn = getattr(surface, "mesh", None)
     if not callable(mesh_fn):
-        raise TypeError(
-            f"Expected a MeshSurface3D-like object with a .mesh() method, "
-            f"got {type(surface).__name__}"
-        )
+        raise TypeError(f"Expected a MeshSurface3D-like object with a .mesh() method, got {type(surface).__name__}")
     result = mesh_fn()
     # Unwrap one level so Boundary objects (mesh() → MeshSurface3D) work too.
     inner = getattr(result, "mesh", None)
@@ -202,13 +199,16 @@ def _clip_faces_to_bounds(V: np.ndarray, F: np.ndarray, bounds: Bounds3D) -> np.
     """
     if F.size == 0:
         return F
-    tris = V[F]                         # (nF, 3, 3)
-    centroids = tris.mean(axis=1)       # (nF, 3)
+    tris = V[F]  # (nF, 3, 3)
+    centroids = tris.mean(axis=1)  # (nF, 3)
     cx, cy, cz = centroids[:, 0], centroids[:, 1], centroids[:, 2]
     keep = (
-        (cx >= bounds.x[0]) & (cx <= bounds.x[1])
-        & (cy >= bounds.y[0]) & (cy <= bounds.y[1])
-        & (cz >= bounds.z[0]) & (cz <= bounds.z[1])
+        (cx >= bounds.x[0])
+        & (cx <= bounds.x[1])
+        & (cy >= bounds.y[0])
+        & (cy <= bounds.y[1])
+        & (cz >= bounds.z[0])
+        & (cz <= bounds.z[1])
     )
     return F[keep]
 
@@ -321,6 +321,7 @@ def _view_dir_from_axes(ax) -> np.ndarray:
     el = np.deg2rad(getattr(ax, "elev", 30.0) or 30.0)
     return np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)], dtype=np.float64)
 
+
 def _is_mesh_open(V: np.ndarray, F: np.ndarray) -> bool:
     """Return True if the mesh has a real (non-degenerate) boundary edge.
 
@@ -382,7 +383,7 @@ def _label_position_for_level(segs_array: np.ndarray) -> Optional[np.ndarray]:
     """
     if segs_array is None or segs_array.size == 0:
         return None
-    midpoints = segs_array.mean(axis=1)            # (n, 3)
+    midpoints = segs_array.mean(axis=1)  # (n, 3)
     centroid = midpoints.mean(axis=0)
     distances = np.linalg.norm(midpoints - centroid, axis=1)
     idx = int(np.argmin(distances))
@@ -418,7 +419,7 @@ def _contour_segments_on_mesh(
         empty = np.empty((0, 2, 3), dtype=np.float64)
         return {float(L): empty for L in levels}
 
-    p = V[F]   # (nF, 3, 3)
+    p = V[F]  # (nF, 3, 3)
     s = vval[F]  # (nF, 3)
 
     valid_face = np.all(np.isfinite(s), axis=1)
@@ -441,12 +442,12 @@ def _contour_segments_on_mesh(
 
     # Edge endpoints: edge ei of each face goes from vertex ei to vertex
     # (ei + 1) mod 3. Roll along the vertex axis to get the "next" vertex.
-    pa_all = p                                 # (nF, 3, 3)  start positions
-    pb_all = np.roll(p, -1, axis=1)            # (nF, 3, 3)  end positions
-    sa_all = s                                 # (nF, 3)     start values
-    sb_all = np.roll(s, -1, axis=1)            # (nF, 3)     end values
+    pa_all = p  # (nF, 3, 3)  start positions
+    pb_all = np.roll(p, -1, axis=1)  # (nF, 3, 3)  end positions
+    sa_all = s  # (nF, 3)     start values
+    sb_all = np.roll(s, -1, axis=1)  # (nF, 3)     end values
 
-    den_all = sb_all - sa_all                  # (nF, 3)
+    den_all = sb_all - sa_all  # (nF, 3)
     safe_den = np.where(den_all != 0.0, den_all, 1.0)
 
     nF = p.shape[0]
@@ -465,13 +466,13 @@ def _contour_segments_on_mesh(
         # Linear interpolation parameter per edge (only meaningful where cross
         # is True; the others are masked away below).
         with np.errstate(invalid="ignore"):
-            t_all = (L_f - sa_all) / safe_den   # (nF, 3)
+            t_all = (L_f - sa_all) / safe_den  # (nF, 3)
         # Intersection points per edge in world coords.
         ip_all = pa_all + t_all[..., None] * (pb_all - pa_all)  # (nF, 3, 3)
 
         # Restrict to faces with exactly two crossings.
-        valid_cross = cross[face_mask]            # (nv, 3)
-        valid_ip = ip_all[face_mask]              # (nv, 3, 3)
+        valid_cross = cross[face_mask]  # (nv, 3)
+        valid_ip = ip_all[face_mask]  # (nv, 3, 3)
         nv = valid_cross.shape[0]
         valid_rows = rows[:nv]
 
@@ -482,8 +483,8 @@ def _contour_segments_on_mesh(
         edge_a = order[:, -2]
         edge_b = order[:, -1]
 
-        seg_a = valid_ip[valid_rows, edge_a]      # (nv, 3)
-        seg_b = valid_ip[valid_rows, edge_b]      # (nv, 3)
+        seg_a = valid_ip[valid_rows, edge_a]  # (nv, 3)
+        seg_b = valid_ip[valid_rows, edge_b]  # (nv, 3)
         segs_array = np.stack([seg_a, seg_b], axis=1).astype(np.float64)  # (nv, 2, 3)
 
         if fn is not None:
@@ -583,10 +584,7 @@ def plot_surfaces(
         else:
             bounds = _bounds_from_mesh_surfaces(items)
             if bounds is None:
-                raise ValueError(
-                    "bounds is required when field is None and the surfaces "
-                    "do not expose vertex extents"
-                )
+                raise ValueError("bounds is required when field is None and the surfaces do not expose vertex extents")
 
     cmap = plt.get_cmap(cmap_name)
     norm = _make_norm(vmin, vmax, robust_data=None if field is None else field.data)
@@ -717,16 +715,14 @@ def plot_surfaces(
             #   "back"   — keep triangles whose normal faces away
             #   "both"   — keep everything
             if contour_side not in ("both", "front", "back", "auto"):
-                raise ValueError(
-                    'contour_side must be "auto", "both", "front", or "back"'
-                )
+                raise ValueError('contour_side must be "auto", "both", "front", or "back"')
             F_contour = F
             effective_side = contour_side
             if effective_side == "auto":
                 effective_side = "both" if _is_mesh_open(V, F_contour) else "front"
             if effective_side != "both" and len(F_contour) > 0:
                 vdir = _view_dir_from_axes(ax)
-                d = (fn[:, 0] * vdir[0] + fn[:, 1] * vdir[1] + fn[:, 2] * vdir[2])
+                d = fn[:, 0] * vdir[0] + fn[:, 1] * vdir[1] + fn[:, 2] * vdir[2]
                 keep = d > 0.0 if effective_side == "front" else d < 0.0
                 # If orientation is flipped, keep may become almost empty; auto-flip in that case.
                 if keep.mean() < 0.05:

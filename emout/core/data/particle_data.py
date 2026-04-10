@@ -21,6 +21,7 @@ class ParticleData:
     Wraps a 1-D float array of per-particle values (e.g. x-positions or
     vx-velocities) with optional unit metadata and a :meth:`plot` helper.
     """
+
     values: np.ndarray
     valunit: Optional[Any] = None
     name: str = "value"

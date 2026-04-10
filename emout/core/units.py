@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from emout.core.facade import Emout
 
 
-
 def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
     """Build a regex dictionary mapping field-name patterns to unit-translator factories.
 
@@ -48,7 +47,7 @@ def build_name2unit_mapping(max_ndp: int = 9) -> RegexDict:
         r"nd[1-9]\d*p": ndp_unit,
         r"p[1-9]v[xyz]": lambda out: out.unit.v,
         r"p[1-9][xyz]": lambda out: out.unit.length,
-        r"p[1-9]tid": lambda _: UnitTranslator(from_unit=1, to_unit=1, name="trace id", unit="")        
+        r"p[1-9]tid": lambda _: UnitTranslator(from_unit=1, to_unit=1, name="trace id", unit=""),
     }
 
     return RegexDict(mapping)
@@ -67,9 +66,7 @@ def t_unit(out: Emout) -> UnitTranslator:
     UnitTranslator
         tの単位変換器
     """
-    return (out.unit.t * UnitTranslator(out.inp.ifdiag * out.inp.dt, 1)).set_name(
-        "t", unit="s"
-    )
+    return (out.unit.t * UnitTranslator(out.inp.ifdiag * out.inp.dt, 1)).set_name("t", unit="s")
 
 
 def wpet_unit(out: Emout) -> UnitTranslator:
@@ -89,9 +86,7 @@ def wpet_unit(out: Emout) -> UnitTranslator:
     UnitTranslator
         wpe * tの単位変換器
     """
-    return UnitTranslator(
-        out.inp.wp[0] * out.inp.ifdiag * out.inp.dt, 1, name="wpe * t", unit=""
-    )
+    return UnitTranslator(out.inp.wp[0] * out.inp.ifdiag * out.inp.dt, 1, name="wpe * t", unit="")
 
 
 def wpit_unit(out: Emout) -> UnitTranslator:
@@ -111,9 +106,7 @@ def wpit_unit(out: Emout) -> UnitTranslator:
     UnitTranslator
         wpi * tの単位変換器
     """
-    return UnitTranslator(
-        out.inp.wp[1] * out.inp.ifdiag * out.inp.dt, 1, name="wpi * t", unit=""
-    )
+    return UnitTranslator(out.inp.wp[1] * out.inp.ifdiag * out.inp.dt, 1, name="wpi * t", unit="")
 
 
 def none_unit(out: Emout) -> UnitTranslator:

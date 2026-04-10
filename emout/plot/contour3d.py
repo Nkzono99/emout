@@ -8,9 +8,11 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 import numpy as np
 
 DxLike = Union[float, Sequence[float]]
-Bounds = Tuple[Tuple[Optional[float], Optional[float]],
-               Tuple[Optional[float], Optional[float]],
-               Tuple[Optional[float], Optional[float]]]
+Bounds = Tuple[
+    Tuple[Optional[float], Optional[float]],
+    Tuple[Optional[float], Optional[float]],
+    Tuple[Optional[float], Optional[float]],
+]
 LevelFormatter = Union[str, Callable[[float], str]]
 
 
@@ -54,9 +56,7 @@ def _sanitize_volume(vol: np.ndarray) -> np.ndarray:
     if not np.issubdtype(vol.dtype, np.floating):
         vol = vol.astype(np.float32, copy=False)
     if not np.isfinite(vol).all():
-        vol = np.nan_to_num(vol, nan=0.0,
-                            posinf=np.finfo(vol.dtype).max,
-                            neginf=np.finfo(vol.dtype).min)
+        vol = np.nan_to_num(vol, nan=0.0, posinf=np.finfo(vol.dtype).max, neginf=np.finfo(vol.dtype).min)
     return vol
 
 
@@ -181,9 +181,7 @@ def _slice_from_bounds_1d(
     i1 = max(0, min(n, i1))
 
     if i1 - i0 < 2:
-        raise ValueError(
-            f"{axis_name} ROI too small (needs >=2 samples). got [{i0}:{i1}] over n={n}"
-        )
+        raise ValueError(f"{axis_name} ROI too small (needs >=2 samples). got [{i0}:{i1}] over n={n}")
 
     new_origin = origin + i0 * d
     return slice(i0, i1), new_origin
@@ -247,8 +245,8 @@ def _apply_roi(
 
 
 def contour3d(
-    data3d: np.ndarray,          # (nz, ny, nx)
-    dx: DxLike,                  # scalar or (dx, dy, dz) in x,y,z
+    data3d: np.ndarray,  # (nz, ny, nx)
+    dx: DxLike,  # scalar or (dx, dy, dz) in x,y,z
     levels: Sequence[float],
     *,
     ax=None,
@@ -376,12 +374,10 @@ def contour3d(
     label_text_kwargs = {} if clabel_text_kwargs is None else dict(clabel_text_kwargs)
     exponent_kwargs = {} if clabel_exponent_kwargs is None else dict(clabel_exponent_kwargs)
     shared_exp = _resolve_shared_exponent(levels, clabel_shared_exponent)
-    scale = 10.0 ** shared_exp if shared_exp != 0 else 1.0
+    scale = 10.0**shared_exp if shared_exp != 0 else 1.0
 
     for lv in levels:
-        verts_zyx, faces, _, _ = marching_cubes(
-            vol, level=float(lv), spacing=spacing_zyx, allow_degenerate=False
-        )
+        verts_zyx, faces, _, _ = marching_cubes(vol, level=float(lv), spacing=spacing_zyx, allow_degenerate=False)
 
         # (z,y,x) -> (x,y,z) and apply origin
         verts_xyz = verts_zyx[:, [2, 1, 0]]
@@ -413,14 +409,14 @@ def contour3d(
     # ax.set_xlim(x0, x0 + (nx - 1) * dx_)
     # ax.set_ylim(y0, y0 + (ny - 1) * dy_)
     # ax.set_zlim(z0, z0 + (nz - 1) * dz_)
-    
+
     if xlabel:
         ax.set_xlabel(xlabel)
     if ylabel:
         ax.set_ylabel(ylabel)
     if zlabel:
         ax.set_zlabel(zlabel)
-        
+
     if title:
         ax.set_title(title)
 

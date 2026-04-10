@@ -12,12 +12,12 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import h5py
 import numpy as np
-from tqdm import tqdm
-from tqdm.notebook import tqdm as notebook_tqdm
+from tqdm import tqdm as _tqdm_terminal
+from tqdm.notebook import tqdm as _tqdm_notebook
 
 from ..data.griddata_series import GridDataSeries
 from ..data.vector_data import VectorData2d, VectorData3d
@@ -34,13 +34,13 @@ def get_tqdm():
         shell = get_ipython().__class__.__name__  # type: ignore
         if shell == "ZMQInteractiveShell":
             logger.debug("Notebook environment detected")
-            return notebook_tqdm
+            return _tqdm_notebook
         else:
             logger.debug("IPython environment (non-notebook) detected")
-            return tqdm
+            return _tqdm_terminal
     except NameError:
         logger.debug("Standard Python environment detected")
-        return tqdm
+        return _tqdm_terminal
 
 
 tqdm = get_tqdm()
@@ -53,9 +53,7 @@ class GridDataLoader:
     ``rb*``), and multi-axis vector fields (``{name}xy``, ``{name}xyz``).
     """
 
-    def __init__(
-        self, dir_inspector: DirectoryInspector, name2unit_map: dict[str, Any]
-    ):
+    def __init__(self, dir_inspector: DirectoryInspector, name2unit_map: dict[str, Any]):
         """Initialize the loader.
 
         Parameters
@@ -91,9 +89,7 @@ class GridDataLoader:
             axes = (axis1, axis2, axis3)
             if len(set(axes)) == 3:
                 skip_2d_vector_parse = True
-                logger.debug(
-                    f"Building VectorData3d: base={dname}, axes=({axis1},{axis2},{axis3})"
-                )
+                logger.debug(f"Building VectorData3d: base={dname}, axes=({axis1},{axis2},{axis3})")
                 try:
                     arr1 = self.load(f"{dname}{axis1}")
                     arr2 = self.load(f"{dname}{axis2}")
@@ -110,12 +106,8 @@ class GridDataLoader:
             m2 = re.match(r"(.+)([xyz])([xyz])$", name)
             if m2:
                 dname, axis1, axis2 = m2.groups()
-                logger.debug(
-                    f"Building VectorData2d: base={dname}, axes=({axis1},{axis2})"
-                )
-                arr1 = self.load(
-                    f"{dname}{axis1}"
-                )  # recursively loads GridDataSeries or relocated field
+                logger.debug(f"Building VectorData2d: base={dname}, axes=({axis1},{axis2})")
+                arr1 = self.load(f"{dname}{axis1}")  # recursively loads GridDataSeries or relocated field
                 arr2 = self.load(f"{dname}{axis2}")
                 vd = VectorData2d([arr1, arr2], name=name)
                 return vd
@@ -179,14 +171,10 @@ class GridDataLoader:
         else:
             # "t" and "axis" are always expected to have keys
             tunit = self.name2unit_map.get("t", lambda out: None)(self.dir_inspector)
-            axisunit = self.name2unit_map.get("axis", lambda out: None)(
-                self.dir_inspector
-            )
+            axisunit = self.name2unit_map.get("axis", lambda out: None)(self.dir_inspector)
             # Actual value unit is extracted from the file name
             base_name = h5file_path.name.replace("00_0000.h5", "")
-            valunit = self.name2unit_map.get(base_name, lambda out: None)(
-                self.dir_inspector
-            )
+            valunit = self.name2unit_map.get(base_name, lambda out: None)(self.dir_inspector)
 
         series = GridDataSeries(
             h5file_path,
@@ -222,9 +210,7 @@ class GridDataLoader:
         for ad in self.dir_inspector.append_directories:
             self._create_one_relocated(ad, field_name, axis)
 
-    def _create_one_relocated(
-        self, directory: Path, name: str, axis: int
-    ) -> None:
+    def _create_one_relocated(self, directory: Path, name: str, axis: int) -> None:
         """Generate a relocated HDF5 file in a single directory.
 
         Parameters
@@ -264,9 +250,7 @@ class GridDataLoader:
 
                         rgrp[key] = relocated_magnetic_field(arr, axis=axis, btypes=btypes)
                     else:
-                        rgrp[key] = relocated_electric_field(
-                            arr, axis=axis, btype=self._get_btype(name)
-                        )
+                        rgrp[key] = relocated_electric_field(arr, axis=axis, btype=self._get_btype(name))
 
     def _get_btype(self, name: str) -> str:
         """Return the boundary condition code for the given field.

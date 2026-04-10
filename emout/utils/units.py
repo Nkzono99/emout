@@ -391,4 +391,3 @@ class Units:
 
         self.EC = EC.set_name("Electric conductivity", unit="S/m")
         """Unit translator for Electric conductivity [S/m]"""
-

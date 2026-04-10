@@ -56,15 +56,9 @@ def plot_cross_sections(
 
     # Dispatch table for boundary types
     handlers: dict[str, Callable] = {
-        "sphere": lambda ib: _handle_sphere(
-            data, ib, axis, coord, ax, use_si, **kwargs
-        ),
-        "flat-surface": lambda ib: _handle_flat(
-            data, axis, coord, ax, use_si, **kwargs
-        ),
-        "rectangle-hole": lambda ib: _handle_rect(
-            data, axis, coord, ax, use_si, **kwargs
-        ),
+        "sphere": lambda ib: _handle_sphere(data, ib, axis, coord, ax, use_si, **kwargs),
+        "flat-surface": lambda ib: _handle_flat(data, axis, coord, ax, use_si, **kwargs),
+        "rectangle-hole": lambda ib: _handle_rect(data, axis, coord, ax, use_si, **kwargs),
     }
 
     for ib, btype in enumerate(inp.boundary_types or []):
@@ -75,9 +69,7 @@ def plot_cross_sections(
     return ax
 
 
-def _handle_sphere(
-    data, ib: int, axis: str, coord: float, ax: plt.Axes, use_si: bool, **kwargs
-) -> None:
+def _handle_sphere(data, ib: int, axis: str, coord: float, ax: plt.Axes, use_si: bool, **kwargs) -> None:
     """Plot sphere cross-section."""
     nml = data.inp.nml["ptcond"]
     si = nml.start_index["sphere_origin"][1]
@@ -93,9 +85,7 @@ def _handle_sphere(
     _plot_spheres(np.column_stack(([center], [radius])), axis, coord, ax, **kwargs)
 
 
-def _handle_flat(
-    data, axis: str, coord: float, ax: plt.Axes, use_si: bool, **kwargs
-) -> None:
+def _handle_flat(data, axis: str, coord: float, ax: plt.Axes, use_si: bool, **kwargs) -> None:
     """Plot flat-surface boundary (horizontal)."""
     zs = float(data.inp.zssurf)
 
@@ -109,9 +99,7 @@ def _handle_flat(
     ax.axhline(zs, **kwargs)
 
 
-def _handle_rect(
-    data, axis: str, coord: float, ax: plt.Axes, use_si: bool, **kwargs
-) -> None:
+def _handle_rect(data, axis: str, coord: float, ax: plt.Axes, use_si: bool, **kwargs) -> None:
     """Plot a rectangular hole cross-section."""
     inp = data.inp
     # bounds in model units
@@ -169,7 +157,7 @@ def _plot_spheres(
     ax = ax or plt.gca()
     # map axis to index and remaining axes
     idx = {"x": 0, "y": 1, "z": 2}[axis]
-    other = [i for i in (0,1,2) if i != idx]
+    other = [i for i in (0, 1, 2) if i != idx]
 
     for xc, yc, zc, r in np.atleast_2d(spheres):
         center = np.array((xc, yc, zc), float)

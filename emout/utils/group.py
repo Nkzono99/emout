@@ -4,8 +4,7 @@ import math
 
 
 class Group:
-    """Container that applies operations element-wise to a list of objects.
-    """
+    """Container that applies operations element-wise to a list of objects."""
 
     def __init__(self, objs, attrs=None):
         """Create a group from the given objects.
@@ -56,9 +55,7 @@ class Group:
         """
         if isinstance(arg, Group):
             if len(self) != len(arg):
-                raise ValueError(
-                    f"group size mismatch: self has {len(self)} elements, arg has {len(arg)}"
-                )
+                raise ValueError(f"group size mismatch: self has {len(self)} elements, arg has {len(arg)}")
             args = arg
         else:
             args = [arg] * len(self.objs)
@@ -908,8 +905,7 @@ class Group:
                 new_kwargss[i][key] = value
 
         new_objs = [
-            obj(*new_args, **new_kwargs)
-            for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)
+            obj(*new_args, **new_kwargs) for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)
         ]
 
         return type(self)(new_objs, attrs=self.attrs)

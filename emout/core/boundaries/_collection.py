@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import inspect
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Set, Tuple, Type
+from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple
 
-import numpy as np
 
 from emout.plot.surface_cut import (
     CompositeMeshSurface,
@@ -13,7 +11,7 @@ from emout.plot.surface_cut import (
 )
 
 from ._base import Boundary
-from ._helpers import _accepted_kwargs, _domain_extent, _safe_attr
+from ._helpers import _accepted_kwargs, _safe_attr
 from ._complex_types import (
     CircleBoundary,
     CuboidBoundary,
@@ -28,7 +26,6 @@ from ._legacy_types import (
     FlatSurfaceBoundary,
     RectangleHoleBoundary,
 )
-
 
 
 # ---------------------------------------------------------------------------
@@ -128,9 +125,7 @@ class BoundaryCollection:
     def __init__(self, inp, unit, remote_open_kwargs: Optional[Mapping[str, Any]] = None):
         self.inp = inp
         self.unit = unit
-        self._emout_open_kwargs = (
-            None if remote_open_kwargs is None else dict(remote_open_kwargs)
-        )
+        self._emout_open_kwargs = None if remote_open_kwargs is None else dict(remote_open_kwargs)
         self.skipped: List[Tuple[int, str, str]] = []
         self._boundaries = self._build()
 

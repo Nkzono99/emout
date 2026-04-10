@@ -36,6 +36,7 @@ class VectorData(utils.Group):
     attrs : dict, optional
         Additional attributes inherited by the wrapper.
     """
+
     def __init__(self, objs: List[Any], name=None, attrs=None):
         """Initialise a VectorData instance.
 
@@ -74,10 +75,7 @@ class VectorData(utils.Group):
 
     def __repr__(self) -> str:
         n = len(self.objs)
-        return (
-            f"<VectorData: name={self.name!r}, "
-            f"components={n}, shape={self.shape}>"
-        )
+        return f"<VectorData: name={self.name!r}, components={n}, shape={self.shape}>"
 
     def negate(self) -> "VectorData":
         """Return a new VectorData with all components sign-flipped.
@@ -201,9 +199,7 @@ class VectorData(utils.Group):
         axis: int = 0,
         title: Union[str, None] = None,
         notitle: bool = False,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         use_si: bool = True,
         **kwargs,
     ):
@@ -224,9 +220,7 @@ class VectorData(utils.Group):
             If True, use SI units; otherwise use EMSES grid units,
             by default False
         """
-        updater = FrameUpdater(
-            self, axis, title, notitle, offsets, use_si, **kwargs
-        )
+        updater = FrameUpdater(self, axis, title, notitle, offsets, use_si, **kwargs)
 
         return updater
 
@@ -240,9 +234,7 @@ class VectorData(utils.Group):
         repeat: bool = True,
         title: Union[str, None] = None,
         notitle: bool = False,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         use_si: bool = True,
         show: bool = False,
         savefilename: PathLike = None,
@@ -292,15 +284,12 @@ class VectorData(utils.Group):
         """
         if return_updater:
             warnings.warn(
-                "The 'return_updater' flag is deprecated. "
-                "Please use gifplot(action='frames') instead.",
+                "The 'return_updater' flag is deprecated. Please use gifplot(action='frames') instead.",
                 DeprecationWarning,
             )
             action = "frames"
 
-        updater = self.build_frame_updater(
-            axis, title, notitle, offsets, use_si, **kwargs
-        )
+        updater = self.build_frame_updater(axis, title, notitle, offsets, use_si, **kwargs)
 
         if action == "frames":
             return updater
@@ -356,9 +345,7 @@ class VectorData(utils.Group):
                 *args,
                 **kwargs,
             )
-        raise NotImplementedError(
-            f"VectorData.plot is not implemented for ndim={self.x_data.ndim}."
-        )
+        raise NotImplementedError(f"VectorData.plot is not implemented for ndim={self.x_data.ndim}.")
 
     def plot2d(
         self,
@@ -366,9 +353,7 @@ class VectorData(utils.Group):
         axes: Literal["auto", "xy", "yz", "zx", "yx", "zy", "xy"] = "auto",
         show: bool = False,
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         **kwargs,
     ):
         """Plot two-dimensional vector data.
@@ -431,17 +416,11 @@ class VectorData(utils.Group):
             axes = "".join(sorted(self.objs[0].use_axes))
 
         if not re.match(r"x[yzt]|y[xzt]|z[xyt]|t[xyz]", axes):
-            raise ValueError(
-                f'axes "{axes}" cannot be used with 2D vector data'
-            )
+            raise ValueError(f'axes "{axes}" cannot be used with 2D vector data')
         if axes[0] not in self.objs[0].use_axes or axes[1] not in self.objs[0].use_axes:
-            raise ValueError(
-                f'axes "{axes}" cannot be used because the axis does not exist in this data'
-            )
+            raise ValueError(f'axes "{axes}" cannot be used because the axis does not exist in this data')
         if len(self.objs[0].shape) != 2:
-            raise ValueError(
-                f'axes "{axes}" cannot be used because data is not 2-dimensional'
-            )
+            raise ValueError(f'axes "{axes}" cannot be used because data is not 2-dimensional')
 
         # x: 3, y: 2, z:1 t:0
         axis1 = self.objs[0].slice_axes[self.objs[0].use_axes.index(axes[0])]
@@ -497,21 +476,15 @@ class VectorData(utils.Group):
         mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
         show: bool = False,
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         plotter=None,
         **kwargs,
     ):
         """Render three-dimensional vector field with PyVista."""
         if self.x_data.ndim != 3:
-            raise ValueError(
-                "plot_pyvista on VectorData requires 3D component data."
-            )
+            raise ValueError("plot_pyvista on VectorData requires 3D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
-            raise ValueError(
-                "plot_pyvista on VectorData requires 3 components (x, y, z)."
-            )
+            raise ValueError("plot_pyvista on VectorData requires 3 components (x, y, z).")
 
         if self.objs[0].valunit is None:
             use_si = False
@@ -550,9 +523,7 @@ class VectorData(utils.Group):
         self,
         mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
         use_si: bool = True,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         ax=None,
         **kwargs,
     ):
@@ -640,11 +611,21 @@ class VectorData(utils.Group):
 
         if mode in ("stream", "streamline"):
             return emplt.plot_3d_streamline(
-                x_data, y_data, z_data, ax=ax, mesh=mesh, **kwargs,
+                x_data,
+                y_data,
+                z_data,
+                ax=ax,
+                mesh=mesh,
+                **kwargs,
             )
         elif mode in ("vec", "quiver"):
             return emplt.plot_3d_quiver(
-                x_data, y_data, z_data, ax3d=ax, mesh=mesh, **kwargs,
+                x_data,
+                y_data,
+                z_data,
+                ax3d=ax,
+                mesh=mesh,
+                **kwargs,
             )
         else:
             raise ValueError(f'Unsupported mode "{mode}" for plot3d_mpl.')

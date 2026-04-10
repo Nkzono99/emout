@@ -12,9 +12,7 @@ from emout.utils.emsesinp import InpFile
 from emout.utils.units import Units
 
 
-def plot_surface_with_hole(
-    data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", **kwargs
-):
+def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", **kwargs):
     """Render a 3-D surface with a rectangular hole.
 
     Internally calls `data_xyz[...].plot(mode="surf", **kwargs)` multiple
@@ -79,9 +77,7 @@ def plot_surface_with_hole(
     data_xyz[zl : zu + 1, yl : yu + 1, xu].plot(mode="surf", **kwargs)
 
     # plot bottom
-    data_xyz[zl, yl : yu + 1, xl : xu + 1].plot(
-        mode="surf", add_colorbar=add_colorbar, **kwargs
-    )
+    data_xyz[zl, yl : yu + 1, xl : xu + 1].plot(mode="surf", add_colorbar=add_colorbar, **kwargs)
 
     if show:
         plt.show()
@@ -136,13 +132,9 @@ def plot_hole_line(
 
     xl = inp.xlrechole[1]
     xu = inp.xurechole[1]
-    yl = inp.ylrechole[1]
-    yu = inp.yurechole[1]
     zl = inp.zlrechole[1] + 0.5
     zu = inp.zurechole[0]
     nx = inp.nx
-    ny = inp.ny
-    nz = inp.nz
 
     if axis == "xz":
         xs = np.array([0.0, xl, xl, xu, xu, nx - 1])
@@ -203,9 +195,7 @@ def plot_line_of_hole_half(inp, off, unit):
         ]
     )
 
-    bottom_points = np.array(
-        [[xc, yl, zl], [xc, yu, zl], [xl, yu, zl], [xl, yl, zl], [xc, yl, zl]]
-    )
+    bottom_points = np.array([[xc, yl, zl], [xc, yu, zl], [xl, yu, zl], [xl, yl, zl], [xc, yl, zl]])
 
     bottom2_points = np.array(
         [
@@ -264,9 +254,7 @@ def plot_line_of_hole_half(inp, off, unit):
         ax.plot(*parse(line, offsets), color="black")
 
 
-def plot_surface_with_hole_half(
-    data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", **kwargs
-):
+def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", **kwargs):
     """Render a half cross-section surface of a rectangular hole.
 
     Parameters
@@ -312,13 +300,11 @@ def plot_surface_with_hole_half(
     lenmax = max(max(xlen, ylen), zlen)
     box_aspect = (xlen / lenmax, ylen / lenmax, zlen / lenmax)
 
-    ax = plt.gcf().add_subplot(projection='3d')
+    ax = plt.gcf().add_subplot(projection="3d")
     plt.sca(ax)
     ax.set_box_aspect(box_aspect)
 
     xc = (xl + xu) // 2
-    yc = (xl + xu) // 2
-    zc = (xl + xu) // 2
 
     if kwargs.get("use_si", False):
         vmax = data_xyz.val_si.max()
@@ -335,7 +321,7 @@ def plot_surface_with_hole_half(
 
     kwargs["vmax"] = kwargs.get("vmax", None) or vmax
     kwargs["vmin"] = kwargs.get("vmin", None) or vmin
-    
+
     kwargs["ax3d"] = ax
 
     # plot top surface
@@ -368,22 +354,13 @@ def plot_surface_with_hole_half(
 
     masked[zl - off // 2 : zu + 1, yl - off : yl + 1, xc].plot(mode="surf", **kwargs)
     masked[zl - off // 2 : zu + 1, yu : yu + off, xc].plot(mode="surf", **kwargs)
-    masked[zl - off // 2 : zu + 1, yl - off, xl - off : xc + 1].plot(
-        mode="surf", **kwargs
-    )
-    masked[zl - off // 2 : zu + 1, yu + off - 1, xl - off : xc + 1].plot(
-        mode="surf", **kwargs
-    )
+    masked[zl - off // 2 : zu + 1, yl - off, xl - off : xc + 1].plot(mode="surf", **kwargs)
+    masked[zl - off // 2 : zu + 1, yu + off - 1, xl - off : xc + 1].plot(mode="surf", **kwargs)
     masked[zl - off // 2 : zl + 1, yl : yu + 1, xc].plot(mode="surf", **kwargs)
 
     # plot bottom
     data_xyz[zl, yl : yu + 1, xl : xc + 1].plot(
-        mode="surf",
-        add_colorbar=add_colorbar,
-        xlabel="x[m]",
-        ylabel="y[m]",
-        zlabel="z[m]",
-        **kwargs
+        mode="surf", add_colorbar=add_colorbar, xlabel="x[m]", ylabel="y[m]", zlabel="z[m]", **kwargs
     )
 
     if show:

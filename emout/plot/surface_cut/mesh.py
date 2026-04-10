@@ -165,10 +165,7 @@ def _scale_resolution(
     nu_s = int(round(nu * float(scale)))
     nv_s = int(round(nv * float(scale)))
     if nu_s < minimum or nv_s < minimum:
-        raise ValueError(
-            f"{name} entries must be >= {minimum} after scaling "
-            f"({nu}, {nv}) by {scale}"
-        )
+        raise ValueError(f"{name} entries must be >= {minimum} after scaling ({nu}, {nv}) by {scale}")
     return nu_s, nv_s
 
 
@@ -490,9 +487,7 @@ def _rect_with_hole_mesh(
     wraps in the angular direction when `theta_range` covers the full circle.
     """
     if inner_radius >= min(half_u, half_v):
-        raise ValueError(
-            "inner_radius must be < min(half_u, half_v) so the hole fits in the rectangle"
-        )
+        raise ValueError("inner_radius must be < min(half_u, half_v) so the hole fits in the rectangle")
 
     theta_min, theta_max, is_full = _resolve_theta_range(theta_range)
     theta = _sample_theta(ntheta, theta_min, theta_max, is_full)
@@ -513,11 +508,7 @@ def _rect_with_hole_mesh(
     u_grid = (1.0 - alphas)[:, None] * inner_u[None, :] + alphas[:, None] * outer_u[None, :]
     v_grid = (1.0 - alphas)[:, None] * inner_v[None, :] + alphas[:, None] * outer_v[None, :]
 
-    points = (
-        base[None, None, :]
-        + u_grid[..., None] * e1[None, None, :]
-        + v_grid[..., None] * e2[None, None, :]
-    )
+    points = base[None, None, :] + u_grid[..., None] * e1[None, None, :] + v_grid[..., None] * e2[None, None, :]
     return _plane_mesh(points, expected_normal=expected_normal, wrap_u=is_full)
 
 
@@ -553,9 +544,6 @@ class BoxMeshSurface(MeshSurface3D):
 
     def _face_mesh(self, face: str) -> Tuple[np.ndarray, np.ndarray]:
         nu, nv = self.resolution
-        xs = np.linspace(self.xmin, self.xmax, nu, dtype=np.float64)
-        ys = np.linspace(self.ymin, self.ymax, nu, dtype=np.float64)
-        zs = np.linspace(self.zmin, self.zmax, nv, dtype=np.float64)
 
         if face == "xmin":
             Y, Z = np.meshgrid(
@@ -666,10 +654,7 @@ class CylinderMeshSurface(MeshSurface3D):
             self.center[None, None, :]
             + T[..., None] * self.axis[None, None, :]
             + self.radius
-            * (
-                np.cos(TH)[..., None] * self.e1[None, None, :]
-                + np.sin(TH)[..., None] * self.e2[None, None, :]
-            )
+            * (np.cos(TH)[..., None] * self.e1[None, None, :] + np.sin(TH)[..., None] * self.e2[None, None, :])
         )
         return _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=self._theta_full)
 
@@ -762,9 +747,7 @@ class HollowCylinderMeshSurface(MeshSurface3D):
             try:
                 wu_raw, wv_raw = width  # type: ignore[misc]
             except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    "width must be a float or a (width_u, width_v) pair"
-                ) from exc
+                raise ValueError("width must be a float or a (width_u, width_v) pair") from exc
             wu = float(wu_raw)
             wv = float(wv_raw)
         if wu <= 0.0 or wv <= 0.0:
@@ -778,9 +761,7 @@ class HollowCylinderMeshSurface(MeshSurface3D):
         if self.inner_radius <= 0.0:
             raise ValueError("inner_radius must be > 0")
         if self.inner_radius >= min(self.half_u, self.half_v):
-            raise ValueError(
-                "inner_radius must be < half of the smaller rectangle side"
-            )
+            raise ValueError("inner_radius must be < half of the smaller rectangle side")
 
         self.tmin, self.tmax = _axial_range(length=length, tmin=tmin, tmax=tmax)
         self.parts = _normalize_selection(parts, allowed=self._allowed_parts, name="parts")
@@ -800,10 +781,7 @@ class HollowCylinderMeshSurface(MeshSurface3D):
             self.center[None, None, :]
             + T[..., None] * self.axis[None, None, :]
             + self.inner_radius
-            * (
-                np.cos(TH)[..., None] * self.e1[None, None, :]
-                + np.sin(TH)[..., None] * self.e2[None, None, :]
-            )
+            * (np.cos(TH)[..., None] * self.e1[None, None, :] + np.sin(TH)[..., None] * self.e2[None, None, :])
         )
         V, F = _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=self._theta_full)
         # Flip to face inward (towards the axis of the hole).
@@ -831,9 +809,9 @@ class HollowCylinderMeshSurface(MeshSurface3D):
 
         return [
             build(-self.half_u * self.e1, self.half_v, -self.e1, self.e2),
-            build(+self.half_u * self.e1, self.half_v,  self.e1, self.e2),
+            build(+self.half_u * self.e1, self.half_v, self.e1, self.e2),
             build(-self.half_v * self.e2, self.half_u, -self.e2, self.e1),
-            build(+self.half_v * self.e2, self.half_u,  self.e2, self.e1),
+            build(+self.half_v * self.e2, self.half_u, self.e2, self.e1),
         ]
 
     def _cap_mesh(self, which: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -916,16 +894,11 @@ class RectangleMeshSurface(MeshSurface3D):
             if pmin is None or pmax is None:
                 raise ValueError("pmin and pmax must be given together")
             if center is not None or axis is not None or width is not None:
-                raise ValueError(
-                    "Cannot mix pmin/pmax with center/axis/width — pick one form"
-                )
+                raise ValueError("Cannot mix pmin/pmax with center/axis/width — pick one form")
             center, axis, width = self._corners_to_center_axis_width(pmin, pmax)
 
         if center is None or axis is None or width is None:
-            raise ValueError(
-                "RectangleMeshSurface requires either (center, axis, width) "
-                "or (pmin, pmax)"
-            )
+            raise ValueError("RectangleMeshSurface requires either (center, axis, width) or (pmin, pmax)")
 
         self.center = _center_to_3vec(center)
         self.axis, self.e1, self.e2 = _orthonormal_frame(axis)
@@ -936,9 +909,7 @@ class RectangleMeshSurface(MeshSurface3D):
             try:
                 wu_raw, wv_raw = width  # type: ignore[misc]
             except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    "width must be a float or a (width_u, width_v) pair"
-                ) from exc
+                raise ValueError("width must be a float or a (width_u, width_v) pair") from exc
             wu = float(wu_raw)
             wv = float(wv_raw)
         if wu <= 0.0 or wv <= 0.0:
@@ -991,10 +962,7 @@ class RectangleMeshSurface(MeshSurface3D):
         wu = float(abs_delta[other_indices[0]])
         wv = float(abs_delta[other_indices[1]])
         if wu <= 0.0 or wv <= 0.0:
-            raise ValueError(
-                f"pmin and pmax must define a non-degenerate rectangle "
-                f"(got widths wu={wu}, wv={wv})"
-            )
+            raise ValueError(f"pmin and pmax must define a non-degenerate rectangle (got widths wu={wu}, wv={wv})")
         return center_arr, axis_letter, (wu, wv)
 
     def mesh(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -1202,11 +1170,7 @@ class DiskMeshSurface(MeshSurface3D):
         points = (
             self.center[None, None, :]
             + T[..., None] * self.axis[None, None, :]
-            + radius
-            * (
-                np.cos(TH)[..., None] * self.e1[None, None, :]
-                + np.sin(TH)[..., None] * self.e2[None, None, :]
-            )
+            + radius * (np.cos(TH)[..., None] * self.e1[None, None, :] + np.sin(TH)[..., None] * self.e2[None, None, :])
         )
         V, F = _plane_mesh(points, expected_normal=tuple(self.e1), wrap_u=self._theta_full)
         if inward:
@@ -1280,9 +1244,7 @@ class PlaneWithCircleMeshSurface(MeshSurface3D):
             try:
                 wu_raw, wv_raw = width  # type: ignore[misc]
             except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    "width must be a float or a (width_u, width_v) pair"
-                ) from exc
+                raise ValueError("width must be a float or a (width_u, width_v) pair") from exc
             wu = float(wu_raw)
             wv = float(wv_raw)
         if wu <= 0.0 or wv <= 0.0:
@@ -1296,9 +1258,7 @@ class PlaneWithCircleMeshSurface(MeshSurface3D):
         if self.inner_radius <= 0.0:
             raise ValueError("inner_radius must be > 0")
         if self.inner_radius >= min(self.half_u, self.half_v):
-            raise ValueError(
-                "inner_radius must be < half of the smaller rectangle side"
-            )
+            raise ValueError("inner_radius must be < half of the smaller rectangle side")
 
         scale = _validate_scale(resolution_scale)
         self.ntheta = _scale_count(ntheta, scale, name="ntheta", minimum=3)

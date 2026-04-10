@@ -63,10 +63,7 @@ class GridDataSeries:
         self._emout_open_kwargs = None
 
     def __repr__(self) -> str:
-        return (
-            f"<GridDataSeries: name={self.name!r}, "
-            f"timesteps={len(self)}, file={self.filename.name}>"
-        )
+        return f"<GridDataSeries: name={self.name!r}, timesteps={len(self)}, file={self.filename.name}>"
 
     @property
     def trange(self) -> List[int]:
@@ -156,10 +153,7 @@ class GridDataSeries:
             If the specified time index does not exist.
         """
         if index not in self._index2key:
-            raise IndexError(
-                f"Time index {index} does not exist. "
-                f"Available indices: {sorted(self._index2key.keys())}"
-            )
+            raise IndexError(f"Time index {index} does not exist. Available indices: {sorted(self._index2key.keys())}")
 
         key = self._index2key[index]
 
@@ -176,9 +170,7 @@ class GridDataSeries:
         data._emout_open_kwargs = self._emout_open_kwargs
         return data
 
-    def __create_data_with_indexes(
-        self, indexes: List[int], tslice: slice = None
-    ) -> Data4d:
+    def __create_data_with_indexes(self, indexes: List[int], tslice: slice = None) -> Data4d:
         """Create a Data4d from a range of time indices.
 
         Parameters
@@ -255,10 +247,7 @@ class GridDataSeries:
             return self.__create_data_with_indexes(item)
 
         else:
-            raise TypeError(
-                f"Unsupported index type {type(item).__name__}; "
-                f"expected int, slice, or list"
-            )
+            raise TypeError(f"Unsupported index type {type(item).__name__}; expected int, slice, or list")
 
     def chain(self, other_series: "GridDataSeries") -> "MultiGridDataSeries":
         """Chain this series with another.
@@ -289,9 +278,7 @@ class GridDataSeries:
             Concatenated series.
         """
         if not isinstance(other_series, GridDataSeries):
-            raise TypeError(
-                f"Cannot chain GridDataSeries with {type(other_series).__name__}"
-            )
+            raise TypeError(f"Cannot chain GridDataSeries with {type(other_series).__name__}")
 
         return self.chain(other_series)
 
@@ -355,14 +342,9 @@ class MultiGridDataSeries(GridDataSeries):
         self.name = self.series[0].name
 
     def __repr__(self) -> str:
-        return (
-            f"<MultiGridDataSeries: name={self.name!r}, "
-            f"timesteps={len(self)}, segments={len(self.series)}>"
-        )
+        return f"<MultiGridDataSeries: name={self.name!r}, timesteps={len(self)}, segments={len(self.series)}>"
 
-    def __expand(
-        self, data_series: Union["GridDataSeries", "MultiGridDataSeries"]
-    ) -> List[GridDataSeries]:
+    def __expand(self, data_series: Union["GridDataSeries", "MultiGridDataSeries"]) -> List[GridDataSeries]:
         """Flatten a (Multi)GridDataSeries into a list of GridDataSeries.
 
         Parameters
@@ -381,9 +363,7 @@ class MultiGridDataSeries(GridDataSeries):
             If the object is not a GridDataSeries.
         """
         if not isinstance(data_series, GridDataSeries):
-            raise TypeError(
-                f"Expected GridDataSeries, got {type(data_series).__name__}"
-            )
+            raise TypeError(f"Expected GridDataSeries, got {type(data_series).__name__}")
         if not isinstance(data_series, MultiGridDataSeries):
             return [data_series]
 
@@ -399,9 +379,7 @@ class MultiGridDataSeries(GridDataSeries):
         for data in self.series:
             data.h5.close()
 
-    def time_series(
-        self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice]
-    ):
+    def time_series(self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice]):
         """Return the time series for the specified spatial range.
 
         Parameters
@@ -497,10 +475,7 @@ class MultiGridDataSeries(GridDataSeries):
 
             length += series_len
 
-        raise IndexError(
-            f"Time index {index} is out of range for MultiGridDataSeries "
-            f"with {len(self)} timesteps"
-        )
+        raise IndexError(f"Time index {index} is out of range for MultiGridDataSeries with {len(self)} timesteps")
 
     def __iter__(self):
         """Return an iterator over all timesteps.

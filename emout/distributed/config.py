@@ -7,7 +7,6 @@ the ``~/.emout/server.json`` state file used by the CLI.
 # emout/distributed/config.py
 from __future__ import annotations
 
-import json
 import logging
 import os
 import socket
@@ -79,8 +78,7 @@ def _get_local_ip() -> str:
 
     candidates.sort()
     best_name, best_ip = candidates[0][1], candidates[0][2]
-    logger.info("Auto-detected scheduler IP: %s (%s, type=%d)",
-                best_ip, best_name, candidates[0][0])
+    logger.info("Auto-detected scheduler IP: %s (%s, type=%d)", best_ip, best_name, candidates[0][0])
     return best_ip
 
 

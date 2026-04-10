@@ -8,6 +8,7 @@ from .remote_render import clear_sessions
 
 _global_cluster = None
 
+
 def start_cluster(
     scheduler_ip: str | None = None,
     scheduler_port: int | None = None,
@@ -113,8 +114,7 @@ def connect(address: str | None = None):
         state_file = Path.home() / ".emout" / "server.json"
         if not state_file.exists():
             raise RuntimeError(
-                "emout server is not running. "
-                "Run 'emout server start' or specify the address explicitly."
+                "emout server is not running. Run 'emout server start' or specify the address explicitly."
             )
         state = json.loads(state_file.read_text())
         address = state["address"]

@@ -18,7 +18,7 @@ def get_indices_in_pitch_range(
     B: np.ndarray,
     a_deg: float,
     b_deg: float,
-    direction: str = 'both',
+    direction: str = "both",
 ) -> np.ndarray:
     """
     Return the indices of particles whose pitch angle falls within [a_deg, b_deg].
@@ -47,7 +47,7 @@ def get_indices_in_pitch_range(
 
     if not (0.0 <= a_deg < b_deg <= 180.0):
         raise ValueError(f"Invalid a_deg={a_deg}, b_deg={b_deg}. Required: 0 <= a < b <= 180")
-    if direction not in ('both', 'pos', 'neg'):
+    if direction not in ("both", "pos", "neg"):
         raise ValueError(f"direction='{direction}' must be one of 'both', 'pos', 'neg'.")
 
     a_rad = np.deg2rad(a_deg)
@@ -67,9 +67,9 @@ def get_indices_in_pitch_range(
     cos_theta = np.clip(cos_theta, -1.0, 1.0)
 
     mask_angle = (cos_theta >= cos_b) & (cos_theta <= cos_a)
-    if direction == 'pos':
+    if direction == "pos":
         mask_dir = dot_vB > 0
-    elif direction == 'neg':
+    elif direction == "neg":
         mask_dir = dot_vB < 0
     else:
         mask_dir = np.ones_like(dot_vB, dtype=bool)
@@ -187,23 +187,17 @@ def compute_energy_flux_histograms(
 
     if pitch_ranges is None:
         pitch_ranges = [
-            (0.0, 30.0, 'pos'),
-            (0.0, 30.0, 'neg'),
-            (30.0, 60.0, 'pos'),
-            (30.0, 60.0, 'neg'),
-            (60.0, 180.0, 'pos'),
-            (60.0, 180.0, 'neg'),
+            (0.0, 30.0, "pos"),
+            (0.0, 30.0, "neg"),
+            (30.0, 60.0, "pos"),
+            (30.0, 60.0, "neg"),
+            (60.0, 180.0, "pos"),
+            (60.0, 180.0, "neg"),
         ]
 
     histograms: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    for (a_deg, b_deg, direction) in pitch_ranges:
-        idx = get_indices_in_pitch_range(
-            velocities=velocities,
-            B=B,
-            a_deg=a_deg,
-            b_deg=b_deg,
-            direction=direction
-        )
+    for a_deg, b_deg, direction in pitch_ranges:
+        idx = get_indices_in_pitch_range(velocities=velocities, B=B, a_deg=a_deg, b_deg=b_deg, direction=direction)
         if idx.size > 0:
             E_cls = energies_eV[idx]
             w_cls = energy_flux[idx]
@@ -225,7 +219,7 @@ def plot_energy_fluxes(
     energy_bins: Union[int, np.ndarray],
     use_probs: bool = False,
     probs_list: Union[list[np.ndarray], None] = None,
-    cmap: str = 'viridis',
+    cmap: str = "viridis",
 ) -> tuple[plt.Figure, plt.Axes]:
     """
     Plot a 2-D heatmap (x vs Energy, colour scale = energy flux) from
@@ -304,18 +298,18 @@ def plot_energy_fluxes(
     fig, ax = plt.subplots(figsize=(8, 5))
     im = ax.imshow(
         E_map,
-        origin='lower',
-        aspect='auto',
+        origin="lower",
+        aspect="auto",
         extent=[x[0], x[-1], energy_centers[0], energy_centers[-1]],
         norm=LogNorm(vmin=E_map[E_map > 0].min(), vmax=E_map.max()),
         cmap=cmap,
     )
     cbar = fig.colorbar(im, ax=ax, pad=0.02)
-    cbar.set_label('Energy Flux [eV·(m/s)·prob] (log scale)')
+    cbar.set_label("Energy Flux [eV·(m/s)·prob] (log scale)")
 
-    ax.set_xlabel('x')
-    ax.set_ylabel('Energy [eV]')
-    ax.set_title('x vs Energy-Flux Map')
+    ax.set_xlabel("x")
+    ax.set_ylabel("Energy [eV]")
+    ax.set_title("x vs Energy-Flux Map")
 
     plt.tight_layout()
     return fig, ax
@@ -328,7 +322,7 @@ def plot_energy_flux(
     mass: float,
     energy_bins: Union[int, np.ndarray],
     pitch_ranges: Union[list[tuple[float, float, str]], None] = None,
-    cmap: str = 'plasma',
+    cmap: str = "plasma",
 ) -> tuple[plt.Figure, plt.Axes]:
     """
     Plot the energy x energy-flux distribution for all particles and for
@@ -368,7 +362,6 @@ def plot_energy_flux(
         bins = bin_edges
     else:
         bins = energy_bins.copy()
-    M = len(bins) - 1
     centers = 0.5 * (bins[:-1] + bins[1:])
 
     total_hist, _ = np.histogram(energies_eV, bins=bins, weights=energy_flux)
@@ -383,21 +376,21 @@ def plot_energy_flux(
     )
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.step(centers, total_hist, where='mid', label='All', color='black', linewidth=1.5)
+    ax.step(centers, total_hist, where="mid", label="All", color="black", linewidth=1.5)
 
     keys = sorted(hists.keys())
     colors = plt.get_cmap(cmap)(np.linspace(0, 1, len(keys)))
 
     for color, key in zip(colors, keys):
         hist, _ = hists[key]
-        ax.step(centers, hist, where='mid', label=key, color=color)
+        ax.step(centers, hist, where="mid", label=key, color=color)
 
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel('Energy [eV]')
-    ax.set_ylabel('Energy  x  Flux  x  prob (arb.)')
-    ax.set_title('Energy-Flux Distribution')
-    ax.legend(fontsize='small', loc='upper right', ncol=2)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Energy [eV]")
+    ax.set_ylabel("Energy  x  Flux  x  prob (arb.)")
+    ax.set_title("Energy-Flux Distribution")
+    ax.legend(fontsize="small", loc="upper right", ncol=2)
     plt.tight_layout()
 
     return fig, ax
@@ -427,9 +420,7 @@ if __name__ == "__main__":
 
     # 1) Test get_indices_in_pitch_range
     sample_vels = velocities_list[0]
-    idx_20_50_pos = get_indices_in_pitch_range(
-        velocities=sample_vels, B=B, a_deg=20.0, b_deg=50.0, direction='pos'
-    )
+    idx_20_50_pos = get_indices_in_pitch_range(velocities=sample_vels, B=B, a_deg=20.0, b_deg=50.0, direction="pos")
     print("20-50 deg parallel particle count:", idx_20_50_pos.size)
 
     # 2) Test compute_energy_flux_histograms (int bins)
@@ -450,7 +441,7 @@ if __name__ == "__main__":
         energy_bins=energy_bins_int,
         use_probs=True,
         probs_list=probs_list,
-        cmap='plasma'
+        cmap="plasma",
     )
     plt.show(fig1)
 

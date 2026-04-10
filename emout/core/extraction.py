@@ -28,6 +28,7 @@ class EmoutDataExtraction:
     as an HDF5 snapshot (last timestep only) into an extraction directory,
     enabling lightweight data subsets for post-processing or transfer.
     """
+
     def __init__(self, root: Union[Path, str], data: Emout, nparent=1):
         """Initialize the extraction wrapper.
 
@@ -45,9 +46,7 @@ class EmoutDataExtraction:
         self._nparent = nparent
 
         self.extract_dir.mkdir(parents=True, exist_ok=True)
-        self._data.inp.save(
-            self.extract_dir / "plasma.inp", convkey=self._data.inp.convkey
-        )
+        self._data.inp.save(self.extract_dir / "plasma.inp", convkey=self._data.inp.convkey)
 
     @property
     def directory(self):

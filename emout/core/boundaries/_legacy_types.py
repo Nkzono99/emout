@@ -14,7 +14,7 @@ from emout.plot.surface_cut import (
 )
 
 from ._base import Boundary
-from ._helpers import _domain_extent, _get_scalar, _safe_attr
+from ._helpers import _domain_extent, _safe_attr
 
 
 class FlatSurfaceBoundary(Boundary):
@@ -64,13 +64,12 @@ def _rectangle_hole_bounds(inp) -> Dict[str, float]:
         yl = ylrechole(1),  yu = yurechole(1),
         zl = zlrechole(2),  zu = zssurf
     """
+
     def _first_nonnone(name: str, start_from: int = 1):
         if name not in inp.nml["ptcond"]:
             return None
         arr = inp.nml["ptcond"][name]
-        si = inp.nml["ptcond"].start_index.get(name) if hasattr(
-            inp.nml["ptcond"], "start_index"
-        ) else None
+        si = inp.nml["ptcond"].start_index.get(name) if hasattr(inp.nml["ptcond"], "start_index") else None
         base = si[0] if si and si[0] is not None else 1
         target = max(start_from, base)
         for ib_fortran in range(target, base + len(arr)):
@@ -95,9 +94,12 @@ def _rectangle_hole_bounds(inp) -> Dict[str, float]:
             "yurechole/zlrechole and zssurf in plasma.inp"
         )
     return {
-        "xl": xl, "xu": xu,
-        "yl": yl, "yu": yu,
-        "zl": zl, "zu": float(zssurf),
+        "xl": xl,
+        "xu": xu,
+        "yl": yl,
+        "yu": yu,
+        "zl": zl,
+        "zu": float(zssurf),
     }
 
 
@@ -124,9 +126,12 @@ class RectangleHoleBoundary(Boundary):
             coords = self._to_si_length(coords)
         xl, xu, yl, yu, zl, zu = coords.tolist()
         return {
-            "xmin": xl, "xmax": xu,
-            "ymin": yl, "ymax": yu,
-            "zmin": zl, "zmax": zu,
+            "xmin": xl,
+            "xmax": xu,
+            "ymin": yl,
+            "ymax": yu,
+            "zmin": zl,
+            "zmax": zu,
             "faces": ("xmin", "xmax", "ymin", "ymax", "zmin"),
         }
 
@@ -169,5 +174,3 @@ class CylinderHoleBoundary(Boundary):
 
     def _build_mesh(self, params: Mapping[str, Any]) -> MeshSurface3D:
         return CylinderMeshSurface(**params)
-
-

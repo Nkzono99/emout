@@ -23,6 +23,7 @@ class BacktraceWrapper:
     Dask-based remote execution, then delegates to the underlying ODE
     solver.
     """
+
     def __init__(
         self,
         directory: Any,
@@ -151,25 +152,20 @@ class BacktraceWrapper:
         if positions.shape != velocities.shape:
             raise ValueError("positions and velocities must have the same shape")
 
-        particles: List[Any] = [
-            Particle(pos_vec, vel_vec)
-            for pos_vec, vel_vec in zip(positions, velocities)
-        ]
+        particles: List[Any] = [Particle(pos_vec, vel_vec) for pos_vec, vel_vec in zip(positions, velocities)]
 
-        ts_list, probabilities, positions_list, velocities_list, last_indexes = (
-            run_backend(
-                _backend,
-                self.directory,
-                ispec=ispec,
-                istep=istep,
-                particles=particles,
-                dt=dt or self.inp.dt,
-                max_step=max_step,
-                output_interval=output_interval,
-                use_adaptive_dt=use_adaptive_dt,
-                n_threads=n_threads,
-                **kwargs,
-            )
+        ts_list, probabilities, positions_list, velocities_list, last_indexes = run_backend(
+            _backend,
+            self.directory,
+            ispec=ispec,
+            istep=istep,
+            particles=particles,
+            dt=dt or self.inp.dt,
+            max_step=max_step,
+            output_interval=output_interval,
+            use_adaptive_dt=use_adaptive_dt,
+            n_threads=n_threads,
+            **kwargs,
         )
 
         return MultiBacktraceResult(
@@ -223,20 +219,18 @@ class BacktraceWrapper:
         """
         from vdsolverf.emses import get_backtraces as _backend
 
-        ts_list, probabilities, positions_list, velocities_list, last_indexes = (
-            run_backend(
-                _backend,
-                self.directory,
-                ispec=ispec,
-                istep=istep,
-                particles=particles,
-                dt=dt or self.inp.dt,
-                max_step=max_step,
-                output_interval=output_interval,
-                use_adaptive_dt=use_adaptive_dt,
-                n_threads=n_threads,
-                **kwargs,
-            )
+        ts_list, probabilities, positions_list, velocities_list, last_indexes = run_backend(
+            _backend,
+            self.directory,
+            ispec=ispec,
+            istep=istep,
+            particles=particles,
+            dt=dt or self.inp.dt,
+            max_step=max_step,
+            output_interval=output_interval,
+            use_adaptive_dt=use_adaptive_dt,
+            n_threads=n_threads,
+            **kwargs,
         )
 
         return MultiBacktraceResult(
@@ -309,6 +303,7 @@ class BacktraceWrapper:
                 RemoteProbabilityResult,
                 _next_key,
             )
+
             session = get_or_create_session(
                 emout_kwargs=self.remote_open_kwargs,
                 emout_dir=self.directory,
@@ -318,10 +313,19 @@ class BacktraceWrapper:
                 session.compute_probabilities(
                     key,
                     emout_kwargs=self.remote_open_kwargs,
-                    x=x, y=y, z=z, vx=vx, vy=vy, vz=vz,
-                    ispec=ispec, istep=istep, dt=dt,
-                    max_step=max_step, use_adaptive_dt=use_adaptive_dt,
-                    n_threads=n_threads, remote=False,  # no recursion on the worker side
+                    x=x,
+                    y=y,
+                    z=z,
+                    vx=vx,
+                    vy=vy,
+                    vz=vz,
+                    ispec=ispec,
+                    istep=istep,
+                    dt=dt,
+                    max_step=max_step,
+                    use_adaptive_dt=use_adaptive_dt,
+                    n_threads=n_threads,
+                    remote=False,  # no recursion on the worker side
                     **kwargs,
                 ).result()
                 return RemoteProbabilityResult(session, key)
@@ -373,9 +377,7 @@ class BacktraceWrapper:
         nvz = _size(vz)
         dims = (nx, ny, nz, nvx, nvy, nvz)
 
-        return ProbabilityResult(
-            phases, prob_flat, dims, ret_particles, particles, ispec, self.inp, self.unit
-        )
+        return ProbabilityResult(phases, prob_flat, dims, ret_particles, particles, ispec, self.inp, self.unit)
 
     def get_probabilities_from_array(
         self,

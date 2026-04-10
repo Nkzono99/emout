@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping, Optional, Set, Type
+from typing import Any, Dict, Mapping, Optional, Type
 
-import numpy as np
 
-from emout.plot.surface_cut import CompositeMeshSurface, MeshSurface3D
+from emout.plot.surface_cut import MeshSurface3D
 
 
 class Boundary:
@@ -57,10 +56,7 @@ class Boundary:
 
     def _to_si_length(self, value):
         if self.unit is None:
-            raise ValueError(
-                "use_si=True requires a unit conversion key; this simulation "
-                "has no data.unit."
-            )
+            raise ValueError("use_si=True requires a unit conversion key; this simulation has no data.unit.")
         return self.unit.length.reverse(value)
 
     # -- to be implemented by subclasses ------------------------------------
@@ -132,5 +128,3 @@ class Boundary:
         ``boundary.mesh(ntheta=96).render(style="solid")``.
         """
         return self.mesh(use_si=use_si).render(**style_kwargs)
-
-

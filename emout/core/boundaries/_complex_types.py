@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import numpy as np
 
@@ -13,7 +13,6 @@ from emout.plot.surface_cut import (
     DiskMeshSurface,
     MeshSurface3D,
     PlaneWithCircleMeshSurface,
-    RectangleMeshSurface,
     SphereMeshSurface,
 )
 
@@ -36,9 +35,7 @@ class SphereBoundary(Boundary):
         center = _get_vector(pt, "sphere_origin", self.fortran_index)
         radius = _get_scalar(pt, "sphere_radius", self.fortran_index)
         if center is None or radius is None:
-            raise ValueError(
-                f"sphere_origin/sphere_radius not set for boundary index {self.index}"
-            )
+            raise ValueError(f"sphere_origin/sphere_radius not set for boundary index {self.index}")
         center = np.asarray(center, dtype=np.float64)
         radius = float(radius)
         if use_si:
@@ -59,17 +56,18 @@ class CuboidBoundary(Boundary):
         pt = self._ptcond()
         shape = _get_vector(pt, "cuboid_shape", self.fortran_index)
         if shape is None:
-            raise ValueError(
-                f"cuboid_shape not set for boundary index {self.index}"
-            )
+            raise ValueError(f"cuboid_shape not set for boundary index {self.index}")
         values = np.asarray([float(v) for v in shape], dtype=np.float64)
         if use_si:
             values = self._to_si_length(values)
         xmin, xmax, ymin, ymax, zmin, zmax = values.tolist()
         return {
-            "xmin": xmin, "xmax": xmax,
-            "ymin": ymin, "ymax": ymax,
-            "zmin": zmin, "zmax": zmax,
+            "xmin": xmin,
+            "xmax": xmax,
+            "ymin": ymin,
+            "ymax": ymax,
+            "zmin": zmin,
+            "zmax": zmax,
         }
 
     def _build_mesh(self, params: Mapping[str, Any]) -> MeshSurface3D:
@@ -89,23 +87,27 @@ class RectangleBoundary(Boundary):
         pt = self._ptcond()
         shape = _get_vector(pt, "rectangle_shape", self.fortran_index)
         if shape is None:
-            raise ValueError(
-                f"rectangle_shape not set for boundary index {self.index}"
-            )
+            raise ValueError(f"rectangle_shape not set for boundary index {self.index}")
         values = np.asarray([float(v) for v in shape], dtype=np.float64)
         if use_si:
             values = self._to_si_length(values)
         xmin, xmax, ymin, ymax, zmin, zmax = values.tolist()
         return {
-            "xmin": xmin, "xmax": xmax,
-            "ymin": ymin, "ymax": ymax,
-            "zmin": zmin, "zmax": zmax,
+            "xmin": xmin,
+            "xmax": xmax,
+            "ymin": ymin,
+            "ymax": ymax,
+            "zmin": zmin,
+            "zmax": zmax,
         }
 
     def _build_mesh(self, params: Mapping[str, Any]) -> MeshSurface3D:
-        xmin = params["xmin"]; xmax = params["xmax"]
-        ymin = params["ymin"]; ymax = params["ymax"]
-        zmin = params["zmin"]; zmax = params["zmax"]
+        xmin = params["xmin"]
+        xmax = params["xmax"]
+        ymin = params["ymin"]
+        ymax = params["ymax"]
+        zmin = params["zmin"]
+        zmax = params["zmax"]
 
         tol = 1e-12
         face: Optional[str] = None
@@ -116,9 +118,12 @@ class RectangleBoundary(Boundary):
         elif abs(zmax - zmin) <= tol:
             face = "zmin"
         kwargs = {
-            "xmin": xmin, "xmax": xmax,
-            "ymin": ymin, "ymax": ymax,
-            "zmin": zmin, "zmax": zmax,
+            "xmin": xmin,
+            "xmax": xmax,
+            "ymin": ymin,
+            "ymax": ymax,
+            "zmin": zmin,
+            "zmax": zmax,
         }
         if face is not None:
             kwargs["faces"] = (face,)
@@ -139,9 +144,7 @@ class CircleBoundary(Boundary):
         center = _get_vector(pt, "circle_origin", self.fortran_index)
         radius = _get_scalar(pt, "circle_radius", self.fortran_index)
         if center is None or radius is None:
-            raise ValueError(
-                f"circle_origin/circle_radius not set for boundary index {self.index}"
-            )
+            raise ValueError(f"circle_origin/circle_radius not set for boundary index {self.index}")
         center = np.asarray(center, dtype=np.float64)
         radius = float(radius)
         if use_si:
@@ -182,10 +185,7 @@ class CylinderBoundary(Boundary):
         radius = _get_scalar(pt, "cylinder_radius", self.fortran_index)
         height = _get_scalar(pt, "cylinder_height", self.fortran_index)
         if origin is None or radius is None or height is None:
-            raise ValueError(
-                "cylinder_origin/cylinder_radius/cylinder_height not set for "
-                f"boundary index {self.index}"
-            )
+            raise ValueError(f"cylinder_origin/cylinder_radius/cylinder_height not set for boundary index {self.index}")
         origin = np.asarray(origin, dtype=np.float64)
         radius = float(radius)
         height = float(height)
@@ -226,8 +226,7 @@ class DiskBoundary(Boundary):
         height = _get_scalar(pt, "disk_height", self.fortran_index)
         if origin is None or outer is None or inner is None or height is None:
             raise ValueError(
-                "disk_origin/disk_radius/disk_inner_radius/disk_height not set "
-                f"for boundary index {self.index}"
+                f"disk_origin/disk_radius/disk_inner_radius/disk_height not set for boundary index {self.index}"
             )
         origin = np.asarray(origin, dtype=np.float64)
         outer = float(outer)
@@ -272,10 +271,7 @@ class PlaneWithCircleBoundary(Boundary):
         origin = _get_vector(pt, "plane_with_circle_origin", self.fortran_index)
         radius = _get_scalar(pt, "plane_with_circle_radius", self.fortran_index)
         if origin is None or radius is None:
-            raise ValueError(
-                "plane_with_circle_origin/radius not set for boundary index "
-                f"{self.index}"
-            )
+            raise ValueError(f"plane_with_circle_origin/radius not set for boundary index {self.index}")
         origin = np.asarray(origin, dtype=np.float64)
         radius = float(radius)
 
@@ -305,5 +301,3 @@ class PlaneWithCircleBoundary(Boundary):
 
     def _build_mesh(self, params: Mapping[str, Any]) -> MeshSurface3D:
         return PlaneWithCircleMeshSurface(**params)
-
-

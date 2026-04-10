@@ -32,9 +32,7 @@ def flatten_list(l):
         Iterator that yields elements in flattened order.
     """
     for el in l:
-        if isinstance(el, collections.abc.Iterable) and not isinstance(
-            el, (str, bytes)
-        ):
+        if isinstance(el, collections.abc.Iterable) and not isinstance(el, (str, bytes)):
             yield from flatten_list(el)
         else:
             yield el
@@ -45,6 +43,7 @@ ANIMATER_PLOT_MODE = Literal["return", "show", "to_html", "save"]
 
 class Animator:
     """Orchestrate multiple FrameUpdaters into an animated plot."""
+
     def __init__(
         self,
         layout: List[List[List[Union["FrameUpdater", Callable[[int], None], None]]]],
@@ -102,16 +101,14 @@ class Animator:
         """
         if show:
             warnings.warn(
-                "The 'show' flag is deprecated. "
-                "Please use gifplot(action='show') instead.",
+                "The 'show' flag is deprecated. Please use gifplot(action='show') instead.",
                 DeprecationWarning,
             )
             action = "show"
 
         if to_html:
             warnings.warn(
-                "The 'to_html' flag is deprecated. "
-                "Please use gifplot(action='to_html') instead.",
+                "The 'to_html' flag is deprecated. Please use gifplot(action='to_html') instead.",
                 DeprecationWarning,
             )
             action = "to_html"
@@ -184,9 +181,7 @@ class Animator:
             raise ValueError("Updaters have no elements")
 
         # Return the minimum frame count
-        frames = min(
-            len(updater) for updater in updaters if isinstance(updater, FrameUpdater)
-        )
+        frames = min(len(updater) for updater in updaters if isinstance(updater, FrameUpdater))
         return frames
 
     @property
@@ -203,15 +198,14 @@ class Animator:
 
 class FrameUpdater:
     """Single data series frame updater for animation."""
+
     def __init__(
         self,
         data,
         axis: int = 0,
         title: Union[str, None] = None,
         notitle: bool = False,
-        offsets: Union[
-            Tuple[Union[float, str], Union[float, str], Union[float, str]], None
-        ] = None,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         use_si: bool = True,
         **kwargs,
     ):

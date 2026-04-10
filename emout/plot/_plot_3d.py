@@ -252,15 +252,9 @@ def plot_3d_streamline(
         yc = np.arange(ny, dtype=float)
         zc = np.arange(nz, dtype=float)
 
-    interp_x = RegularGridInterpolator(
-        (zc, yc, xc), Fx, bounds_error=False, fill_value=0.0
-    )
-    interp_y = RegularGridInterpolator(
-        (zc, yc, xc), Fy, bounds_error=False, fill_value=0.0
-    )
-    interp_z = RegularGridInterpolator(
-        (zc, yc, xc), Fz, bounds_error=False, fill_value=0.0
-    )
+    interp_x = RegularGridInterpolator((zc, yc, xc), Fx, bounds_error=False, fill_value=0.0)
+    interp_y = RegularGridInterpolator((zc, yc, xc), Fy, bounds_error=False, fill_value=0.0)
+    interp_z = RegularGridInterpolator((zc, yc, xc), Fz, bounds_error=False, fill_value=0.0)
 
     def field_func(t, pos):
         pt = np.array([[pos[2], pos[1], pos[0]]])  # (z, y, x)
@@ -274,18 +268,24 @@ def plot_3d_streamline(
 
     if seed_points is None:
         rng = np.random.RandomState(42)
-        seed_points = np.column_stack([
-            rng.uniform(xc[0], xc[-1], n_seeds),
-            rng.uniform(yc[0], yc[-1], n_seeds),
-            rng.uniform(zc[0], zc[-1], n_seeds),
-        ])
+        seed_points = np.column_stack(
+            [
+                rng.uniform(xc[0], xc[-1], n_seeds),
+                rng.uniform(yc[0], yc[-1], n_seeds),
+                rng.uniform(zc[0], zc[-1], n_seeds),
+            ]
+        )
 
     lines = []
     for seed in seed_points:
         try:
             sol = solve_ivp(
-                field_func, [0, max_length], seed,
-                method="RK45", max_step=step_size, dense_output=False,
+                field_func,
+                [0, max_length],
+                seed,
+                method="RK45",
+                max_step=step_size,
+                dense_output=False,
             )
             if sol.success and sol.y.shape[1] > 1:
                 lines.append(sol.y)
@@ -294,6 +294,7 @@ def plot_3d_streamline(
 
     if not lines:
         import warnings
+
         warnings.warn("No streamlines could be traced from the given seeds.")
 
     fig = None
@@ -306,38 +307,37 @@ def plot_3d_streamline(
         all_mags = []
         for line in lines:
             pts_zyx = np.column_stack([line[2], line[1], line[0]])
-            mags = np.sqrt(
-                interp_x(pts_zyx) ** 2
-                + interp_y(pts_zyx) ** 2
-                + interp_z(pts_zyx) ** 2
-            )
+            mags = np.sqrt(interp_x(pts_zyx) ** 2 + interp_y(pts_zyx) ** 2 + interp_z(pts_zyx) ** 2)
             all_mags.append(mags)
         mag_min = min(m.min() for m in all_mags) if all_mags else 0.0
         mag_max = max(m.max() for m in all_mags) if all_mags else 1.0
-        sm = plt.cm.ScalarMappable(
-            cmap=cmap, norm=plt.Normalize(vmin=mag_min, vmax=mag_max)
-        )
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=mag_min, vmax=mag_max))
 
     for i, line in enumerate(lines):
         xs, ys, zs = line[0], line[1], line[2]
         if use_cmap:
             pts_zyx = np.column_stack([zs, ys, xs])
-            mags = np.sqrt(
-                interp_x(pts_zyx) ** 2
-                + interp_y(pts_zyx) ** 2
-                + interp_z(pts_zyx) ** 2
-            )
+            mags = np.sqrt(interp_x(pts_zyx) ** 2 + interp_y(pts_zyx) ** 2 + interp_z(pts_zyx) ** 2)
             for j in range(len(xs) - 1):
                 c = sm.to_rgba(mags[j])
                 ax.plot(
-                    xs[j : j + 2], ys[j : j + 2], zs[j : j + 2],
-                    color=c, linewidth=linewidth, alpha=alpha, **kwargs,
+                    xs[j : j + 2],
+                    ys[j : j + 2],
+                    zs[j : j + 2],
+                    color=c,
+                    linewidth=linewidth,
+                    alpha=alpha,
+                    **kwargs,
                 )
         else:
             ax.plot(
-                xs, ys, zs,
+                xs,
+                ys,
+                zs,
                 color=color or f"C{i % 10}",
-                linewidth=linewidth, alpha=alpha, **kwargs,
+                linewidth=linewidth,
+                alpha=alpha,
+                **kwargs,
             )
 
     if use_cmap and lines:

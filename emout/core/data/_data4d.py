@@ -28,9 +28,7 @@ class Data4d(Data):
         obj = np.asarray(input_array).view(cls)
 
         if obj.ndim != 4:
-            raise ValueError(
-                f"Data4d requires a 4-D array (t, z, y, x), got shape {obj.shape}"
-            )
+            raise ValueError(f"Data4d requires a 4-D array (t, z, y, x), got shape {obj.shape}")
 
         if "xslice" not in kwargs:
             kwargs["xslice"] = slice(0, obj.shape[3], 1)
@@ -61,5 +59,3 @@ class Data4d(Data):
             Not implemented.
         """
         raise NotImplementedError("Data4d.plot() is not yet implemented.")
-
-

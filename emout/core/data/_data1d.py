@@ -5,7 +5,6 @@ from typing import Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
-import emout.plot.basic_plot as emplt
 import emout.utils as utils
 from emout.utils.util import apply_offset
 
@@ -137,5 +136,3 @@ class Data1d(Data):
             return None
         else:
             return line
-
-

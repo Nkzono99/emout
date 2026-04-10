@@ -5,11 +5,9 @@ from typing import Optional, Tuple, Union
 import numpy as np
 
 from ._pyvista_helpers import (
-    _as_scalar_array,
+    _SPATIAL_AXES,
     _axis_values,
-    _offseted,
     _require_pyvista,
-    _scalar_label,
     _show_bounds,
     _spacing,
 )
@@ -56,9 +54,7 @@ def create_vector_mesh3d(
 
     axes = tuple(x_data3d.use_axes)
     if set(axes) != set(_SPATIAL_AXES):
-        raise ValueError(
-            f"plot_pyvista for VectorData3d requires spatial axes x,y,z. got: {axes}"
-        )
+        raise ValueError(f"plot_pyvista for VectorData3d requires spatial axes x,y,z. got: {axes}")
 
     coords, axis_labels = _axis_values(x_data3d, use_si=use_si, offsets=offsets)
     x = coords["x"]
@@ -313,9 +309,7 @@ def plot_vector_streamlines3d(
         **kwargs,
     )
     if streamline.n_points == 0:
-        raise RuntimeError(
-            "No streamlines were generated. Try increasing n_points/source_radius."
-        )
+        raise RuntimeError("No streamlines were generated. Try increasing n_points/source_radius.")
 
     if magnitude_name not in streamline.array_names and vector_name in streamline.array_names:
         vecs = np.asarray(streamline[vector_name])

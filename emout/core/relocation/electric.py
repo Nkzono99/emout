@@ -5,9 +5,7 @@ from typing import Literal
 import numpy as np
 
 
-def relocated_electric_field(
-    ef: np.ndarray, axis: int, btype: Literal["periodic", "dirichlet", "neumann"]
-):
+def relocated_electric_field(ef: np.ndarray, axis: int, btype: Literal["periodic", "dirichlet", "neumann"]):
     """Relocate the electric field to cell-centre positions.
 
     Parameters
@@ -24,6 +22,7 @@ def relocated_electric_field(
     np.ndarray
         Relocated electric field array.
     """
+
     def slc(a, b=None):
         """Build a slice tuple for the target axis.
 

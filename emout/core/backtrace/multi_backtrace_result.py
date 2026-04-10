@@ -57,23 +57,15 @@ class MultiBacktraceResult:
         last_indexes : numpy.ndarray, shape = (N_traj,)
         """
         if ts_list.ndim != 2:
-            raise ValueError(
-                "ts_list must be a 2-D array of shape (N_traj, N_steps)"
-            )
+            raise ValueError("ts_list must be a 2-D array of shape (N_traj, N_steps)")
         N, T = ts_list.shape
 
         if probabilities.shape != (N,):
-            raise ValueError(
-                "probabilities must have shape (N_traj,)"
-            )
+            raise ValueError("probabilities must have shape (N_traj,)")
         if positions_list.ndim != 3 or positions_list.shape != (N, T, 3):
-            raise ValueError(
-                "positions_list must have shape (N_traj, N_steps, 3)"
-            )
+            raise ValueError("positions_list must have shape (N_traj, N_steps, 3)")
         if velocities_list.ndim != 3 or velocities_list.shape != (N, T, 3):
-            raise ValueError(
-                "velocities_list must have shape (N_traj, N_steps, 3)"
-            )
+            raise ValueError("velocities_list must have shape (N_traj, N_steps, 3)")
 
         self.ts_list = ts_list
         self.probabilities = probabilities
@@ -86,7 +78,7 @@ class MultiBacktraceResult:
     def __iter__(self) -> Iterator[Any]:
         """Support tuple unpacking::
 
-            ts_list, probabilities, positions_list, velocities_list, last_indexes = result
+        ts_list, probabilities, positions_list, velocities_list, last_indexes = result
         """
         yield self.ts_list
         yield self.probabilities
@@ -129,9 +121,7 @@ class MultiBacktraceResult:
         if isinstance(indices, int):
             k = indices
             if not (0 <= k <= N):
-                raise ValueError(
-                    "sample(int): k must satisfy 0 <= k <= N_traj"
-                )
+                raise ValueError("sample(int): k must satisfy 0 <= k <= N_traj")
             rng = np.random.RandomState(random_state)
             chosen = rng.choice(N, size=k, replace=False)
 
@@ -145,9 +135,7 @@ class MultiBacktraceResult:
             chosen = list(indices)
 
         else:
-            raise TypeError(
-                "sample() argument must be int, slice, range, or Sequence[int]"
-            )
+            raise TypeError("sample() argument must be int, slice, range, or Sequence[int]")
 
         if any((i < 0 or i >= N) for i in chosen):
             raise IndexError("sample(): index out of range")
@@ -159,7 +147,12 @@ class MultiBacktraceResult:
         last_indexes_sub = self.last_indexes[chosen]
 
         return MultiBacktraceResult(
-            ts_sub, prob_sub, pos_sub, vel_sub, last_indexes_sub, unit=self.unit,
+            ts_sub,
+            prob_sub,
+            pos_sub,
+            vel_sub,
+            last_indexes_sub,
+            unit=self.unit,
         )
 
     def pair(self, var1: str, var2: str) -> MultiXYData:
@@ -174,13 +167,8 @@ class MultiBacktraceResult:
             result.pair("t", "x")  # t vs x per trajectory
             result.tvy             # shorthand for pair("t", "vy")
         """
-        if (
-            var1 not in MultiBacktraceResult._VALID_KEYS
-            or var2 not in MultiBacktraceResult._VALID_KEYS
-        ):
-            raise KeyError(
-                f"Allowed keys = {MultiBacktraceResult._VALID_KEYS}, but got '{var1}', '{var2}'"
-            )
+        if var1 not in MultiBacktraceResult._VALID_KEYS or var2 not in MultiBacktraceResult._VALID_KEYS:
+            raise KeyError(f"Allowed keys = {MultiBacktraceResult._VALID_KEYS}, but got '{var1}', '{var2}'")
 
         def _get_array_list(key: str) -> np.ndarray:
             """Return the data array and unit for the given key.
@@ -250,6 +238,4 @@ class MultiBacktraceResult:
                 if rest in MultiBacktraceResult._VALID_KEYS:
                     return self.pair(key1, rest)
 
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'"
-        )
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")

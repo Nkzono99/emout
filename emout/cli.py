@@ -75,6 +75,7 @@ def cmd_server_start(args):
     _save_state({"address": addr, "pid": os.getpid()})
 
     from emout.distributed.config import _get_local_ip
+
     detected_ip = _get_local_ip()
 
     print(f"Scheduler running at {addr}")
@@ -93,6 +94,7 @@ def cmd_server_start(args):
     try:
         client.scheduler_info()  # keep the process alive
         import time
+
         while True:
             time.sleep(60)
     except KeyboardInterrupt:
@@ -165,6 +167,7 @@ def cmd_server_status(_args):
 
     try:
         from dask.distributed import Client
+
         c = Client(state["address"], timeout="3s")
         info = c.scheduler_info()
         n_workers = len(info.get("workers", {}))
@@ -202,7 +205,7 @@ def cmd_inspect(args):
     # Input file
     if data.inp is not None:
         inp = data.inp
-        print(f"Input file: plasma.inp")
+        print("Input file: plasma.inp")
         nstep = getattr(inp, "nstep", None)
         if nstep is not None:
             print(f"  nstep = {nstep}")
@@ -222,7 +225,7 @@ def cmd_inspect(args):
 
     # Unit info
     if data.unit is not None:
-        print(f"Unit conversion: available")
+        print("Unit conversion: available")
     else:
         print("Unit conversion: not available (no conversion key in inp)")
 
@@ -238,6 +241,7 @@ def cmd_inspect(args):
             name = f.name.replace("00_0000.h5", "")
             try:
                 import h5py
+
                 with h5py.File(str(f), "r") as hf:
                     grp = hf[list(hf.keys())[0]]
                     n_steps = len(grp.keys())
@@ -252,9 +256,7 @@ def cmd_inspect(args):
     # Particle files
     p_files = sorted(data.directory.glob("p*00_0000.h5"))
     if p_files:
-        species = sorted(set(
-            f.name[1] for f in p_files if f.name[1].isdigit()
-        ))
+        species = sorted(set(f.name[1] for f in p_files if f.name[1].isdigit()))
         print(f"\nParticle species: {', '.join(species)}")
 
     # Diagnostic files
@@ -280,7 +282,9 @@ def main():
     # inspect
     inspect_parser = sub.add_parser("inspect", help="Show simulation metadata")
     inspect_parser.add_argument(
-        "directory", nargs="?", default="./",
+        "directory",
+        nargs="?",
+        default="./",
         help="Simulation output directory (default: current directory)",
     )
     inspect_parser.set_defaults(func=cmd_inspect)

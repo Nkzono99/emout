@@ -39,7 +39,5 @@ def set_log_level(level: str = "WARNING") -> None:
     logger.setLevel(getattr(_logging, level.upper(), _logging.WARNING))
     if not logger.handlers:
         handler = _logging.StreamHandler()
-        handler.setFormatter(
-            _logging.Formatter("%(name)s [%(levelname)s] %(message)s")
-        )
+        handler.setFormatter(_logging.Formatter("%(name)s [%(levelname)s] %(message)s"))
         logger.addHandler(handler)

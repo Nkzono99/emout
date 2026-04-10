@@ -1,13 +1,13 @@
 """PyVista scalar field plotting helpers."""
 
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 import numpy as np
 
 from ._pyvista_helpers import (
+    _SPATIAL_AXES,
     _as_scalar_array,
     _axis_values,
-    _offseted,
     _require_pyvista,
     _scalar_label,
     _show_bounds,
@@ -106,9 +106,7 @@ def create_volume_mesh(data3d, use_si=True, offsets=None, scalar_name=None):
     """
     axes = tuple(data3d.use_axes)
     if set(axes) != set(_SPATIAL_AXES):
-        raise ValueError(
-            f"plot_pyvista for Data3d requires spatial axes x,y,z. got: {axes}"
-        )
+        raise ValueError(f"plot_pyvista for Data3d requires spatial axes x,y,z. got: {axes}")
 
     coords, axis_labels = _axis_values(data3d, use_si=use_si, offsets=offsets)
     x = coords["x"]
@@ -351,5 +349,3 @@ def plot_scalar_volume(
     if show:
         plotter.show()
     return plotter
-
-

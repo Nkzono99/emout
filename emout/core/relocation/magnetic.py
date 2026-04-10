@@ -7,9 +7,8 @@ import numpy as np
 
 Btype = Literal["periodic", "dirichlet", "neumann"]
 
-def relocated_magnetic_field(
-    bf: np.array, axis: int, btypes: Tuple[Btype, Btype] 
-):
+
+def relocated_magnetic_field(bf: np.array, axis: int, btypes: Tuple[Btype, Btype]):
     """Relocate the magnetic field to cell-centre positions.
 
     Parameters
@@ -58,9 +57,7 @@ def relocated_magnetic_field(
     rbf = np.zeros_like(bf)
 
     # Extend by one grid cell in the orthogonal plane
-    bfe = np.empty(
-        np.array(bf.shape) + np.array([0 if i == axis else 1 for i in range(3)])
-    )
+    bfe = np.empty(np.array(bf.shape) + np.array([0 if i == axis else 1 for i in range(3)]))
     bfe[slc(slice(1, -1), slice(1, -1))] = bf[slc(slice(None, -1), slice(None, -1))]
     if btypes[0] == "periodic":
         bfe[slc(slice(1, -1), 0)] = bfe[slc(slice(1, -1), -2)]

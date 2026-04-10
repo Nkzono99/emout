@@ -14,7 +14,7 @@ import itertools
 import json
 import sys
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 import numpy as np
 
@@ -47,6 +47,7 @@ class RemoteSession:
         emout_kwargs: dict[str, Any] | None = None,
     ):
         import matplotlib
+
         matplotlib.use("Agg")
 
         self._instances: dict[str, Any] = {}  # JSON key → Emout
@@ -64,9 +65,11 @@ class RemoteSession:
     def _get_emout(self, emout_kwargs: dict):
         """Lazy-load and cache an Emout instance by its normalized kwargs."""
         import json as _json
+
         cache_key = _json.dumps(emout_kwargs, sort_keys=True)
         if cache_key not in self._instances:
             import emout
+
             self._instances[cache_key] = emout.Emout(**emout_kwargs)
         return self._instances[cache_key]
 
@@ -155,14 +158,21 @@ class RemoteSession:
         return buf.getvalue()
 
     def render_pair(
-        self, key: str, var1: str, var2: str,
-        fmt: str = "png", dpi: int = 150, **plot_kwargs,
+        self,
+        key: str,
+        var1: str,
+        var2: str,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
     ) -> bytes:
         """Render a 2-D heatmap of a cached probability result and return image bytes."""
         result = self._cache[key]
         heatmap = result.pair(var1, var2)
         return self._render_to_bytes(
-            lambda fig, ax: heatmap.plot(ax=ax, **plot_kwargs), fmt, dpi,
+            lambda fig, ax: heatmap.plot(ax=ax, **plot_kwargs),
+            fmt,
+            dpi,
         )
 
     def fetch_heatmap_data(self, key: str, var1: str, var2: str) -> dict:
@@ -186,9 +196,7 @@ class RemoteSession:
         units_payload = None
         if heatmap.units is not None:
             units_payload = [
-                {"from_unit": u.from_unit, "to_unit": u.to_unit,
-                 "name": u.name, "unit": u.unit}
-                for u in heatmap.units
+                {"from_unit": u.from_unit, "to_unit": u.to_unit, "name": u.name, "unit": u.unit} for u in heatmap.units
             ]
         return {
             "X": np.asarray(heatmap.X),
@@ -222,9 +230,7 @@ class RemoteSession:
         units_payload = None
         if xy.units is not None:
             units_payload = [
-                {"from_unit": u.from_unit, "to_unit": u.to_unit,
-                 "name": u.name, "unit": u.unit}
-                for u in xy.units
+                {"from_unit": u.from_unit, "to_unit": u.to_unit, "name": u.name, "unit": u.unit} for u in xy.units
             ]
         payload = {
             "x": np.asarray(xy.x),
@@ -239,11 +245,16 @@ class RemoteSession:
         return payload
 
     def render_energy_spectrum(
-        self, key: str, energy_bins=None, scale: str = "log",
-        fmt: str = "png", dpi: int = 150,
+        self,
+        key: str,
+        energy_bins=None,
+        scale: str = "log",
+        fmt: str = "png",
+        dpi: int = 150,
     ) -> bytes:
         """Render energy spectrum of a cached probability result."""
         import matplotlib.pyplot as plt
+
         result = self._cache[key]
 
         def _draw(fig, ax):
@@ -253,22 +264,35 @@ class RemoteSession:
         return self._render_to_bytes(_draw, fmt, dpi)
 
     def render_backtrace_pair(
-        self, key: str, var1: str, var2: str,
-        fmt: str = "png", dpi: int = 150, **plot_kwargs,
+        self,
+        key: str,
+        var1: str,
+        var2: str,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
     ) -> bytes:
         """Render a backtrace XY pair as a line plot."""
         result = self._cache[key]
         xy = result.pair(var1, var2)
         return self._render_to_bytes(
-            lambda fig, ax: xy.plot(ax=ax, **plot_kwargs), fmt, dpi,
+            lambda fig, ax: xy.plot(ax=ax, **plot_kwargs),
+            fmt,
+            dpi,
         )
 
     def render_field(
-        self, attr_name: str, index: tuple,
-        fmt: str = "png", dpi: int = 150, emout_kwargs=None, **plot_kwargs,
+        self,
+        attr_name: str,
+        index: tuple,
+        fmt: str = "png",
+        dpi: int = 150,
+        emout_kwargs=None,
+        **plot_kwargs,
     ) -> bytes:
         """Render a sliced field (e.g. data.phisp[-1, :, 100, :]) as image bytes."""
         import matplotlib.pyplot as plt
+
         data = self._resolve(emout_kwargs)
         arr = getattr(data, attr_name)[index]
 
@@ -297,9 +321,14 @@ class RemoteSession:
         }
 
     def render_plot_surfaces(
-        self, attr_name: str, t_index: int,
-        use_si: bool = True, fmt: str = "png", dpi: int = 150,
-        emout_kwargs=None, **plot_kwargs,
+        self,
+        attr_name: str,
+        t_index: int,
+        use_si: bool = True,
+        fmt: str = "png",
+        dpi: int = 150,
+        emout_kwargs=None,
+        **plot_kwargs,
     ) -> bytes:
         """Render Data3d.plot_surfaces on the worker and return image bytes."""
         data = self._resolve(emout_kwargs)
@@ -307,17 +336,23 @@ class RemoteSession:
         boundaries = data.boundaries
 
         def _draw(fig, ax):
-            import matplotlib.pyplot as plt
             ax = fig.add_subplot(111, projection="3d")
             data3d.plot_surfaces(
-                surfaces=boundaries, ax=ax, use_si=use_si, **plot_kwargs,
+                surfaces=boundaries,
+                ax=ax,
+                use_si=use_si,
+                **plot_kwargs,
             )
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
     def render_boundaries(
-        self, use_si: bool = True, fmt: str = "png", dpi: int = 150,
-        emout_kwargs=None, **plot_kwargs,
+        self,
+        use_si: bool = True,
+        fmt: str = "png",
+        dpi: int = 150,
+        emout_kwargs=None,
+        **plot_kwargs,
     ) -> bytes:
         """Render BoundaryCollection.plot() on the worker and return image bytes."""
         data = self._resolve(emout_kwargs)
@@ -340,6 +375,7 @@ class RemoteSession:
             ("energy_spectrum", cache_key, spec_kwargs)
         """
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         from io import BytesIO
@@ -418,19 +454,23 @@ class RemoteHeatmap:
         from emout.utils.units import UnitTranslator
 
         payload = self._session.fetch_heatmap_data(
-            self._key, self._var1, self._var2,
+            self._key,
+            self._var1,
+            self._var2,
         ).result()
         units = None
         if payload["units"] is not None:
             units = [
-                UnitTranslator(u["from_unit"], u["to_unit"],
-                               name=u["name"], unit=u["unit"])
-                for u in payload["units"]
+                UnitTranslator(u["from_unit"], u["to_unit"], name=u["name"], unit=u["unit"]) for u in payload["units"]
             ]
         return HeatmapData(
-            X=payload["X"], Y=payload["Y"], Z=payload["Z"],
-            xlabel=payload["xlabel"], ylabel=payload["ylabel"],
-            title=payload["title"], units=units,
+            X=payload["X"],
+            Y=payload["Y"],
+            Z=payload["Z"],
+            xlabel=payload["xlabel"],
+            ylabel=payload["ylabel"],
+            title=payload["title"],
+            units=units,
         )
 
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
@@ -445,12 +485,18 @@ class RemoteHeatmap:
         use :meth:`fetch` instead.
         """
         from .remote_figure import bind_session, is_recording, record_backtrace_render
+
         if is_recording():
             bind_session(self._session)
             record_backtrace_render(self._key, self._var1, self._var2, plot_kwargs)
             return None
         img = self._session.render_pair(
-            self._key, self._var1, self._var2, fmt=fmt, dpi=dpi, **plot_kwargs,
+            self._key,
+            self._var1,
+            self._var2,
+            fmt=fmt,
+            dpi=dpi,
+            **plot_kwargs,
         ).result()
         return display_image(img, ax=ax)
 
@@ -483,26 +529,32 @@ class RemoteXYData:
         from emout.utils.units import UnitTranslator
 
         payload = self._session.fetch_xy_data(
-            self._key, self._var1, self._var2,
+            self._key,
+            self._var1,
+            self._var2,
         ).result()
         units = None
         if payload["units"] is not None:
             units = [
-                UnitTranslator(u["from_unit"], u["to_unit"],
-                               name=u["name"], unit=u["unit"])
-                for u in payload["units"]
+                UnitTranslator(u["from_unit"], u["to_unit"], name=u["name"], unit=u["unit"]) for u in payload["units"]
             ]
         if "last_indexes" in payload:
             return MultiXYData(
-                x=payload["x"], y=payload["y"],
+                x=payload["x"],
+                y=payload["y"],
                 last_indexes=payload["last_indexes"],
-                xlabel=payload["xlabel"], ylabel=payload["ylabel"],
-                title=payload["title"], units=units,
+                xlabel=payload["xlabel"],
+                ylabel=payload["ylabel"],
+                title=payload["title"],
+                units=units,
             )
         return XYData(
-            x=payload["x"], y=payload["y"],
-            xlabel=payload["xlabel"], ylabel=payload["ylabel"],
-            title=payload["title"], units=units,
+            x=payload["x"],
+            y=payload["y"],
+            xlabel=payload["xlabel"],
+            ylabel=payload["ylabel"],
+            title=payload["title"],
+            units=units,
         )
 
     def plot(self, ax=None, fmt: str = "png", dpi: int = 150, **plot_kwargs):
@@ -517,12 +569,18 @@ class RemoteXYData:
         matplotlib control, use :meth:`fetch` instead.
         """
         from .remote_figure import bind_session, is_recording, record_backtrace_render
+
         if is_recording():
             bind_session(self._session)
             record_backtrace_render(self._key, self._var1, self._var2, plot_kwargs)
             return None
         img = self._session.render_backtrace_pair(
-            self._key, self._var1, self._var2, fmt=fmt, dpi=dpi, **plot_kwargs,
+            self._key,
+            self._var1,
+            self._var2,
+            fmt=fmt,
+            dpi=dpi,
+            **plot_kwargs,
         ).result()
         return display_image(img, ax=ax)
 
@@ -548,9 +606,14 @@ class RemoteProbabilityResult:
         return RemoteHeatmap(self._session, self._key, var1, var2)
 
     def plot_energy_spectrum(
-        self, energy_bins=None, scale: str = "log", fmt: str = "png", dpi: int = 150,
+        self,
+        energy_bins=None,
+        scale: str = "log",
+        fmt: str = "png",
+        dpi: int = 150,
     ):
         from .remote_figure import bind_session, is_recording, record_energy_spectrum
+
         if is_recording():
             bind_session(self._session)
             record_energy_spectrum(
@@ -559,7 +622,11 @@ class RemoteProbabilityResult:
             )
             return None
         img = self._session.render_energy_spectrum(
-            self._key, energy_bins=energy_bins, scale=scale, fmt=fmt, dpi=dpi,
+            self._key,
+            energy_bins=energy_bins,
+            scale=scale,
+            fmt=fmt,
+            dpi=dpi,
         ).result()
         return display_image(img)
 
@@ -571,7 +638,7 @@ class RemoteProbabilityResult:
         # Same as ProbabilityResult.__getattr__: result.vxvz -> pair("vx","vz")
         for key1 in self._AXES:
             if name.startswith(key1):
-                rest = name[len(key1):]
+                rest = name[len(key1) :]
                 if rest in self._AXES and rest != key1:
                     return self.pair(key1, rest)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
@@ -598,7 +665,7 @@ class RemoteBacktraceResult:
     def __getattr__(self, name: str):
         for key1 in self._AXES:
             if name.startswith(key1):
-                rest = name[len(key1):]
+                rest = name[len(key1) :]
                 if rest in self._AXES and rest != key1:
                     return self.pair(key1, rest)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
@@ -617,6 +684,7 @@ def display_image(img_bytes: bytes, ax=None):
     if ax is None:
         try:
             from IPython.display import display as ipydisplay, Image
+
             ipydisplay(Image(data=img_bytes))
             return None
         except ImportError:
@@ -663,15 +731,15 @@ def _normalize_emout_kwargs(
 
     append_directories = normalized.get("append_directories")
     if append_directories is not None:
-        normalized["append_directories"] = [
-            str(Path(path).resolve()) for path in append_directories
-        ]
+        normalized["append_directories"] = [str(Path(path).resolve()) for path in append_directories]
 
     return normalized
 
 
 def get_or_create_session(
-    emout_dir=None, input_path=None, emout_kwargs: dict[str, Any] | None = None,
+    emout_dir=None,
+    input_path=None,
+    emout_kwargs: dict[str, Any] | None = None,
 ) -> Optional[RemoteSession]:
     """Return the shared RemoteSession actor, creating it if needed.
 
@@ -702,6 +770,7 @@ def get_or_create_session(
             try:
                 state = json.loads(state_file.read_text())
                 from dask.distributed import Client
+
                 client = Client(state["address"])
             except Exception:
                 return None

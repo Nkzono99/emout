@@ -69,13 +69,10 @@ def poisson(
 
     # [x-boundary, y-boundary, z-boundary]
     boundaries: List[PoissonBoundary] = [
-        POISSON_BOUNDARIES[_type](2 - i, boundary_values[i])
-        for i, _type in enumerate(boundary_types)
+        POISSON_BOUNDARIES[_type](2 - i, boundary_values[i]) for i, _type in enumerate(boundary_types)
     ]
 
-    rho_target = rho[
-        tuple(boundary.get_target_slice() for boundary in reversed(boundaries))
-    ].copy()
+    rho_target = rho[tuple(boundary.get_target_slice() for boundary in reversed(boundaries))].copy()
 
     # Poisson's equation: dphi/dx^2 = -rho/epsilon_0
     rho_target = -rho_target / epsilon_0 * dx * dx
@@ -128,8 +125,8 @@ def poisson(
 
 
 class FFT3d:
-    """Composite 3-D FFT that applies per-axis forward/backward transforms.
-    """
+    """Composite 3-D FFT that applies per-axis forward/backward transforms."""
+
     def __init__(
         self,
         forwards: List[Callable[[np.ndarray], np.ndarray]],
@@ -192,6 +189,7 @@ class FFT3d:
 
 class PoissonBoundary(metaclass=ABCMeta):
     """Abstract base for Poisson boundary conditions."""
+
     def __init__(self, axis: int, boundary_values: Tuple[float] = (0.0, 0.0)):
         """Initialize the instance.
 
@@ -328,6 +326,7 @@ class PoissonBoundary(metaclass=ABCMeta):
 
 class PeriodicPoissonBoundary(PoissonBoundary):
     """Periodic boundary condition for the Poisson solver."""
+
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
         """Return the forward FFT function for periodic boundaries.
@@ -415,6 +414,7 @@ class PeriodicPoissonBoundary(PoissonBoundary):
 
 class DirichletPoissonBoundary(PoissonBoundary):
     """Fixed-value (Dirichlet) boundary condition for the Poisson solver."""
+
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
         """Return the forward FFT function for Dirichlet boundaries.
@@ -479,12 +479,8 @@ class DirichletPoissonBoundary(PoissonBoundary):
         None
             No return value.
         """
-        rho_target[self._get_slices_at(0)] = (
-            rho_target[self._get_slices_at(0)] - self.boundary_values[0]
-        )
-        rho_target[self._get_slices_at(-1)] = (
-            rho_target[self._get_slices_at(-1)] - self.boundary_values[1]
-        )
+        rho_target[self._get_slices_at(0)] = rho_target[self._get_slices_at(0)] - self.boundary_values[0]
+        rho_target[self._get_slices_at(-1)] = rho_target[self._get_slices_at(-1)] - self.boundary_values[1]
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
         """Correct boundary values by assigning the fixed Dirichlet values.
@@ -504,6 +500,7 @@ class DirichletPoissonBoundary(PoissonBoundary):
 
 class NeumannPoissonBoundary(PoissonBoundary):
     """Zero-gradient (Neumann) boundary condition for the Poisson solver."""
+
     @property
     def fft_forward(self) -> Callable[[np.ndarray], np.ndarray]:
         """Return the forward FFT function for Neumann boundaries.
@@ -567,12 +564,8 @@ class NeumannPoissonBoundary(PoissonBoundary):
         None
             No return value.
         """
-        rho_target[self._get_slices_at(0)] = (
-            rho_target[self._get_slices_at(0)] - self.boundary_values[0] * dx
-        )
-        rho_target[self._get_slices_at(-1)] = (
-            rho_target[self._get_slices_at(-1)] + self.boundary_values[1] * dx
-        )
+        rho_target[self._get_slices_at(0)] = rho_target[self._get_slices_at(0)] - self.boundary_values[0] * dx
+        rho_target[self._get_slices_at(-1)] = rho_target[self._get_slices_at(-1)] + self.boundary_values[1] * dx
 
     def correct_boundary_values(self, phi: np.ndarray) -> None:
         """Correct boundary values for Neumann conditions (no-op).

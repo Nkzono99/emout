@@ -26,9 +26,7 @@ class Field3D:
             Cell-center values. Shape must be `(grid.nz, grid.ny, grid.nx)`.
         """
         if data_zyx.shape != (grid.nz, grid.ny, grid.nx):
-            raise ValueError(
-                f"data shape must be (nz,ny,nx)=({grid.nz},{grid.ny},{grid.nx}), got {data_zyx.shape}"
-            )
+            raise ValueError(f"data shape must be (nz,ny,nx)=({grid.nz},{grid.ny},{grid.nx}), got {data_zyx.shape}")
         self.grid = grid
         self.data = np.asarray(data_zyx, dtype=np.float64)
 

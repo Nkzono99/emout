@@ -52,13 +52,9 @@ class BacktraceResult:
         """
         N = ts.shape[0]
         if positions.ndim != 2 or positions.shape != (N, 3):
-            raise ValueError(
-                "positions must be an array of shape (N_steps, 3)"
-            )
+            raise ValueError("positions must be an array of shape (N_steps, 3)")
         if velocities.ndim != 2 or velocities.shape != (N, 3):
-            raise ValueError(
-                "velocities must be an array of shape (N_steps, 3)"
-            )
+            raise ValueError("velocities must be an array of shape (N_steps, 3)")
 
         self.ts = ts
         self.probability = probability
@@ -100,13 +96,8 @@ class BacktraceResult:
             result.pair("t", "x")   # t vs x
             result.pair("z", "vy")  # z vs vy
         """
-        if (
-            var1 not in BacktraceResult._VALID_KEYS
-            or var2 not in BacktraceResult._VALID_KEYS
-        ):
-            raise KeyError(
-                f"Allowed keys = {BacktraceResult._VALID_KEYS}, but got '{var1}', '{var2}'"
-            )
+        if var1 not in BacktraceResult._VALID_KEYS or var2 not in BacktraceResult._VALID_KEYS:
+            raise KeyError(f"Allowed keys = {BacktraceResult._VALID_KEYS}, but got '{var1}', '{var2}'")
 
         def _get_array(key: str) -> np.ndarray:
             """Return the data array and unit for the given key.
@@ -177,6 +168,4 @@ class BacktraceResult:
                 if rest in BacktraceResult._VALID_KEYS:
                     return self.pair(key1, rest)
 
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'"
-        )
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")

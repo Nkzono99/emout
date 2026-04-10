@@ -70,9 +70,7 @@ class XYData:
         str
             Human-readable summary.
         """
-        return (
-            f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
-        )
+        return f"<XYData: len={len(self.x)}, xlabel={self.xlabel}, ylabel={self.ylabel}>"
 
     def plot(self, ax: Any = None, use_si=True, gap=None, offsets=None, **plot_kwargs) -> Any:
         """Plot the x-y curve.
@@ -161,9 +159,7 @@ class MultiXYData:
             Unit conversion information
         """
         if x.ndim != 2 or y.ndim != 2:
-            raise ValueError(
-                "MultiXYData: x and y must be 2-D arrays of shape (N_series, N_points)"
-            )
+            raise ValueError("MultiXYData: x and y must be 2-D arrays of shape (N_series, N_points)")
         if x.shape != y.shape:
             raise ValueError("MultiXYData: x and y must have the same shape")
 
@@ -188,7 +184,7 @@ class MultiXYData:
 
     def __repr__(self) -> str:
         """Return a string representation.
-        
+
         Returns
         -------
         str
@@ -244,11 +240,7 @@ class MultiXYData:
             if gap:
                 xs, ys = _insert_nans_for_gaps(xs, ys, gap)
 
-            if (
-                alpha_arr is not None
-                and hasattr(alpha_arr, "__len__")
-                and len(alpha_arr) == n_series
-            ):
+            if alpha_arr is not None and hasattr(alpha_arr, "__len__") and len(alpha_arr) == n_series:
                 alpha_i = float(alpha_arr[i])
                 kw = {**plot_kwargs, "alpha": alpha_i}
                 ax.plot(xs, ys, **kw)

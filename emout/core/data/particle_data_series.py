@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from itertools import chain
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -72,10 +71,7 @@ class ParticleDataSeries:
         self.name = name
 
     def __repr__(self) -> str:
-        return (
-            f"<ParticleDataSeries: name={self.name!r}, "
-            f"timesteps={len(self)}, file={self.filename.name}>"
-        )
+        return f"<ParticleDataSeries: name={self.name!r}, timesteps={len(self)}, file={self.filename.name}>"
 
     def close(self) -> None:
         """Close the underlying HDF5 file handle."""
@@ -232,9 +228,7 @@ class ParticleDataSeries:
             Combined series.
         """
         if not isinstance(other, ParticleDataSeries):
-            raise TypeError(
-                f"Cannot chain ParticleDataSeries with {type(other).__name__}"
-            )
+            raise TypeError(f"Cannot chain ParticleDataSeries with {type(other).__name__}")
         return self.chain(other)
 
 
@@ -272,9 +266,7 @@ class MultiParticleDataSeries(ParticleDataSeries):
 
         self.drop_head_of_later = drop_head_of_later
 
-    def _expand(
-        self, s: Union["ParticleDataSeries", "MultiParticleDataSeries"]
-    ) -> List[ParticleDataSeries]:
+    def _expand(self, s: Union["ParticleDataSeries", "MultiParticleDataSeries"]) -> List[ParticleDataSeries]:
         """Flatten a (possibly nested) series into a list of leaf series.
 
         Parameters
@@ -288,9 +280,7 @@ class MultiParticleDataSeries(ParticleDataSeries):
             Flattened list of leaf ParticleDataSeries objects.
         """
         if not isinstance(s, ParticleDataSeries):
-            raise TypeError(
-                f"Expected ParticleDataSeries, got {type(s).__name__}"
-            )
+            raise TypeError(f"Expected ParticleDataSeries, got {type(s).__name__}")
         if not isinstance(s, MultiParticleDataSeries):
             return [s]
         out: List[ParticleDataSeries] = []
@@ -401,6 +391,7 @@ class MultiParticleDataSeries(ParticleDataSeries):
 @dataclass(slots=True)
 class ParticleSnapshot:
     """Single-timestep snapshot bundling all particle components."""
+
     fields: Dict[str, ParticleData]
 
     def __repr__(self) -> str:
@@ -434,13 +425,12 @@ class ParticleSnapshot:
 
         for key1 in self._PHASE_KEYS:
             if name.startswith(key1):
-                rest = name[len(key1):]
+                rest = name[len(key1) :]
                 if rest in self._PHASE_KEYS and rest != key1:
                     return partial(self.plot_phase_space, key1, rest)
 
         raise AttributeError(
-            f"'{type(self).__name__}' has no component or pair '{name}'. "
-            f"Available: {list(self.fields.keys())}"
+            f"'{type(self).__name__}' has no component or pair '{name}'. Available: {list(self.fields.keys())}"
         )
 
     def keys(self) -> Iterable[str]:
@@ -529,14 +519,9 @@ class ParticleSnapshot:
 
         for v in (var1, var2):
             if v not in self._PHASE_KEYS:
-                raise KeyError(
-                    f"Unknown variable {v!r}; choose from {self._PHASE_KEYS}"
-                )
+                raise KeyError(f"Unknown variable {v!r}; choose from {self._PHASE_KEYS}")
             if v not in self.fields:
-                raise KeyError(
-                    f"Component {v!r} is not loaded in this snapshot. "
-                    f"Available: {list(self.fields.keys())}"
-                )
+                raise KeyError(f"Component {v!r} is not loaded in this snapshot. Available: {list(self.fields.keys())}")
 
         d1 = self.fields[var1]
         d2 = self.fields[var2]
@@ -673,16 +658,12 @@ class ParticlesSeries:
             paths = [p for _, p in items]
 
             vunit = self.vunits.get(comp)
-            series_list = [
-                ParticleDataSeries(p, name=comp, tunit=self.tunit, valunit=vunit) for p in paths
-            ]
+            series_list = [ParticleDataSeries(p, name=comp, tunit=self.tunit, valunit=vunit) for p in paths]
 
             if len(series_list) == 1:
                 self._series[comp] = series_list[0]
             else:
-                self._series[comp] = MultiParticleDataSeries(
-                    *series_list, drop_head_of_later=self.drop_head_of_later
-                )
+                self._series[comp] = MultiParticleDataSeries(*series_list, drop_head_of_later=self.drop_head_of_later)
 
     def _validate_lengths(self) -> None:
         """Verify that all component series have equal length."""
@@ -729,10 +710,7 @@ class ParticlesSeries:
 
     def __repr__(self) -> str:
         comps = self.available_components()
-        return (
-            f"<ParticlesSeries: species={self.species}, "
-            f"components={list(comps)}, timesteps={len(self)}>"
-        )
+        return f"<ParticlesSeries: species={self.species}, components={list(comps)}, timesteps={len(self)}>"
 
     def __getattr__(self, name: str):
         # p.x / p.vx / p.tid returns the corresponding series

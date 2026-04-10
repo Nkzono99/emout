@@ -746,4 +746,3 @@ def plot_2d_streamline(
         return None
     else:
         return img
-

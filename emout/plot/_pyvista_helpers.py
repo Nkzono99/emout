@@ -6,7 +6,7 @@ They are called by :meth:`Data3d.plot_pyvista` and
 """
 
 import importlib
-from typing import Any, Literal, Optional, Tuple, Union
+from typing import Union
 
 import numpy as np
 
@@ -27,9 +27,7 @@ def _require_pyvista():
     try:
         return importlib.import_module("pyvista")
     except Exception as exc:
-        raise ModuleNotFoundError(
-            "pyvista is required for 3D plotting. Install it via `pip install pyvista`."
-        ) from exc
+        raise ModuleNotFoundError("pyvista is required for 3D plotting. Install it via `pip install pyvista`.") from exc
 
 
 def _offseted(line: np.ndarray, offset: Union[float, str, None]) -> np.ndarray:
@@ -185,5 +183,3 @@ def _show_bounds(plotter, axis_labels):
         )
     except TypeError:
         plotter.show_bounds()
-
-

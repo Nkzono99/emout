@@ -27,21 +27,7 @@ a companion ``mesh()`` that concatenates every boundary into a single
 from __future__ import annotations
 
 import inspect
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Set, Tuple, Type
-
-import numpy as np
-
-from emout.plot.surface_cut import (
-    BoxMeshSurface,
-    CircleMeshSurface,
-    CompositeMeshSurface,
-    CylinderMeshSurface,
-    DiskMeshSurface,
-    MeshSurface3D,
-    PlaneWithCircleMeshSurface,
-    RectangleMeshSurface,
-    SphereMeshSurface,
-)
+from typing import List, Optional, Set
 
 
 # ---------------------------------------------------------------------------
@@ -161,5 +147,3 @@ def _domain_extent(inp):
     ny = _safe_attr(inp, "ny") or 1.0
     nz = _safe_attr(inp, "nz") or 1.0
     return float(nx), float(ny), float(nz)
-
-

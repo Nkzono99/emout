@@ -84,9 +84,7 @@ class TomlData:
         try:
             return _wrap(self._data[key])
         except KeyError:
-            raise AttributeError(
-                f"'{type(self).__name__}' has no attribute '{key}'"
-            )
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
 
     # --- display ---
 
@@ -114,11 +112,7 @@ def _deep_merge(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, An
     """Return a new dict with *overrides* recursively merged into *base*."""
     merged = copy.deepcopy(base)
     for key, value in overrides.items():
-        if (
-            key in merged
-            and isinstance(merged[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
             merged[key] = _deep_merge(merged[key], value)
         else:
             merged[key] = copy.deepcopy(value)
@@ -183,9 +177,7 @@ def _resolve_groups_in_data(
     for entries_key, groups_key in group_table_map.items():
         entries = resolved.get(entries_key)
         groups = resolved.get(groups_key)
-        if isinstance(entries, list) and entries and all(
-            isinstance(entry, dict) for entry in entries
-        ):
+        if isinstance(entries, list) and entries and all(isinstance(entry, dict) for entry in entries):
             resolved[entries_key] = _resolve_group_entries(entries, groups)
             if purge_groups:
                 resolved.pop(groups_key, None)
