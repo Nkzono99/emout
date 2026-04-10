@@ -263,9 +263,7 @@ def test_sphere_resolution_scale_multiplies_defaults():
 
 def test_cylinder_resolution_scale_scales_every_count():
     base = CylinderMeshSurface(center=(0, 0, 0), axis="z", radius=1.0, length=2.0)
-    scaled = CylinderMeshSurface(
-        center=(0, 0, 0), axis="z", radius=1.0, length=2.0, resolution_scale=4
-    )
+    scaled = CylinderMeshSurface(center=(0, 0, 0), axis="z", radius=1.0, length=2.0, resolution_scale=4)
     # Defaults: ntheta=64, naxial=2, nradial=8.
     assert base.ntheta == 64 and base.naxial == 2 and base.nradial == 8
     assert scaled.ntheta == 64 * 4
@@ -283,9 +281,7 @@ def test_box_resolution_scale_scales_face_resolution():
 
 def test_resolution_scale_combines_with_explicit_count():
     # Explicit ntheta becomes the *base* that scale multiplies.
-    surface = SphereMeshSurface(
-        center=(0, 0, 0), radius=1.0, ntheta=12, nphi=7, resolution_scale=3
-    )
+    surface = SphereMeshSurface(center=(0, 0, 0), radius=1.0, ntheta=12, nphi=7, resolution_scale=3)
     assert surface.ntheta == 36
     assert surface.nphi == 21
 
@@ -390,12 +386,8 @@ def test_plot_surfaces_clip_to_bounds_drops_outside_faces():
 
     # Sphere completely outside the field's grid extent (which is
     # 0..8 / 0..7 / 0..6 for the test fixture).
-    far_sphere = SphereMeshSurface(
-        center=(50.0, 50.0, 50.0), radius=1.0, ntheta=12, nphi=7
-    )
-    near_box = BoxMeshSurface(
-        1.0, 5.0, 1.0, 4.0, 1.0, 3.0, faces=("zmax",), resolution=(4, 4)
-    )
+    far_sphere = SphereMeshSurface(center=(50.0, 50.0, 50.0), radius=1.0, ntheta=12, nphi=7)
+    near_box = BoxMeshSurface(1.0, 5.0, 1.0, 4.0, 1.0, 3.0, faces=("zmax",), resolution=(4, 4))
 
     def _merged_face_count(ax):
         """Return the number of faces in the (single) merged Poly3DCollection."""
@@ -446,7 +438,12 @@ def test_plot_surfaces_clabel_places_one_text_per_level():
     ax = fig.add_subplot(111, projection="3d")
 
     box = BoxMeshSurface(
-        1.0, 7.0, 1.0, 5.0, 1.0, 3.0,
+        1.0,
+        7.0,
+        1.0,
+        5.0,
+        1.0,
+        3.0,
         faces=("zmax",),
         resolution=(6, 6),
     )
@@ -493,8 +490,13 @@ def test_is_mesh_open_distinguishes_closed_vs_open():
     # A half-cylinder cut by theta_range has real boundary edges along
     # the cut.
     half_cyl = CylinderMeshSurface(
-        center=(0, 0, 0), axis="z", radius=1.0, length=2.0,
-        ntheta=16, naxial=4, theta_range=(0.0, np.pi),
+        center=(0, 0, 0),
+        axis="z",
+        radius=1.0,
+        length=2.0,
+        ntheta=16,
+        naxial=4,
+        theta_range=(0.0, np.pi),
     )
     V_half, F_half = half_cyl.mesh()
     assert _is_mesh_open(V_half, F_half) is True
@@ -531,7 +533,7 @@ def test_plot_surfaces_contour_auto_keeps_open_mesh_contours():
         center=(10.0, 10.0, 10.0),
         axis="z",
         radius=2.0,
-        length=6.0,            # spans z = 7 .. 13, well inside the grid
+        length=6.0,  # spans z = 7 .. 13, well inside the grid
         ntheta=64,
         naxial=8,
         theta_range=(0.0, np.pi),
@@ -592,7 +594,12 @@ def test_plot_surfaces_clabel_off_by_default():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     box = BoxMeshSurface(
-        1.0, 7.0, 1.0, 5.0, 1.0, 3.0,
+        1.0,
+        7.0,
+        1.0,
+        5.0,
+        1.0,
+        3.0,
         faces=("zmax",),
         resolution=(6, 6),
     )
@@ -630,7 +637,12 @@ def test_plot_surfaces_contour_pinned_above_polygon_zorder():
     # level of 18 will definitely cut the face and produce contour
     # segments.
     box = BoxMeshSurface(
-        1.0, 7.0, 1.0, 5.0, 1.0, 3.0,
+        1.0,
+        7.0,
+        1.0,
+        5.0,
+        1.0,
+        3.0,
         faces=("zmax",),
         resolution=(6, 6),
     )
@@ -689,16 +701,19 @@ def test_plot_surfaces_merges_polygons_into_single_collection():
         ),
         RenderItem(
             BoxMeshSurface(
-                1.0, 5.0, 1.0, 4.0, 1.0, 3.0,
+                1.0,
+                5.0,
+                1.0,
+                4.0,
+                1.0,
+                3.0,
                 faces=("zmax",),
                 resolution=(3, 3),
             ),
             style="field",
         ),
         RenderItem(
-            SphereMeshSurface(
-                center=(4.0, 3.0, 2.0), radius=0.8, ntheta=14, nphi=8
-            ),
+            SphereMeshSurface(center=(4.0, 3.0, 2.0), radius=0.8, ntheta=14, nphi=8),
             style="solid",
             solid_color="tab:blue",
             alpha=0.4,
@@ -733,9 +748,7 @@ def test_plot_surfaces_clip_to_bounds_partial_mesh_keeps_inside_faces():
     # Box that pokes well outside the field domain on +x. Faces of the box
     # whose centroid lies inside the bounds box should survive; the rest
     # should be culled.
-    half_in = BoxMeshSurface(
-        4.0, 20.0, 1.0, 4.0, 1.0, 3.0, resolution=(4, 4)
-    )
+    half_in = BoxMeshSurface(4.0, 20.0, 1.0, 4.0, 1.0, 3.0, resolution=(4, 4))
 
     cmap, _norm = plot_surfaces(
         ax,
@@ -893,9 +906,7 @@ def test_data3d_plot_surfaces_wraps_field_and_mesh():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
 
-    mesh = BoxMeshSurface(
-        0.1, 0.4, 0.1, 0.4, 0.05, 0.35, faces=("zmax",)
-    )
+    mesh = BoxMeshSurface(0.1, 0.4, 0.1, 0.4, 0.05, 0.35, faces=("zmax",))
     # Pass a bare MeshSurface3D — plot_surfaces should wrap it in a RenderItem.
     cmap, norm = d3.plot_surfaces(
         mesh,

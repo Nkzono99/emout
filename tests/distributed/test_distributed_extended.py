@@ -9,13 +9,11 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
-import socket
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import numpy as np
 import pytest
 
 # The __init__ of emout.distributed re-exports the *function*
@@ -302,9 +300,7 @@ class TestPickPort:
     def test_pick_port_returns_int(self, monkeypatch):
         from emout.distributed.config import _pick_port
 
-        monkeypatch.setattr(
-            "emout.distributed.config._is_port_open", lambda ip, port, timeout=0.3: False
-        )
+        monkeypatch.setattr("emout.distributed.config._is_port_open", lambda ip, port, timeout=0.3: False)
         port = _pick_port("127.0.0.1")
         assert isinstance(port, int)
         assert port >= 10000
@@ -324,9 +320,7 @@ class TestPickPort:
     def test_pick_port_fallback_when_all_taken(self, monkeypatch):
         from emout.distributed.config import _pick_port
 
-        monkeypatch.setattr(
-            "emout.distributed.config._is_port_open", lambda ip, port, timeout=0.3: True
-        )
+        monkeypatch.setattr("emout.distributed.config._is_port_open", lambda ip, port, timeout=0.3: True)
         base = 10000 + (os.getuid() % 50000)
         port = _pick_port("127.0.0.1", max_retries=5)
         assert port == base
@@ -766,7 +760,7 @@ class TestRemoteFigure:
 
     def test_monkey_patches_plt(self, monkeypatch):
         """RemoteFigure.open() should monkey-patch plt methods."""
-        from emout.distributed.remote_figure import RemoteFigure, _PLT_METHODS
+        from emout.distributed.remote_figure import RemoteFigure
         import emout.distributed.remote_render as rr_mod
         import matplotlib.pyplot as plt
 
@@ -1220,6 +1214,7 @@ class TestDisplayImage:
         monkey-patched by RemoteFigure tests.
         """
         import matplotlib
+
         matplotlib.use("Agg")
         from matplotlib.figure import Figure
         from io import BytesIO
@@ -1234,6 +1229,7 @@ class TestDisplayImage:
     def test_display_on_axes(self):
         """display_image with an axes argument should render onto it."""
         import matplotlib
+
         matplotlib.use("Agg")
         from matplotlib.figure import Figure
         from emout.distributed.remote_render import display_image
@@ -1248,11 +1244,13 @@ class TestDisplayImage:
     def test_display_without_ipython_creates_axes(self, monkeypatch):
         """Without IPython, display_image(bytes, ax=None) should create a new axes."""
         import matplotlib
+
         matplotlib.use("Agg")
         from emout.distributed.remote_render import display_image
 
         # Ensure IPython import fails
         import builtins
+
         _real_import = builtins.__import__
 
         def _no_ipython(name, *args, **kwargs):
@@ -1270,6 +1268,7 @@ class TestDisplayImage:
         assert result is not None  # an axes was created
 
         import matplotlib.pyplot as plt
+
         plt.close("all")
 
 

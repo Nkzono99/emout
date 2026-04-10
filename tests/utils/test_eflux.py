@@ -9,12 +9,14 @@ from scipy.constants import e as e_charge
 # get_indices_in_pitch_range
 # ---------------------------------------------------------------------------
 
+
 class TestGetIndicesInPitchRange:
     """Tests for get_indices_in_pitch_range."""
 
     @pytest.fixture(autouse=True)
     def _import(self):
         from emout.utils.eflux import get_indices_in_pitch_range
+
         self.func = get_indices_in_pitch_range
 
     def test_parallel_particles_selected(self):
@@ -195,12 +197,14 @@ class TestGetIndicesInPitchRange:
 # compute_energy_flux_histogram
 # ---------------------------------------------------------------------------
 
+
 class TestComputeEnergyFluxHistogram:
     """Tests for compute_energy_flux_histogram."""
 
     @pytest.fixture(autouse=True)
     def _import(self):
         from emout.utils.eflux import compute_energy_flux_histogram
+
         self.func = compute_energy_flux_histogram
 
     def test_basic_histogram_int_bins(self):
@@ -299,12 +303,14 @@ class TestComputeEnergyFluxHistogram:
 # compute_energy_flux_histograms
 # ---------------------------------------------------------------------------
 
+
 class TestComputeEnergyFluxHistograms:
     """Tests for compute_energy_flux_histograms (pitch-angle decomposition)."""
 
     @pytest.fixture(autouse=True)
     def _import(self):
         from emout.utils.eflux import compute_energy_flux_histograms
+
         self.func = compute_energy_flux_histograms
 
     def test_default_pitch_ranges_produce_6_keys(self):
@@ -339,9 +345,12 @@ class TestComputeEnergyFluxHistograms:
         mass = 9.109e-31
         result = self.func(velocities, probs, B, mass, energy_bins=5)
         expected_keys = [
-            "00-30_pos", "00-30_neg",
-            "30-60_pos", "30-60_neg",
-            "60-180_pos", "60-180_neg",
+            "00-30_pos",
+            "00-30_neg",
+            "30-60_pos",
+            "30-60_neg",
+            "60-180_pos",
+            "60-180_neg",
         ]
         for key in expected_keys:
             assert key in result
@@ -415,9 +424,8 @@ class TestComputeEnergyFluxHistograms:
         mass = 9.109e-31
 
         from emout.utils.eflux import compute_energy_flux_histogram
-        total_hist, total_bins = compute_energy_flux_histogram(
-            velocities, probs, mass, energy_bins=10
-        )
+
+        total_hist, total_bins = compute_energy_flux_histogram(velocities, probs, mass, energy_bins=10)
 
         ranges = [(0.0, 90.0, "both"), (90.0, 180.0, "both")]
         result = self.func(velocities, probs, B, mass, energy_bins=total_bins, pitch_ranges=ranges)
@@ -446,17 +454,20 @@ class TestComputeEnergyFluxHistograms:
 # plot_energy_fluxes
 # ---------------------------------------------------------------------------
 
+
 class TestPlotEnergyFluxes:
     """Tests for plot_energy_fluxes (2-D heatmap plotting)."""
 
     @pytest.fixture(autouse=True)
     def _import(self):
         from emout.utils.eflux import plot_energy_fluxes
+
         self.func = plot_energy_fluxes
 
     def test_returns_fig_and_ax(self):
         """Should return (fig, ax) tuple."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 5
         velocities_list = [rng.randn(20, 3) * 1e6 for _ in range(T)]
@@ -481,8 +492,7 @@ class TestPlotEnergyFluxes:
         velocities_list = [rng.randn(10, 3) for _ in range(3)]
         x = np.linspace(0, 1, 3)
         with pytest.raises(ValueError, match="use_probs"):
-            self.func(velocities_list, x, mass=1.0, energy_bins=5,
-                      use_probs=True, probs_list=None)
+            self.func(velocities_list, x, mass=1.0, energy_bins=5, use_probs=True, probs_list=None)
 
     def test_probs_list_wrong_length_raises(self):
         """probs_list with wrong length should raise."""
@@ -490,12 +500,12 @@ class TestPlotEnergyFluxes:
         velocities_list = [rng.randn(10, 3) for _ in range(3)]
         x = np.linspace(0, 1, 3)
         with pytest.raises(ValueError, match="use_probs"):
-            self.func(velocities_list, x, mass=1.0, energy_bins=5,
-                      use_probs=True, probs_list=[np.ones(10)])
+            self.func(velocities_list, x, mass=1.0, energy_bins=5, use_probs=True, probs_list=[np.ones(10)])
 
     def test_use_probs_true(self):
         """plot_energy_fluxes with use_probs=True should work."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 3
         velocities_list = [rng.randn(15, 3) * 1e6 for _ in range(T)]
@@ -503,8 +513,12 @@ class TestPlotEnergyFluxes:
         x = np.linspace(0, 1, T)
         mass = 9.109e-31
         fig, ax = self.func(
-            velocities_list, x, mass, energy_bins=5,
-            use_probs=True, probs_list=probs_list,
+            velocities_list,
+            x,
+            mass,
+            energy_bins=5,
+            use_probs=True,
+            probs_list=probs_list,
         )
         assert fig is not None
         plt.close(fig)
@@ -512,6 +526,7 @@ class TestPlotEnergyFluxes:
     def test_probs_shape_mismatch_raises(self):
         """probs_list[j] and velocities_list[j] with different lengths should raise."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 2
         velocities_list = [rng.randn(10, 3) * 1e6 for _ in range(T)]
@@ -519,13 +534,13 @@ class TestPlotEnergyFluxes:
         probs_list = [np.ones(5), np.ones(10)]
         x = np.linspace(0, 1, T)
         with pytest.raises(ValueError, match="same length"):
-            self.func(velocities_list, x, mass=1.0, energy_bins=5,
-                      use_probs=True, probs_list=probs_list)
+            self.func(velocities_list, x, mass=1.0, energy_bins=5, use_probs=True, probs_list=probs_list)
         plt.close("all")
 
     def test_explicit_bin_edges(self):
         """Explicit bin edges should be accepted."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 3
         velocities_list = [rng.randn(10, 3) * 1e6 for _ in range(T)]
@@ -539,6 +554,7 @@ class TestPlotEnergyFluxes:
     def test_custom_cmap(self):
         """Custom cmap parameter should be accepted without error."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 3
         velocities_list = [rng.randn(10, 3) * 1e6 for _ in range(T)]
@@ -550,6 +566,7 @@ class TestPlotEnergyFluxes:
     def test_heatmap_shape(self):
         """E_map (the internal heatmap) should have shape (M, T)."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 4
         velocities_list = [rng.randn(20, 3) * 1e6 for _ in range(T)]
@@ -566,6 +583,7 @@ class TestPlotEnergyFluxes:
     def test_axis_labels_set(self):
         """Axes labels should be set on the plot."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         T = 3
         velocities_list = [rng.randn(10, 3) * 1e6 for _ in range(T)]
@@ -581,17 +599,20 @@ class TestPlotEnergyFluxes:
 # plot_energy_flux
 # ---------------------------------------------------------------------------
 
+
 class TestPlotEnergyFlux:
     """Tests for plot_energy_flux (line plot of energy-flux distribution)."""
 
     @pytest.fixture(autouse=True)
     def _import(self):
         from emout.utils.eflux import plot_energy_flux
+
         self.func = plot_energy_flux
 
     def test_returns_fig_and_ax(self):
         """Should return (fig, ax) tuple."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(100, 3) * 1e6
         probs = np.ones(100)
@@ -605,20 +626,20 @@ class TestPlotEnergyFlux:
     def test_custom_pitch_ranges(self):
         """Custom pitch_ranges should produce a valid plot."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(50, 3) * 1e6
         probs = np.ones(50)
         B = np.array([1.0, 0.0, 0.0])
         mass = 9.109e-31
         ranges = [(0.0, 45.0, "both"), (45.0, 90.0, "both"), (90.0, 180.0, "both")]
-        fig, ax = self.func(
-            velocities, probs, B, mass, energy_bins=10, pitch_ranges=ranges
-        )
+        fig, ax = self.func(velocities, probs, B, mass, energy_bins=10, pitch_ranges=ranges)
         plt.close(fig)
 
     def test_explicit_bin_edges(self):
         """Explicit bin edges should be accepted."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(50, 3) * 1e6
         probs = np.ones(50)
@@ -631,6 +652,7 @@ class TestPlotEnergyFlux:
     def test_log_scale_axes(self):
         """Axes should use log scale."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(50, 3) * 1e6
         probs = np.ones(50)
@@ -644,6 +666,7 @@ class TestPlotEnergyFlux:
     def test_custom_cmap(self):
         """Custom cmap should be accepted."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(50, 3) * 1e6
         probs = np.ones(50)
@@ -655,6 +678,7 @@ class TestPlotEnergyFlux:
     def test_legend_present(self):
         """The plot should have a legend."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(50, 3) * 1e6
         probs = np.ones(50)
@@ -670,6 +694,7 @@ class TestPlotEnergyFlux:
     def test_title_set(self):
         """The plot title should be set."""
         import matplotlib.pyplot as plt
+
         rng = np.random.RandomState(0)
         velocities = rng.randn(50, 3) * 1e6
         probs = np.ones(50)

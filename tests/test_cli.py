@@ -6,7 +6,6 @@ import argparse
 import json
 import os
 import signal
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -129,17 +128,28 @@ class TestArgParsing:
         assert args.walltime is None
 
     def test_server_start_with_options(self):
-        args = _parse([
-            "server", "start",
-            "--scheduler-ip", "10.0.0.1",
-            "--scheduler-port", "9999",
-            "--partition", "gpu",
-            "--processes", "4",
-            "--threads", "2",
-            "--cores", "8",
-            "--memory", "32G",
-            "--walltime", "02:00:00",
-        ])
+        args = _parse(
+            [
+                "server",
+                "start",
+                "--scheduler-ip",
+                "10.0.0.1",
+                "--scheduler-port",
+                "9999",
+                "--partition",
+                "gpu",
+                "--processes",
+                "4",
+                "--threads",
+                "2",
+                "--cores",
+                "8",
+                "--memory",
+                "32G",
+                "--walltime",
+                "02:00:00",
+            ]
+        )
         assert args.scheduler_ip == "10.0.0.1"
         assert args.scheduler_port == 9999
         assert args.partition == "gpu"
@@ -184,6 +194,7 @@ class TestCmdServerStop:
         )
         # Mock the import inside cmd_server_stop
         import emout.distributed.client as client_mod
+
         monkeypatch.setattr(client_mod, "stop_cluster", lambda address=None: stopped.append(address))
 
         # Patch the lazy import
@@ -191,9 +202,7 @@ class TestCmdServerStop:
             stopped.append(address)
 
         with patch.dict("sys.modules", {}):
-            monkeypatch.setattr(
-                "emout.distributed.client.stop_cluster", fake_stop
-            )
+            monkeypatch.setattr("emout.distributed.client.stop_cluster", fake_stop)
             cli.cmd_server_stop(SimpleNamespace())
 
         assert "tcp://10.0.0.1:8786" in stopped
@@ -383,12 +392,13 @@ class TestCmdInspect:
             except Exception as exc:
                 print(f"Error loading directory: {exc}")
                 import sys
+
                 sys.exit(1)
 
             print(f"Directory: {data.directory}")
 
             if data.inp is not None:
-                print(f"Input file: plasma.inp")
+                print("Input file: plasma.inp")
                 try:
                     nx = data.inp["tmgrid"]["nx"]
                     ny = data.inp["tmgrid"]["ny"]
@@ -437,6 +447,7 @@ class TestCmdInspect:
         monkeypatch.setattr("emout.cli.Emout", lambda d: mock_data, raising=False)
         # We need to patch the import inside cmd_inspect
         import emout
+
         monkeypatch.setattr(emout, "Emout", lambda d: mock_data)
 
         args = SimpleNamespace(directory=str(tmp_path))
@@ -460,6 +471,7 @@ class TestCmdInspect:
         mock_data.is_valid.return_value = False
 
         import emout
+
         monkeypatch.setattr(emout, "Emout", lambda d: mock_data)
 
         args = SimpleNamespace(directory=str(tmp_path))
@@ -478,6 +490,7 @@ class TestCmdInspect:
         mock_data.is_valid.return_value = False
 
         import emout
+
         monkeypatch.setattr(emout, "Emout", lambda d: mock_data)
 
         args = SimpleNamespace(directory=str(tmp_path))

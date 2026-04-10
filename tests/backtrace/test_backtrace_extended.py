@@ -8,7 +8,7 @@ Covers:
 """
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import matplotlib
 import numpy as np
@@ -29,20 +29,25 @@ from emout.core.backtrace.multi_backtrace_result import MultiBacktraceResult
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_backtrace_result(n_steps=10, unit=None):
     """Build a BacktraceResult with deterministic data."""
     ts = np.arange(n_steps, dtype=float)
     probability = np.linspace(0.0, 1.0, n_steps)
-    positions = np.column_stack([
-        np.linspace(0, 1, n_steps),
-        np.linspace(1, 2, n_steps),
-        np.linspace(2, 3, n_steps),
-    ])
-    velocities = np.column_stack([
-        np.linspace(10, 20, n_steps),
-        np.linspace(20, 30, n_steps),
-        np.linspace(30, 40, n_steps),
-    ])
+    positions = np.column_stack(
+        [
+            np.linspace(0, 1, n_steps),
+            np.linspace(1, 2, n_steps),
+            np.linspace(2, 3, n_steps),
+        ]
+    )
+    velocities = np.column_stack(
+        [
+            np.linspace(10, 20, n_steps),
+            np.linspace(20, 30, n_steps),
+            np.linspace(30, 40, n_steps),
+        ]
+    )
     return BacktraceResult(ts, probability, positions, velocities, unit=unit)
 
 
@@ -54,8 +59,12 @@ def _make_multi_backtrace_result(n_traj=3, n_steps=10, unit=None):
     velocities_list = np.random.RandomState(99).randn(n_traj, n_steps, 3)
     last_indexes = np.full(n_traj, n_steps, dtype=int)
     return MultiBacktraceResult(
-        ts_list, probabilities, positions_list, velocities_list,
-        last_indexes, unit=unit,
+        ts_list,
+        probabilities,
+        positions_list,
+        velocities_list,
+        last_indexes,
+        unit=unit,
     )
 
 
@@ -84,6 +93,7 @@ def _make_unit():
 # ===================================================================
 # XYData
 # ===================================================================
+
 
 class TestXYData:
     """Tests for the XYData container."""
@@ -194,6 +204,7 @@ class TestXYData:
 # MultiXYData
 # ===================================================================
 
+
 class TestMultiXYData:
     """Tests for the MultiXYData container."""
 
@@ -215,8 +226,11 @@ class TestMultiXYData:
 
     def test_default_title(self):
         mxy = MultiXYData(
-            np.zeros((2, 4)), np.ones((2, 4)),
-            np.array([4, 4]), xlabel="a", ylabel="b",
+            np.zeros((2, 4)),
+            np.ones((2, 4)),
+            np.array([4, 4]),
+            xlabel="a",
+            ylabel="b",
         )
         assert mxy.title == "a vs b"
 
@@ -231,8 +245,11 @@ class TestMultiXYData:
 
     def test_repr(self):
         mxy = MultiXYData(
-            np.zeros((4, 7)), np.ones((4, 7)),
-            np.full(4, 7), xlabel="xx", ylabel="yy",
+            np.zeros((4, 7)),
+            np.ones((4, 7)),
+            np.full(4, 7),
+            xlabel="xx",
+            ylabel="yy",
         )
         r = repr(mxy)
         assert "MultiXYData" in r
@@ -288,6 +305,7 @@ class TestMultiXYData:
 # _insert_nans_for_gaps
 # ===================================================================
 
+
 class TestInsertNansForGaps:
     """Tests for the gap-breaking utility function."""
 
@@ -337,6 +355,7 @@ class TestInsertNansForGaps:
 # ===================================================================
 # BacktraceResult
 # ===================================================================
+
 
 class TestBacktraceResult:
     """Tests for BacktraceResult construction and data access."""
@@ -474,6 +493,7 @@ class TestBacktraceResult:
 # ===================================================================
 # MultiBacktraceResult
 # ===================================================================
+
 
 class TestMultiBacktraceResult:
     """Tests for MultiBacktraceResult construction, sampling, and pairing."""
@@ -656,6 +676,7 @@ class TestMultiBacktraceResult:
 # BacktraceWrapper (mocked solver)
 # ===================================================================
 
+
 class TestBacktraceWrapper:
     """Tests for BacktraceWrapper using mocked external solver modules."""
 
@@ -694,6 +715,7 @@ class TestBacktraceWrapper:
 
         # Mock the vdsolverf imports inside get_backtrace
         import sys
+
         mock_vdsolverf_core = MagicMock()
         mock_vdsolverf_emses = MagicMock()
         sys.modules["vdsolverf"] = MagicMock()
@@ -739,6 +761,7 @@ class TestBacktraceWrapper:
         )
 
         import sys
+
         sys.modules["vdsolverf"] = MagicMock()
         sys.modules["vdsolverf.core"] = MagicMock()
         sys.modules["vdsolverf.emses"] = MagicMock()
@@ -775,6 +798,7 @@ class TestBacktraceWrapper:
         )
 
         import sys
+
         sys.modules["vdsolverf"] = MagicMock()
         sys.modules["vdsolverf.core"] = MagicMock()
         sys.modules["vdsolverf.emses"] = MagicMock()
@@ -796,6 +820,7 @@ class TestBacktraceWrapper:
         wrapper = self._make_wrapper()
 
         import sys
+
         sys.modules["vdsolverf"] = MagicMock()
         sys.modules["vdsolverf.core"] = MagicMock()
         sys.modules["vdsolverf.emses"] = MagicMock()
@@ -831,6 +856,7 @@ class TestBacktraceWrapper:
         )
 
         import sys
+
         sys.modules["vdsolverf"] = MagicMock()
         sys.modules["vdsolverf.core"] = MagicMock()
         sys.modules["vdsolverf.emses"] = MagicMock()
@@ -849,6 +875,7 @@ class TestBacktraceWrapper:
 # ===================================================================
 # Integration: BacktraceResult -> XYData -> plot
 # ===================================================================
+
 
 class TestBacktraceResultPlotIntegration:
     """End-to-end test: BacktraceResult -> pair() -> XYData.plot()."""

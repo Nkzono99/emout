@@ -35,7 +35,6 @@ from emout.plot.surface_cut import (
     CompositeMeshSurface,
     CylinderMeshSurface,
     DiskMeshSurface,
-    MeshSurface3D,
     PlaneWithCircleMeshSurface,
     RectangleMeshSurface,
     SphereMeshSurface,
@@ -123,9 +122,7 @@ def test_collection_repr_and_iteration(boundaries: BoundaryCollection):
 
 def test_collection_empty_when_unsupported_top_level_type(tmp_path: Path, unit: Units):
     path = tmp_path / "plasma.inp"
-    path.write_text(
-        "&ptcond\n    boundary_type = 'none'\n/\n"
-    )
+    path.write_text("&ptcond\n    boundary_type = 'none'\n/\n")
     inp = InpFile(path)
     coll = BoundaryCollection(inp, unit)
     assert len(coll) == 0
@@ -149,9 +146,7 @@ def test_collection_skips_unsupported_complex_types(tmp_path: Path, unit: Units)
     assert len(coll) == 1
     assert isinstance(coll[0], SphereBoundary)
     assert coll[0].index == 1  # original 0-based position preserved
-    assert any(
-        "hyperboloid-hole" in entry for entry in (f"{s[1]}" for s in coll.skipped)
-    )
+    assert any("hyperboloid-hole" in entry for entry in (f"{s[1]}" for s in coll.skipped))
 
 
 # ---------------------------------------------------------------------------
@@ -407,9 +402,7 @@ def test_boundary_add_meshsurface_yields_composite(boundaries: BoundaryCollectio
 
 
 def test_collection_from_boundaries_preserves_order_and_unit(boundaries: BoundaryCollection, unit: Units):
-    explicit = type(boundaries).from_boundaries(
-        [boundaries[2], boundaries[0]], unit=unit
-    )
+    explicit = type(boundaries).from_boundaries([boundaries[2], boundaries[0]], unit=unit)
     assert isinstance(explicit, BoundaryCollection)
     assert len(explicit) == 2
     assert explicit[0] is boundaries[2]

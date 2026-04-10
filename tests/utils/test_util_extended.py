@@ -19,6 +19,7 @@ from emout.utils.util import (
 # interp2d
 # ---------------------------------------------------------------------------
 
+
 class TestInterp2d:
     def test_constant_mesh_early_return(self):
         """All elements equal -> early return with constant array."""
@@ -50,6 +51,7 @@ class TestInterp2d:
 # range_with_slice — negative indices
 # ---------------------------------------------------------------------------
 
+
 class TestRangeWithSlice:
     def test_negative_start(self):
         """Negative start is resolved against maxlen."""
@@ -79,6 +81,7 @@ class TestRangeWithSlice:
 # ---------------------------------------------------------------------------
 # apply_offset
 # ---------------------------------------------------------------------------
+
 
 class TestApplyOffset:
     def test_left(self):
@@ -112,6 +115,7 @@ class TestApplyOffset:
 # RegexDict — KeyError and .get() default
 # ---------------------------------------------------------------------------
 
+
 class TestRegexDictExtended:
     def test_getitem_raises_keyerror(self):
         d = RegexDict({r"foo": 1})
@@ -134,6 +138,7 @@ class TestRegexDictExtended:
 # ---------------------------------------------------------------------------
 # DataFileInfo — None filename, Path filename, directory/abspath
 # ---------------------------------------------------------------------------
+
 
 class TestDataFileInfo:
     def test_none_filename(self):
@@ -173,6 +178,7 @@ class TestDataFileInfo:
 # ---------------------------------------------------------------------------
 # hole_mask
 # ---------------------------------------------------------------------------
+
 
 class TestHoleMask:
     def _make_inp(self, nx=10, ny=10, nz=10):

@@ -6,7 +6,6 @@ particle_data_series.py.
 """
 
 import warnings
-from pathlib import Path
 from unittest.mock import patch
 
 import h5py
@@ -36,6 +35,7 @@ from emout.utils import UnitTranslator
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_unit(factor=2.0, name="length", unit="m"):
     return UnitTranslator(1.0, factor, name=name, unit=unit)
@@ -79,6 +79,7 @@ def _d4d(shape=(2, 3, 4, 5), **kw):
 # _base.py: __repr__
 # ---------------------------------------------------------------------------
 
+
 class TestBaseRepr:
     def test_repr_no_unit(self):
         d = _d3d()
@@ -102,6 +103,7 @@ class TestBaseRepr:
 # ---------------------------------------------------------------------------
 # _base.py: properties (filename, directory, x, y, z, t, etc.)
 # ---------------------------------------------------------------------------
+
 
 class TestBaseProperties:
     def test_filename_and_directory(self, tmp_path):
@@ -170,6 +172,7 @@ class TestBaseProperties:
 # _base.py: __getitem__ returning various Data subclasses
 # ---------------------------------------------------------------------------
 
+
 class TestBaseGetitem:
     def test_scalar_returns_float(self):
         d = _d1d(n=5)
@@ -226,6 +229,7 @@ class TestBaseGetitem:
 # _base.py: negate, scale, masked, to_numpy
 # ---------------------------------------------------------------------------
 
+
 class TestBaseTransforms:
     def test_negate(self):
         d = _d1d(n=5)
@@ -275,6 +279,7 @@ class TestBaseTransforms:
 # _base.py: gifplot deprecated parameters
 # ---------------------------------------------------------------------------
 
+
 class TestGifplotDeprecations:
     def test_to_html_deprecation_warning(self):
         d = _d4d(shape=(2, 3, 4, 5), axisunits=_make_axisunits(), valunit=_make_valunit())
@@ -296,6 +301,7 @@ class TestGifplotDeprecations:
             assert "return_updater" in str(dep_warnings[0].message)
         # return_updater sets action='frames', so we get a FrameUpdater
         from emout.plot.animation_plot import FrameUpdater
+
         assert isinstance(updater, FrameUpdater)
 
 
@@ -303,12 +309,14 @@ class TestGifplotDeprecations:
 # _base.py: build_frame_updater
 # ---------------------------------------------------------------------------
 
+
 class TestBuildFrameUpdater:
     def test_build_frame_updater_with_si(self):
         au = _make_axisunits()
         vu = _make_valunit()
         d = _d4d(shape=(2, 3, 4, 5), axisunits=au, valunit=vu)
         from emout.plot.animation_plot import FrameUpdater
+
         updater = d.build_frame_updater(axis=0, use_si=True)
         assert isinstance(updater, FrameUpdater)
 
@@ -317,6 +325,7 @@ class TestBuildFrameUpdater:
         vu = _make_valunit()
         d = _d4d(shape=(2, 3, 4, 5), axisunits=au, valunit=vu)
         from emout.plot.animation_plot import FrameUpdater
+
         updater = d.build_frame_updater(axis=0, use_si=False)
         assert isinstance(updater, FrameUpdater)
 
@@ -325,6 +334,7 @@ class TestBuildFrameUpdater:
         vu = _make_valunit()
         d = _d4d(shape=(2, 3, 4, 5), axisunits=au, valunit=vu)
         from emout.plot.animation_plot import FrameUpdater
+
         updater = d.build_frame_updater(axis=0, use_si=True, vmin=-1, vmax=1)
         assert isinstance(updater, FrameUpdater)
 
@@ -332,6 +342,7 @@ class TestBuildFrameUpdater:
 # ---------------------------------------------------------------------------
 # _data1d.py: __new__ validation
 # ---------------------------------------------------------------------------
+
 
 class TestData1d:
     def test_creation_basic(self):
@@ -381,6 +392,7 @@ class TestData1d:
 # ---------------------------------------------------------------------------
 # _data3d.py: __new__ validation and to_vtk
 # ---------------------------------------------------------------------------
+
 
 class TestData3d:
     def test_creation(self):
@@ -438,6 +450,7 @@ class TestData3d:
 # _data4d.py
 # ---------------------------------------------------------------------------
 
+
 class TestData4d:
     def test_creation(self):
         d = _d4d(shape=(2, 3, 4, 5))
@@ -458,6 +471,7 @@ class TestData4d:
 # Data base class: requires 4D without slice_axes
 # ---------------------------------------------------------------------------
 
+
 class TestDataBase:
     def test_data_base_requires_4d(self):
         """Data base class without slice_axes requires 4-D input."""
@@ -468,6 +482,7 @@ class TestDataBase:
 # ---------------------------------------------------------------------------
 # vector_data.py
 # ---------------------------------------------------------------------------
+
 
 class TestVectorData:
     @pytest.fixture
@@ -538,16 +553,12 @@ class TestVectorData:
     def test_negate(self, vd3):
         neg = vd3.negate()
         assert isinstance(neg, VectorData)
-        np.testing.assert_array_equal(
-            np.asarray(neg.x_data), -np.asarray(vd3.x_data)
-        )
+        np.testing.assert_array_equal(np.asarray(neg.x_data), -np.asarray(vd3.x_data))
 
     def test_scale(self, vd3):
         sc = vd3.scale(2.0)
         assert isinstance(sc, VectorData)
-        np.testing.assert_array_equal(
-            np.asarray(sc.x_data), np.asarray(vd3.x_data) * 2
-        )
+        np.testing.assert_array_equal(np.asarray(sc.x_data), np.asarray(vd3.x_data) * 2)
 
     def test_name_from_x_data(self):
         x = _d3d(name="ex")
@@ -579,6 +590,7 @@ class TestVectorData:
         z = _d3d(name="jz", axisunits=au, valunit=vu)
         vd = VectorData([x, y, z], name="j")
         from emout.plot.animation_plot import FrameUpdater
+
         updater = vd.build_frame_updater(axis=0, use_si=False)
         assert isinstance(updater, FrameUpdater)
 
@@ -586,6 +598,7 @@ class TestVectorData:
 # ---------------------------------------------------------------------------
 # particle_data.py
 # ---------------------------------------------------------------------------
+
 
 class TestParticleData:
     def test_creation(self):
@@ -635,14 +648,13 @@ class TestParticleData:
 # griddata_series.py
 # ---------------------------------------------------------------------------
 
+
 def _create_grid_h5(filepath, name, timesteps, shape):
     """Create a test HDF5 file with the GridDataSeries-expected structure."""
     with h5py.File(str(filepath), "w") as h5:
         group = h5.create_group(name)
         for i in range(timesteps):
-            group.create_dataset(
-                f"{i:04d}", data=np.random.rand(*shape).astype("f")
-            )
+            group.create_dataset(f"{i:04d}", data=np.random.rand(*shape).astype("f"))
 
 
 class TestGridDataSeries:
@@ -735,6 +747,7 @@ class TestGridDataSeries:
         s2 = GridDataSeries(f2, "phi")
         multi = s1.chain(s2)
         from emout.core.data.griddata_series import MultiGridDataSeries
+
         assert isinstance(multi, MultiGridDataSeries)
 
     def test_add_operator(self, tmp_path):
@@ -746,6 +759,7 @@ class TestGridDataSeries:
         s2 = GridDataSeries(f2, "phi")
         multi = s1 + s2
         from emout.core.data.griddata_series import MultiGridDataSeries
+
         assert isinstance(multi, MultiGridDataSeries)
 
     def test_add_wrong_type(self, series):
@@ -756,6 +770,7 @@ class TestGridDataSeries:
 # ---------------------------------------------------------------------------
 # griddata_series.py: MultiGridDataSeries
 # ---------------------------------------------------------------------------
+
 
 class TestMultiGridDataSeries:
     @pytest.fixture
@@ -819,6 +834,7 @@ class TestMultiGridDataSeries:
 # ---------------------------------------------------------------------------
 # particle_data_series.py: ParticleDataSeries
 # ---------------------------------------------------------------------------
+
 
 def _create_particle_h5(filepath, name, timesteps, nparticles):
     """Create a test HDF5 file with particle data structure.
@@ -922,6 +938,7 @@ class TestParticleDataSeries:
 # particle_data_series.py: MultiParticleDataSeries
 # ---------------------------------------------------------------------------
 
+
 class TestMultiParticleDataSeries:
     @pytest.fixture
     def multi_ps(self, tmp_path):
@@ -1016,6 +1033,7 @@ class TestMultiParticleDataSeries:
 # particle_data_series.py: ParticleSnapshot
 # ---------------------------------------------------------------------------
 
+
 class TestParticleSnapshot:
     @pytest.fixture
     def snap(self):
@@ -1091,6 +1109,7 @@ class TestParticleSnapshot:
 # particle_data_series.py: ParticlesSeries
 # ---------------------------------------------------------------------------
 
+
 class TestParticlesSeries:
     @pytest.fixture
     def pdir(self, tmp_path):
@@ -1156,9 +1175,7 @@ class TestParticlesSeries:
                 fname = f"p1{comp}e{seg:02d}_0000.h5"
                 fpath = tmp_path / fname
                 _create_particle_h5(fpath, comp, 3, 20)
-        ps = ParticlesSeries(
-            tmp_path, species=1, components=("x",), strict_length=False
-        )
+        ps = ParticlesSeries(tmp_path, species=1, components=("x",), strict_length=False)
         # MultiParticleDataSeries should be built
         assert len(ps) > 0
 
@@ -1169,23 +1186,20 @@ class TestParticlesSeries:
             fpath = tmp_path / fname
             _create_particle_h5(fpath, comp, 3, 20)
         with pytest.raises(ValueError, match="No particle"):
-            ParticlesSeries(
-                tmp_path, species=1, components=("x",), strict_length=True
-            )
+            ParticlesSeries(tmp_path, species=1, components=("x",), strict_length=True)
 
 
 # ---------------------------------------------------------------------------
 # _base.py: flip (already partially tested in test_mirror_tile.py)
 # ---------------------------------------------------------------------------
 
+
 class TestFlip:
     def test_flip_axis0(self):
         d = _d2d(shape=(4, 5))
         f = d.flip(0)
         assert f.shape == (4, 5)
-        np.testing.assert_array_equal(
-            np.asarray(f), np.flip(np.asarray(d), axis=0)
-        )
+        np.testing.assert_array_equal(np.asarray(f), np.flip(np.asarray(d), axis=0))
 
     def test_flip_by_name(self):
         d = _d2d(shape=(4, 5))
@@ -1200,6 +1214,7 @@ class TestFlip:
 # ---------------------------------------------------------------------------
 # _base.py: _to_recipe_index
 # ---------------------------------------------------------------------------
+
 
 class TestRecipeIndex:
     def test_recipe_index_4d(self):
@@ -1219,6 +1234,7 @@ class TestRecipeIndex:
 # ---------------------------------------------------------------------------
 # _base.py: xslice, yslice, zslice, tslice properties
 # ---------------------------------------------------------------------------
+
 
 class TestSliceProperties:
     def test_xslice(self):
@@ -1242,6 +1258,7 @@ class TestSliceProperties:
 # _base.py: __array_finalize__ (metadata propagation through numpy ops)
 # ---------------------------------------------------------------------------
 
+
 class TestArrayFinalize:
     def test_numpy_op_preserves_name(self):
         d = _d1d(n=5, name="field")
@@ -1258,6 +1275,7 @@ class TestArrayFinalize:
 # ---------------------------------------------------------------------------
 # _data3d.py: _write_vti_xml (fallback without pyvista)
 # ---------------------------------------------------------------------------
+
 
 class TestWriteVtiXml:
     def test_write_vti_xml(self, tmp_path):
@@ -1277,19 +1295,23 @@ class TestWriteVtiXml:
 # vector_data.py: VectorData2d, VectorData3d aliases
 # ---------------------------------------------------------------------------
 
+
 class TestVectorDataAliases:
     def test_vectordata2d_is_vectordata(self):
         from emout.core.data.vector_data import VectorData2d
+
         assert VectorData2d is VectorData
 
     def test_vectordata3d_is_vectordata(self):
         from emout.core.data.vector_data import VectorData3d
+
         assert VectorData3d is VectorData
 
 
 # ---------------------------------------------------------------------------
 # _base.py: gifplot with mode parameter
 # ---------------------------------------------------------------------------
+
 
 class TestGifplotMode:
     def test_gifplot_with_mode_returns_updater(self):
@@ -1298,6 +1320,7 @@ class TestGifplotMode:
         d = _d4d(shape=(2, 3, 4, 5), axisunits=au, valunit=vu)
         updater = d.gifplot(mode="cm", action="frames")
         from emout.plot.animation_plot import FrameUpdater
+
         assert isinstance(updater, FrameUpdater)
 
     def test_gifplot_without_mode_returns_updater(self):
@@ -1306,12 +1329,14 @@ class TestGifplotMode:
         d = _d4d(shape=(2, 3, 4, 5), axisunits=au, valunit=vu)
         updater = d.gifplot(action="frames")
         from emout.plot.animation_plot import FrameUpdater
+
         assert isinstance(updater, FrameUpdater)
 
 
 # ---------------------------------------------------------------------------
 # GridDataSeries: series with units
 # ---------------------------------------------------------------------------
+
 
 class TestGridDataSeriesWithUnits:
     def test_data_inherits_units(self, tmp_path):
@@ -1331,6 +1356,7 @@ class TestGridDataSeriesWithUnits:
 # _base.py: _resolve_axis
 # ---------------------------------------------------------------------------
 
+
 class TestResolveAxis:
     def test_resolve_by_name(self):
         d = _d3d(shape=(3, 4, 5))
@@ -1347,6 +1373,7 @@ class TestResolveAxis:
 # ---------------------------------------------------------------------------
 # _base.py: chaining negate + scale
 # ---------------------------------------------------------------------------
+
 
 class TestChainOps:
     def test_negate_then_scale(self):
@@ -1365,6 +1392,7 @@ class TestChainOps:
 # ---------------------------------------------------------------------------
 # Negative slice indexing in __add_slices
 # ---------------------------------------------------------------------------
+
 
 class TestNegativeSlicing:
     def test_negative_index_3d(self):

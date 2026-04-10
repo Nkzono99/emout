@@ -9,17 +9,14 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import patch
 
-import h5py
-import numpy as np
 import pandas as pd
 import pytest
 
 from emout.core.io.directory import DirectoryInspector
 from emout.core.io.grid import GridDataLoader
-from emout.utils import InpFile, Units
 
 # Re-use helpers from conftest (they are importable as regular functions).
-from tests.conftest import create_h5file, create_inpfile, nml
+from tests.conftest import create_h5file
 
 
 # ---------------------------------------------------------------------------

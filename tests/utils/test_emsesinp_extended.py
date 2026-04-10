@@ -15,6 +15,7 @@ from emout.utils.units import Units
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _write_inp(tmp_path, text, *, header=None):
     """Write a namelist string to a temporary .inp file and return its path.
 
@@ -161,6 +162,7 @@ def full_inp(tmp_path):
 # UnitConversionKey
 # ===================================================================
 
+
 class TestUnitConversionKey:
     """Tests for UnitConversionKey."""
 
@@ -228,6 +230,7 @@ class TestUnitConversionKey:
 # AttrDict
 # ===================================================================
 
+
 class TestAttrDict:
     """Tests for AttrDict."""
 
@@ -262,6 +265,7 @@ class TestAttrDict:
 # InpFile.__contains__
 # ===================================================================
 
+
 class TestInpFileContains:
     """Tests for InpFile.__contains__."""
 
@@ -290,6 +294,7 @@ class TestInpFileContains:
 # InpFile.__getitem__  (KeyError on missing)
 # ===================================================================
 
+
 class TestInpFileGetitem:
     """Tests for InpFile.__getitem__."""
 
@@ -311,6 +316,7 @@ class TestInpFileGetitem:
 # ===================================================================
 # InpFile.__setitem__
 # ===================================================================
+
 
 class TestInpFileSetitem:
     """Tests for InpFile.__setitem__."""
@@ -342,6 +348,7 @@ class TestInpFileSetitem:
 # ===================================================================
 # InpFile.remove()
 # ===================================================================
+
 
 class TestInpFileRemove:
     """Tests for InpFile.remove()."""
@@ -399,6 +406,7 @@ class TestInpFileRemove:
 # InpFile.setlist()
 # ===================================================================
 
+
 class TestInpFileSetlist:
     """Tests for InpFile.setlist()."""
 
@@ -437,10 +445,10 @@ class TestInpFileSetlist:
         inp.setlist("grp", "arr", [200, 300, 400], start_index=2)
         arr = inp["grp"]["arr"]
         # Index 1 keeps old value, indices 2-4 get new values
-        assert arr[0] == 10      # index 1 (old)
-        assert arr[1] == 200     # index 2 (new, overwrites 20)
-        assert arr[2] == 300     # index 3 (new, overwrites 30)
-        assert arr[3] == 400     # index 4 (new, extends)
+        assert arr[0] == 10  # index 1 (old)
+        assert arr[1] == 200  # index 2 (new, overwrites 20)
+        assert arr[2] == 300  # index 3 (new, overwrites 30)
+        assert arr[3] == 400  # index 4 (new, extends)
         assert inp.nml["grp"].start_index["arr"] == [1]
 
     def test_setlist_merge_non_overlapping_before(self, tmp_path):
@@ -454,11 +462,11 @@ class TestInpFileSetlist:
         inp.setlist("grp", "arr", [10, 20], start_index=2)
         arr = inp["grp"]["arr"]
         # Indices 2-3: new values; 4: None gap; 5-6: old values
-        assert arr[0] == 10     # index 2
-        assert arr[1] == 20     # index 3
-        assert arr[2] is None   # index 4 (gap)
-        assert arr[3] == 50     # index 5
-        assert arr[4] == 60     # index 6
+        assert arr[0] == 10  # index 2
+        assert arr[1] == 20  # index 3
+        assert arr[2] is None  # index 4 (gap)
+        assert arr[3] == 50  # index 5
+        assert arr[4] == 60  # index 6
         assert inp.nml["grp"].start_index["arr"] == [2]
 
     def test_setlist_merge_non_overlapping_after(self, tmp_path):
@@ -471,18 +479,19 @@ class TestInpFileSetlist:
         inp = _make_inp(tmp_path, nml_text)
         inp.setlist("grp", "arr", [50, 60], start_index=5)
         arr = inp["grp"]["arr"]
-        assert arr[0] == 10     # index 1
-        assert arr[1] == 20     # index 2
-        assert arr[2] is None   # index 3 (gap)
-        assert arr[3] is None   # index 4 (gap)
-        assert arr[4] == 50     # index 5
-        assert arr[5] == 60     # index 6
+        assert arr[0] == 10  # index 1
+        assert arr[1] == 20  # index 2
+        assert arr[2] is None  # index 3 (gap)
+        assert arr[3] is None  # index 4 (gap)
+        assert arr[4] == 50  # index 5
+        assert arr[5] == 60  # index 6
         assert inp.nml["grp"].start_index["arr"] == [1]
 
 
 # ===================================================================
 # InpFile.save()
 # ===================================================================
+
 
 class TestInpFileSave:
     """Tests for InpFile.save()."""
@@ -519,6 +528,7 @@ class TestInpFileSave:
 # InpFile.__str__ / __repr__
 # ===================================================================
 
+
 class TestInpFileStr:
     """Tests for InpFile string representations."""
 
@@ -536,6 +546,7 @@ class TestInpFileStr:
 # ===================================================================
 # InpFile.conversion()
 # ===================================================================
+
 
 class TestInpFileConversion:
     """Tests for InpFile.conversion()."""
@@ -648,6 +659,7 @@ class TestInpFileConversion:
 # InpFile.dx / .to_c properties
 # ===================================================================
 
+
 class TestInpFileProperties:
     """Tests for InpFile.dx and .to_c convenience properties."""
 
@@ -663,6 +675,7 @@ class TestInpFileProperties:
 # ===================================================================
 # InpFile.__getattr__ / __setattr__ (AttrDict wrapping)
 # ===================================================================
+
 
 class TestInpFileAttrAccess:
     """Tests for InpFile attribute-style access."""
@@ -691,6 +704,7 @@ class TestInpFileAttrAccess:
 # ===================================================================
 # InpFile empty construction
 # ===================================================================
+
 
 class TestInpFileEmpty:
     """Tests for InpFile constructed without a file."""

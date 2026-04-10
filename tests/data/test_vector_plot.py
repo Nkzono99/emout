@@ -20,6 +20,7 @@ from emout.utils import UnitTranslator
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_unit():
     """Create a minimal UnitTranslator for testing."""
     return UnitTranslator(1.0, 1.0, name="length", unit="m")
@@ -43,8 +44,7 @@ def _make_2d_vec(shape=(4, 5), name="v", with_units=False):
         kwargs["valunit"] = vu
 
     vx = Data2d(arr_x, **kwargs)
-    vy = Data2d(arr_y, name="vy",
-                **({k: v for k, v in kwargs.items() if k != "name"}))
+    vy = Data2d(arr_y, name="vy", **({k: v for k, v in kwargs.items() if k != "name"}))
     return VectorData([vx, vy], name=name)
 
 
@@ -68,6 +68,7 @@ def _make_3d_vec(shape=(3, 4, 5), name="B", with_units=False):
 # ---------------------------------------------------------------------------
 # Construction & basic properties
 # ---------------------------------------------------------------------------
+
 
 class TestVectorDataConstruction:
     def test_requires_2_or_3_components(self):
@@ -99,16 +100,12 @@ class TestVectorDataConstruction:
     def test_negate(self):
         vec = _make_2d_vec()
         neg = vec.negate()
-        np.testing.assert_array_almost_equal(
-            np.array(neg.x_data), -np.array(vec.x_data)
-        )
+        np.testing.assert_array_almost_equal(np.array(neg.x_data), -np.array(vec.x_data))
 
     def test_scale(self):
         vec = _make_2d_vec()
         scaled = vec.scale(3.0)
-        np.testing.assert_array_almost_equal(
-            np.array(scaled.x_data), np.array(vec.x_data) * 3.0
-        )
+        np.testing.assert_array_almost_equal(np.array(scaled.x_data), np.array(vec.x_data) * 3.0)
 
     def test_4_components_raises(self):
         arr = np.zeros((3, 4), dtype=np.float32)
@@ -120,6 +117,7 @@ class TestVectorDataConstruction:
 # ---------------------------------------------------------------------------
 # plot() dispatch
 # ---------------------------------------------------------------------------
+
 
 class TestPlotDispatch:
     """Test that plot() dispatches to plot2d or plot3d_mpl based on ndim."""
@@ -143,6 +141,7 @@ class TestPlotDispatch:
     def test_1d_raises(self):
         """1-D data should raise NotImplementedError."""
         from emout.core.data._data1d import Data1d
+
         d1 = Data1d(np.zeros(5), name="v1")
         d2 = Data1d(np.zeros(5), name="v2")
         vec = VectorData([d1, d2], name="v")
@@ -156,15 +155,15 @@ class TestPlotDispatch:
         monkeypatch.setattr(VectorData, "plot2d", mock)
         vec.plot(mode="vec", show=False, density=5, custom_arg="hello")
         call_kwargs = mock.call_args
-        assert "density" in call_kwargs.kwargs or "density" in dict(zip(
-            ["mode", "show", "density", "custom_arg"],
-            call_kwargs.args[1:] if len(call_kwargs.args) > 1 else []
-        ))
+        assert "density" in call_kwargs.kwargs or "density" in dict(
+            zip(["mode", "show", "density", "custom_arg"], call_kwargs.args[1:] if len(call_kwargs.args) > 1 else [])
+        )
 
 
 # ---------------------------------------------------------------------------
 # plot2d
 # ---------------------------------------------------------------------------
+
 
 class TestPlot2d:
     """Test plot2d argument parsing and dispatch."""
@@ -287,6 +286,7 @@ class TestPlot2d:
 # plot3d_mpl
 # ---------------------------------------------------------------------------
 
+
 class TestPlot3dMpl:
     """Test plot3d_mpl argument parsing and dispatch."""
 
@@ -355,8 +355,7 @@ class TestPlot3dMpl:
     @patch("emout.plot.basic_plot.plot_3d_streamline", return_value="ax3d")
     def test_offsets_applied(self, mock_stream):
         vec = _make_3d_vec()
-        vec.plot3d_mpl(mode="stream", use_si=False,
-                       offsets=("left", "center", "right"))
+        vec.plot3d_mpl(mode="stream", use_si=False, offsets=("left", "center", "right"))
         mock_stream.assert_called_once()
         call_kwargs = mock_stream.call_args[1]
         # mesh should be provided
@@ -411,6 +410,7 @@ class TestPlot3dMpl:
 # ---------------------------------------------------------------------------
 # plot_pyvista
 # ---------------------------------------------------------------------------
+
 
 class TestPlotPyvista:
     """Test plot_pyvista argument validation and dispatch."""
@@ -488,6 +488,7 @@ class TestPlotPyvista:
 # plot3d (backend dispatch)
 # ---------------------------------------------------------------------------
 
+
 class TestPlot3d:
     """Test plot3d backend dispatch."""
 
@@ -539,6 +540,7 @@ class TestPlot3d:
 # build_frame_updater
 # ---------------------------------------------------------------------------
 
+
 class TestBuildFrameUpdater:
     """Test build_frame_updater returns a FrameUpdater."""
 
@@ -548,8 +550,7 @@ class TestBuildFrameUpdater:
         # Need a 3-D VectorData with an extra leading axis
         rng = np.random.RandomState(0)
         shape_3d = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         vec = VectorData(comps, name="B")
 
         updater = vec.build_frame_updater(axis=0, use_si=False)
@@ -560,8 +561,7 @@ class TestBuildFrameUpdater:
     def test_title_override(self):
         rng = np.random.RandomState(0)
         shape_3d = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         vec = VectorData(comps, name="B")
         updater = vec.build_frame_updater(title="custom", use_si=False)
         assert updater.title == "custom"
@@ -569,8 +569,7 @@ class TestBuildFrameUpdater:
     def test_notitle_flag(self):
         rng = np.random.RandomState(0)
         shape_3d = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         vec = VectorData(comps, name="B")
         updater = vec.build_frame_updater(notitle=True, use_si=False)
         assert updater.notitle is True
@@ -579,8 +578,7 @@ class TestBuildFrameUpdater:
         """When title is None, it should use the data's name."""
         rng = np.random.RandomState(0)
         shape_3d = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         vec = VectorData(comps, name="B")
         updater = vec.build_frame_updater(title=None, use_si=False)
         assert updater.title == "B"
@@ -588,8 +586,7 @@ class TestBuildFrameUpdater:
     def test_offsets_stored(self):
         rng = np.random.RandomState(0)
         shape_3d = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         vec = VectorData(comps, name="B")
         offsets = ("left", "center", "right")
         updater = vec.build_frame_updater(offsets=offsets, use_si=False)
@@ -599,8 +596,7 @@ class TestBuildFrameUpdater:
         """Extra kwargs should be stored and forwarded during animation."""
         rng = np.random.RandomState(0)
         shape_3d = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape_3d).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         vec = VectorData(comps, name="B")
         updater = vec.build_frame_updater(use_si=False, mode="vec")
         assert updater.kwargs.get("mode") == "vec"
@@ -610,14 +606,14 @@ class TestBuildFrameUpdater:
 # gifplot
 # ---------------------------------------------------------------------------
 
+
 class TestGifplot:
     """Test gifplot argument handling and FrameUpdater creation."""
 
     def _make_vec(self):
         rng = np.random.RandomState(0)
         shape = (3, 4, 5)
-        comps = [Data3d(rng.rand(*shape).astype(np.float32), name=n)
-                 for n in ("Bx", "By", "Bz")]
+        comps = [Data3d(rng.rand(*shape).astype(np.float32), name=n) for n in ("Bx", "By", "Bz")]
         return VectorData(comps, name="B")
 
     def test_return_updater_deprecated(self):
@@ -631,18 +627,19 @@ class TestGifplot:
             assert "return_updater" in str(dep_warnings[0].message)
 
         from emout.plot.animation_plot import FrameUpdater
+
         assert isinstance(result, FrameUpdater)
 
     def test_action_frames(self):
         vec = self._make_vec()
         from emout.plot.animation_plot import FrameUpdater
+
         result = vec.gifplot(action="frames", use_si=False)
         assert isinstance(result, FrameUpdater)
 
     def test_action_return_calls_animator(self):
         vec = self._make_vec()
-        with patch("emout.plot.animation_plot.Animator.plot",
-                   return_value=("fig", "ani")) as mock_plot:
+        with patch("emout.plot.animation_plot.Animator.plot", return_value=("fig", "ani")) as mock_plot:
             result = vec.gifplot(action="return", use_si=False)
         mock_plot.assert_called_once()
         assert result == ("fig", "ani")
@@ -674,10 +671,8 @@ class TestGifplot:
     def test_animator_plot_called_with_params(self):
         """Animator.plot should receive the interval, repeat, etc."""
         vec = self._make_vec()
-        with patch("emout.plot.animation_plot.Animator.plot",
-                   return_value=("fig", "ani")) as mock_plot:
-            vec.gifplot(action="return", use_si=False,
-                        interval=100, repeat=False)
+        with patch("emout.plot.animation_plot.Animator.plot", return_value=("fig", "ani")) as mock_plot:
+            vec.gifplot(action="return", use_si=False, interval=100, repeat=False)
         call_kwargs = mock_plot.call_args[1]
         assert call_kwargs["interval"] == 100
         assert call_kwargs["repeat"] is False
@@ -687,19 +682,23 @@ class TestGifplot:
 # VectorData2d / VectorData3d aliases
 # ---------------------------------------------------------------------------
 
+
 class TestAliases:
     def test_vectordata2d_alias(self):
         from emout.core.data.vector_data import VectorData2d
+
         assert VectorData2d is VectorData
 
     def test_vectordata3d_alias(self):
         from emout.core.data.vector_data import VectorData3d
+
         assert VectorData3d is VectorData
 
 
 # ---------------------------------------------------------------------------
 # Additional edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     def test_name_from_attrs(self):
@@ -770,17 +769,13 @@ class TestEdgeCases:
         """Negate should work on 3-component VectorData."""
         vec = _make_3d_vec()
         neg = vec.negate()
-        np.testing.assert_array_almost_equal(
-            np.array(neg.z_data), -np.array(vec.z_data)
-        )
+        np.testing.assert_array_almost_equal(np.array(neg.z_data), -np.array(vec.z_data))
 
     def test_scale_3d(self):
         """Scale should work on 3-component VectorData."""
         vec = _make_3d_vec()
         scaled = vec.scale(0.5)
-        np.testing.assert_array_almost_equal(
-            np.array(scaled.z_data), np.array(vec.z_data) * 0.5
-        )
+        np.testing.assert_array_almost_equal(np.array(scaled.z_data), np.array(vec.z_data) * 0.5)
 
     def test_shape_delegates_to_first_component(self):
         """Shape should match the first component."""

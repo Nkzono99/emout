@@ -5,12 +5,12 @@ import pytest
 @pytest.fixture
 def phisp(data):
     """テスト用の `phisp` データを返す。
-    
+
     Parameters
     ----------
     data : object
         処理対象のデータ。
-    
+
     Returns
     -------
     object
@@ -21,12 +21,12 @@ def phisp(data):
 
 def test_open_data(data):
     """open data のテストを行う。
-    
+
     Parameters
     ----------
     data : object
         処理対象のデータ。
-    
+
     Returns
     -------
     None
@@ -41,12 +41,12 @@ def test_open_data(data):
 
 def test_data_type(data):
     """data type のテストを行う。
-    
+
     Parameters
     ----------
     data : object
         処理対象のデータ。
-    
+
     Returns
     -------
     None
@@ -63,17 +63,20 @@ def test_data_type(data):
     assert type(data.phisp[1, 1, 1]) == emout.data.Data1d
 
 
-@pytest.mark.parametrize('tslice, expected', [
-    (1, list('zyx')),
-    (-1, list('zyx')),
-    (slice(None), list('tzyx')),
-    (slice(None, 1), list('tzyx')),
-    (slice(1, None), list('tzyx')),
-    ([1, 2, 4], list('tzyx'))
-])
+@pytest.mark.parametrize(
+    "tslice, expected",
+    [
+        (1, list("zyx")),
+        (-1, list("zyx")),
+        (slice(None), list("tzyx")),
+        (slice(None, 1), list("tzyx")),
+        (slice(1, None), list("tzyx")),
+        ([1, 2, 4], list("tzyx")),
+    ],
+)
 def test_tslice(phisp, tslice, expected):
     """tslice のテストを行う。
-    
+
     Parameters
     ----------
     phisp : object
@@ -89,16 +92,20 @@ def test_tslice(phisp, tslice, expected):
     """
     assert phisp[tslice].use_axes == expected
 
-@pytest.mark.parametrize('tslice, expected', [
-    (1, (100, 30, 30)),
-    (slice(None), (5, 100, 30, 30)),
-    (slice(1), (1, 100, 30, 30)),
-    (slice(-1), (4, 100, 30, 30)),
-    ([1, 2, 4], (3, 100, 30, 30))
-])
+
+@pytest.mark.parametrize(
+    "tslice, expected",
+    [
+        (1, (100, 30, 30)),
+        (slice(None), (5, 100, 30, 30)),
+        (slice(1), (1, 100, 30, 30)),
+        (slice(-1), (4, 100, 30, 30)),
+        ([1, 2, 4], (3, 100, 30, 30)),
+    ],
+)
 def test_tslice_with_shape(phisp, tslice, expected):
     """tslice with shape のテストを行う。
-    
+
     Parameters
     ----------
     phisp : object
@@ -117,7 +124,7 @@ def test_tslice_with_shape(phisp, tslice, expected):
 
 def test_2dslice(phisp):
     """2dslice のテストを行う。
-    
+
     Parameters
     ----------
     phisp : object
@@ -127,43 +134,47 @@ def test_2dslice(phisp):
     None
         戻り値はありません。
     """
-    assert phisp[1][1, :, :].use_axes == list('yx')
-    assert phisp[1][:, :, 1].use_axes == list('zy')
-    assert phisp[1][:, 1, :].use_axes == list('zx')
+    assert phisp[1][1, :, :].use_axes == list("yx")
+    assert phisp[1][:, :, 1].use_axes == list("zy")
+    assert phisp[1][:, 1, :].use_axes == list("zx")
 
-    assert phisp[:][1, 1, :, :].use_axes == list('yx')
-    assert phisp[:][1, :, :, 1].use_axes == list('zy')
-    assert phisp[:][1, :, 1, :].use_axes == list('zx')
+    assert phisp[:][1, 1, :, :].use_axes == list("yx")
+    assert phisp[:][1, :, :, 1].use_axes == list("zy")
+    assert phisp[:][1, :, 1, :].use_axes == list("zx")
 
-    assert phisp[:][:, 1, 1, :].use_axes == list('tx')
-    assert phisp[:][:, 1, :, 1].use_axes == list('ty')
-    assert phisp[:][:, :, 1, 1].use_axes == list('tz')
+    assert phisp[:][:, 1, 1, :].use_axes == list("tx")
+    assert phisp[:][:, 1, :, 1].use_axes == list("ty")
+    assert phisp[:][:, :, 1, 1].use_axes == list("tz")
 
-    assert phisp[1, 1].use_axes == list('yx')
-    assert phisp[1, :, 1].use_axes == list('zx')
-    assert phisp[1, 1, 1, :].use_axes == list('x')
+    assert phisp[1, 1].use_axes == list("yx")
+    assert phisp[1, :, 1].use_axes == list("zx")
+    assert phisp[1, 1, 1, :].use_axes == list("x")
 
-    assert phisp[1, :, :, 1].use_axes == list('zy')
-    assert phisp[1, :, :, 1][1].use_axes == list('y')
-    assert phisp[1, :, :, 1][:, 1].use_axes == list('z')
+    assert phisp[1, :, :, 1].use_axes == list("zy")
+    assert phisp[1, :, :, 1][1].use_axes == list("y")
+    assert phisp[1, :, :, 1][:, 1].use_axes == list("z")
 
-    assert phisp[:, :, :, :].use_axes == list('tzyx')
-    assert phisp[:][:, :, :, 1].use_axes == list('tzy')
-    assert phisp[:, :, :, 1].use_axes == list('tzy')
+    assert phisp[:, :, :, :].use_axes == list("tzyx")
+    assert phisp[:][:, :, :, 1].use_axes == list("tzy")
+    assert phisp[:, :, :, 1].use_axes == list("tzy")
 
 
-@pytest.mark.parametrize('phisp, tslice, slices, expected', [
-    (None, 1, (1, 1, slice(None)), list('x')),
-    (None, 1, (1, slice(None), 1), list('y')),
-    (None, 1, (slice(None), 1, 1), list('z')),
-    (None, slice(None), (1, 1, 1, slice(None)), list('x')),
-    (None, slice(None), (1, 1, slice(None), 1), list('y')),
-    (None, slice(None), (1, slice(None), 1, 1), list('z')),
-    (None, slice(None), (slice(None), 1, 1, 1), list('t')),
-], indirect=['phisp'])
+@pytest.mark.parametrize(
+    "phisp, tslice, slices, expected",
+    [
+        (None, 1, (1, 1, slice(None)), list("x")),
+        (None, 1, (1, slice(None), 1), list("y")),
+        (None, 1, (slice(None), 1, 1), list("z")),
+        (None, slice(None), (1, 1, 1, slice(None)), list("x")),
+        (None, slice(None), (1, 1, slice(None), 1), list("y")),
+        (None, slice(None), (1, slice(None), 1, 1), list("z")),
+        (None, slice(None), (slice(None), 1, 1, 1), list("t")),
+    ],
+    indirect=["phisp"],
+)
 def test_1dslice(phisp, tslice, slices, expected):
     """1dslice のテストを行う。
-    
+
     Parameters
     ----------
     phisp : object
@@ -184,7 +195,7 @@ def test_1dslice(phisp, tslice, slices, expected):
 
 def test_shape(phisp):
     """shape のテストを行う。
-    
+
     Parameters
     ----------
     phisp : object
@@ -201,28 +212,31 @@ def test_shape(phisp):
     assert phisp[1].shape == (100, 30, 30)
 
 
-@pytest.mark.parametrize('name', [
-    ('phisp'),
-    ('nd1p'),
-    ('nd12p'),
-    ('jx'),
-    ('jy'),
-    ('jz'),
-    ('bx'),
-    ('by'),
-    ('bz'),
-    ('ex'),
-    ('ey'),
-    ('ez'),
-    ('j1x'),
-    ('j1y'),
-    ('j1z'),
-    ('rho'),
-    ('rhobk')
-])
+@pytest.mark.parametrize(
+    "name",
+    [
+        ("phisp"),
+        ("nd1p"),
+        ("nd12p"),
+        ("jx"),
+        ("jy"),
+        ("jz"),
+        ("bx"),
+        ("by"),
+        ("bz"),
+        ("ex"),
+        ("ey"),
+        ("ez"),
+        ("j1x"),
+        ("j1y"),
+        ("j1z"),
+        ("rho"),
+        ("rhobk"),
+    ],
+)
 def test_name2unit(name):
     """name2unit のテストを行う。
-    
+
     Parameters
     ----------
     name : object

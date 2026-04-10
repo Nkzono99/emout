@@ -11,6 +11,7 @@ from emout.core.relocation.magnetic import relocated_magnetic_field
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uniform_field(value, shape=(5, 6, 7)):
     """Return a 3-D array filled with *value*."""
     return np.full(shape, value, dtype=float)
@@ -31,6 +32,7 @@ def _ramp_along_axis(axis, shape=(5, 6, 7)):
 # ===================================================================
 # Electric-field relocation
 # ===================================================================
+
 
 class TestRelocatedElectricFieldUniform:
     """A uniform field should stay uniform after relocation (interior)."""
@@ -149,17 +151,21 @@ class TestRelocatedElectricFieldPeriodic:
 # Magnetic-field relocation
 # ===================================================================
 
+
 class TestRelocatedMagneticFieldUniform:
     """Uniform magnetic field stays uniform after 4-point averaging."""
 
     @pytest.mark.parametrize("axis", [0, 1, 2])
-    @pytest.mark.parametrize("btypes", [
-        ("periodic", "periodic"),
-        ("dirichlet", "dirichlet"),
-        ("neumann", "neumann"),
-        ("periodic", "neumann"),
-        ("dirichlet", "periodic"),
-    ])
+    @pytest.mark.parametrize(
+        "btypes",
+        [
+            ("periodic", "periodic"),
+            ("dirichlet", "dirichlet"),
+            ("neumann", "neumann"),
+            ("periodic", "neumann"),
+            ("dirichlet", "periodic"),
+        ],
+    )
     def test_uniform_field(self, axis, btypes):
         shape = (5, 6, 7)
         bf = _uniform_field(4.0, shape)
@@ -180,11 +186,14 @@ class TestRelocatedMagneticFieldShape:
     """Output shape must match input shape."""
 
     @pytest.mark.parametrize("axis", [0, 1, 2])
-    @pytest.mark.parametrize("btypes", [
-        ("periodic", "periodic"),
-        ("dirichlet", "neumann"),
-        ("neumann", "dirichlet"),
-    ])
+    @pytest.mark.parametrize(
+        "btypes",
+        [
+            ("periodic", "periodic"),
+            ("dirichlet", "neumann"),
+            ("neumann", "dirichlet"),
+        ],
+    )
     def test_shape_preserved(self, axis, btypes):
         shape = (4, 5, 6)
         bf = np.random.default_rng(0).random(shape)
@@ -223,24 +232,24 @@ class TestRelocatedMagneticFieldAveraging:
         bfe[:, 0, :] = bfe[:, -2, :]
         bfe[:, -1, :] = bfe[:, 1, :]
 
-        expected = 0.25 * (
-            bfe[:, :-1, :-1] + bfe[:, 1:, :-1]
-            + bfe[:, :-1, 1:] + bfe[:, 1:, 1:]
-        )
+        expected = 0.25 * (bfe[:, :-1, :-1] + bfe[:, 1:, :-1] + bfe[:, :-1, 1:] + bfe[:, 1:, 1:])
         np.testing.assert_allclose(rbf, expected)
 
 
 class TestRelocatedMagneticFieldBoundaryTypes:
     """Each boundary type (periodic/dirichlet/neumann) for each orthogonal axis."""
 
-    @pytest.mark.parametrize("btypes", [
-        ("dirichlet", "periodic"),
-        ("periodic", "dirichlet"),
-        ("neumann", "periodic"),
-        ("periodic", "neumann"),
-        ("dirichlet", "neumann"),
-        ("neumann", "dirichlet"),
-    ])
+    @pytest.mark.parametrize(
+        "btypes",
+        [
+            ("dirichlet", "periodic"),
+            ("periodic", "dirichlet"),
+            ("neumann", "periodic"),
+            ("periodic", "neumann"),
+            ("dirichlet", "neumann"),
+            ("neumann", "dirichlet"),
+        ],
+    )
     def test_mixed_btypes_no_crash(self, btypes):
         """All btypes combinations should run without error."""
         shape = (5, 6, 7)

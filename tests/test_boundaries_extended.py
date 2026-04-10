@@ -4,7 +4,6 @@ helpers, and uncovered edge-case paths.
 
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,8 +12,6 @@ import pytest
 
 from emout.core.boundaries import (
     BoundaryCollection,
-    CuboidBoundary,
-    SphereBoundary,
 )
 from emout.core.boundaries._helpers import (
     _accepted_kwargs,
@@ -26,7 +23,6 @@ from emout.core.boundaries._helpers import (
 from emout.core.boundaries._collection import _offset_mesh
 from emout.plot.surface_cut import (
     CompositeMeshSurface,
-    MeshSurface3D,
     SphereMeshSurface,
 )
 from emout.utils import InpFile, Units
@@ -137,7 +133,8 @@ class TestFromBoundaries:
 
     def test_from_boundary_list(self, coll: BoundaryCollection, unit: Units):
         explicit = BoundaryCollection.from_boundaries(
-            [coll[0], coll[1]], unit=unit,
+            [coll[0], coll[1]],
+            unit=unit,
         )
         assert len(explicit) == 2
         assert explicit.unit is unit
@@ -199,15 +196,21 @@ class TestOffsetMesh:
         assert V_shifted.shape == V_orig.shape
         # x shifted by +10
         np.testing.assert_allclose(
-            V_shifted[:, 0], V_orig[:, 0] + 10.0, atol=1e-10,
+            V_shifted[:, 0],
+            V_orig[:, 0] + 10.0,
+            atol=1e-10,
         )
         # y shifted by -5
         np.testing.assert_allclose(
-            V_shifted[:, 1], V_orig[:, 1] - 5.0, atol=1e-10,
+            V_shifted[:, 1],
+            V_orig[:, 1] - 5.0,
+            atol=1e-10,
         )
         # z unchanged (offset=0.0)
         np.testing.assert_allclose(
-            V_shifted[:, 2], V_orig[:, 2], atol=1e-10,
+            V_shifted[:, 2],
+            V_orig[:, 2],
+            atol=1e-10,
         )
 
     def test_offset_with_none_elements(self):

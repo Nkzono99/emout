@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-import scipy.constants as cn
 
 from emout.utils.poisson import (
     DirichletPoissonBoundary,
@@ -17,6 +16,7 @@ from emout.utils.poisson import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _grid_shape(nx, ny, nz):
     """Return grid shape (nz+1, ny+1, nx+1)."""
     return (nz + 1, ny + 1, nx + 1)
@@ -25,6 +25,7 @@ def _grid_shape(nx, ny, nz):
 # ---------------------------------------------------------------------------
 # 1. Default arguments: boundary_types and boundary_values initialised
 # ---------------------------------------------------------------------------
+
 
 class TestDefaultArguments:
     """Cover lines 50-53: default boundary_types/boundary_values."""
@@ -41,6 +42,7 @@ class TestDefaultArguments:
 # ---------------------------------------------------------------------------
 # 2. btypes short-string parsing
 # ---------------------------------------------------------------------------
+
 
 class TestBtypesParsing:
     """Cover lines 56-62: short-string btypes → boundary_types expansion."""
@@ -75,6 +77,7 @@ class TestBtypesParsing:
 # ---------------------------------------------------------------------------
 # 3. All-periodic with known analytic solution (sin wave)
 # ---------------------------------------------------------------------------
+
 
 class TestPeriodicAnalytic:
     """Verify against a known analytic solution on a periodic domain.
@@ -118,6 +121,7 @@ class TestPeriodicAnalytic:
 # 4. Mixed boundary types
 # ---------------------------------------------------------------------------
 
+
 class TestMixedBoundaries:
     """Cover mixed boundary combinations and all boundary class code paths."""
 
@@ -145,6 +149,7 @@ class TestMixedBoundaries:
 # ---------------------------------------------------------------------------
 # 5. All-Dirichlet with non-zero boundary values
 # ---------------------------------------------------------------------------
+
 
 class TestDirichletNonZeroBV:
     """Cover boundary value transposition (lines 84-85) and correction (line 120).
@@ -200,6 +205,7 @@ class TestDirichletNonZeroBV:
 # 6. All-Neumann boundaries
 # ---------------------------------------------------------------------------
 
+
 class TestNeumannBoundaries:
     """Cover Neumann boundary class and the all-periodic/neumann zero-freq
     guard (lines 112-113)."""
@@ -234,19 +240,16 @@ class TestNeumannBoundaries:
 # 7. Output shape matches input for various sizes
 # ---------------------------------------------------------------------------
 
+
 class TestOutputShape:
-    @pytest.mark.parametrize(
-        "nx,ny,nz", [(4, 4, 4), (8, 16, 4), (16, 8, 32)]
-    )
+    @pytest.mark.parametrize("nx,ny,nz", [(4, 4, 4), (8, 16, 4), (16, 8, 32)])
     def test_output_shape_periodic(self, nx, ny, nz):
         shape = _grid_shape(nx, ny, nz)
         rho = np.zeros(shape)
         phi = poisson(rho, dx=1.0)
         assert phi.shape == shape
 
-    @pytest.mark.parametrize(
-        "nx,ny,nz", [(4, 4, 4), (8, 8, 8)]
-    )
+    @pytest.mark.parametrize("nx,ny,nz", [(4, 4, 4), (8, 8, 8)])
     def test_output_shape_dirichlet(self, nx, ny, nz):
         shape = _grid_shape(nx, ny, nz)
         rho = np.zeros(shape)
@@ -257,6 +260,7 @@ class TestOutputShape:
 # ---------------------------------------------------------------------------
 # 8. Scalar dx parameter
 # ---------------------------------------------------------------------------
+
 
 class TestDxScalar:
     """dx affects the magnitude of the potential."""
@@ -283,6 +287,7 @@ class TestDxScalar:
 # ---------------------------------------------------------------------------
 # 9. Boundary class unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestBoundaryClasses:
     """Direct tests on individual boundary classes."""
@@ -368,6 +373,7 @@ class TestBoundaryClasses:
 # ---------------------------------------------------------------------------
 # 10. FFT3d class
 # ---------------------------------------------------------------------------
+
 
 class TestFFT3d:
     """Direct tests on the FFT3d wrapper."""

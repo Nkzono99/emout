@@ -56,6 +56,8 @@ distributed = [
 ]
 dev = [
   "pytest",
+  "pre-commit",
+  "ruff",
 ]
 
 [project.scripts]
@@ -67,3 +69,24 @@ Repository = "https://github.com/Nkzono99/emout.git"
 [tool.setuptools.packages.find]
 include = ["emout*"]
 namespaces = false
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+  "E741",   # ambiguous variable name (l, I) — common in physics code
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]   # re-exports and star imports
+"emout/emout/__init__.py" = ["E402", "F401", "F403"]
+"tests/**" = ["F841", "E721"]      # unused vars and type() checks common in tests
+
+[tool.ruff.format]
+quote-style = "double"

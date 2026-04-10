@@ -109,14 +109,14 @@ def test_rmod():
 
 def test_pow_scalar():
     g = Group([2, 3, 4])
-    result = g ** 2
+    result = g**2
     assert result.objs == [4, 9, 16]
 
 
 def test_pow_group():
     g1 = Group([2, 3, 4])
     g2 = Group([3, 2, 1])
-    result = g1 ** g2
+    result = g1**g2
     assert result.objs == [8, 9, 4]
 
 
@@ -210,7 +210,7 @@ def test_float():
 def test_complex():
     g = Group([1, 2, 3])
     result = g.__complex__()
-    assert result.objs == [(1+0j), (2+0j), (3+0j)]
+    assert result.objs == [(1 + 0j), (2 + 0j), (3 + 0j)]
 
 
 def test_bool():
@@ -321,16 +321,24 @@ def test_call_group_args():
 
 
 def test_call_kwargs():
-    def f(x=0): return x + 1
-    def h(x=0): return x * 2
+    def f(x=0):
+        return x + 1
+
+    def h(x=0):
+        return x * 2
+
     g = Group([f, h])
     result = g(x=5)
     assert result.objs == [6, 10]
 
 
 def test_call_group_kwargs():
-    def f(x=0): return x + 1
-    def h(x=0): return x * 2
+    def f(x=0):
+        return x + 1
+
+    def h(x=0):
+        return x * 2
+
     g = Group([f, h])
     result = g(x=Group([10, 20]))
     assert result.objs == [11, 40]
@@ -358,6 +366,7 @@ def test_getattr_scalar():
     class Obj:
         def __init__(self, val):
             self.val = val
+
     g = Group([Obj(1), Obj(2)])
     result = g.val
     assert result.objs == [1, 2]
@@ -368,6 +377,7 @@ def test_getattr_group():
         def __init__(self, a, b):
             self.a = a
             self.b = b
+
     g = Group([Obj(1, 10), Obj(2, 20)])
     keys = Group(["a", "b"])
     result = g.__getattr__(keys)
@@ -378,6 +388,7 @@ def test_setattr_scalar():
     class Obj:
         def __init__(self):
             self.x = 0
+
     o1, o2 = Obj(), Obj()
     g = Group([o1, o2])
     g.x = 99
@@ -389,6 +400,7 @@ def test_setattr_group_values():
     class Obj:
         def __init__(self):
             self.x = 0
+
     o1, o2 = Obj(), Obj()
     g = Group([o1, o2])
     g.x = Group([10, 20])
@@ -491,6 +503,7 @@ def test_binary_op_preserves_attrs():
 def test_binary_op_preserves_type():
     class MyGroup(Group):
         pass
+
     g = MyGroup([1, 2, 3])
     result = g + 1
     assert type(result) is MyGroup

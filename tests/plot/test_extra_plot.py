@@ -7,7 +7,7 @@ Data objects are mocked with synthetic numpy arrays.
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -270,9 +270,12 @@ class TestPlotSurfaceWithHole:
 
         monkeypatch.setattr(plt, "show", MagicMock())
         inp = _make_inp(
-            xlrechole=(0, 5), xurechole=(0, 15),
-            ylrechole=(0, 3), yurechole=(0, 12),
-            zlrechole=(0, 2), zurechole=(20,),
+            xlrechole=(0, 5),
+            xurechole=(0, 15),
+            ylrechole=(0, 3),
+            yurechole=(0, 12),
+            zlrechole=(0, 2),
+            zurechole=(20,),
         )
         data = _SliceableMock()
         plot_surface_with_hole(data, inp)
@@ -301,7 +304,8 @@ class TestPlotHoleLine:
         """Common plt patches for plot_hole_line tests."""
         plot_calls = []
         monkeypatch.setattr(
-            plt, "plot",
+            plt,
+            "plot",
             lambda *a, **kw: plot_calls.append((a, kw)) or [MagicMock()],
         )
         monkeypatch.setattr(plt, "xlim", lambda *a: (0, 100))
@@ -323,10 +327,15 @@ class TestPlotHoleLine:
         calls = self._patch_plt(monkeypatch)
         emout = MagicMock()
         emout.inp = SimpleNamespace(
-            xlrechole=[0, 10], xurechole=[0, 30],
-            ylrechole=[0, 5], yurechole=[0, 25],
-            zlrechole=[0, 8], zurechole=[40],
-            nx=64, ny=64, nz=64,
+            xlrechole=[0, 10],
+            xurechole=[0, 30],
+            ylrechole=[0, 5],
+            yurechole=[0, 25],
+            zlrechole=[0, 8],
+            zurechole=[40],
+            nx=64,
+            ny=64,
+            nz=64,
         )
         emout.unit = _make_unit()
         plot_hole_line(emout, use_si=True)
@@ -341,8 +350,8 @@ class TestPlotHoleLine:
         unit = _make_unit()
         plot_hole_line(inp, unit=unit, use_si=True)
         xs = calls[0][0][0]
-        assert xs[1] == pytest.approx(0.1)   # xl=10 * 0.01
-        assert xs[3] == pytest.approx(0.3)   # xu=30 * 0.01
+        assert xs[1] == pytest.approx(0.1)  # xl=10 * 0.01
+        assert xs[3] == pytest.approx(0.3)  # xu=30 * 0.01
 
     def test_use_si_false(self, monkeypatch):
         """use_si=False keeps grid units."""
@@ -352,9 +361,7 @@ class TestPlotHoleLine:
         inp = _make_inp_mock_for_inpfile()
         plot_hole_line(inp, use_si=False)
         xs = calls[0][0][0]
-        np.testing.assert_array_almost_equal(
-            xs, [0, 10, 10, 30, 30, 63]
-        )
+        np.testing.assert_array_almost_equal(xs, [0, 10, 10, 30, 30, 63])
 
     def test_use_si_true_unit_none(self, monkeypatch):
         """use_si=True with unit=None does not convert."""
@@ -375,7 +382,7 @@ class TestPlotHoleLine:
         plot_hole_line(inp, use_si=False, offsets=(100, 200))
         xs, ys = calls[0][0][0], calls[0][0][1]
         assert xs[0] == pytest.approx(100.0)
-        assert ys[0] == pytest.approx(240.0)   # zu=40 + 200
+        assert ys[0] == pytest.approx(240.0)  # zu=40 + 200
 
     def test_color_forwarded(self, monkeypatch):
         """color keyword reaches plt.plot."""
@@ -400,12 +407,8 @@ class TestPlotHoleLine:
         xlim_calls = []
         ylim_calls = []
         monkeypatch.setattr(plt, "plot", lambda *a, **kw: [MagicMock()])
-        monkeypatch.setattr(
-            plt, "xlim", lambda *a: xlim_calls.append(a) or (0, 100)
-        )
-        monkeypatch.setattr(
-            plt, "ylim", lambda *a: ylim_calls.append(a) or (0, 100)
-        )
+        monkeypatch.setattr(plt, "xlim", lambda *a: xlim_calls.append(a) or (0, 100))
+        monkeypatch.setattr(plt, "ylim", lambda *a: ylim_calls.append(a) or (0, 100))
         plot_hole_line(_make_inp_mock_for_inpfile(), fix_lims=True)
         assert len(xlim_calls) >= 2
         assert len(ylim_calls) >= 2
@@ -416,9 +419,7 @@ class TestPlotHoleLine:
 
         xlim_calls = []
         monkeypatch.setattr(plt, "plot", lambda *a, **kw: [MagicMock()])
-        monkeypatch.setattr(
-            plt, "xlim", lambda *a: xlim_calls.append(a) or (0, 100)
-        )
+        monkeypatch.setattr(plt, "xlim", lambda *a: xlim_calls.append(a) or (0, 100))
         monkeypatch.setattr(plt, "ylim", lambda *a: (0, 100))
         plot_hole_line(_make_inp_mock_for_inpfile(), fix_lims=False)
         assert len(xlim_calls) == 0
@@ -508,9 +509,7 @@ class TestPlotLineOfHoleHalf:
         for off_val in [5, 20]:
             ax = MagicMock()
             monkeypatch.setattr(plt, "gca", lambda: ax)
-            plot_line_of_hole_half(
-                _make_inp(), off=off_val, unit=_make_unit_translator()
-            )
+            plot_line_of_hole_half(_make_inp(), off=off_val, unit=_make_unit_translator())
             first_call_args = ax.plot.call_args_list[0][0]
             results[off_val] = first_call_args
         assert not np.array_equal(results[5][0], results[20][0])
@@ -521,9 +520,7 @@ class TestPlotLineOfHoleHalf:
 
         ax = MagicMock()
         monkeypatch.setattr(plt, "gca", lambda: ax)
-        result = plot_line_of_hole_half(
-            _make_inp(), off=10, unit=_make_unit_translator()
-        )
+        result = plot_line_of_hole_half(_make_inp(), off=10, unit=_make_unit_translator())
         assert result is None
 
     def test_polygon_point_counts(self, monkeypatch):
@@ -532,9 +529,7 @@ class TestPlotLineOfHoleHalf:
 
         ax = MagicMock()
         monkeypatch.setattr(plt, "gca", lambda: ax)
-        plot_line_of_hole_half(
-            _make_inp(), off=10, unit=_make_unit_translator()
-        )
+        plot_line_of_hole_half(_make_inp(), off=10, unit=_make_unit_translator())
         calls = ax.plot.call_args_list
         # First 3 calls are polygons: surf(9), bottom(5), bottom2(5)
         assert len(calls[0][0][0]) == 9  # surf_points
@@ -547,9 +542,7 @@ class TestPlotLineOfHoleHalf:
 
         ax = MagicMock()
         monkeypatch.setattr(plt, "gca", lambda: ax)
-        plot_line_of_hole_half(
-            _make_inp(), off=10, unit=_make_unit_translator()
-        )
+        plot_line_of_hole_half(_make_inp(), off=10, unit=_make_unit_translator())
         for c in ax.plot.call_args_list[3:]:
             assert len(c[0][0]) == 2  # each line has 2 points
 

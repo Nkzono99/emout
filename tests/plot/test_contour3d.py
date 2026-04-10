@@ -13,7 +13,7 @@ matplotlib.use("Agg")
 
 def test_format_level_value():
     """format level value のテストを行う。
-    
+
     Returns
     -------
     None
@@ -26,7 +26,7 @@ def test_format_level_value():
 
 def test_format_level_value_invalid_sigfigs():
     """format level value invalid sigfigs のテストを行う。
-    
+
     Returns
     -------
     None
@@ -38,7 +38,7 @@ def test_format_level_value_invalid_sigfigs():
 
 def test_resolve_shared_exponent_auto():
     """resolve shared exponent auto のテストを行う。
-    
+
     Returns
     -------
     None
@@ -52,7 +52,7 @@ def test_resolve_shared_exponent_auto():
 
 def test_contour3d_clabel_shared_exponent():
     """contour3d clabel shared exponent のテストを行う。
-    
+
     Returns
     -------
     None

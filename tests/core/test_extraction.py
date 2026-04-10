@@ -1,7 +1,7 @@
 """Tests for emout.core.extraction.EmoutDataExtraction."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import h5py
 import numpy as np
@@ -14,6 +14,7 @@ from emout.core.extraction import EmoutDataExtraction
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_data(directory, convkey=None):
     """Build a mock Emout object with the minimum interface used by
@@ -52,6 +53,7 @@ def _make_grid_data(shape=(4, 5, 6)):
 # Initialization
 # ===================================================================
 
+
 class TestEmoutDataExtractionInit:
     """Constructor creates the extract directory and saves plasma.inp."""
 
@@ -84,6 +86,7 @@ class TestEmoutDataExtractionInit:
 # ===================================================================
 # Properties delegated to Emout
 # ===================================================================
+
 
 class TestDelegatedProperties:
     """Properties that pass through to the wrapped Emout."""
@@ -126,6 +129,7 @@ class TestDelegatedProperties:
 # extract_dir computation
 # ===================================================================
 
+
 class TestExtractDir:
     """extract_dir derives the path from directory + nparent."""
 
@@ -158,6 +162,7 @@ class TestExtractDir:
 # ===================================================================
 # __getattr__ — dynamic attribute access
 # ===================================================================
+
 
 class TestGetattr:
     """__getattr__ delegates to Emout and triggers save_hdf5."""
@@ -226,6 +231,7 @@ class TestGetattr:
 # ===================================================================
 # save_hdf5
 # ===================================================================
+
 
 class TestSaveHdf5:
     """save_hdf5 writes last-timestep data to an HDF5 file."""
@@ -302,6 +308,7 @@ class TestSaveHdf5:
 # ===================================================================
 # is_valid delegation
 # ===================================================================
+
 
 class TestIsValid:
     """is_valid() delegates to the wrapped Emout."""

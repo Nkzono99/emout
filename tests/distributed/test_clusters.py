@@ -8,15 +8,12 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, mock_open, call
+from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 pytestmark = pytest.mark.skipif(
@@ -111,17 +108,13 @@ class TestInit:
     def test_env_mods_none_becomes_empty_list(self, tmp_path):
         from emout.distributed.clusters import SimpleDaskCluster
 
-        cluster = SimpleDaskCluster(
-            scheduler_ip="1.2.3.4", env_mods=None, logdir=str(tmp_path)
-        )
+        cluster = SimpleDaskCluster(scheduler_ip="1.2.3.4", env_mods=None, logdir=str(tmp_path))
         assert cluster.env_mods == []
 
     def test_sbatch_extra_none_becomes_empty_list(self, tmp_path):
         from emout.distributed.clusters import SimpleDaskCluster
 
-        cluster = SimpleDaskCluster(
-            scheduler_ip="1.2.3.4", sbatch_extra=None, logdir=str(tmp_path)
-        )
+        cluster = SimpleDaskCluster(scheduler_ip="1.2.3.4", sbatch_extra=None, logdir=str(tmp_path))
         assert cluster.sbatch_extra == []
 
     def test_initial_worker_job_ids_empty(self, tmp_path):
@@ -143,8 +136,7 @@ class TestStartScheduler:
         mock_proc.poll.return_value = None  # still running
         mock_proc.pid = 12345
 
-        with patch("subprocess.Popen", return_value=mock_proc) as mock_popen, \
-             patch("time.sleep"):
+        with patch("subprocess.Popen", return_value=mock_proc) as mock_popen, patch("time.sleep"):
             cluster.start_scheduler()
 
         assert cluster._sched_proc is mock_proc
@@ -163,8 +155,7 @@ class TestStartScheduler:
         mock_proc = MagicMock()
         mock_proc.poll.return_value = None
 
-        with patch("subprocess.Popen", return_value=mock_proc) as mock_popen, \
-             patch("time.sleep"):
+        with patch("subprocess.Popen", return_value=mock_proc) as mock_popen, patch("time.sleep"):
             cluster.start_scheduler(no_dashboard=False)
 
         cmd = mock_popen.call_args[0][0]
@@ -185,8 +176,7 @@ class TestStartScheduler:
         mock_proc = MagicMock()
         mock_proc.poll.return_value = 1  # exited immediately
 
-        with patch("subprocess.Popen", return_value=mock_proc), \
-             patch("time.sleep"):
+        with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
             with pytest.raises(RuntimeError, match="Scheduler failed to start"):
                 cluster.start_scheduler()
 
@@ -203,9 +193,9 @@ class TestStartScheduler:
             open_calls.append(str(path))
             return MagicMock()  # mock file handle
 
-        with patch("subprocess.Popen", return_value=mock_proc), \
-             patch("time.sleep"), \
-             patch("builtins.open", tracking_open):
+        with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"), patch(
+            "builtins.open", tracking_open
+        ):
             cluster.start_scheduler()
 
         log_dir = str(cluster.logdir)
@@ -303,8 +293,9 @@ class TestSubmitWorker:
         completed.returncode = 0
         completed.stdout = "Submitted batch job 123456"
 
-        with patch("subprocess.run", return_value=completed), \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")):
+        with patch("subprocess.run", return_value=completed), patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        ):
             job_ids = cluster.submit_worker(jobs=1)
 
         assert job_ids == [123456]
@@ -326,8 +317,9 @@ class TestSubmitWorker:
             result.stdout = f"Submitted batch job {100 + call_count}"
             return result
 
-        with patch("subprocess.run", side_effect=fake_run), \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")):
+        with patch("subprocess.run", side_effect=fake_run), patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        ):
             job_ids = cluster.submit_worker(jobs=3)
 
         assert len(job_ids) == 3
@@ -349,8 +341,9 @@ class TestSubmitWorker:
             result.stdout = f"Submitted batch job {counter[0]}"
             return result
 
-        with patch("subprocess.run", side_effect=fake_run), \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")):
+        with patch("subprocess.run", side_effect=fake_run), patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        ):
             cluster.submit_worker(jobs=2)
             cluster.submit_worker(jobs=1)
 
@@ -366,8 +359,9 @@ class TestSubmitWorker:
         completed.returncode = 1
         completed.stderr = "sbatch: error: allocation failure"
 
-        with patch("subprocess.run", return_value=completed), \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")):
+        with patch("subprocess.run", return_value=completed), patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        ):
             with pytest.raises(RuntimeError, match="sbatch failed"):
                 cluster.submit_worker()
 
@@ -381,8 +375,9 @@ class TestSubmitWorker:
         completed.returncode = 0
         completed.stdout = "Unexpected output with no number"
 
-        with patch("subprocess.run", return_value=completed), \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")):
+        with patch("subprocess.run", return_value=completed), patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        ):
             with pytest.raises(RuntimeError, match="Could not parse job ID"):
                 cluster.submit_worker()
 
@@ -396,8 +391,9 @@ class TestSubmitWorker:
         completed.returncode = 0
         completed.stdout = "Submitted batch job 999"
 
-        with patch("subprocess.run", return_value=completed) as mock_run, \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")):
+        with patch("subprocess.run", return_value=completed) as mock_run, patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        ):
             cluster.submit_worker()
 
         call_kwargs = mock_run.call_args[1]
@@ -575,9 +571,9 @@ class TestGetClient:
                 raise ConnectionError("not ready")
             return mock_client
 
-        with patch("emout.distributed.clusters.Client", side_effect=fake_client), \
-             patch("time.sleep"), \
-             patch("time.time", side_effect=[0, 0.1, 0.2, 0.3]):
+        with patch("emout.distributed.clusters.Client", side_effect=fake_client), patch("time.sleep"), patch(
+            "time.time", side_effect=[0, 0.1, 0.2, 0.3]
+        ):
             result = cluster.get_client(timeout=10.0)
 
         assert result is mock_client
@@ -596,9 +592,9 @@ class TestGetClient:
             raise ConnectionError("not ready")
 
         # time.time returns increasing values that exceed timeout
-        with patch("emout.distributed.clusters.Client", side_effect=fake_client), \
-             patch("time.sleep"), \
-             patch("time.time", side_effect=[0, 100]):
+        with patch("emout.distributed.clusters.Client", side_effect=fake_client), patch("time.sleep"), patch(
+            "time.time", side_effect=[0, 100]
+        ):
             with pytest.raises(RuntimeError, match="Could not connect"):
                 cluster.get_client(timeout=5.0)
 
@@ -666,8 +662,7 @@ class TestLifecycle:
         mock_proc.poll.return_value = None
         mock_proc.pid = 42
 
-        with patch("subprocess.Popen", return_value=mock_proc), \
-             patch("time.sleep"):
+        with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
             cluster.start_scheduler()
 
         assert cluster._sched_proc is not None
@@ -677,8 +672,9 @@ class TestLifecycle:
         completed.returncode = 0
         completed.stdout = "Submitted batch job 555"
 
-        with patch("subprocess.run", return_value=completed), \
-             patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/w.sh")):
+        with patch("subprocess.run", return_value=completed), patch.object(
+            cluster, "_generate_worker_script", return_value=Path("/tmp/w.sh")
+        ):
             ids = cluster.submit_worker(jobs=1)
 
         assert ids == [555]

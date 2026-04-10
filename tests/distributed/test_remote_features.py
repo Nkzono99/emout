@@ -211,11 +211,17 @@ def test_remote_heatmap_fetch_returns_local_heatmap(monkeypatch):
 
     class FakeSession:
         def fetch_heatmap_data(self, key, var1, var2):
-            return FakeFuture({
-                "X": X, "Y": Y, "Z": Z,
-                "xlabel": "vx", "ylabel": "vz",
-                "title": "vx vs vz", "units": None,
-            })
+            return FakeFuture(
+                {
+                    "X": X,
+                    "Y": Y,
+                    "Z": Z,
+                    "xlabel": "vx",
+                    "ylabel": "vz",
+                    "title": "vx vs vz",
+                    "units": None,
+                }
+            )
 
     hm = RemoteHeatmap(FakeSession(), "k", "vx", "vz")
     local = hm.fetch()
@@ -236,11 +242,16 @@ def test_remote_xy_data_fetch_returns_local_xy_data(monkeypatch):
 
     class FakeSession:
         def fetch_xy_data(self, key, var1, var2):
-            return FakeFuture({
-                "x": x, "y": y,
-                "xlabel": "x", "ylabel": "vz",
-                "title": "x vs vz", "units": None,
-            })
+            return FakeFuture(
+                {
+                    "x": x,
+                    "y": y,
+                    "xlabel": "x",
+                    "ylabel": "vz",
+                    "title": "x vs vz",
+                    "units": None,
+                }
+            )
 
     proxy = RemoteXYData(FakeSession(), "k", "x", "vz")
     local = proxy.fetch()
@@ -261,9 +272,11 @@ def test_remote_heatmap_plot_outside_recording_renders_on_server():
             render_calls.append((key, var1, var2))
             # Return 1x1 white PNG
             import matplotlib
+
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
             from io import BytesIO
+
             fig, ax = plt.subplots()
             buf = BytesIO()
             fig.savefig(buf, format="png")
@@ -271,6 +284,7 @@ def test_remote_heatmap_plot_outside_recording_renders_on_server():
             return FakeFuture(buf.getvalue())
 
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 

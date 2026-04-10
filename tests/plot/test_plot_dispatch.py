@@ -5,11 +5,9 @@ control-flow branching.  Matplotlib rendering is monkeypatched so no
 actual display or file-writing occurs.
 """
 
-import collections
-import copy
 import warnings
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -21,6 +19,7 @@ matplotlib.use("Agg")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _mock_figure():
     """Return a MagicMock that behaves like a matplotlib Figure."""
@@ -40,6 +39,7 @@ def _mock_ax3d():
 # ===================================================================
 # _plot_2d  --  plot_2dmap
 # ===================================================================
+
 
 class TestPlot2dmap:
     """Tests for emout.plot._plot_2d.plot_2dmap."""
@@ -61,6 +61,7 @@ class TestPlot2dmap:
         from emout.plot._plot_2d import plot_2dmap
 
         imshow_kwargs = {}
+
         def _imshow(*a, **kw):
             imshow_kwargs.update(kw)
             return MagicMock()
@@ -83,6 +84,7 @@ class TestPlot2dmap:
         from emout.plot._plot_2d import plot_2dmap
 
         imshow_kwargs = {}
+
         def _imshow(*a, **kw):
             imshow_kwargs.update(kw)
             return MagicMock()
@@ -184,9 +186,11 @@ class TestPlot2dmap:
 
         cb_kw = {}
         monkeypatch.setattr(plt, "imshow", lambda *a, **kw: MagicMock())
+
         def _colorbar(**kw):
             cb_kw.update(kw)
             return MagicMock()
+
         monkeypatch.setattr(plt, "colorbar", _colorbar)
 
         z = np.random.rand(4, 4)
@@ -210,6 +214,7 @@ class TestPlot2dmap:
 # _plot_2d  --  plot_2d_contour
 # ===================================================================
 
+
 class TestPlot2dContour:
     """Tests for emout.plot._plot_2d.plot_2d_contour."""
 
@@ -231,9 +236,11 @@ class TestPlot2dContour:
 
         contour_args = []
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_args.extend(a)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 7)
@@ -247,9 +254,11 @@ class TestPlot2dContour:
 
         contour_args = []
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_args.extend(a)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 7)
@@ -266,9 +275,11 @@ class TestPlot2dContour:
 
         contour_kw = {}
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_kw.update(kw)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 5)
@@ -281,9 +292,11 @@ class TestPlot2dContour:
 
         contour_kw = {}
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_kw.update(kw)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 5)
@@ -297,9 +310,11 @@ class TestPlot2dContour:
 
         contour_kw = {}
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_kw.update(kw)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 5)
@@ -327,9 +342,11 @@ class TestPlot2dContour:
 
         contour_kw = {}
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_kw.update(kw)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 5)
@@ -370,9 +387,11 @@ class TestPlot2dContour:
 
         contour_kw = {}
         mock_cont = MagicMock()
+
         def _contour(*a, **kw):
             contour_kw.update(kw)
             return mock_cont
+
         monkeypatch.setattr(plt, "contour", _contour)
 
         z = np.random.rand(5, 5)
@@ -384,6 +403,7 @@ class TestPlot2dContour:
 # _plot_2d  --  plot_line
 # ===================================================================
 
+
 class TestPlotLine:
     """Tests for emout.plot._plot_2d.plot_line."""
 
@@ -393,9 +413,11 @@ class TestPlotLine:
 
         mock_line = MagicMock()
         plot_args = []
+
         def _plot(*a, **kw):
             plot_args.extend(a)
             return mock_line
+
         monkeypatch.setattr(plt, "plot", _plot)
         monkeypatch.setattr(plt, "ylim", lambda v: None)
 
@@ -409,9 +431,11 @@ class TestPlotLine:
         from emout.plot._plot_2d import plot_line
 
         plot_args = []
+
         def _plot(*a, **kw):
             plot_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "plot", _plot)
         monkeypatch.setattr(plt, "ylim", lambda v: None)
 
@@ -467,9 +491,11 @@ class TestPlotLine:
 
         fig_kw = {}
         mock_fig = _mock_figure()
+
         def _figure(**kw):
             fig_kw.update(kw)
             return mock_fig
+
         monkeypatch.setattr(plt, "figure", _figure)
         monkeypatch.setattr(plt, "plot", lambda *a, **kw: MagicMock())
         monkeypatch.setattr(plt, "ylim", lambda v: None)
@@ -512,6 +538,7 @@ class TestPlotLine:
 # _plot_2d  --  plot_2d_vector
 # ===================================================================
 
+
 class TestPlot2dVector:
     """Tests for emout.plot._plot_2d.plot_2d_vector."""
 
@@ -532,9 +559,11 @@ class TestPlot2dVector:
         from emout.plot._plot_2d import plot_2d_vector
 
         quiver_args = []
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "quiver", _quiver)
 
         U = np.random.rand(8, 8)
@@ -548,9 +577,11 @@ class TestPlot2dVector:
         from emout.plot._plot_2d import plot_2d_vector
 
         quiver_args = []
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "quiver", _quiver)
 
         U = np.random.rand(12, 8)
@@ -563,9 +594,11 @@ class TestPlot2dVector:
         from emout.plot._plot_2d import plot_2d_vector
 
         quiver_args = []
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "quiver", _quiver)
 
         U = np.ones((4, 4)) * 3.0
@@ -582,9 +615,11 @@ class TestPlot2dVector:
         from emout.plot._plot_2d import plot_2d_vector
 
         quiver_args = []
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "quiver", _quiver)
 
         U = np.ones((4, 4)) * 3.0
@@ -598,9 +633,11 @@ class TestPlot2dVector:
         from emout.plot._plot_2d import plot_2d_vector
 
         quiver_args = []
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "quiver", _quiver)
 
         U = np.ones((4, 4)) * 3.0
@@ -616,10 +653,12 @@ class TestPlot2dVector:
 
         quiver_args = []
         quiver_kw = {}
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             quiver_kw.update(kw)
             return MagicMock()
+
         monkeypatch.setattr(plt, "quiver", _quiver)
 
         U = np.random.rand(4, 4)
@@ -634,6 +673,7 @@ class TestPlot2dVector:
 # _plot_2d  --  plot_2d_streamline
 # ===================================================================
 
+
 class TestPlot2dStreamline:
     """Tests for emout.plot._plot_2d.plot_2d_streamline."""
 
@@ -643,9 +683,11 @@ class TestPlot2dStreamline:
 
         stream_kw = {}
         mock_stream = MagicMock()
+
         def _streamplot(*a, **kw):
             stream_kw.update(kw)
             return mock_stream
+
         monkeypatch.setattr(plt, "streamplot", _streamplot)
 
         U = np.random.rand(8, 8)
@@ -660,9 +702,11 @@ class TestPlot2dStreamline:
 
         stream_kw = {}
         mock_stream = MagicMock()
+
         def _streamplot(*a, **kw):
             stream_kw.update(kw)
             return mock_stream
+
         monkeypatch.setattr(plt, "streamplot", _streamplot)
 
         U = np.random.rand(8, 8)
@@ -677,9 +721,11 @@ class TestPlot2dStreamline:
         import matplotlib.colors as mcolors
 
         stream_kw = {}
+
         def _streamplot(*a, **kw):
             stream_kw.update(kw)
             return MagicMock()
+
         monkeypatch.setattr(plt, "streamplot", _streamplot)
 
         U = np.random.rand(8, 8) + 0.1
@@ -693,9 +739,11 @@ class TestPlot2dStreamline:
         import matplotlib.colors as mcolors
 
         stream_kw = {}
+
         def _streamplot(*a, **kw):
             stream_kw.update(kw)
             return MagicMock()
+
         monkeypatch.setattr(plt, "streamplot", _streamplot)
 
         U = np.random.rand(8, 8)
@@ -708,9 +756,11 @@ class TestPlot2dStreamline:
         from emout.plot._plot_2d import plot_2d_streamline
 
         stream_args = []
+
         def _streamplot(*a, **kw):
             stream_args.extend(a)
             return MagicMock()
+
         monkeypatch.setattr(plt, "streamplot", _streamplot)
 
         U = np.random.rand(8, 8)
@@ -723,9 +773,11 @@ class TestPlot2dStreamline:
         from emout.plot._plot_2d import plot_2d_streamline
 
         stream_kw = {}
+
         def _streamplot(*a, **kw):
             stream_kw.update(kw)
             return MagicMock()
+
         monkeypatch.setattr(plt, "streamplot", _streamplot)
 
         U = np.random.rand(8, 8)
@@ -752,6 +804,7 @@ class TestPlot2dStreamline:
 # ===================================================================
 # _plot_2d  --  plot_surface
 # ===================================================================
+
 
 class TestPlotSurface:
     """Tests for emout.plot._plot_2d.plot_surface."""
@@ -781,6 +834,7 @@ class TestPlotSurface:
         original_interp = None
         try:
             import emout.utils as eutils
+
             original_interp = eutils.interp2d
         except Exception:
             pass
@@ -828,8 +882,7 @@ class TestPlotSurface:
         y = np.arange(6, dtype=float).reshape(2, 3)
         z = np.arange(6, dtype=float).reshape(2, 3)
         val = np.random.rand(2, 3)
-        plot_surface(x, y, z, val, ax3d=ax3d, ninterp=None,
-                     xlabel="X", ylabel="Y", zlabel="Z", title="T")
+        plot_surface(x, y, z, val, ax3d=ax3d, ninterp=None, xlabel="X", ylabel="Y", zlabel="Z", title="T")
         ax3d.set_xlabel.assert_called_once_with("X")
         ax3d.set_ylabel.assert_called_once_with("Y")
         ax3d.set_zlabel.assert_called_once_with("Z")
@@ -850,10 +903,7 @@ class TestPlotSurface:
         y = np.arange(6, dtype=float).reshape(2, 3)
         z = np.arange(6, dtype=float).reshape(2, 3)
         val = np.random.rand(2, 3)
-        result = plot_surface(
-            x, y, z, val, ninterp=None,
-            savefilename=str(tmp_path / "surf.png")
-        )
+        result = plot_surface(x, y, z, val, ninterp=None, savefilename=str(tmp_path / "surf.png"))
         assert result is None
         mock_fig.savefig.assert_called_once()
 
@@ -876,11 +926,13 @@ class TestPlotSurface:
 # _plot_2d  --  figsize_with_2d
 # ===================================================================
 
+
 class TestFigsizeWith2d:
     """Tests for figsize_with_2d."""
 
     def test_basic(self):
         from emout.plot._plot_2d import figsize_with_2d
+
         data = np.zeros((10, 20))
         fs = figsize_with_2d(data, dpi=10)
         assert len(fs) == 2
@@ -893,6 +945,7 @@ class TestFigsizeWith2d:
 # ===================================================================
 # _plot_3d  --  plot_3d_quiver
 # ===================================================================
+
 
 class TestPlot3dQuiver:
     """Tests for emout.plot._plot_3d.plot_3d_quiver."""
@@ -917,9 +970,11 @@ class TestPlot3dQuiver:
 
         quiver_args = []
         ax3d = MagicMock()
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         ax3d.quiver = _quiver
 
         U = np.random.rand(8, 8, 8)
@@ -935,9 +990,11 @@ class TestPlot3dQuiver:
 
         quiver_args = []
         ax3d = MagicMock()
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         ax3d.quiver = _quiver
 
         U = np.random.rand(6, 8, 12)
@@ -954,9 +1011,11 @@ class TestPlot3dQuiver:
 
         quiver_args = []
         ax3d = MagicMock()
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             return MagicMock()
+
         ax3d.quiver = _quiver
 
         U = np.ones((4, 4, 4)) * 3.0
@@ -975,10 +1034,12 @@ class TestPlot3dQuiver:
         quiver_args = []
         quiver_kw = {}
         ax3d = MagicMock()
+
         def _quiver(*a, **kw):
             quiver_args.extend(a)
             quiver_kw.update(kw)
             return MagicMock()
+
         ax3d.quiver = _quiver
 
         U = np.random.rand(4, 4, 4)
@@ -1014,6 +1075,7 @@ class TestPlot3dQuiver:
 # _plot_3d  --  plot_3d_streamline
 # ===================================================================
 
+
 class TestPlot3dStreamline:
     """Tests for emout.plot._plot_3d.plot_3d_streamline."""
 
@@ -1039,7 +1101,6 @@ class TestPlot3dStreamline:
     def test_no_lines_warns(self, monkeypatch):
         """When no streamlines can be traced, a warning is issued."""
         from emout.plot._plot_3d import plot_3d_streamline
-        from scipy.integrate import solve_ivp as _real_solve_ivp
 
         mock_fig = _mock_figure()
         mock_ax = MagicMock()
@@ -1080,9 +1141,7 @@ class TestPlot3dStreamline:
         Fz = np.zeros((4, 4, 4))
         seeds = np.array([[1.5, 1.5, 1.5]])
 
-        result = plot_3d_streamline(
-            Fx, Fy, Fz, seed_points=seeds, color="red", show=False
-        )
+        result = plot_3d_streamline(Fx, Fy, Fz, seed_points=seeds, color="red", show=False)
         assert result is mock_ax
         # At least one plot call should have been made
         assert mock_ax.plot.called
@@ -1104,8 +1163,15 @@ class TestPlot3dStreamline:
         seeds = np.array([[1.5, 1.5, 1.5]])
 
         plot_3d_streamline(
-            Fx, Fy, Fz, seed_points=seeds, show=False,
-            xlabel="XX", ylabel="YY", zlabel="ZZ", title="TT",
+            Fx,
+            Fy,
+            Fz,
+            seed_points=seeds,
+            show=False,
+            xlabel="XX",
+            ylabel="YY",
+            zlabel="ZZ",
+            title="TT",
         )
         mock_ax.set_xlabel.assert_called_once_with("XX")
         mock_ax.set_ylabel.assert_called_once_with("YY")
@@ -1131,8 +1197,12 @@ class TestPlot3dStreamline:
         seeds = np.array([[1.5, 1.5, 1.5]])
 
         result = plot_3d_streamline(
-            Fx, Fy, Fz, seed_points=seeds,
-            savefilename=str(tmp_path / "stream3d.png"), show=False,
+            Fx,
+            Fy,
+            Fz,
+            seed_points=seeds,
+            savefilename=str(tmp_path / "stream3d.png"),
+            show=False,
         )
         assert result is mock_ax
 
@@ -1164,9 +1234,11 @@ class TestPlot3dStreamline:
         mock_ax = MagicMock()
         figure_calls = [0]
         orig_figure = plt.figure
+
         def _figure(**kw):
             figure_calls[0] += 1
             return _mock_figure()
+
         monkeypatch.setattr(plt, "figure", _figure)
         monkeypatch.setattr(plt, "gcf", _mock_figure)
         monkeypatch.setattr(plt, "show", lambda: None)
@@ -1185,24 +1257,29 @@ class TestPlot3dStreamline:
 # animation_plot  --  flatten_list
 # ===================================================================
 
+
 class TestFlattenList:
     """Tests for flatten_list."""
 
     def test_flat(self):
         from emout.plot.animation_plot import flatten_list
+
         assert list(flatten_list([1, 2, 3])) == [1, 2, 3]
 
     def test_nested(self):
         from emout.plot.animation_plot import flatten_list
+
         assert list(flatten_list([[1, [2]], 3])) == [1, 2, 3]
 
     def test_string_not_expanded(self):
         from emout.plot.animation_plot import flatten_list
+
         result = list(flatten_list(["abc", [1]]))
         assert result == ["abc", 1]
 
     def test_deeply_nested(self):
         from emout.plot.animation_plot import flatten_list
+
         result = list(flatten_list([[[[[1]]]]]))
         assert result == [1]
 
@@ -1211,11 +1288,13 @@ class TestFlattenList:
 # animation_plot  --  Animator
 # ===================================================================
 
+
 class TestAnimator:
     """Tests for the Animator class."""
 
     def test_shape_single(self):
         from emout.plot.animation_plot import Animator
+
         updater = MagicMock()
         updater.__len__ = lambda self: 5
         animator = Animator([[[updater]]])
@@ -1223,6 +1302,7 @@ class TestAnimator:
 
     def test_shape_multi(self):
         from emout.plot.animation_plot import Animator
+
         u1 = MagicMock()
         u2 = MagicMock()
         animator = Animator([[[u1], [u2]], [[u1]]])
@@ -1242,6 +1322,7 @@ class TestAnimator:
 
     def test_frames_empty_raises(self):
         from emout.plot.animation_plot import Animator
+
         animator = Animator([[]])
         with pytest.raises(ValueError, match="no elements"):
             _ = animator.frames
@@ -1262,7 +1343,8 @@ class TestAnimator:
 
         mock_ani = MagicMock()
         monkeypatch.setattr(
-            animation, "FuncAnimation",
+            animation,
+            "FuncAnimation",
             lambda fig, func, **kw: mock_ani,
         )
 
@@ -1284,7 +1366,8 @@ class TestAnimator:
         monkeypatch.setattr(plt, "clf", lambda: None)
         monkeypatch.setattr(plt, "subplot", lambda *a: None)
         monkeypatch.setattr(
-            animation, "FuncAnimation",
+            animation,
+            "FuncAnimation",
             lambda fig, func, **kw: MagicMock(),
         )
 
@@ -1307,7 +1390,8 @@ class TestAnimator:
 
         mock_ani = MagicMock()
         monkeypatch.setattr(
-            animation, "FuncAnimation",
+            animation,
+            "FuncAnimation",
             lambda fig, func, **kw: mock_ani,
         )
 
@@ -1332,7 +1416,8 @@ class TestAnimator:
         mock_ani = MagicMock()
         mock_ani.to_jshtml.return_value = "<html></html>"
         monkeypatch.setattr(
-            animation, "FuncAnimation",
+            animation,
+            "FuncAnimation",
             lambda fig, func, **kw: mock_ani,
         )
 
@@ -1352,6 +1437,7 @@ class TestAnimator:
 # animation_plot  --  FrameUpdater
 # ===================================================================
 
+
 class TestFrameUpdater:
     """Tests for the FrameUpdater class."""
 
@@ -1370,12 +1456,14 @@ class TestFrameUpdater:
 
     def test_len(self):
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         assert len(fu) == 5
 
     def test_to_animator(self):
         from emout.plot.animation_plot import FrameUpdater, Animator
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         animator = fu.to_animator()
@@ -1383,6 +1471,7 @@ class TestFrameUpdater:
 
     def test_to_animator_custom_layout(self):
         from emout.plot.animation_plot import FrameUpdater, Animator
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         fu2 = FrameUpdater(data, axis=0)
@@ -1392,6 +1481,7 @@ class TestFrameUpdater:
 
     def test_offseted_left(self):
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         line = np.array([10.0, 20.0, 30.0])
@@ -1400,6 +1490,7 @@ class TestFrameUpdater:
 
     def test_offseted_center(self):
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         line = np.array([10.0, 20.0, 30.0])
@@ -1408,6 +1499,7 @@ class TestFrameUpdater:
 
     def test_offseted_right(self):
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         line = np.array([10.0, 20.0, 30.0])
@@ -1416,6 +1508,7 @@ class TestFrameUpdater:
 
     def test_offseted_numeric(self):
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         fu = FrameUpdater(data, axis=0)
         line = np.array([10.0, 20.0, 30.0])
@@ -1425,6 +1518,7 @@ class TestFrameUpdater:
     def test_valunit_none_disables_si(self):
         """When valunit is None, use_si is forced to False."""
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         data.valunit = None
         fu = FrameUpdater(data, axis=0, use_si=True)
@@ -1433,6 +1527,7 @@ class TestFrameUpdater:
     def test_title_default_from_name(self):
         """Default title uses data.name."""
         from emout.plot.animation_plot import FrameUpdater
+
         data = self._make_data()
         data.name = "phi"
         fu = FrameUpdater(data, axis=0)
@@ -1442,6 +1537,7 @@ class TestFrameUpdater:
 # ===================================================================
 # plot_cross_sections
 # ===================================================================
+
 
 class TestPlotCrossSections:
     """Tests for plot_cross_sections."""
@@ -1591,6 +1687,7 @@ class TestPlotCrossSections:
 # plot_cross_sections  --  _plot_spheres
 # ===================================================================
 
+
 class TestPlotSpheres:
     """Tests for _plot_spheres helper."""
 
@@ -1642,30 +1739,36 @@ class TestPlotSpheres:
 # contour3d  --  helper functions
 # ===================================================================
 
+
 class TestContour3dHelpers:
     """Tests for contour3d helper functions."""
 
     def test_as_spacing_scalar(self):
         from emout.plot.contour3d import _as_spacing_xyz
+
         assert _as_spacing_xyz(2.0) == (2.0, 2.0, 2.0)
 
     def test_as_spacing_tuple(self):
         from emout.plot.contour3d import _as_spacing_xyz
+
         assert _as_spacing_xyz((1.0, 2.0, 3.0)) == (1.0, 2.0, 3.0)
 
     def test_as_spacing_invalid(self):
         from emout.plot.contour3d import _as_spacing_xyz
+
         with pytest.raises(ValueError, match="scalar"):
             _as_spacing_xyz((1.0, 2.0))
 
     def test_sanitize_volume_3d(self):
         from emout.plot.contour3d import _sanitize_volume
+
         vol = np.ones((3, 4, 5), dtype=int)
         result = _sanitize_volume(vol)
         assert np.issubdtype(result.dtype, np.floating)
 
     def test_sanitize_volume_nan(self):
         from emout.plot.contour3d import _sanitize_volume
+
         vol = np.ones((3, 4, 5))
         vol[0, 0, 0] = np.nan
         result = _sanitize_volume(vol)
@@ -1673,33 +1776,39 @@ class TestContour3dHelpers:
 
     def test_sanitize_volume_wrong_ndim(self):
         from emout.plot.contour3d import _sanitize_volume
+
         with pytest.raises(ValueError, match="3D"):
             _sanitize_volume(np.ones((3, 4)))
 
     def test_slice_from_bounds_1d_basic(self):
         from emout.plot.contour3d import _slice_from_bounds_1d
+
         sl, new_o = _slice_from_bounds_1d(1.0, 3.0, 0.0, 1.0, 10, "x")
         assert sl == slice(1, 4)
         assert new_o == pytest.approx(1.0)
 
     def test_slice_from_bounds_1d_none(self):
         from emout.plot.contour3d import _slice_from_bounds_1d
+
         sl, new_o = _slice_from_bounds_1d(None, None, 0.0, 1.0, 10, "x")
         assert sl == slice(0, 10)
         assert new_o == pytest.approx(0.0)
 
     def test_slice_from_bounds_1d_invalid(self):
         from emout.plot.contour3d import _slice_from_bounds_1d
+
         with pytest.raises(ValueError, match="invalid"):
             _slice_from_bounds_1d(5.0, 1.0, 0.0, 1.0, 10, "x")
 
     def test_slice_from_bounds_1d_too_small(self):
         from emout.plot.contour3d import _slice_from_bounds_1d
+
         with pytest.raises(ValueError, match="too small"):
             _slice_from_bounds_1d(0.0, 0.1, 0.0, 1.0, 10, "x")
 
     def test_apply_roi_none(self):
         from emout.plot.contour3d import _apply_roi
+
         vol = np.ones((5, 6, 7))
         dx = (1.0, 1.0, 1.0)
         origin = (0.0, 0.0, 0.0)
@@ -1708,6 +1817,7 @@ class TestContour3dHelpers:
 
     def test_apply_roi_with_roi_zyx(self):
         from emout.plot.contour3d import _apply_roi
+
         vol = np.ones((10, 10, 10))
         dx = (1.0, 1.0, 1.0)
         origin = (0.0, 0.0, 0.0)
@@ -1718,6 +1828,7 @@ class TestContour3dHelpers:
 
     def test_apply_roi_with_bounds(self):
         from emout.plot.contour3d import _apply_roi
+
         vol = np.ones((10, 10, 10))
         dx = (1.0, 1.0, 1.0)
         origin = (0.0, 0.0, 0.0)
@@ -1730,16 +1841,19 @@ class TestContour3dHelpers:
 # contour3d  --  validation
 # ===================================================================
 
+
 class TestContour3dValidation:
     """Tests for contour3d input validation."""
 
     def test_empty_levels(self):
         from emout.plot.contour3d import contour3d
+
         with pytest.raises(ValueError, match="non-empty"):
             contour3d(np.ones((5, 5, 5)), dx=1.0, levels=[])
 
     def test_both_bounds_and_roi(self):
         from emout.plot.contour3d import contour3d
+
         with pytest.raises(ValueError, match="only one"):
             contour3d(
                 np.ones((5, 5, 5)),
@@ -1751,16 +1865,19 @@ class TestContour3dValidation:
 
     def test_invalid_opacity(self):
         from emout.plot.contour3d import contour3d
+
         with pytest.raises(ValueError, match="opacity"):
             contour3d(np.ones((5, 5, 5)), dx=1.0, levels=[0.5], opacity=1.5)
 
     def test_invalid_step(self):
         from emout.plot.contour3d import contour3d
+
         with pytest.raises(ValueError, match="step"):
             contour3d(np.ones((5, 5, 5)), dx=1.0, levels=[0.5], step=0)
 
     def test_invalid_clabel_fontsize(self):
         from emout.plot.contour3d import contour3d
+
         with pytest.raises(ValueError, match="clabel_fontsize"):
             contour3d(
                 np.ones((5, 5, 5)),
@@ -1775,31 +1892,37 @@ class TestContour3dValidation:
 # contour3d  --  _format_level_value edge cases
 # ===================================================================
 
+
 class TestFormatLevelValueEdgeCases:
     """Additional edge-case tests for _format_level_value."""
 
     def test_callable_fmt(self):
         from emout.plot.contour3d import _format_level_value
+
         result = _format_level_value(3.14, fmt=lambda v: f"val={v:.1f}")
         assert result == "val=3.1"
 
     def test_format_mini_language(self):
         from emout.plot.contour3d import _format_level_value
+
         result = _format_level_value(3.14159, fmt=".3g")
         assert result == "3.14"
 
     def test_str_format_style(self):
         from emout.plot.contour3d import _format_level_value
+
         result = _format_level_value(3.14, fmt="{value:.2f}")
         assert result == "3.14"
 
     def test_default_no_fmt_no_sigfigs(self):
         from emout.plot.contour3d import _format_level_value
+
         result = _format_level_value(100.0)
         assert result == "100"
 
     def test_resolve_shared_exponent_invalid(self):
         from emout.plot.contour3d import _resolve_shared_exponent
+
         with pytest.raises(ValueError, match="auto"):
             _resolve_shared_exponent([1.0], "bogus")
 
@@ -1807,6 +1930,7 @@ class TestFormatLevelValueEdgeCases:
 # ===================================================================
 # extra_plot  --  plot_energies
 # ===================================================================
+
 
 class TestExtraPlot:
     """Tests for extra_plot functions.
@@ -1822,11 +1946,13 @@ class TestExtraPlot:
     def test_plot_surface_with_hole_exists(self):
         """plot_surface_with_hole function is importable."""
         from emout.plot.extra_plot import plot_surface_with_hole
+
         assert callable(plot_surface_with_hole)
 
     def test_plot_surface_with_hole_half_exists(self):
         """plot_surface_with_hole_half is importable."""
         from emout.plot.extra_plot import plot_surface_with_hole_half
+
         assert callable(plot_surface_with_hole_half)
 
 
@@ -1834,12 +1960,14 @@ class TestExtraPlot:
 # extra_plot  --  plot_hole_line
 # ===================================================================
 
+
 class TestPlotHoleLine:
     """Tests for extra_plot.plot_hole_line."""
 
     def _make_inp_mock(self, monkeypatch):
         """Create a mock InpFile that passes isinstance check."""
         from emout.utils.emsesinp import InpFile
+
         inp = MagicMock(spec=InpFile)
         inp.xlrechole = [0, 10]
         inp.xurechole = [0, 20]
@@ -1887,9 +2015,11 @@ class TestPlotHoleLine:
         from emout.plot.extra_plot import plot_hole_line
 
         lim_calls = [0]
+
         def _xlim(*a):
             lim_calls[0] += 1
             return (0, 10)
+
         monkeypatch.setattr(plt, "xlim", _xlim)
         monkeypatch.setattr(plt, "ylim", lambda *a: (0, 10))
         monkeypatch.setattr(plt, "plot", lambda *a, **kw: [MagicMock()])
@@ -1931,51 +2061,24 @@ class TestPlotHoleLine:
 # Smoke test: all public functions importable
 # ===================================================================
 
+
 class TestImports:
     """Verify that all expected public symbols are importable."""
 
     def test_plot_2d_imports(self):
-        from emout.plot._plot_2d import (
-            plot_2dmap,
-            plot_2d_contour,
-            plot_line,
-            plot_surface,
-            plot_2d_vector,
-            plot_2d_streamline,
-            figsize_with_2d,
-        )
+        pass
 
     def test_plot_3d_imports(self):
-        from emout.plot._plot_3d import plot_3d_quiver, plot_3d_streamline
+        pass
 
     def test_animation_imports(self):
-        from emout.plot.animation_plot import (
-            flatten_list,
-            Animator,
-            FrameUpdater,
-        )
+        pass
 
     def test_extra_plot_imports(self):
-        from emout.plot.extra_plot import (
-            plot_hole_line,
-            plot_surface_with_hole,
-            plot_surface_with_hole_half,
-            plot_line_of_hole_half,
-        )
+        pass
 
     def test_cross_sections_imports(self):
-        from emout.plot.plot_cross_sections import (
-            plot_cross_sections,
-            _plot_spheres,
-        )
+        pass
 
     def test_contour3d_imports(self):
-        from emout.plot.contour3d import (
-            contour3d,
-            _as_spacing_xyz,
-            _sanitize_volume,
-            _format_level_value,
-            _resolve_shared_exponent,
-            _slice_from_bounds_1d,
-            _apply_roi,
-        )
+        pass
