@@ -31,6 +31,9 @@ pip install emout
 
 # 3D 可視化（PyVista）を使う場合
 pip install "emout[pyvista]"
+
+# リモート実行（Dask + IP 自動検出）を使う場合
+pip install "emout[distributed]"
 ```
 
 ---

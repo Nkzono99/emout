@@ -14,6 +14,12 @@ For 3D visualization with PyVista:
 pip install "emout[pyvista]"
 ```
 
+For remote execution (Dask + auto IP detection):
+
+```bash
+pip install "emout[distributed]"
+```
+
 ## Loading Simulation Data
 
 ```python

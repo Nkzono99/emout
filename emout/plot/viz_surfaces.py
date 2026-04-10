@@ -8,6 +8,6 @@ New preferred usage:
     # or: from surface_cut.viz import ...
 """
 
-from surface_cut.viz import Bounds3D, plot_surfaces, add_colorbar
+from .surface_cut.viz import Bounds3D, add_colorbar, plot_surfaces
 
 __all__ = ["Bounds3D", "plot_surfaces", "add_colorbar"]

@@ -14,6 +14,12 @@ pip install emout
 pip install "emout[pyvista]"
 ```
 
+リモート実行（Dask + IP 自動検出）を使う場合:
+
+```bash
+pip install "emout[distributed]"
+```
+
 ## シミュレーションデータの読み込み
 
 ```python

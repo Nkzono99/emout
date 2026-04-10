@@ -54,6 +54,12 @@ with remote_figure(figsize=(12, 5)):
 
 ## セットアップ
 
+まず distributed 関連の依存関係を入れます:
+
+```bash
+pip install "emout[distributed]"
+```
+
 ### 1. サーバー起動（ターミナルで 1 回だけ）
 
 ```bash
