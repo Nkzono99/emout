@@ -19,7 +19,7 @@ emout は:
 
 ---
 
-- **ドキュメント:** [ユーザーガイド（日本語）](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html) | [User Guide (English)](https://nkzono99.github.io/emout/guide/quickstart.html)
+- **ドキュメント:** [ユーザーガイド (日本語/English)](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
 
 ---

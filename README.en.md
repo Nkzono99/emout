@@ -19,7 +19,7 @@ emout is:
 
 ---
 
-- **Documentation:** [User Guide (English)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html) | [ユーザーガイド（日本語）](https://nkzono99.github.io/emout/guide/quickstart.ja.html)
+- **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
 
 ---
