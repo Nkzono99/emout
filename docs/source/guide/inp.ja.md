@@ -2,7 +2,7 @@ Lang: [日本語](inp.ja.md) | [English](inp.md)
 
 # パラメータファイル (`data.inp`)
 
-emout は EMSES のパラメータファイル（`plasma.inp` または `plasma.toml`）を読み込み、辞書風オブジェクトとして属性アクセスできるようにします。
+emout は EMSES のパラメータファイル（`plasma.inp` / `plasma.toml`）を読み込み、属性アクセスできる辞書風のオブジェクトとして提供します。
 
 ## パラメータへのアクセス
 
@@ -15,7 +15,7 @@ data = emout.Emout("output_dir")
 data.inp["tmgrid"]["nx"]    # → 例: 256
 data.inp["plasma"]["wp"]    # → 例: [1.0, 0.05]
 
-# グループ名を省略（あいまいでなければ）
+# グループ名を省略（名前が一意なら）
 data.inp["nx"]              # → data.inp["tmgrid"]["nx"] と同じ
 
 # 属性スタイル
@@ -78,7 +78,8 @@ btypes = data.inp.mtd_vbnd  # 例: [0, 2, 0] → 周期-ノイマン-周期
 
 ## TOML 形式 (`plasma.toml`)
 
-emout は `plasma.toml` を透過的にサポートします。`plasma.inp` と `plasma.toml` の両方が存在する場合、`plasma.toml` が優先されます。
+`plasma.toml` が存在する場合、emout は自動的に `toml2inp` を実行して `plasma.inp` を生成し、それを読み込みます。
+`toml2inp` コマンドは [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D) に同梱されています。
 
 ```python
 data = emout.Emout("output_dir")
@@ -87,8 +88,13 @@ data.inp.nx          # ファイル形式に関係なく同じインターフェ
 
 ### 生の TOML 構造へのアクセス
 
+`data.toml` で TOML のネイティブ構造に直接アクセスできます:
+
 ```python
-data.inp.toml        # 生の TOML 辞書（OrderedDict）を返す
+data.toml                        # TomlData ラッパー（plasma.inp のみの場合は None）
+data.toml.tmgrid.nx              # 属性アクセス
+data.toml["tmgrid"]["nx"]        # 辞書アクセス
+data.toml.species[0].wp          # ネスト構造へのアクセス
 ```
 
 TOML 形式では namelist グループに対応するセクションヘッダーを使います:
@@ -100,10 +106,19 @@ ny = 256
 nz = 512
 dt = 0.5
 
-[plasma]
-nspec = 2
-wp = [1.0, 0.05]
-qm = [-1.0, 0.001]
+[[species]]
+wp = 1.0
+qm = -1.0
+
+[[species]]
+wp = 0.05
+qm = 0.001
+```
+
+### 入力ファイルと出力ディレクトリの分離
+
+```python
+data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
 ```
 
 ## 単位変換キー
@@ -125,4 +140,4 @@ dx = 0.5
 to_c = 10000.0
 ```
 
-変換キーが存在しない場合、`data.unit` は `None` となり、SI 機能（`val_si`, `use_si=True`）は EMSES 生単位にフォールバックします。
+変換キーが存在しない場合、`data.unit` は `None` になり、SI 関連機能（`val_si`, `use_si=True`）は EMSES の生の単位のまま動作します。

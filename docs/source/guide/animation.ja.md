@@ -57,7 +57,7 @@ data.phisp[:, 100, :, :].gifplot(action="show")
 複数データソースをグリッドレイアウトで 1 つのアニメーションにまとめます:
 
 ```python
-# ステップ1: フレームアップデータを作成
+# ステップ 1: FrameUpdater を作成
 updater0 = data.phisp[:, 100, :, :].gifplot(action="frames", mode="cmap")
 updater1 = data.phisp[:, 100, :, :].build_frame_updater(mode="cont")
 updater2 = data.nd1p[:, 100, :, :].build_frame_updater(
@@ -68,7 +68,7 @@ updater3 = data.nd2p[:, 100, :, :].build_frame_updater(
 )
 updater4 = data.j2xy[:, 100, :, :].build_frame_updater(mode="stream")
 
-# ステップ2: レイアウトを3重リストで定義 [行][列][重ね合わせ]
+# ステップ 2: レイアウトを 3 段のリストで定義 [行][列][重ね合わせ]
 layout = [
     [
         [updater0, updater1],   # 行0, 列0: カラーマップ + 等高線重ね合わせ
@@ -77,26 +77,26 @@ layout = [
     ]
 ]
 
-# ステップ3: Animator を作成して表示
+# ステップ 3: Animator を作成して表示
 animator = updater0.to_animator(layout=layout)
 animator.plot(action="to_html")
 ```
 
 ### レイアウト構造
 
-レイアウトは **3 重のネストされたリスト** です:
+レイアウトは **3 段にネストしたリスト** です:
 
-- **レベル 1（外側）:** 行
-- **レベル 2:** 行内の列
-- **レベル 3（内側）:** 同じサブプロットに重ね描きする updater
+- **外側:** 行
+- **中間:** 行内の列
+- **内側:** 同じサブプロットに重ね描きする updater
 
-最内リスト内の各 updater は同じ Axes に描画されるため、異なる可視化モードの重ね合わせ（例: カラーマップ + 等高線、密度 + ストリームライン）が可能です。
+最も内側のリスト内の updater は同じ Axes に描画されるので、異なる可視化モードの重ね描き（例: カラーマップ + 等高線、密度 + ストリームライン）ができます。
 
 ### `build_frame_updater` と `gifplot(action='frames')` の違い
 
-どちらも `FrameUpdater` オブジェクトを生成します。違いは:
+どちらも `FrameUpdater` オブジェクトを返します:
 
-- `gifplot(action='frames')` は簡易ショートカット
-- `build_frame_updater()` は `mode`, `vmin`, `vmax` 等を明示的に制御可能
+- `gifplot(action='frames')` — 手軽なショートカット
+- `build_frame_updater()` — `mode`, `vmin`, `vmax` 等を細かく制御できる
 
-パネルごとにカスタマイズが必要な場合は `build_frame_updater()` を使います。
+パネルごとに設定を変えたい場合は `build_frame_updater()` を使ってください。

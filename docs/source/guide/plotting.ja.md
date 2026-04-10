@@ -81,7 +81,7 @@ data.j1xy[-1, 100, :, :].plot()
 
 ## SI 単位と EMSES 単位
 
-デフォルトでは `plot()` は軸ラベルと値を SI 単位に変換します。EMSES 生単位で表示するには:
+デフォルトでは `plot()` が軸ラベルと値を SI 単位に変換します。EMSES の生の単位で表示するには:
 
 ```python
 data.phisp[-1, 100, :, :].plot(use_si=False)
@@ -128,7 +128,7 @@ data.j1xyz[-1].plot3d(mode="quiver", show=True)
 
 ### メッシュサーフェス描画
 
-面指向の 3D レンダリングで、明示的なメッシュサーフェスを使用します:
+メッシュサーフェスを指定して面ごとに 3D レンダリングできます:
 
 ```python
 import matplotlib.pyplot as plt

@@ -44,7 +44,7 @@ data = emout.Emout("output_dir")
 | `data.icur` | `icur`（テキスト） | 電流データ（pandas DataFrame） |
 | `data.pbody` | `pbody`（テキスト） | 導体データ（pandas DataFrame） |
 
-各属性は時系列オブジェクトです。タイムステップでインデックスすると NumPy 互換の配列を返します:
+各属性は時系列オブジェクトで、タイムステップを指定すると NumPy 互換の配列が返ります:
 
 ```python
 len(data.phisp)       # タイムステップ数
@@ -75,7 +75,7 @@ data = emout.Emout("output_dir", append_directories=["output_dir_2", "output_dir
 
 ## 粒子データ
 
-EMSES の粒子出力は種ごとに自動グルーピングされます:
+EMSES の粒子出力は種ごとに自動的にまとめられます:
 
 ```python
 p4 = data.p4              # 種4

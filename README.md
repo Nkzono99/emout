@@ -10,12 +10,12 @@ Lang: [日本語](README.md) | [English](README.en.md)
 
 **[EMSES](https://github.com/Nkzono99/MPIEMSES3D) シミュレーション出力の解析・可視化 Python ライブラリ**
 
-emout は:
+emout でできること:
 
-- `.h5` グリッド出力 + `plasma.inp` / `plasma.toml` を 1 行で読み込む Facade
-- データ次元から自動で最適なビューを選ぶ 1D / 2D / 3D プロット
-- `!!key dx=...,to_c=...` を解析して生成する EMSES ⇄ SI 単位変換器（30+ の物理量に対応）
-- EMSES の finbound 境界を Python オブジェクトとして扱える境界 API
+- `.h5` グリッド出力と `plasma.inp` / `plasma.toml` を 1 行で読み込めるファサード
+- データの次元に応じて最適な表示を自動選択する 1D / 2D / 3D プロット
+- `!!key dx=...,to_c=...` ヘッダーから自動生成される EMSES ⇄ SI 単位変換（30 種以上の物理量に対応）
+- EMSES の finbound 境界形状を Python オブジェクトとして操作できる API
 
 ---
 
