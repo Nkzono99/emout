@@ -50,6 +50,7 @@ pytest -q                 # 全テスト
 | skill | `run-tests` | テストベースラインの確認 |
 | skill | `add-mesh-surface` | `mesh.py` に新メッシュクラスを追加するとき |
 | skill | `add-boundary` | `boundaries/` に新境界型を追加するとき |
+| skill | `release` | バージョンを上げてリリースするとき |
 | skill | `harness-improve` | この harness 自体を改善するとき |
 | agent | `finbound-investigator` | MPIEMSES3D のパラメータ仕様を Fortran ソースから調査するとき |
 
