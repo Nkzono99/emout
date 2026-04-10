@@ -14,7 +14,7 @@ class _IdentityConverter:
         return value
 
 
-_TRAPEZOID = getattr(np, "trapezoid", np.trapz)
+_TRAPEZOID = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
 
 
 def _integrate_expected(probabilities_nd, axis_values, var1, var2):

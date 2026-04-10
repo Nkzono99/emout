@@ -12,7 +12,7 @@ import scipy.constants as cn
 
 from emout.utils.eflux import compute_energy_flux_histogram
 
-_TRAPEZOID = getattr(np, "trapezoid", np.trapz)
+_TRAPEZOID = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
 
 
 class HeatmapData:

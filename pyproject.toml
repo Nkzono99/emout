@@ -51,6 +51,9 @@ classifiers = [
 pyvista = [
   "pyvista",
 ]
+dev = [
+  "pytest",
+]
 
 [project.scripts]
 emout = "emout.cli:main"
