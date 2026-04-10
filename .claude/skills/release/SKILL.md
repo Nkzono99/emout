@@ -1,6 +1,6 @@
 ---
 name: release
-description: Bump the version, tag, push, and create a GitHub release. Use when the user asks to release a new version, cut a release, or bump the version.
+description: Bump the version, tag, push, and create a GitHub release with structured release notes. Use when the user asks to release a new version, cut a release, or bump the version.
 ---
 
 # release
@@ -52,18 +52,60 @@ git tag vX.Y.Z
 git push origin main --tags
 ```
 
-### 5. Create GitHub release
+### 5. Write release notes and create GitHub release
 
-Generate release notes from the commit log. Group by category:
+#### Release note format
 
-- **Breaking Changes** — API removals, Python version drops
-- **New Features** — new classes, methods, CLI commands
-- **Bug Fixes** — correctness fixes
-- **Infrastructure** — tests, CI, refactoring, harness
-- **Documentation** — docs, translations
+Use the following template (inspired by pydantic / rich / Keep a Changelog):
+
+```markdown
+<!-- 1-2 sentence summary of the release in Japanese -->
+境界モデルに円柱型を追加し、単位変換の不具合を修正したリリースです。
+
+## Highlights
+- `CylinderBoundary` を追加 (abc1234)
+- `UnitTranslator` の逆変換精度の問題を修正 (def5678)
+
+## New Features
+- Add `CylinderBoundary` for finbound cylinder type (abc1234)
+
+## Bug Fixes
+- Fix reverse unit conversion precision loss (def5678)
+
+## Changes
+- Drop Python 3.8 support (1234567)
+
+## Documentation
+- Add boundaries guide (ja/en) (89abcde)
+
+**Full Changelog**: https://github.com/Nkzono99/emout/compare/vPREV...vX.Y.Z
+```
+
+#### Rules for writing
+
+- **Summary** (冒頭): 1-2 文の日本語。非開発者にも伝わるように書く。
+- **Highlights**: 最も重要な変更を 2-3 個。ユーザーが「アップデートすべきか」を判断できる情報。
+- **Categories**: 以下の 4+1 カテゴリから該当するものだけ使う:
+  - `New Features` — 新しいクラス・メソッド・CLI コマンド
+  - `Bug Fixes` — 正しさに関する修正
+  - `Changes` — 破壊的変更、依存関係変更、動作変更
+  - `Documentation` — ドキュメント・翻訳の変更
+  - `Infrastructure` — テスト・CI・リファクタリング（ユーザーに直接影響しない場合は省略可）
+- **各エントリ**: 英語、動詞で始める（Add / Fix / Update / Remove / Drop）、末尾にコミットハッシュ短縮形 `(abc1234)`。PR があれば `#123` 形式でリンク。
+- **Infrastructure は省略可**: テスト追加やCI修正だけのリリースでは書かなくてよい。ユーザー向けの変更がある場合のみ記載。
+- **Full Changelog**: `compare/vPREV...vX.Y.Z` のリンクを末尾に必ず付ける。
+
+#### How to generate
 
 ```bash
-gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
+# Commit log to work from
+git log --oneline $(git describe --tags --abbrev=0)..HEAD
+
+# Create release
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "$(cat <<'EOF'
+...release notes here...
+EOF
+)"
 ```
 
 ### 6. Verify
@@ -77,3 +119,5 @@ gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
 - **Tagging before committing** — the tag must point at the version-bump commit.
 - **Not running tests** — a released tag with broken tests is hard to undo.
 - **Wrong bump level** — dropping Python 3.8 is a breaking change (major or minor, ask the user).
+- **Highlights が空** — 必ず 1 個以上入れる。ユーザーが最初に読む場所。
+- **Summary を英語で書く** — emout のユーザーは日本語話者が多いため、冒頭は日本語で。
