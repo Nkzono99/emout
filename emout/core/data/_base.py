@@ -161,21 +161,26 @@ class Data(np.ndarray):
         if len(new_obj.shape) == 1:
             if isinstance(new_obj, Data1d):
                 return new_obj
-            return Data1d(new_obj, **params)
+            result = Data1d(new_obj, **params)
         elif len(new_obj.shape) == 2:
             if isinstance(new_obj, Data2d):
                 return new_obj
-            return Data2d(new_obj, **params)
+            result = Data2d(new_obj, **params)
         elif len(new_obj.shape) == 3:
             if isinstance(new_obj, Data3d):
                 return new_obj
-            return Data3d(new_obj, **params)
+            result = Data3d(new_obj, **params)
         elif len(new_obj.shape) == 4:
             if isinstance(new_obj, Data4d):
                 return new_obj
-            return Data4d(new_obj, **params)
+            result = Data4d(new_obj, **params)
         else:
             return new_obj
+
+        # Propagate remote-rendering metadata from the source object
+        result._emout_dir = getattr(self, "_emout_dir", None)
+        result._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
+        return result
 
     def __add_slices(self, new_obj, item):
         """Propagate sub-range metadata to a newly sliced object.
