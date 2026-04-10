@@ -193,8 +193,10 @@ class TestStartScheduler:
             open_calls.append(str(path))
             return MagicMock()  # mock file handle
 
-        with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"), patch(
-            "builtins.open", tracking_open
+        with (
+            patch("subprocess.Popen", return_value=mock_proc),
+            patch("time.sleep"),
+            patch("builtins.open", tracking_open),
         ):
             cluster.start_scheduler()
 
@@ -293,8 +295,9 @@ class TestSubmitWorker:
         completed.returncode = 0
         completed.stdout = "Submitted batch job 123456"
 
-        with patch("subprocess.run", return_value=completed), patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        with (
+            patch("subprocess.run", return_value=completed),
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")),
         ):
             job_ids = cluster.submit_worker(jobs=1)
 
@@ -317,8 +320,9 @@ class TestSubmitWorker:
             result.stdout = f"Submitted batch job {100 + call_count}"
             return result
 
-        with patch("subprocess.run", side_effect=fake_run), patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        with (
+            patch("subprocess.run", side_effect=fake_run),
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")),
         ):
             job_ids = cluster.submit_worker(jobs=3)
 
@@ -341,8 +345,9 @@ class TestSubmitWorker:
             result.stdout = f"Submitted batch job {counter[0]}"
             return result
 
-        with patch("subprocess.run", side_effect=fake_run), patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        with (
+            patch("subprocess.run", side_effect=fake_run),
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")),
         ):
             cluster.submit_worker(jobs=2)
             cluster.submit_worker(jobs=1)
@@ -359,8 +364,9 @@ class TestSubmitWorker:
         completed.returncode = 1
         completed.stderr = "sbatch: error: allocation failure"
 
-        with patch("subprocess.run", return_value=completed), patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        with (
+            patch("subprocess.run", return_value=completed),
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")),
         ):
             with pytest.raises(RuntimeError, match="sbatch failed"):
                 cluster.submit_worker()
@@ -375,8 +381,9 @@ class TestSubmitWorker:
         completed.returncode = 0
         completed.stdout = "Unexpected output with no number"
 
-        with patch("subprocess.run", return_value=completed), patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        with (
+            patch("subprocess.run", return_value=completed),
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")),
         ):
             with pytest.raises(RuntimeError, match="Could not parse job ID"):
                 cluster.submit_worker()
@@ -391,8 +398,9 @@ class TestSubmitWorker:
         completed.returncode = 0
         completed.stdout = "Submitted batch job 999"
 
-        with patch("subprocess.run", return_value=completed) as mock_run, patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")
+        with (
+            patch("subprocess.run", return_value=completed) as mock_run,
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/worker.sh")),
         ):
             cluster.submit_worker()
 
@@ -571,8 +579,10 @@ class TestGetClient:
                 raise ConnectionError("not ready")
             return mock_client
 
-        with patch("dask.distributed.Client", side_effect=fake_client), patch("time.sleep"), patch(
-            "time.time", side_effect=[0, 0.1, 0.2, 0.3]
+        with (
+            patch("dask.distributed.Client", side_effect=fake_client),
+            patch("time.sleep"),
+            patch("time.time", side_effect=[0, 0.1, 0.2, 0.3]),
         ):
             result = cluster.get_client(timeout=10.0)
 
@@ -592,8 +602,10 @@ class TestGetClient:
             raise ConnectionError("not ready")
 
         # time.time returns increasing values that exceed timeout
-        with patch("dask.distributed.Client", side_effect=fake_client), patch("time.sleep"), patch(
-            "time.time", side_effect=[0, 100]
+        with (
+            patch("dask.distributed.Client", side_effect=fake_client),
+            patch("time.sleep"),
+            patch("time.time", side_effect=[0, 100]),
         ):
             with pytest.raises(RuntimeError, match="Could not connect"):
                 cluster.get_client(timeout=5.0)
@@ -672,8 +684,9 @@ class TestLifecycle:
         completed.returncode = 0
         completed.stdout = "Submitted batch job 555"
 
-        with patch("subprocess.run", return_value=completed), patch.object(
-            cluster, "_generate_worker_script", return_value=Path("/tmp/w.sh")
+        with (
+            patch("subprocess.run", return_value=completed),
+            patch.object(cluster, "_generate_worker_script", return_value=Path("/tmp/w.sh")),
         ):
             ids = cluster.submit_worker(jobs=1)
 

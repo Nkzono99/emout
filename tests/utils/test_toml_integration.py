@@ -10,7 +10,6 @@ plasma.toml → plasma.inp の変換は MPIEMSES3D 側の ``toml2inp``
 
 import shutil
 import subprocess
-import sys
 
 import f90nml
 import h5py
