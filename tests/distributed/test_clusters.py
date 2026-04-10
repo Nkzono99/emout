@@ -550,7 +550,7 @@ class TestGetClient:
 
         mock_client = MagicMock()
 
-        with patch("emout.distributed.clusters.Client", return_value=mock_client):
+        with patch("dask.distributed.Client", return_value=mock_client):
             result = cluster.get_client()
 
         assert result is mock_client
@@ -571,7 +571,7 @@ class TestGetClient:
                 raise ConnectionError("not ready")
             return mock_client
 
-        with patch("emout.distributed.clusters.Client", side_effect=fake_client), patch("time.sleep"), patch(
+        with patch("dask.distributed.Client", side_effect=fake_client), patch("time.sleep"), patch(
             "time.time", side_effect=[0, 0.1, 0.2, 0.3]
         ):
             result = cluster.get_client(timeout=10.0)
@@ -592,7 +592,7 @@ class TestGetClient:
             raise ConnectionError("not ready")
 
         # time.time returns increasing values that exceed timeout
-        with patch("emout.distributed.clusters.Client", side_effect=fake_client), patch("time.sleep"), patch(
+        with patch("dask.distributed.Client", side_effect=fake_client), patch("time.sleep"), patch(
             "time.time", side_effect=[0, 100]
         ):
             with pytest.raises(RuntimeError, match="Could not connect"):
@@ -604,7 +604,7 @@ class TestGetClient:
         mock_proc.poll.return_value = None
         cluster._sched_proc = mock_proc
 
-        with patch("emout.distributed.clusters.Client") as MockClient:
+        with patch("dask.distributed.Client") as MockClient:
             cluster.get_client()
 
         MockClient.assert_called_once()
@@ -681,7 +681,7 @@ class TestLifecycle:
 
         # Get client
         mock_client = MagicMock()
-        with patch("emout.distributed.clusters.Client", return_value=mock_client):
+        with patch("dask.distributed.Client", return_value=mock_client):
             client = cluster.get_client()
 
         assert client is mock_client

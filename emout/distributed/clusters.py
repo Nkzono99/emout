@@ -50,8 +50,10 @@ import os
 import subprocess
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from dask.distributed import Client
+if TYPE_CHECKING:
+    from dask.distributed import Client
 
 
 class SimpleDaskCluster:
@@ -281,12 +283,14 @@ class SimpleDaskCluster:
         script_path.chmod(0o744)
         return script_path
 
-    def get_client(self, timeout: float = 30.0) -> Client:
+    def get_client(self, timeout: float = 30.0):
         """
         Return a dask.distributed.Client. On first call, attempt to connect.
         The Client will automatically retry even if no workers have connected
         to the scheduler yet.
         """
+        from dask.distributed import Client
+
         if self._sched_proc is None:
             raise RuntimeError("Scheduler is not running.")
 
