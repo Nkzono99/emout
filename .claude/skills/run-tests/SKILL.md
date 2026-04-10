@@ -5,7 +5,7 @@ description: Run emout's full pytest baseline. Use whenever you need a clean sig
 
 # run-tests
 
-Run the project's test baseline. As of 2026-04-09 the suite is clean, no ignores needed.
+Run the project's test baseline. The suite is clean, no ignores needed.
 
 ## What to run
 
@@ -13,16 +13,8 @@ Run the project's test baseline. As of 2026-04-09 the suite is clean, no ignores
 python -m pytest tests/ -q
 ```
 
-No `--ignore` flags are required — the previously broken
-`tests/utils/test_toml_converter.py` and `tests/utils/test_toml_integration.py`
-were repaired on 2026-04-09:
-
-- `test_toml_converter.py` now only tests `TomlData` / `load_toml` (the
-  `_convert_v*` / `load_toml_as_namelist` helpers were removed upstream
-  and the tests that imported them were deleted).
-- `test_toml_integration.py` carries a `pytestmark = pytest.mark.skipif(...)`
-  that skips the file when `toml2inp` is not on PATH, so the suite stays
-  green even without MPIEMSES3D installed.
+`test_toml_integration.py` は `toml2inp` が PATH 上で動作可能な場合のみ実行される（`skipif` 付き）。
+`toml2inp` 未導入でもテスト全体はグリーンを維持する。
 
 ## How to use the result
 
