@@ -21,7 +21,8 @@
 ## セットアップ & テスト
 
 ```bash
-pip install -e .          # 開発インストール
+pip install -e ".[dev]"   # 開発インストール (pytest, ruff, pre-commit)
+pre-commit install        # git commit 時に ruff lint+format を自動実行
 pytest -q                 # 全テスト
 ```
 
@@ -48,7 +49,7 @@ pytest -q                 # 全テスト
 |------|------|-----------|
 | skill | `run-tests` | テストベースラインの確認 |
 | skill | `add-mesh-surface` | `mesh.py` に新メッシュクラスを追加するとき |
-| skill | `add-boundary` | `boundaries.py` に新境界型を追加するとき |
+| skill | `add-boundary` | `boundaries/` に新境界型を追加するとき |
 | skill | `harness-improve` | この harness 自体を改善するとき |
 | agent | `finbound-investigator` | MPIEMSES3D のパラメータ仕様を Fortran ソースから調査するとき |
 
