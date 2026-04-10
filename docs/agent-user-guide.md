@@ -10,14 +10,18 @@ Import this file via `@docs/agent-user-guide.md` to get the full API context.
 - One-line 1D/2D/3D plotting with automatic SI unit conversion
 - GIF/HTML animation creation from time-series data
 - Parameter file access as a dictionary-like object
-- Bidirectional EMSES↔SI unit conversion
-- Particle data grouping and pandas integration
+- Bidirectional EMSES↔SI unit conversion (30+ quantities)
+- Particle data grouping, phase-space plots, and pandas integration
+- Boundary mesh rendering and 3D field overlay
+- VTK export for external visualization
+- Remote execution via Dask (offload to HPC compute nodes)
 
 ## Installation
 
 ```bash
-pip install emout              # Core
-pip install "emout[pyvista]"   # + 3D visualization
+pip install emout                  # Core (requires Python >=3.9)
+pip install "emout[pyvista]"       # + 3D visualization
+pip install "emout[distributed]"   # + remote execution (Dask, Python >=3.10)
 ```
 
 ---
@@ -84,6 +88,28 @@ data.phisp[-1, :, 32, 32]     # → Data1d (z-profile at x=32, y=32)
 data.phisp[:, 100, :, :]      # → all timesteps at z=100 (for gifplot)
 ```
 
+### Data manipulation (chainable)
+
+These methods return transformed copies — the original is not modified.
+
+```python
+data.phisp[-1, :, ny//2, :].negate()      # flip sign: -data
+data.phisp[-1].scale(1e3)                  # multiply by factor
+data.phisp[-1, :, ny//2, :].flip('z')     # reverse along axis ('x'/'y'/'z'/'t' or int)
+data.phisp[-1, :, ny//2, :].mirror('z')   # append reflected copy (len → 2n-1)
+data.phisp[-1, :, ny//2, :].tile(1, 'z')  # tile periodic copies along axis
+
+# Chaining
+data.ex[-1].negate().mirror('z').tile(1, 'z').plot()
+```
+
+### Data masking
+
+```python
+data.phisp[-1].masked(lambda phi: phi < phi.mean())          # returns copy with NaN
+data.phisp[-1].masked(lambda phi: phi < phi.mean()).plot()    # plot masked data
+```
+
 ---
 
 ## plot()
@@ -104,7 +130,7 @@ data.phisp[-1, :, ny//2, :].plot()
     show=False,            # call plt.show()
     use_si=True,           # SI unit labels/values
     offsets=None,          # (x_off, y_off, z_off): "left"|"center"|"right"|float
-    mode="cm",             # "cm" (colormap), "cont" (contour), "cm+cont"
+    mode="cm",             # "cm" (colormap), "cont" (contour), "cm+cont", "surf" (3D surface)
     # kwargs passed to underlying plot function:
     savefilename=None,     # save to file
     cmap=None,             # matplotlib colormap
@@ -145,8 +171,8 @@ data.phisp[-1, :, 32, 32].plot()
 2D vector data plots as streamlines by default:
 
 ```python
-data.j1xy[-1, 100, :, :].plot()          # streamlines
-data.j1xy[-1, 100, :, :].plot(mode="quiver")  # quiver arrows
+data.j1xy[-1, 100, :, :].plot()                # streamlines
+data.j1xy[-1, 100, :, :].plot(mode="quiver")   # quiver arrows
 ```
 
 ### Common patterns
@@ -192,23 +218,15 @@ fig.suptitle("Overview")
 fig.tight_layout()
 plt.savefig("multi.png")
 
-# Global style changes apply to emout plots too
-plt.rcParams.update({"font.size": 14, "figure.dpi": 120})
-data.phisp[-1, 100, :, :].plot()
-
 # Use raw numpy data for fully custom plots
-phi = data.phisp[-1, :, 32, :].val_si   # plain numpy array
-x = data.phisp[-1, :, 32, :].x_si       # SI x-axis
-z = data.phisp[-1, :, 32, :].z_si       # SI z-axis
-plt.contourf(x, z, phi, levels=30, cmap="RdBu_r")
-plt.colorbar(label="Potential [V]")
+phi = data.phisp[-1, :, 32, :].val_si   # plain numpy array in SI
 ```
 
 Key points:
 - `plot()` draws on `plt.gca()` — use `plt.sca(ax)` or `plt.subplot()` to target a specific axes before calling
 - Returned artists can be modified (`im.set_clim(...)`, `line.set_color(...)`, etc.)
 - `plt.rcParams` changes (font, dpi, style) affect emout plots
-- For full control, extract `.val_si` / `.x_si` / `.z_si` arrays and plot with pure matplotlib
+- For full control, extract `.val_si` arrays and plot with pure matplotlib
 
 ---
 
@@ -265,6 +283,68 @@ animator.plot(action="to_html")  # or "save", "show"
 
 ---
 
+## data.boundaries — Boundary meshes
+
+Access MPIEMSES finbound/legacy boundaries as Python objects. Requires `boundary_type` / `boundary_types` in `plasma.inp`.
+
+### Basic access
+
+```python
+data.boundaries                    # BoundaryCollection (iterable, indexable)
+len(data.boundaries)               # number of boundaries
+data.boundaries.types              # list of boundary_types strings
+data.boundaries.skipped            # [(index, type_name, reason), ...]
+
+data.boundaries[0]                 # Boundary subclass (SphereBoundary, etc.)
+data.boundaries[0].btype           # e.g. "sphere", "cylinderz"
+data.boundaries[0].mesh()          # → MeshSurface3D (SI units by default)
+data.boundaries[0].mesh(use_si=False)  # grid units
+```
+
+### Overlay on 3D field plot
+
+```python
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection="3d")
+
+data.phisp[-1].plot_surfaces(
+    ax=ax,
+    surfaces=data.boundaries,      # auto-wrapped into RenderItems
+    use_si=True,
+)
+plt.show()
+```
+
+### Composite mesh and per-boundary styling
+
+```python
+# All boundaries as one mesh
+composite = data.boundaries.mesh()     # → CompositeMeshSurface
+V, F = composite.mesh()               # raw (vertices, faces) arrays
+
+# Combine individual boundaries
+combined = data.boundaries[0] + data.boundaries[1]
+
+# Override resolution
+data.boundaries[0].mesh(ntheta=64)
+data.boundaries.mesh(per={0: dict(ntheta=64)})
+```
+
+### Supported boundary types
+
+| Category | Type names |
+| --- | --- |
+| Closed solids | `sphere`, `cuboid` |
+| Cylinders | `cylinderx/y/z`, `open-cylinderx/y/z` |
+| Flat panels | `rectangle`, `circlex/y/z`, `diskx/y/z`, `plane-with-circlex/y/z` |
+| Legacy single-body | `flat-surface`, `rectangle-hole`, `cylinder-hole` |
+
+Unregistered types are recorded in `data.boundaries.skipped` instead of raising an error.
+
+---
+
 ## data.toml — Parameter file (recommended for plasma.toml)
 
 When `plasma.toml` is present, emout runs the `toml2inp` command to generate `plasma.inp`, then loads it. **Use `data.toml` for native TOML structure access** via the `TomlData` wrapper.
@@ -289,44 +369,6 @@ data.toml["tmgrid"]["nx"]        # dict-style access → value
 data.toml.tmgrid.keys()          # dict-like: keys(), values(), items(), get()
 data.toml.tmgrid.to_dict()       # unwrap to plain dict
 "tmgrid" in data.toml            # containment check
-```
-
-### TOML structure example (V2 format)
-
-```toml
-[meta.unit_conversion]
-dx = 0.5
-to_c = 10000.0
-
-[tmgrid]
-nx = 256
-ny = 256
-nz = 512
-dt = 0.5
-ifdiag = 100
-nstep = 50000
-
-[plasma]
-nspec = 2
-
-[[plasma.species]]
-wp = 1.0
-qm = -1.0
-path = [0.1, 0.1, 0.1]
-
-[[plasma.species]]
-wp = 0.05
-qm = 0.001
-path = [0.01, 0.01, 0.01]
-```
-
-Access:
-
-```python
-data.toml.plasma.species[0].wp    # 1.0 (electron)
-data.toml.plasma.species[1].qm    # 0.001 (ion)
-data.toml.tmgrid.nx               # 256
-data.toml.meta.unit_conversion.dx  # 0.5
 ```
 
 ### When to use data.toml vs data.inp
@@ -404,28 +446,50 @@ data.nd1p[-1].val_si              # [/m^3]
 
 ### Available translators
 
-`phi`(V), `E`(V/m), `B`(T), `J`(A/m^2), `n`(/m^3), `rho`(C/m^3), `v`(m/s), `t`(s), `f`(Hz), `length`(m), `q`(C), `m`(kg), `W`(J), `w`(J/m^3), `P`(W), `T`(K), `F`(N), `a`(m/s^2), `i`(A), `N`(/m^2s), `c`(m/s), `eps`(F/m), `mu`(H/m), `C`(F), `L`(H), `G`(S), `q_m`(C/kg), `qe`(C), `qe_me`(C/kg), `kB`(J/K), `e0`(F/m), `m0`(N/A^2)
+`phi`(V), `E`(V/m), `B`(T), `J`(A/m²), `n`(/m³), `rho`(C/m³), `v`(m/s), `t`(s), `f`(Hz), `length`(m), `q`(C), `m`(kg), `W`(J), `w`(J/m³), `P`(W), `T`(K), `F`(N), `a`(m/s²), `i`(A), `N`(/m²s), `c`(m/s), `eps`(F/m), `mu`(H/m), `C`(F), `L`(H), `G`(S), `q_m`(C/kg), `qe`(C), `qe_me`(C/kg), `kB`(J/K), `e0`(F/m), `m0`(N/A²)
 
 ---
 
 ## Particle data
 
+### Time series access
+
 ```python
-p4 = data.p4                # species 4
-p4.x[0]                     # x-positions at timestep 0 → ParticleData1d
+p4 = data.p4                # ParticlesSeries for species 4
+p4.x, p4.y, p4.z            # position time series
+p4.vx, p4.vy, p4.vz         # velocity time series
+p4.tid                       # trace ID time series
+
+p4.x[0]                     # ParticleData at timestep 0
 p4.vx[0].val_si             # SI velocity array
 p4.vx[0].to_series()        # → pandas.Series
-p4.vx[0].val_si.to_series().hist(bins=200)
-# Components: x, y, z, vx, vy, vz, tid
 ```
 
----
+### Snapshots and phase-space plots
 
-## Data masking
+Indexing a `ParticlesSeries` by timestep returns a `ParticleSnapshot` bundling all components:
 
 ```python
-data.phisp[-1].masked(lambda phi: phi < phi.mean())          # returns copy with NaN
-data.phisp[-1].masked(lambda phi: phi < phi.mean()).plot()    # plot masked data
+snap = data.p4[0]            # ParticleSnapshot at timestep 0
+
+# Access components
+snap.x, snap.vx, snap.tid   # ParticleData for each component
+snap.keys()                  # available component names
+snap.to_dataframe()          # → pandas.DataFrame
+
+# Phase-space plots (shorthand attribute syntax)
+snap.xvx()                   # scatter plot of x vs vx
+snap.yvz()                   # scatter plot of y vs vz
+snap.zvz()                   # etc. — any pair of (x,y,z,vx,vy,vz)
+
+# Explicit call with options
+snap.plot_phase_space(
+    "x", "vx",
+    kind="scatter",          # "scatter" or "hist2d"
+    use_si=True,
+    bins=64,                 # for hist2d
+    ax=None,                 # target matplotlib axes
+)
 ```
 
 ---
@@ -437,6 +501,82 @@ data.phisp[-1, :, :, :].plot3d(mode="box", show=True)       # volume
 data.phisp[-1, 100, :, :].plot3d(show=True)                  # 2D slice in 3D space
 data.j1xyz[-1].plot3d(mode="stream", show=True)              # 3D streamlines
 data.j1xyz[-1].plot3d(mode="quiver", show=True)              # 3D quiver
+```
+
+### 3D mesh surface rendering
+
+Overlay boundary meshes on 3D scalar field:
+
+```python
+import matplotlib.pyplot as plt
+from emout.plot.surface_cut import BoxMeshSurface, CylinderMeshSurface, RenderItem, plot_surfaces
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+
+# Using data.boundaries (simplest)
+data.phisp[-1].plot_surfaces(ax=ax, surfaces=data.boundaries)
+
+# Using explicit mesh surfaces with RenderItem for style control
+plot_surfaces(
+    ax,
+    field=field3d,
+    surfaces=[
+        RenderItem(BoxMeshSurface(0, 10, 0, 6, 0, 4, faces=("zmax",)), style="field"),
+        RenderItem(CylinderMeshSurface(center=(5, 3, 2), axis="z", radius=1.5, length=4.0),
+                   style="solid", solid_color="0.7", alpha=0.5),
+    ],
+)
+```
+
+### VTK export
+
+```python
+data.phisp[-1].to_vtk("output.vti", use_si=True)
+# → writes VTK ImageData (.vti) file for ParaView / PyVista
+```
+
+---
+
+## Remote execution (Dask) — experimental
+
+Offload heavy data processing to HPC compute nodes. Only plot images or small slices are returned.
+Requires `pip install "emout[distributed]"` (Python ≥ 3.10).
+
+### Server management (CLI)
+
+```bash
+emout server start --partition gr20001a --memory 60G --walltime 03:00:00
+emout server stop
+emout server status
+```
+
+### Usage from Python
+
+When a server is running, `plot()` and slicing automatically use remote execution — **no code changes needed**.
+
+```python
+# Data-transfer mode (default): worker extracts slice, matplotlib runs locally
+data.phisp[-1, :, 100, :].plot()
+plt.xlabel("x [m]")               # ← local matplotlib, full customization
+
+# Image mode: all matplotlib runs on server, only PNG comes back
+from emout.distributed import remote_figure
+
+with remote_figure():
+    data.phisp[-1, :, 100, :].plot()
+    plt.axhline(y=50, color="red")
+    plt.title("Custom title")
+# ← PNG displayed in Jupyter here
+```
+
+### Jupyter cell magic
+
+```python
+%load_ext emout.distributed.remote_figure
+
+%%remote_figure --dpi 300 --fmt svg --figsize 12,6
+data.phisp[-1, :, 100, :].plot()
 ```
 
 ---
@@ -481,28 +621,27 @@ bt.xz.plot(color="black", alpha=alpha_values)
 import emout
 
 data = emout.Emout("output_dir")
-# Or: data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")
 
-# Use data.toml for parameter access
+# Parameter access via TOML
 nx = data.toml.tmgrid.nx
 ny = data.toml.tmgrid.ny
-nz = data.toml.tmgrid.nz
-
-# V2 species access
 electron_wp = data.toml.species[0].wp
-ion_qm = data.toml.species[1].qm
 
-# Quick 2D visualization
+# 2D visualization
 data.phisp[-1, :, ny // 2, :].plot()
 
 # Time animation
-data.phisp[:, nz // 2, :, :].gifplot(action="save", filename="phisp.gif")
+data.phisp[:, data.toml.tmgrid.nz // 2, :, :].gifplot(action="save", filename="phisp.gif")
 
 # SI values for analysis
 phi_si = data.phisp[-1].val_si  # [V]
-
-# Unit conversion
 v_emses = data.unit.v.trans(1e5)  # 1e5 m/s → EMSES
+
+# Boundary overlay
+data.phisp[-1].plot_surfaces(surfaces=data.boundaries)
+
+# Particle phase-space
+data.p4[0].xvx()
 ```
 
 ### With plasma.inp (legacy)
@@ -524,9 +663,13 @@ data.phisp[-1, :, ny // 2, :].plot()
 2. **Prefer `data.toml` over `data.inp`** when `plasma.toml` is present. `data.toml` preserves the native TOML structure (nested dicts, species lists), while `data.inp` flattens everything into a namelist.
 3. **`data.toml` is `None`** when only `plasma.inp` exists. Guard with `if data.toml is not None:` before using it.
 4. **`data.unit` can be `None`** if `plasma.inp` lacks the `!!key` header (or `plasma.toml` lacks `[meta.unit_conversion]`). Always guard: `if data.unit is not None:`.
-5. **`plot()` returns an artist object** unless `show=True` or `savefilename` is set. In scripts, add `show=True` or call `plt.show()`.
-6. **`gifplot()` defaults to `action="to_html"`** which only works in Jupyter. For scripts, use `action="save"` or `action="show"`.
-7. **Variable names are EMSES conventions**: `phisp` (potential), `nd{i}p` (species-i density), `j{i}x/y/z` (species-i current), `ex/ey/ez` (E-field), `bx/by/bz` (B-field).
-8. **Vector auto-combination**: `data.j1xy` combines j1x+j1y. `data.j1xyz` combines j1x+j1y+j1z. Don't manually concatenate.
-9. **`data.inp["nx"]`** works only if `nx` is unambiguous across all groups. If ambiguous, use `data.inp["tmgrid"]["nx"]` or prefer `data.toml.tmgrid.nx`.
-10. **`val_si` is a property**, not a method. Use `data.phisp[-1].val_si`, not `data.phisp[-1].val_si()`.
+5. **`data.boundaries` needs `&ptcond`** in the parameter file. If no boundaries are defined, `data.boundaries` is empty (not `None`).
+6. **`plot()` returns an artist object** unless `show=True` or `savefilename` is set. In scripts, add `show=True` or call `plt.show()`.
+7. **`gifplot()` defaults to `action="to_html"`** which only works in Jupyter. For scripts, use `action="save"` or `action="show"`.
+8. **Variable names are EMSES conventions**: `phisp` (potential), `nd{i}p` (species-i density), `j{i}x/y/z` (species-i current), `ex/ey/ez` (E-field), `bx/by/bz` (B-field).
+9. **Vector auto-combination**: `data.j1xy` combines j1x+j1y. `data.j1xyz` combines j1x+j1y+j1z. Don't manually concatenate.
+10. **`data.inp["nx"]`** works only if `nx` is unambiguous across all groups. If ambiguous, use `data.inp["tmgrid"]["nx"]`.
+11. **`val_si` is a property**, not a method. Use `data.phisp[-1].val_si`, not `data.phisp[-1].val_si()`.
+12. **Data manipulation methods (`flip`, `mirror`, `tile`, `negate`, `scale`) return copies**. They do not modify the original array.
+13. **Phase-space shorthand** (`snap.xvx()`) works for any pair of `(x, y, z, vx, vy, vz)`. The first variable is the horizontal axis.
+14. **Remote execution is transparent**. When an emout server is running, existing code automatically uses it. No import or code changes needed for the data-transfer mode.
