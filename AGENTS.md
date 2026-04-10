@@ -13,7 +13,7 @@
 | `emout/core/facade.py`, `emout/core/io/` | I/O & Facade |
 | `emout/core/data/` | データモデル |
 | `emout/plot/` (`surface_cut/` 含む) | 可視化・メッシュ境界描画 |
-| `emout/core/boundaries.py` | MPIEMSES finbound 境界モデル |
+| `emout/core/boundaries/` | MPIEMSES finbound 境界モデル |
 | `emout/utils/emsesinp.py`, `emout/utils/units.py` | 入力パラメータ・単位系 |
 | `emout/distributed/` | リモート実行 (Dask, 共有セッション) |
 | `emout/core/backtrace/` | バックトレース (実験的) |
@@ -25,7 +25,7 @@ pip install -e .          # 開発インストール
 pytest -q                 # 全テスト
 ```
 
-テストベースライン: **180 passed**（`toml2inp` 未導入時は 19 skipped, 161 passed）
+テストベースライン: **1321 passed**（`toml2inp` 未導入時は一部 skipped）
 
 ## MPIEMSES 外部資料
 
