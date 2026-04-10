@@ -10,7 +10,7 @@ emout
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guide (日本語/English)
+   :caption: User Guide
 
    guide/quickstart.ja
    guide/quickstart

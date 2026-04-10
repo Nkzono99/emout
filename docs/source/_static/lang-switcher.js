@@ -1,24 +1,67 @@
 /**
  * Language switcher for emout docs.
  *
- * Adds a Japanese/English dropdown next to furo's dark-mode toggle.
+ * - Adds a Japanese/English dropdown next to furo's dark-mode toggle.
+ * - Filters the sidebar toctree to show only the active language.
+ * - Persists the choice in localStorage.
+ *
  * Guide pages use the *.ja.html / *.html naming convention.
  */
 document.addEventListener("DOMContentLoaded", () => {
+  const STORAGE_KEY = "emout-docs-lang";
   const path = window.location.pathname;
-  const isJa = path.endsWith(".ja.html") || path.endsWith(".ja/");
+  const isJaPage = path.endsWith(".ja.html") || path.endsWith(".ja/");
+
+  // Determine initial language: page URL > localStorage > default ja
+  const lang = isJaPage ? "ja" : (localStorage.getItem(STORAGE_KEY) || "ja");
 
   // Compute the counterpart URL (only for guide pages)
   const isGuide = path.includes("/guide/");
-  let otherUrl;
-  if (isGuide) {
-    otherUrl = isJa
-      ? path.replace(/\.ja\.html$/, ".html")
-      : path.replace(/\.html$/, ".ja.html");
-  } else {
-    otherUrl = null; // no counterpart
+  function counterpartUrl(targetLang) {
+    if (!isGuide) return null;
+    if (targetLang === "ja" && !isJaPage) {
+      return path.replace(/\.html$/, ".ja.html");
+    }
+    if (targetLang === "en" && isJaPage) {
+      return path.replace(/\.ja\.html$/, ".html");
+    }
+    return null; // already on the target language
   }
 
+  // --- Sidebar filtering ---
+  function filterSidebar(activeLang) {
+    const sidebarLinks = document.querySelectorAll(".sidebar-tree .toctree-l1");
+    sidebarLinks.forEach((li) => {
+      const a = li.querySelector("a");
+      if (!a) return;
+      const href = a.getAttribute("href") || "";
+      // Only filter guide entries (those linking to *.ja.html or guide/*.html)
+      const isJaLink = href.endsWith(".ja.html") || href.includes(".ja.html");
+      const isGuideLink = href.includes("guide/") || href.endsWith(".ja.html") ||
+        // relative links within guide pages
+        /^(quickstart|plotting|animation|inp|units|boundaries|distributed)/.test(href);
+
+      if (!isGuideLink) return; // don't touch API Reference etc.
+
+      if (activeLang === "ja") {
+        li.style.display = isJaLink || li.classList.contains("current-page") && isJaPage ? "" : "none";
+        // Show Japanese entries; for current page (which uses # href), check page lang
+        if (href === "#") {
+          li.style.display = isJaPage ? "" : "none";
+        } else {
+          li.style.display = isJaLink ? "" : "none";
+        }
+      } else {
+        if (href === "#") {
+          li.style.display = isJaPage ? "none" : "";
+        } else {
+          li.style.display = isJaLink ? "none" : "";
+        }
+      }
+    });
+  }
+
+  // --- Dropdown creation ---
   function createSwitcher(container) {
     const select = document.createElement("select");
     select.className = "lang-switcher";
@@ -27,29 +70,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const optEn = document.createElement("option");
     optEn.textContent = "English";
     optEn.value = "en";
-    optEn.selected = !isJa;
+    optEn.selected = lang === "en";
 
     const optJa = document.createElement("option");
     optJa.textContent = "日本語";
     optJa.value = "ja";
-    optJa.selected = isJa;
+    optJa.selected = lang === "ja";
 
     select.appendChild(optEn);
     select.appendChild(optJa);
 
-    if (otherUrl) {
-      select.addEventListener("change", () => {
-        window.location.href = otherUrl;
-      });
-    } else {
-      select.disabled = true;
-      select.title = "Language switching is available on guide pages";
-    }
+    select.addEventListener("change", () => {
+      const newLang = select.value;
+      localStorage.setItem(STORAGE_KEY, newLang);
+
+      // Navigate to counterpart if on a guide page
+      const url = counterpartUrl(newLang);
+      if (url) {
+        window.location.href = url;
+      } else {
+        // Non-guide page: just update sidebar filtering
+        filterSidebar(newLang);
+        // Sync all switcher dropdowns on the page
+        document.querySelectorAll(".lang-switcher").forEach((s) => {
+          s.value = newLang;
+        });
+      }
+    });
 
     container.appendChild(select);
   }
 
-  // Header (mobile + desktop top bar)
+  // --- Inject switchers ---
   const headerToggle = document.querySelector(
     ".theme-toggle-container.theme-toggle-header"
   );
@@ -60,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
     createSwitcher(wrapper);
   }
 
-  // Content area (desktop, inside article header)
   const contentToggle = document.querySelector(
     ".theme-toggle-container.theme-toggle-content"
   );
@@ -70,4 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     contentToggle.parentNode.insertBefore(wrapper, contentToggle);
     createSwitcher(wrapper);
   }
+
+  // --- Apply initial sidebar filter ---
+  filterSidebar(lang);
 });
