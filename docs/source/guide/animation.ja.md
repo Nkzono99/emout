@@ -1,5 +1,3 @@
-Lang: [日本語](animation.ja.md) | [English](animation.md)
-
 # アニメーション (`gifplot`)
 
 `gifplot()` は多次元データから時系列アニメーションを作成します。`plot()` に次いで 2 番目によく使う機能です。

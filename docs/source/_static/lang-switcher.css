@@ -1,0 +1,27 @@
+/* Language switcher — matches furo's theme-toggle style */
+.lang-switcher-container {
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+}
+
+.lang-switcher {
+  appearance: auto;
+  background: transparent;
+  border: 1px solid var(--color-foreground-border);
+  border-radius: 4px;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 0.15rem 0.3rem;
+}
+
+.lang-switcher:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lang-switcher:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}

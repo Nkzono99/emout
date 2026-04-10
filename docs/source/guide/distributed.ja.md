@@ -1,5 +1,3 @@
-Lang: [日本語](distributed.ja.md) | [English](distributed.md)
-
 # リモート実行 (Dask) — 実験的
 
 大規模なシミュレーション出力を HPC の計算ノードで処理し、

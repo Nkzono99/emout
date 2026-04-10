@@ -1,5 +1,3 @@
-Lang: [English](distributed.md) | [日本語](distributed.ja.md)
-
 # Remote Execution (Dask) — Experimental
 
 A remote execution framework that processes large simulation outputs on

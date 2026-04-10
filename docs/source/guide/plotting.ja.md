@@ -1,5 +1,3 @@
-Lang: [日本語](plotting.ja.md) | [English](plotting.md)
-
 # プロット (`plot`)
 
 `plot()` は emout で最もよく使う機能です。データの次元に応じて自動的に適切な可視化を選択します。

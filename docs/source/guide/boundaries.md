@@ -1,5 +1,3 @@
-Lang: [English](boundaries.md) | [日本語](boundaries.ja.md)
-
 # Boundary Meshes (`data.boundaries`)
 
 The `finbound` / legacy boundaries defined under MPIEMSES's `&ptcond` are exposed

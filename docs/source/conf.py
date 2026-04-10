@@ -77,3 +77,6 @@ html_theme_options = {
 }
 
 html_title = "emout"
+
+html_js_files = ["lang-switcher.js"]
+html_css_files = ["lang-switcher.css"]

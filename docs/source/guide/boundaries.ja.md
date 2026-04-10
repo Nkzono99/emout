@@ -1,5 +1,3 @@
-Lang: [日本語](boundaries.ja.md) | [English](boundaries.md)
-
 # 境界メッシュ (`data.boundaries`)
 
 MPIEMSES の `&ptcond` で定義された finbound / legacy 境界型を、

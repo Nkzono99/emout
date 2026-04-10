@@ -1,5 +1,3 @@
-Lang: [English](plotting.md) | [日本語](plotting.ja.md)
-
 # Plotting (`plot`)
 
 `plot()` is the most frequently used feature in emout. It automatically selects the visualization type based on data dimensionality.
