@@ -14,7 +14,7 @@ import scipy.constants as cn
 from emout.utils import RegexDict, UnitTranslator
 
 if TYPE_CHECKING:
-    from emout.facade import Emout
+    from emout.core.facade import Emout
 
 
 

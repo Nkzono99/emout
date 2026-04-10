@@ -1,5 +1,7 @@
 """Dask cluster lifecycle management (start / stop / connect)."""
 
+from __future__ import annotations
+
 from .clusters import SimpleDaskCluster
 from .config import DaskConfig
 from .remote_render import clear_sessions

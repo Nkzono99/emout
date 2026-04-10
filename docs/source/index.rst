@@ -5,6 +5,7 @@ emout
 
 .. include:: ../../README.en.md
    :parser: myst_parser.sphinx_
+   :start-after: [![License: MIT]
    :end-before: ## Installation
 
 .. toctree::
@@ -35,4 +36,4 @@ emout
    :maxdepth: 2
    :caption: API Reference
 
-   api/emout
+   api/modules

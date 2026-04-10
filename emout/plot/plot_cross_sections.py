@@ -4,6 +4,8 @@ Renders sphere, flat-surface, and rectangle boundaries on a 2-D plane
 using information from the ``plasma.inp`` parameter file.
 """
 
+from __future__ import annotations
+
 from typing import Callable, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
@@ -123,16 +125,16 @@ def _handle_rect(
         to_phys = data.unit.length.reverse
         xl, xu, yl, yu = map(to_phys, (xl, xu, yl, yu))
         zl, zu = to_phys(zl), to_phys(zu)
-        nx, ny = to_phys(nx), to_phys(ny)
+        nx, ny = to_phys(nx - 1), to_phys(ny - 1)
 
     # prepare coords
     if axis == "x" and xl <= coord <= xu:
-        ys = np.array([0, yl, yl, yu, yu, ny - 1])
+        ys = np.array([0, yl, yl, yu, yu, ny])
         zs = np.array([zu, zu, zl, zl, zu, zu])
         ax.plot(ys, zs, **kwargs)
 
     elif axis == "y" and yl <= coord <= yu:
-        xs = np.array([0, xl, xl, xu, xu, nx - 1])
+        xs = np.array([0, xl, xl, xu, xu, nx])
         zs = np.array([zu, zu, zl, zl, zu, zu])
         ax.plot(xs, zs, **kwargs)
 

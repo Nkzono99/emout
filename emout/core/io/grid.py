@@ -7,6 +7,8 @@ or :class:`~emout.core.data.vector_data.VectorData` instances.
 
 # emout/io/grid.py
 
+from __future__ import annotations
+
 import logging
 import re
 from pathlib import Path

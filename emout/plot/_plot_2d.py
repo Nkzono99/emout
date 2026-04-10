@@ -353,7 +353,7 @@ def plot_surface(
 
     if cmap is not None:
         if isinstance(cmap, str):
-            cmap = copy.copy(cm.get_cmap(str(cmap)))
+            cmap = copy.copy(plt.get_cmap(str(cmap)))
         else:
             cmap = copy.copy(cmap)
         cmap.set_bad(color=mask_color)
@@ -746,5 +746,4 @@ def plot_2d_streamline(
         return None
     else:
         return img
-
 

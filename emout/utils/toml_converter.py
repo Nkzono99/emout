@@ -4,6 +4,8 @@ The plasma.toml to plasma.inp conversion is handled by the MPIEMSES3D
 ``toml2inp`` command.
 """
 
+from __future__ import annotations
+
 import copy
 from pathlib import Path
 from typing import Any, Dict

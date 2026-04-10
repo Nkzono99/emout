@@ -5,6 +5,8 @@ the ``~/.emout/server.json`` state file used by the CLI.
 """
 
 # emout/distributed/config.py
+from __future__ import annotations
+
 import json
 import logging
 import os

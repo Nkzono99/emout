@@ -1543,6 +1543,29 @@ class TestPlotCrossSections:
         result = plot_cross_sections(data, axis="z", coord=5, use_si=False)
         mock_ax.plot.assert_called_once()
 
+    def test_rectangle_hole_y_axis_uses_converted_grid_endpoint(self, monkeypatch):
+        """SI conversion should apply to ``nx - 1`` / ``ny - 1`` before plotting."""
+        from emout.plot.plot_cross_sections import plot_cross_sections
+
+        data = self._make_data(boundary_types=["rectangle-hole"])
+        data.inp.xlrechole = [0, 10]
+        data.inp.xurechole = [0, 20]
+        data.inp.ylrechole = [0, 5]
+        data.inp.yurechole = [0, 15]
+        data.inp.zlrechole = [0, 3]
+        data.inp.zurechole = [0, 8]
+        data.inp.nx = 30
+        data.inp.ny = 25
+        data.unit.length.reverse = lambda x: x * 0.5
+        mock_ax = MagicMock()
+        monkeypatch.setattr(plt, "gca", lambda: mock_ax)
+
+        plot_cross_sections(data, axis="y", coord=10, use_si=True)
+
+        xs, zs = mock_ax.plot.call_args.args[:2]
+        np.testing.assert_allclose(xs, np.array([0.0, 5.0, 5.0, 10.0, 10.0, 14.5]))
+        np.testing.assert_allclose(zs, np.array([4.0, 4.0, 1.5, 1.5, 4.0, 4.0]))
+
     def test_rectangle_hole_outside_range(self, monkeypatch):
         """rectangle-hole with coord outside range draws nothing."""
         from emout.plot.plot_cross_sections import plot_cross_sections

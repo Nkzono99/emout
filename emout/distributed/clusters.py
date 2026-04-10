@@ -44,6 +44,8 @@ Usage example:
     # (SLURM jobs expire at walltime or can be cancelled with scancel)
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
 import time
