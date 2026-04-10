@@ -9,6 +9,8 @@ plasma.toml → plasma.inp の変換は MPIEMSES3D 側の ``toml2inp``
 """
 
 import shutil
+import subprocess
+import sys
 
 import f90nml
 import h5py
@@ -17,9 +19,25 @@ import pytest
 
 import emout
 
+
+def _toml2inp_works() -> bool:
+    """Return True only if toml2inp is on PATH and actually runnable."""
+    if shutil.which("toml2inp") is None:
+        return False
+    try:
+        subprocess.run(
+            ["toml2inp", "--help"],
+            capture_output=True,
+            timeout=5,
+        )
+        return True
+    except Exception:
+        return False
+
+
 pytestmark = pytest.mark.skipif(
-    shutil.which("toml2inp") is None,
-    reason="toml2inp command not found on PATH; install MPIEMSES3D to run these tests",
+    not _toml2inp_works(),
+    reason="toml2inp not available or broken on this Python version",
 )
 
 # テスト用 plasma.inp 内容 (conftest.py と同じパラメータ)
