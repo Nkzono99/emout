@@ -17,8 +17,7 @@ authors = [{name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp"}]
 
 maintainers = [{name = "Nkzono99", email = "j-nakazono@stu.kobe-u.ac.jp"}]
 
-license = "MIT"
-license-files = ["LICENSE"]
+license = {text = "MIT"}
 
 dependencies = [
   "numpy",

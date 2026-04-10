@@ -388,7 +388,7 @@ class MultiParticleDataSeries(ParticleDataSeries):
 # ============================================================
 # 2) Snapshot (fixed t, bundling x, y, z, vx, vy, vz, tid)
 # ============================================================
-@dataclass(slots=True)
+@dataclass
 class ParticleSnapshot:
     """Single-timestep snapshot bundling all particle components."""
 

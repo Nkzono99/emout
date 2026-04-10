@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 
-@dataclass(slots=True)
+@dataclass
 class ParticleData:
     """Single-timestep container for one particle-data component.
 
