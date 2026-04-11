@@ -212,6 +212,18 @@ def record_cached_plot(cache_key: str, plot_kwargs: dict) -> None:
     _commands.append(("cached_plot", cache_key, _encode_command_value(plot_kwargs)))
 
 
+def record_cached_plot_surfaces(cache_key: str, surfaces, plot_kwargs: dict) -> None:
+    """Record ``RemoteRef.plot_surfaces()`` for replay on the worker."""
+    _commands.append(
+        (
+            "cached_plot_surfaces",
+            cache_key,
+            _encode_command_value(surfaces),
+            _encode_command_value(plot_kwargs),
+        )
+    )
+
+
 def record_boundary_plot(
     plot_kwargs: dict,
     emout_kwargs: Optional[dict[str, Any]] = None,

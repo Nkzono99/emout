@@ -29,6 +29,11 @@ class FakeActorSession:
         self._instances = {"default": emout} if emout is not None else {}
         self._drops = []
 
+    def _render_to_bytes(self, draw_fn, fmt="png", dpi=150):
+        from emout.distributed.remote_render import RemoteSession
+
+        return RemoteSession._render_to_bytes(draw_fn, fmt=fmt, dpi=dpi)
+
     def _resolve(self, emout_kwargs=None):
         if not self._instances:
             raise RuntimeError("No fake Emout is registered")
@@ -78,6 +83,35 @@ class FakeActorSession:
         from emout.distributed.remote_render import RemoteSession
 
         return FakeFuture(RemoteSession.render_cached_plot(self, key, fmt=fmt, dpi=dpi, **plot_kwargs))
+
+    def get_cached_plot_surfaces_metadata(self, key, use_si=True, vmin=None, vmax=None, cmap_name="jet"):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(
+            RemoteSession.get_cached_plot_surfaces_metadata(
+                self,
+                key,
+                use_si=use_si,
+                vmin=vmin,
+                vmax=vmax,
+                cmap_name=cmap_name,
+            )
+        )
+
+    def render_cached_plot_surfaces(self, key, surfaces, fmt="png", dpi=150, use_si=True, **plot_kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(
+            RemoteSession.render_cached_plot_surfaces(
+                self,
+                key,
+                surfaces,
+                fmt=fmt,
+                dpi=dpi,
+                use_si=use_si,
+                **plot_kwargs,
+            )
+        )
 
     def replay_figure(self, commands, fmt="png", dpi=150):
         from emout.distributed.remote_render import RemoteSession
@@ -414,6 +448,71 @@ def test_remote_figure_replays_pyplot_colorbar_proxy(monkeypatch):
     assert displayed[0][0]
 
 
+def test_remote_ref_plot_surfaces_outside_recording_renders_on_server(monkeypatch):
+    from emout.core.data.data import Data3d
+    from emout.distributed import remote_render
+    from emout.distributed.remote_render import RemoteRef
+    from emout.plot.surface_cut import BoxMeshSurface
+
+    displayed = []
+    session = FakeActorSession()
+    session._cache["field_0"] = Data3d(np.arange(4 * 5 * 6, dtype=float).reshape(4, 5, 6), name="phisp")
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    ref = RemoteRef(session, "field_0")
+    cmap, norm = ref.plot_surfaces(
+        BoxMeshSurface(0.0, 5.0, 0.0, 4.0, 0.0, 3.0, faces=("zmax",), resolution=(4, 4)),
+        use_si=False,
+        cmap_name="plasma",
+    )
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+    assert cmap.name == "plasma"
+    assert norm.vmin < norm.vmax
+
+
+def test_remote_ref_plot_surfaces_replays_with_remote_surface_refs(monkeypatch):
+    from emout.core.data.data import Data3d
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteRef, remote_scope
+    from emout.plot.surface_cut import BoxMeshSurface, add_colorbar
+
+    displayed = []
+    session = FakeActorSession()
+    session._cache["field_0"] = Data3d(np.arange(4 * 5 * 6, dtype=float).reshape(4, 5, 6), name="phisp")
+    session._cache["surface_0"] = BoxMeshSurface(0.0, 5.0, 0.0, 4.0, 0.0, 3.0, faces=("zmax",), resolution=(4, 4))
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    with remote_scope():
+        field = RemoteRef(session, "field_0")
+        surfaces = RemoteRef(session, "surface_0")
+        with remote_figure(session=session):
+            fig = plt.figure(figsize=(5, 4))
+            ax = fig.add_subplot(111, projection="3d")
+            cax = fig.add_axes([0.82, 0.15, 0.04, 0.7])
+            cmap, norm = field.plot_surfaces(
+                surfaces,
+                ax=ax,
+                use_si=False,
+                cmap_name="viridis",
+            )
+            cbar = add_colorbar(fig, ax=None, cmap=cmap, norm=norm, cax=cax)
+            cbar.set_label("phi")
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+    assert session._drops == ["surface_0", "field_0"]
+
+
 def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch):
     from emout.distributed import remote_figure
     from emout.distributed import remote_render
@@ -467,6 +566,47 @@ def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch
     assert fmt == "png"
     assert dpi == 150
     assert displayed == [(b"png-bytes", None)]
+
+
+def test_try_remote_plot_keeps_implicit_data_transfer_mode(monkeypatch):
+    from emout.core.data.data import Data2d
+    from emout.distributed import remote_render
+
+    open_kwargs = {
+        "directory": "/tmp/input",
+        "output_directory": "/tmp/output",
+        "input_path": "/tmp/input/plasma.toml",
+        "append_directories": [],
+        "inpfilename": "plasma.toml",
+    }
+    data = Data2d(np.arange(4, dtype=float).reshape(2, 2), filename="dummy.h5", name="phisp")
+    data._emout_open_kwargs = open_kwargs
+    payload = {
+        "array": np.arange(4, dtype=float).reshape(2, 2),
+        "name": "phisp",
+        "slices": data.slices,
+        "slice_axes": data.slice_axes,
+        "axisunits": data.axisunits,
+        "valunit": data.valunit,
+    }
+    seen = []
+
+    class FakeSession:
+        def fetch_field(self, attr_name, recipe_index, emout_kwargs=None):
+            seen.append((attr_name, recipe_index, emout_kwargs))
+            return FakeFuture(payload)
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: FakeSession())
+    monkeypatch.setattr(
+        Data2d,
+        "plot",
+        lambda self, **kwargs: {"kwargs": kwargs, "remote_kwargs": getattr(self, "_emout_open_kwargs", None)},
+    )
+
+    result = data._try_remote_plot(cmap="magma")
+
+    assert result == {"kwargs": {"cmap": "magma"}, "remote_kwargs": None}
+    assert seen == [("phisp", (0, 0, slice(0, 2, 1), slice(0, 2, 1)), open_kwargs)]
 
 
 def test_get_or_create_session_returns_shared_session(monkeypatch):

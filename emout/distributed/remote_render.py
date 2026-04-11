@@ -393,6 +393,60 @@ class RemoteSession:
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
+    def get_cached_plot_surfaces_metadata(
+        self,
+        key: str,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        cmap_name="jet",
+    ) -> dict:
+        """Return colormap metadata for ``cached_object.plot_surfaces(...)``."""
+        from emout.plot.surface_cut.viz import _make_norm
+
+        obj = self._cache[key]
+        effective_si = bool(use_si) and getattr(obj, "valunit", None) is not None
+        data = np.asarray(obj.val_si if effective_si else obj, dtype=np.float64)
+        norm = _make_norm(vmin=vmin, vmax=vmax, robust_data=data)
+        return {
+            "cmap_name": cmap_name,
+            "vmin": float(norm.vmin),
+            "vmax": float(norm.vmax),
+        }
+
+    def render_cached_plot_surfaces(
+        self,
+        key: str,
+        surfaces,
+        fmt: str = "png",
+        dpi: int = 150,
+        use_si: bool = True,
+        **plot_kwargs,
+    ) -> bytes:
+        """Render ``cached_object.plot_surfaces(...)`` and return image bytes."""
+        obj = self._cache[key]
+        surfaces = self._decode_remote_value(surfaces)
+        plot_kwargs = self._decode_remote_value(plot_kwargs)
+
+        def _draw(fig, ax):
+            ax = fig.add_subplot(111, projection="3d")
+            if hasattr(obj, "_plot_surfaces_local"):
+                obj._plot_surfaces_local(
+                    surfaces=surfaces,
+                    ax=ax,
+                    use_si=use_si,
+                    **plot_kwargs,
+                )
+            else:
+                obj.plot_surfaces(
+                    surfaces,
+                    ax=ax,
+                    use_si=use_si,
+                    **plot_kwargs,
+                )
+
+        return self._render_to_bytes(_draw, fmt, dpi)
+
     def fetch_field(self, attr_name: str, index: tuple, emout_kwargs=None) -> dict:
         """Return sliced field data and metadata for local plotting.
 
@@ -462,6 +516,7 @@ class RemoteSession:
             ("field_plot", attr_name, recipe_index, plot_kwargs, emout_kwargs)
             ("plot_surfaces", attr_name, recipe_index, surfaces, plot_kwargs, emout_kwargs)
             ("cached_plot", key, plot_kwargs)
+            ("cached_plot_surfaces", key, surfaces, plot_kwargs)
             ("figure_call", figure_id, method_name, args, kwargs, target)
             ("axes_call", ax_id, method_name, args, kwargs)
             ("axis_call", ax_id, axis_name, method_name, args, kwargs)
@@ -503,6 +558,8 @@ class RemoteSession:
             if isinstance(value, dict):
                 if marker in value:
                     return _resolve_proxy(value[marker])
+                if set(value) == {_REMOTE_REF_MARKER}:
+                    return self._cache[value[_REMOTE_REF_MARKER]]
                 return {k: _decode(v) for k, v in value.items()}
             if isinstance(value, list):
                 return [_decode(v) for v in value]
@@ -574,6 +631,25 @@ class RemoteSession:
                 plot_kwargs = _decode(plot_kwargs)
                 obj = self._cache[key]
                 obj.plot(**plot_kwargs)
+
+            elif kind == "cached_plot_surfaces":
+                _, key, surfaces, plot_kwargs = cmd
+                surfaces = _decode(surfaces)
+                plot_kwargs = _decode(plot_kwargs)
+                use_si = plot_kwargs.pop("use_si", True)
+                obj = self._cache[key]
+                if hasattr(obj, "_plot_surfaces_local"):
+                    obj._plot_surfaces_local(
+                        surfaces=surfaces,
+                        use_si=use_si,
+                        **plot_kwargs,
+                    )
+                else:
+                    obj.plot_surfaces(
+                        surfaces,
+                        use_si=use_si,
+                        **plot_kwargs,
+                    )
 
             elif kind == "figure_call":
                 _, figure_id, method_name, args, kwargs, target = cmd
@@ -797,6 +873,73 @@ class RemoteRef:
             return None
         img = _await_remote(self._session.render_cached_plot(self._key, fmt=fmt, dpi=dpi, **plot_kwargs))
         return display_image(img, ax=ax)
+
+    def plot_surfaces(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        fmt: str = "png",
+        dpi: int = 150,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        **plot_kwargs,
+    ):
+        """Render ``cached_object.plot_surfaces(...)`` while keeping data remote."""
+        import matplotlib.pyplot as plt
+
+        from emout.plot.surface_cut.viz import _make_norm
+        from .remote_figure import bind_session, is_recording, record_cached_plot_surfaces
+
+        cmap_name = plot_kwargs.get("cmap_name", "jet")
+        if vmin is None or vmax is None:
+            metadata = _await_remote(
+                self._session.get_cached_plot_surfaces_metadata(
+                    self._key,
+                    use_si=use_si,
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap_name=cmap_name,
+                )
+            )
+            cmap_name = metadata["cmap_name"]
+            vmin = metadata["vmin"]
+            vmax = metadata["vmax"]
+
+        cmap = plt.get_cmap(cmap_name)
+        norm = _make_norm(vmin=vmin, vmax=vmax)
+
+        payload_kwargs = {
+            "ax": ax,
+            "use_si": use_si,
+            "vmin": vmin,
+            "vmax": vmax,
+            **plot_kwargs,
+        }
+        encoded_surfaces = self._encode_remote_arg(surfaces)
+        encoded_kwargs = self._encode_remote_arg(payload_kwargs)
+
+        if is_recording():
+            bind_session(self._session)
+            record_cached_plot_surfaces(self._key, encoded_surfaces, encoded_kwargs)
+            return cmap, norm
+
+        render_kwargs = dict(plot_kwargs)
+        render_kwargs["vmin"] = vmin
+        render_kwargs["vmax"] = vmax
+        img = _await_remote(
+            self._session.render_cached_plot_surfaces(
+                self._key,
+                encoded_surfaces,
+                fmt=fmt,
+                dpi=dpi,
+                use_si=use_si,
+                **self._encode_remote_arg(render_kwargs),
+            )
+        )
+        display_image(img, ax=ax)
+        return cmap, norm
 
     def __getitem__(self, index) -> "RemoteRef":
         key = self._spawn("ref")
