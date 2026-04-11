@@ -13,6 +13,7 @@ from __future__ import annotations
 import contextlib
 import itertools
 import json
+import operator
 import sys
 import warnings
 from pathlib import Path
@@ -23,6 +24,33 @@ import numpy as np
 _key_counter = itertools.count()
 _REMOTE_REF_MARKER = "__remote_ref__"
 _scope_stack: list["RemoteScope"] = []
+
+_UNARY_OPERATOR_MAP = {
+    "neg": operator.neg,
+    "pos": operator.pos,
+    "abs": operator.abs,
+    "invert": operator.invert,
+}
+
+_BINARY_OPERATOR_MAP = {
+    "add": operator.add,
+    "sub": operator.sub,
+    "mul": operator.mul,
+    "truediv": operator.truediv,
+    "floordiv": operator.floordiv,
+    "pow": operator.pow,
+    "mod": operator.mod,
+    "matmul": operator.matmul,
+    "and": operator.and_,
+    "or": operator.or_,
+    "xor": operator.xor,
+    "lt": operator.lt,
+    "le": operator.le,
+    "eq": operator.eq,
+    "ne": operator.ne,
+    "gt": operator.gt,
+    "ge": operator.ge,
+}
 
 
 def _next_key(prefix: str = "result") -> str:
@@ -201,6 +229,47 @@ class RemoteSession:
         resolved_args = self._decode_remote_value(args)
         resolved_kwargs = self._decode_remote_value(kwargs)
         self._cache[key] = func(obj, *resolved_args, **resolved_kwargs)
+        return True
+
+    def apply_unary_operator(self, key: str, parent_key: str, operator_name: str) -> bool:
+        """Apply a unary operator to a cached object and store the result."""
+        obj = self._cache[parent_key]
+        fn = _UNARY_OPERATOR_MAP[operator_name]
+        self._cache[key] = fn(obj)
+        return True
+
+    def apply_binary_operator(
+        self,
+        key: str,
+        parent_key: str,
+        operator_name: str,
+        other=None,
+        reverse: bool = False,
+    ) -> bool:
+        """Apply a binary operator to a cached object and store the result."""
+        obj = self._cache[parent_key]
+        other = self._decode_remote_value(other)
+        lhs, rhs = (other, obj) if reverse else (obj, other)
+        fn = _BINARY_OPERATOR_MAP[operator_name]
+        self._cache[key] = fn(lhs, rhs)
+        return True
+
+    def apply_ufunc(self, key: str, ufunc_name: str, method: str, inputs=(), kwargs=None) -> bool:
+        """Apply a NumPy ufunc on the worker and store the result."""
+        kwargs = {} if kwargs is None else kwargs
+        resolved_inputs = self._decode_remote_value(inputs)
+        resolved_kwargs = self._decode_remote_value(kwargs)
+        ufunc = getattr(np, ufunc_name)
+        self._cache[key] = getattr(ufunc, method)(*resolved_inputs, **resolved_kwargs)
+        return True
+
+    def apply_array_function(self, key: str, func_name: str, args=(), kwargs=None) -> bool:
+        """Apply a top-level NumPy function on the worker and store the result."""
+        kwargs = {} if kwargs is None else kwargs
+        resolved_args = self._decode_remote_value(args)
+        resolved_kwargs = self._decode_remote_value(kwargs)
+        func = getattr(np, func_name)
+        self._cache[key] = func(*resolved_args, **resolved_kwargs)
         return True
 
     def fetch_object(self, key: str):
@@ -806,6 +875,8 @@ class RemoteEmout:
 class RemoteRef:
     """Client-side proxy for an object cached inside :class:`RemoteSession`."""
 
+    __array_priority__ = 1000
+
     def __init__(self, session: RemoteSession, key: str):
         self._session = session
         self._key = key
@@ -826,6 +897,25 @@ class RemoteRef:
 
     def _spawn(self, prefix: str) -> str:
         return _next_key(prefix)
+
+    def _apply_unary_operator(self, operator_name: str) -> "RemoteRef":
+        key = self._spawn("ref")
+        _await_remote(self._session.apply_unary_operator(key, self._key, operator_name))
+        return RemoteRef(self._session, key)
+
+    def _apply_binary_operator(self, operator_name: str, other, reverse: bool = False) -> "RemoteRef":
+        key = self._spawn("ref")
+        encoded_other = self._encode_remote_arg(other)
+        _await_remote(
+            self._session.apply_binary_operator(
+                key,
+                self._key,
+                operator_name,
+                other=encoded_other,
+                reverse=reverse,
+            )
+        )
+        return RemoteRef(self._session, key)
 
     def fetch(self):
         """Fetch the cached object to the local process."""
@@ -940,6 +1030,143 @@ class RemoteRef:
         )
         display_image(img, ax=ax)
         return cmap, norm
+
+    def __array_ufunc__(self, ufunc, method: str, *inputs, **kwargs):
+        if method == "at":
+            raise NotImplementedError("RemoteRef does not support in-place ufuncs")
+        if kwargs.get("out") is not None:
+            raise NotImplementedError("RemoteRef does not support ufunc 'out' arguments")
+        if getattr(ufunc, "nout", 1) != 1:
+            raise NotImplementedError("RemoteRef only supports single-output ufuncs")
+
+        key = self._spawn("ref")
+        _await_remote(
+            self._session.apply_ufunc(
+                key,
+                ufunc.__name__,
+                method,
+                inputs=self._encode_remote_arg(inputs),
+                kwargs=self._encode_remote_arg(kwargs),
+            )
+        )
+        return RemoteRef(self._session, key)
+
+    def __array_function__(self, func, types, args, kwargs):
+        module = getattr(func, "__module__", "")
+        name = getattr(func, "__name__", None)
+        if not module.startswith("numpy") or not name or not hasattr(np, name):
+            return NotImplemented
+        if kwargs is None:
+            kwargs = {}
+        if kwargs.get("out") is not None:
+            raise NotImplementedError("RemoteRef does not support numpy 'out' arguments")
+
+        key = self._spawn("ref")
+        _await_remote(
+            self._session.apply_array_function(
+                key,
+                name,
+                args=self._encode_remote_arg(args),
+                kwargs=self._encode_remote_arg(kwargs),
+            )
+        )
+        return RemoteRef(self._session, key)
+
+    def __neg__(self) -> "RemoteRef":
+        return self._apply_unary_operator("neg")
+
+    def __pos__(self) -> "RemoteRef":
+        return self._apply_unary_operator("pos")
+
+    def __abs__(self) -> "RemoteRef":
+        return self._apply_unary_operator("abs")
+
+    def __invert__(self) -> "RemoteRef":
+        return self._apply_unary_operator("invert")
+
+    def __add__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("add", other)
+
+    def __radd__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("add", other, reverse=True)
+
+    def __sub__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("sub", other)
+
+    def __rsub__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("sub", other, reverse=True)
+
+    def __mul__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("mul", other)
+
+    def __rmul__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("mul", other, reverse=True)
+
+    def __truediv__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("truediv", other)
+
+    def __rtruediv__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("truediv", other, reverse=True)
+
+    def __floordiv__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("floordiv", other)
+
+    def __rfloordiv__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("floordiv", other, reverse=True)
+
+    def __pow__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("pow", other)
+
+    def __rpow__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("pow", other, reverse=True)
+
+    def __mod__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("mod", other)
+
+    def __rmod__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("mod", other, reverse=True)
+
+    def __matmul__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("matmul", other)
+
+    def __rmatmul__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("matmul", other, reverse=True)
+
+    def __and__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("and", other)
+
+    def __rand__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("and", other, reverse=True)
+
+    def __or__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("or", other)
+
+    def __ror__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("or", other, reverse=True)
+
+    def __xor__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("xor", other)
+
+    def __rxor__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("xor", other, reverse=True)
+
+    def __lt__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("lt", other)
+
+    def __le__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("le", other)
+
+    def __eq__(self, other) -> "RemoteRef":  # type: ignore[override]
+        return self._apply_binary_operator("eq", other)
+
+    def __ne__(self, other) -> "RemoteRef":  # type: ignore[override]
+        return self._apply_binary_operator("ne", other)
+
+    def __gt__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("gt", other)
+
+    def __ge__(self, other) -> "RemoteRef":
+        return self._apply_binary_operator("ge", other)
 
     def __getitem__(self, index) -> "RemoteRef":
         key = self._spawn("ref")

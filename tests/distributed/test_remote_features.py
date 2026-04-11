@@ -74,6 +74,35 @@ class FakeActorSession:
 
         return FakeFuture(RemoteSession.apply_function(self, key, parent_key, func, args=args, kwargs=kwargs))
 
+    def apply_unary_operator(self, key, parent_key, operator_name):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.apply_unary_operator(self, key, parent_key, operator_name))
+
+    def apply_binary_operator(self, key, parent_key, operator_name, other=None, reverse=False):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(
+            RemoteSession.apply_binary_operator(
+                self,
+                key,
+                parent_key,
+                operator_name,
+                other=other,
+                reverse=reverse,
+            )
+        )
+
+    def apply_ufunc(self, key, ufunc_name, method, inputs=(), kwargs=None):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.apply_ufunc(self, key, ufunc_name, method, inputs=inputs, kwargs=kwargs))
+
+    def apply_array_function(self, key, func_name, args=(), kwargs=None):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.apply_array_function(self, key, func_name, args=args, kwargs=kwargs))
+
     def fetch_object(self, key):
         from emout.distributed.remote_render import RemoteSession
 
@@ -189,6 +218,25 @@ def test_remote_ref_supports_dynamic_method_calls():
     assert sl.shape.fetch() == array[1].shape
 
 
+def test_remote_ref_supports_operator_and_numpy_style_expressions():
+    from emout.distributed.remote_render import RemoteEmout
+
+    array = np.arange(12, dtype=float).reshape(3, 4)
+    session = FakeActorSession(emout=SimpleNamespace(exz=array, phisp=array + 10.0))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    sl = remote_data.exz[1]
+    neg_ref = -sl
+    expr_ref = (remote_data.phisp[1] + 2.0) / np.abs(neg_ref)
+    mean_ref = np.mean(expr_ref)
+
+    expected = ((array[1] + 10.0) + 2.0) / np.abs(-array[1])
+
+    assert np.allclose(neg_ref.fetch(), -array[1])
+    assert np.allclose(expr_ref.fetch(), expected)
+    assert mean_ref.fetch() == pytest.approx(expected.mean())
+
+
 def test_remote_scope_auto_drops_registered_refs():
     from emout.distributed.remote_render import RemoteRef, remote_scope
 
@@ -275,6 +323,42 @@ def test_remote_figure_replays_subplot_field_plot_and_axes_overlay(monkeypatch):
         ax = plt.subplot(111)
         assert data.plot() is None
         ax.axhline(0.5, color="red", linewidth=0.5)
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
+def test_remote_figure_supports_expression_style_overlays_with_remote_refs(monkeypatch):
+    from emout.core.data.data import Data4d
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteEmout
+
+    displayed = []
+    phisp = Data4d(np.arange(2 * 4 * 5 * 6, dtype=float).reshape(2, 4, 5, 6), filename="dummy.h5", name="phisp")
+    exz = Data4d(np.arange(2 * 4 * 5 * 6, dtype=float).reshape(2, 4, 5, 6) + 1.0, filename="dummy.h5", name="exz")
+
+    class Holder:
+        def __init__(self, data):
+            self._data = data
+
+        def __getitem__(self, index):
+            return self._data[index]
+
+    session = FakeActorSession(emout=SimpleNamespace(phisp=Holder(phisp), exz=Holder(exz)))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    with remote_figure(session=session):
+        plt.figure(figsize=(18, 16))
+        remote_data.phisp[-1, 1:4, 2, :].plot()
+        (-remote_data.exz[-1, 1:4, 2, :]).plot()
 
     assert len(displayed) == 1
     assert displayed[0][0]
