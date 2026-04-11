@@ -5,6 +5,7 @@ vector_data.py, griddata_series.py, particle_data.py, and
 particle_data_series.py.
 """
 
+import pickle
 import warnings
 from unittest.mock import patch
 
@@ -19,6 +20,7 @@ from emout.core.data import (
     Data2d,
     Data3d,
     Data4d,
+    GridDataSelection,
     GridDataSeries,
     ParticleData,
     ParticleDataSeries,
@@ -689,12 +691,12 @@ class TestGridDataSeries:
 
     def test_getitem_slice(self, series):
         d = series[:]
-        assert isinstance(d, Data4d)
+        assert isinstance(d, GridDataSelection)
         assert d.shape[0] == 5
 
     def test_getitem_list(self, series):
         d = series[[0, 2]]
-        assert isinstance(d, Data4d)
+        assert isinstance(d, GridDataSelection)
         assert d.shape[0] == 2
 
     def test_getitem_tuple_int(self, series):
@@ -706,6 +708,50 @@ class TestGridDataSeries:
         """Tuple (t_slice, ...) indexing."""
         d = series[:, 0]
         assert isinstance(d, Data3d)
+
+    def test_getitem_tuple_slice_timeseries_avoids_shape_change(self, series):
+        d = series[:, 1, 1, 1]
+        expected = series[:][:, 1, 1, 1]
+        assert isinstance(d, Data1d)
+        np.testing.assert_allclose(np.asarray(d), np.asarray(expected))
+
+    def test_lazy_selector_staged_space_selection(self, series):
+        staged = series.lazy[:].select_space(1, 1, 1)
+        expected = series[:][:, 1, 1, 1]
+        assert isinstance(staged, Data1d)
+        np.testing.assert_allclose(np.asarray(staged), np.asarray(expected))
+
+    def test_lazy_selector_tuple_staged_space_selection(self, series):
+        staged = series.lazy[:][:, 1, 1, 1]
+        expected = series[:][:, 1, 1, 1]
+        assert isinstance(staged, Data1d)
+        np.testing.assert_allclose(np.asarray(staged), np.asarray(expected))
+
+    def test_lazy_selector_repr_and_shape(self, series):
+        selection = series.lazy[:]
+        assert "GridDataSelection" in repr(selection)
+        assert selection.shape == (5, 3, 4, 5)
+
+    def test_lazy_selector_gifplot_frames(self, series):
+        updater = series.lazy[:].gifplot(action="frames")
+        from emout.plot.animation_plot import FrameUpdater
+
+        assert isinstance(updater, FrameUpdater)
+
+    def test_lazy_selector_materialize_returns_data4d(self, series):
+        d = series[:].materialize()
+        assert isinstance(d, Data4d)
+        assert d.shape == (5, 3, 4, 5)
+
+    def test_lazy_selector_attribute_access_materializes(self, series):
+        negated = series[:].negate()
+        assert isinstance(negated, Data4d)
+        np.testing.assert_allclose(np.asarray(negated), -np.asarray(series[:].materialize()))
+
+    def test_lazy_selector_pickles_as_data4d(self, series):
+        restored = pickle.loads(pickle.dumps(series[:]))
+        assert isinstance(restored, Data4d)
+        assert restored.shape == (5, 3, 4, 5)
 
     def test_getitem_invalid_type(self, series):
         with pytest.raises(TypeError, match="Unsupported"):

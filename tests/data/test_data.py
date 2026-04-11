@@ -54,7 +54,8 @@ def test_data_type(data):
     """
     assert type(data.phisp) == emout.data.GridDataSeries
 
-    assert type(data.phisp[:]) == emout.data.Data4d
+    assert isinstance(data.phisp[:], emout.data.GridDataSelection)
+    assert type(data.phisp[:].materialize()) == emout.data.Data4d
     assert type(data.phisp[1]) == emout.data.Data3d
     assert type(data.phisp[1][1, :, :]) == emout.data.Data2d
     assert type(data.phisp[1][1, 1, :]) == emout.data.Data1d
