@@ -428,7 +428,7 @@ class RemoteSession:
 
         def _draw(fig, ax):
             ax = fig.add_subplot(111, projection="3d")
-            data3d.plot_surfaces(
+            data3d._plot_surfaces_local(
                 surfaces=boundaries,
                 ax=ax,
                 use_si=use_si,
@@ -460,6 +460,7 @@ class RemoteSession:
         Command formats::
 
             ("field_plot", attr_name, recipe_index, plot_kwargs, emout_kwargs)
+            ("plot_surfaces", attr_name, recipe_index, surfaces, plot_kwargs, emout_kwargs)
             ("cached_plot", key, plot_kwargs)
             ("figure_call", figure_id, method_name, args, kwargs, target)
             ("axes_call", ax_id, method_name, args, kwargs)
@@ -558,6 +559,15 @@ class RemoteSession:
                 data = self._resolve(emout_kwargs)
                 arr = getattr(data, attr_name)[recipe_index]
                 arr.plot(**plot_kwargs)
+
+            elif kind == "plot_surfaces":
+                _, attr_name, recipe_index, surfaces, plot_kwargs, emout_kwargs = cmd
+                surfaces = _decode(surfaces)
+                plot_kwargs = _decode(plot_kwargs)
+                emout_kwargs = _decode(emout_kwargs)
+                data = self._resolve(emout_kwargs)
+                arr = getattr(data, attr_name)[recipe_index]
+                arr._plot_surfaces_local(surfaces, **plot_kwargs)
 
             elif kind == "cached_plot":
                 _, key, plot_kwargs = cmd

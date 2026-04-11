@@ -117,6 +117,26 @@ def record_field_plot(
     )
 
 
+def record_plot_surfaces(
+    attr_name: str,
+    recipe_index: tuple,
+    surfaces,
+    plot_kwargs: dict,
+    emout_kwargs: Optional[dict[str, Any]] = None,
+) -> None:
+    """Record a ``Data3d.plot_surfaces()`` command with the Emout identity."""
+    _commands.append(
+        (
+            "plot_surfaces",
+            attr_name,
+            recipe_index,
+            _encode_command_value(surfaces),
+            _encode_command_value(plot_kwargs),
+            _encode_command_value(emout_kwargs),
+        )
+    )
+
+
 def record_plt_call(method: str, args: tuple, kwargs: dict) -> None:
     """Record a ``plt.*`` call."""
     _commands.append(("plt", method, _encode_command_value(args), _encode_command_value(kwargs)))

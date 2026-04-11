@@ -252,9 +252,41 @@ class Data3d(Data):
         tuple
             ``(cmap, norm)`` returned by ``plot_surfaces``.
         """
+        remote_kwargs = self._get_remote_open_kwargs()
+        if remote_kwargs is not None:
+            from emout.distributed.remote_figure import (
+                is_recording,
+                record_plot_surfaces,
+                request_session,
+            )
+
+            if is_recording():
+                from emout.plot.surface_cut.viz import _make_norm
+                import matplotlib.pyplot as plt
+
+                request_session(remote_kwargs)
+                recipe_index = self._to_recipe_index()
+                record_plot_surfaces(
+                    self.name,
+                    recipe_index,
+                    surfaces,
+                    {
+                        "ax": ax,
+                        "use_si": use_si,
+                        "vmin": vmin,
+                        "vmax": vmax,
+                        **kwargs,
+                    },
+                    emout_kwargs=remote_kwargs,
+                )
+                effective_si = bool(use_si) and getattr(self, "valunit", None) is not None
+                data = np.asarray(self.val_si if effective_si else self, dtype=np.float64)
+                cmap = plt.get_cmap(kwargs.get("cmap_name", "jet"))
+                norm = _make_norm(vmin, vmax, robust_data=data)
+                return cmap, norm
+
         # If a Dask session is running, fetch the 3-D array from the worker
         # and render locally (so ax.set_xlabel() etc. can be applied afterwards)
-        remote_kwargs = self._get_remote_open_kwargs()
         if remote_kwargs is not None:
             from emout.distributed.remote_render import get_or_create_session
 
@@ -272,7 +304,7 @@ class Data3d(Data):
                 local_data.slice_axes = payload["slice_axes"]
                 local_data._emout_dir = None  # prevent recursion
                 local_data._emout_open_kwargs = None
-                return local_data.plot_surfaces(
+                return local_data._plot_surfaces_local(
                     surfaces,
                     ax=ax,
                     use_si=use_si,
@@ -280,6 +312,27 @@ class Data3d(Data):
                     vmax=vmax,
                     **kwargs,
                 )
+
+        return self._plot_surfaces_local(
+            surfaces,
+            ax=ax,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs,
+        )
+
+    def _plot_surfaces_local(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        use_si: bool = True,
+        vmin: Union[float, None] = None,
+        vmax: Union[float, None] = None,
+        **kwargs,
+    ):
+        """Local implementation for ``plot_surfaces`` without remote dispatch."""
 
         import matplotlib.pyplot as plt
 

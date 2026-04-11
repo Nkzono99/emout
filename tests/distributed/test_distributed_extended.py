@@ -617,6 +617,29 @@ class TestRecordingState:
 
         _rf_mod._reset_recording_state()
 
+    def test_record_plot_surfaces(self):
+        _rf_mod._reset_recording_state()
+        _rf_mod._commands = []
+
+        _rf_mod.record_plot_surfaces(
+            "phisp",
+            (0,),
+            ["surface"],
+            {"use_si": True, "vmin": -1.0},
+            {"directory": "/tmp"},
+        )
+
+        assert len(_rf_mod._commands) == 1
+        cmd = _rf_mod._commands[0]
+        assert cmd[0] == "plot_surfaces"
+        assert cmd[1] == "phisp"
+        assert cmd[2] == (0,)
+        assert cmd[3] == ["surface"]
+        assert cmd[4] == {"use_si": True, "vmin": -1.0}
+        assert cmd[5] == {"directory": "/tmp"}
+
+        _rf_mod._reset_recording_state()
+
     def test_record_plt_call(self):
         _rf_mod._reset_recording_state()
         _rf_mod._commands = []

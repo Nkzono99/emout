@@ -328,6 +328,65 @@ def test_remote_figure_supports_surface_cut_helpers(monkeypatch):
     assert displayed[0][0]
 
 
+def test_remote_figure_records_data3d_plot_surfaces_without_fetch_field(monkeypatch):
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed import remote_render
+    from emout.core.data.data import Data3d
+    from emout.plot.surface_cut import BoxMeshSurface, add_colorbar
+
+    displayed = []
+    open_kwargs = {
+        "directory": "/tmp/input",
+        "output_directory": "/tmp/output",
+        "input_path": "/tmp/input/plasma.toml",
+        "append_directories": [],
+        "inpfilename": "plasma.toml",
+    }
+
+    array = np.arange(6 * 5 * 4, dtype=float).reshape(4, 5, 6)
+    data3d = Data3d(array, filename="dummy.h5", name="phisp")
+    data3d._emout_open_kwargs = open_kwargs
+    replay_data3d = Data3d(array, filename="dummy.h5", name="phisp")
+    replay_data3d._emout_open_kwargs = None
+
+    class Holder:
+        def __getitem__(self, index):
+            assert index == (0, slice(0, 4, 1), slice(0, 5, 1), slice(0, 6, 1))
+            return replay_data3d
+
+    session = FakeActorSession(emout=SimpleNamespace(phisp=Holder()))
+
+    def _fail_fetch_field(*args, **kwargs):
+        raise AssertionError("fetch_field should not be used while recording Data3d.plot_surfaces()")
+
+    monkeypatch.setattr(session, "fetch_field", _fail_fetch_field, raising=False)
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: session)
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    with remote_figure():
+        fig = plt.figure(figsize=(5, 4))
+        ax = fig.add_subplot(111, projection="3d")
+        cax = fig.add_axes([0.82, 0.15, 0.04, 0.7])
+        cmap, norm = data3d.plot_surfaces(
+            BoxMeshSurface(0.0, 5.0, 0.0, 4.0, 0.0, 3.0, faces=("zmax",), resolution=(4, 4)),
+            ax=ax,
+            use_si=False,
+            vmin=0.0,
+            vmax=120.0,
+            contour_levels=[20.0, 40.0],
+        )
+        cbar = add_colorbar(fig, ax=None, cmap=cmap, norm=norm, cax=cax)
+        cbar.set_label("phi")
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
 def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch):
     from emout.distributed import remote_figure
     from emout.distributed import remote_render
