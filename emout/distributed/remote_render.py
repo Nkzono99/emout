@@ -921,6 +921,16 @@ class RemoteRef:
         """Fetch the cached object to the local process."""
         return _await_remote(self._session.fetch_object(self._key))
 
+    def _fetch_scalar(self):
+        value = self.fetch()
+        if isinstance(value, np.ndarray):
+            if value.shape != ():
+                raise TypeError("RemoteRef does not represent a scalar value")
+            return value.item()
+        if isinstance(value, np.generic):
+            return value.item()
+        return value
+
     def drop(self) -> None:
         """Release the cached object from worker memory."""
         _await_remote(self._session.drop(self._key))
@@ -1167,6 +1177,21 @@ class RemoteRef:
 
     def __ge__(self, other) -> "RemoteRef":
         return self._apply_binary_operator("ge", other)
+
+    def __int__(self) -> int:
+        return int(self._fetch_scalar())
+
+    def __float__(self) -> float:
+        return float(self._fetch_scalar())
+
+    def __complex__(self) -> complex:
+        return complex(self._fetch_scalar())
+
+    def __index__(self) -> int:
+        return operator.index(self._fetch_scalar())
+
+    def __bool__(self) -> bool:
+        raise TypeError("The truth value of a RemoteRef is ambiguous; call fetch() first")
 
     def __getitem__(self, index) -> "RemoteRef":
         key = self._spawn("ref")

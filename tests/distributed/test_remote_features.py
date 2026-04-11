@@ -237,6 +237,16 @@ def test_remote_ref_supports_operator_and_numpy_style_expressions():
     assert mean_ref.fetch() == pytest.approx(expected.mean())
 
 
+def test_remote_ref_supports_scalar_conversion_helpers():
+    from emout.distributed.remote_render import RemoteEmout
+
+    session = FakeActorSession(emout=SimpleNamespace(inp=SimpleNamespace(ny=6, ratio=np.array(1.5))))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    assert int(remote_data.inp.ny // 2) == 3
+    assert float(remote_data.inp.ratio) == pytest.approx(1.5)
+
+
 def test_remote_scope_auto_drops_registered_refs():
     from emout.distributed.remote_render import RemoteRef, remote_scope
 
