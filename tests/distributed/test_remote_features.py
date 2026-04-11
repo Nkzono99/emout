@@ -271,6 +271,63 @@ def test_remote_figure_replays_figure_add_axes_plot3d_and_tick_params(monkeypatc
     assert displayed[0][0]
 
 
+def test_remote_figure_supports_surface_cut_helpers(monkeypatch):
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed import remote_render
+    from emout.plot.surface_cut import (
+        Bounds3D,
+        BoxMeshSurface,
+        Field3D,
+        RenderItem,
+        UniformCellCenteredGrid,
+        add_colorbar,
+        plot_surfaces,
+    )
+
+    displayed = []
+    session = FakeActorSession()
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    grid = UniformCellCenteredGrid(nx=6, ny=5, nz=4, dx=1.0, dy=1.0, dz=1.0)
+    z = grid.z_centers()[:, None, None]
+    y = grid.y_centers()[None, :, None]
+    x = grid.x_centers()[None, None, :]
+    field = Field3D(grid, x + 2.0 * y + 3.0 * z)
+    surface = RenderItem(
+        BoxMeshSurface(0.0, 5.0, 0.0, 4.0, 0.0, 3.0, faces=("zmax",), resolution=(4, 4)),
+        style="field",
+    )
+
+    with remote_figure(session=session):
+        fig = plt.figure(figsize=(5, 4))
+        ax = fig.add_axes([0.1, 0.1, 0.6, 0.8], projection="3d")
+        cax = fig.add_axes([0.78, 0.15, 0.04, 0.7])
+        ax.view_init(elev=25, azim=-40)
+        cmap, norm = plot_surfaces(
+            ax,
+            field=field,
+            surfaces=[surface],
+            bounds=Bounds3D((0.0, 6.0), (0.0, 5.0), (0.0, 4.0)),
+            vmin=0.0,
+            vmax=25.0,
+            contour_levels=[5.0, 10.0],
+        )
+        cbar = add_colorbar(fig, ax=None, cmap=cmap, norm=norm, cax=cax)
+        cbar.set_label("phi")
+        cbar.ax.tick_params(labelsize=8)
+        assert ax.elev == 25
+        assert ax.azim == -40
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
 def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch):
     from emout.distributed import remote_figure
     from emout.distributed import remote_render

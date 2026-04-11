@@ -332,6 +332,15 @@ class AxesProxy(_RemotePlotProxyBase):
         object.__setattr__(self, "_remote_plot_kind", "axes")
         object.__setattr__(self, "_remote_plot_id", axes_id)
         object.__setattr__(self, "_figure_id", figure_id)
+        object.__setattr__(self, "azim", -60.0)
+        object.__setattr__(self, "elev", 30.0)
+
+    def __setattr__(self, name: str, value) -> None:
+        if name in {"azim", "elev", "computed_zorder"}:
+            object.__setattr__(self, name, value)
+            record_proxy_attr_set(self._remote_plot_kind, self._remote_plot_id, name, value)
+            return
+        super().__setattr__(name, value)
 
     @property
     def figure(self):
@@ -358,6 +367,13 @@ class AxesProxy(_RemotePlotProxyBase):
     def __getattr__(self, name: str):
         def _recorder(*args, **kwargs):
             _set_current(self._figure_id, self._remote_plot_id)
+            if name == "view_init":
+                elev = kwargs.get("elev", args[0] if len(args) >= 1 else None)
+                azim = kwargs.get("azim", args[1] if len(args) >= 2 else None)
+                if elev is not None:
+                    object.__setattr__(self, "elev", elev)
+                if azim is not None:
+                    object.__setattr__(self, "azim", azim)
             record_axes_call(self._remote_plot_id, name, args, kwargs)
             return None
 
