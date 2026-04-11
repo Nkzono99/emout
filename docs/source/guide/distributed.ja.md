@@ -70,16 +70,19 @@ Workers: 1
 
 ### 2. スクリプトから使う
 
-`server.json` が存在すれば自動接続されるため、**コードの変更は不要**です:
+`server.json` が存在すれば既存コードはそのまま互換モードで動作します。
+ただし、新規コードでは `Emout.remote()` を使う explicit な書き方を推奨します:
 
 ```python
 import emout
+from emout.distributed import remote_figure, remote_scope
 
-data = emout.Emout("output_dir")
+data = emout.Emout("output_dir").remote()
 
-# ↓ サーバーが起動していれば自動的にリモート実行
-#   起動していなければ従来どおりローカル実行
-data.phisp[-1, :, 100, :].plot()
+with remote_scope():
+    ymid = int(data.inp.ny // 2)
+    with remote_figure():
+        data.phisp[-1, :, ymid, :].plot()
 ```
 
 ### 3. サーバー停止
@@ -90,9 +93,35 @@ emout server stop
 
 ## 使い方
 
-### データ転送モード（デフォルト）
+### 推奨モード（`Emout.remote()`）
 
-`with remote_figure()` を使わない場合のデフォルト。
+worker 上の object を `RemoteRef` として保持しながら、ローカルの `emout` / `numpy`
+に近い記法で処理を書けます。`-ref`, `ref1 + ref2`, `np.abs(ref)`, `int(ref)` のような
+式も remote のまま評価されます。
+
+```python
+import matplotlib.pyplot as plt
+import emout
+from emout.distributed import remote_figure, remote_scope
+
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    ymid = int(rdata.inp.ny // 2)
+
+    with remote_figure():
+        plt.figure(figsize=(18, 16))
+        rdata.phisp[-1, 180:400, ymid, :].plot()
+        (-rdata.exz[-1, 180:400, ymid, :]).plot()
+        plt.title("remote expression example")
+```
+
+`remote_scope()` の内側で作られた remote object は、`with` を抜けると自動で `drop()`
+されます。中間結果を再利用したい場合に最も向いています。
+
+### データ転送モード（互換モード）
+
+既存の `plot()` コードをそのまま活かしたい場合の互換モードです。
 Worker がスライスを切り出してローカルに転送し、matplotlib はローカルで実行されます。
 **`plt.axhline()` 等のカスタマイズが自由にできます。**
 
@@ -198,6 +227,26 @@ with remote_figure():
 # 不要になったらサーバーメモリを解放
 result.drop()
 ```
+
+これは専用 proxy (`RemoteProbabilityResult`, `RemoteHeatmap`) を返すため、現状では
+backtrace 用として最も完成度の高いルートです。
+
+`Emout.remote()` 経由でも generic `RemoteRef` として実行できます:
+
+```python
+with remote_scope():
+    rdata = data.remote()
+    result = rdata.backtrace.get_probabilities(
+        x, y, z, vx_range, vy_center, vz_range, ispec=0,
+    )
+
+    with remote_figure():
+        result.vxvz.plot(cmap="viridis")
+        result.plot_energy_spectrum(scale="log")
+```
+
+ただしこちらは専用 proxy ではなく generic `RemoteRef` なので、
+現時点では `data.backtrace.get_probabilities(...)` の方を推奨します。
 
 #### fetch() によるローカル加工
 

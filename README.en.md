@@ -137,7 +137,8 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 ### Remote Execution (Dask) — Experimental
 
 Offload data processing to HPC compute nodes; only plot images are returned to your login node.
-**The API is identical to local execution** — if a server is running, it's automatic.
+For new code, prefer the explicit `Emout.remote()` workflow.
+The older “auto-remote when a server is running” behavior is still kept as a backward-compatible compatibility mode.
 
 ```bash
 # Start the server once in a terminal
@@ -145,15 +146,30 @@ emout server start --partition gr20001a --memory 60G
 ```
 
 ```python
-# Script / Jupyter — auto-remote if server is running, local otherwise
-data.phisp[-1, :, 100, :].plot()    # only 2D slice transferred
-plt.xlabel("x [m]")                 # local matplotlib annotation
+import matplotlib.pyplot as plt
+import emout
+from emout.distributed import remote_figure, remote_scope
+
+data = emout.Emout("output_dir").remote()
+
+# Recommended: keep remote objects explicitly
+with remote_scope():
+    ymid = int(data.inp.ny // 2)
+
+    with remote_figure():
+        plt.figure(figsize=(18, 16))
+        data.phisp[-1, 180:400, ymid, :].plot()
+        (-data.exz[-1, 180:400, ymid, :]).plot()
+        plt.title("remote expression example")
+
+# Compatibility mode: existing plot() code still works unchanged
+local_data = emout.Emout("output_dir")
+local_data.phisp[-1, :, 100, :].plot()    # only 2D slice transferred
+plt.xlabel("x [m]")                       # local matplotlib annotation
 
 # Run everything on the server (only PNG comes back)
-from emout.distributed import remote_figure
-
 with remote_figure():
-    data.phisp[-1, :, 100, :].plot()
+    local_data.phisp[-1, :, 100, :].plot()
     plt.axhline(y=50, color="red")
     plt.title("Custom title")
 
@@ -162,17 +178,19 @@ from emout.distributed import RemoteFigure
 
 rf = RemoteFigure()
 rf.open()
-data.phisp[-1, :, 100, :].plot()
+local_data.phisp[-1, :, 100, :].plot()
 rf.close()
 
 # Jupyter cell magic — just add to the top of a cell
 # %load_ext emout.distributed.remote_figure
 # %%remote_figure
-# data.phisp[-1, :, 100, :].plot()
+# local_data.phisp[-1, :, 100, :].plot()
 ```
 
 Heavy backtrace computations run on the server and stay in server memory;
 re-render with different parameters without recomputation.
+Today, the dedicated `data.backtrace.get_probabilities(...)` proxy route is still the most polished backtrace API,
+while `data.remote().backtrace.get_probabilities(...)` also works through the generic `RemoteRef` path.
 
 **Cross-simulation comparison** is also supported:
 

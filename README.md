@@ -137,7 +137,8 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 ### リモート実行 (Dask) — 実験的
 
 HPC の計算ノードにデータ処理を委譲し、ログインノードにはプロット画像だけを返します。
-**コードの書き方はローカル実行と全く同じ**で、サーバーが起動していれば自動的にリモートになります。
+新規コードでは `Emout.remote()` を使う explicit な書き方を推奨します。
+従来の「サーバーが起動していれば自動的に remote」という挙動も、後方互換の互換モードとして当面は残しています。
 
 ```bash
 # ターミナルでサーバーを起動（1 回だけ）
@@ -145,15 +146,30 @@ emout server start --partition gr20001a --memory 60G
 ```
 
 ```python
-# スクリプト / Jupyter — サーバーがあれば自動リモート、なければローカル
-data.phisp[-1, :, 100, :].plot()    # 2D スライスだけ転送
-plt.xlabel("x [m]")                 # ローカル matplotlib で追記可能
+import matplotlib.pyplot as plt
+import emout
+from emout.distributed import remote_figure, remote_scope
+
+data = emout.Emout("output_dir").remote()
+
+# 推奨: remote object を明示的に持つ
+with remote_scope():
+    ymid = int(data.inp.ny // 2)
+
+    with remote_figure():
+        plt.figure(figsize=(18, 16))
+        data.phisp[-1, 180:400, ymid, :].plot()
+        (-data.exz[-1, 180:400, ymid, :]).plot()
+        plt.title("remote expression example")
+
+# 互換モード: 既存の plot() コードもそのまま動く
+local_data = emout.Emout("output_dir")
+local_data.phisp[-1, :, 100, :].plot()    # 2D スライスだけ転送
+plt.xlabel("x [m]")                       # ローカル matplotlib で追記可能
 
 # 全操作をサーバーで実行（ローカルにはPNG画像のみ）
-from emout.distributed import remote_figure
-
 with remote_figure():
-    data.phisp[-1, :, 100, :].plot()
+    local_data.phisp[-1, :, 100, :].plot()
     plt.axhline(y=50, color="red")
     plt.title("カスタムタイトル")
 
@@ -162,16 +178,18 @@ from emout.distributed import RemoteFigure
 
 rf = RemoteFigure()
 rf.open()
-data.phisp[-1, :, 100, :].plot()
+local_data.phisp[-1, :, 100, :].plot()
 rf.close()
 
 # Jupyter セルマジック — セル先頭に書くだけ
 # %load_ext emout.distributed.remote_figure
 # %%remote_figure
-# data.phisp[-1, :, 100, :].plot()
+# local_data.phisp[-1, :, 100, :].plot()
 ```
 
 backtrace の重い計算もサーバーで実行し、可視化パラメータだけ変えて何度でも再描画できます。
+現状では backtrace は `data.backtrace.get_probabilities(...)` の専用 proxy ルートが最も完成度が高く、
+`data.remote().backtrace.get_probabilities(...)` も generic `RemoteRef` として利用可能です。
 
 **複数シミュレーションの比較**も可能です:
 

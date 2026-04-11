@@ -70,15 +70,19 @@ Workers: 1
 
 ### 2. Use from scripts
 
-With `server.json` present, **no code changes are needed**:
+With `server.json` present, existing code still works through the compatibility mode.
+For new code, prefer the explicit `Emout.remote()` workflow:
 
 ```python
 import emout
+from emout.distributed import remote_figure, remote_scope
 
-data = emout.Emout("output_dir")
+data = emout.Emout("output_dir").remote()
 
-# ↓ automatically remote if server is running; local otherwise
-data.phisp[-1, :, 100, :].plot()
+with remote_scope():
+    ymid = int(data.inp.ny // 2)
+    with remote_figure():
+        data.phisp[-1, :, ymid, :].plot()
 ```
 
 ### 3. Stop the server
@@ -89,9 +93,37 @@ emout server stop
 
 ## Usage Modes
 
-### Data-transfer mode (default)
+### Recommended mode (`Emout.remote()`)
 
-The default when not using `with remote_figure()`.
+This keeps worker-side objects alive as `RemoteRef` proxies while letting
+you write code close to normal `emout` / `numpy` style. Expressions such as
+`-ref`, `ref1 + ref2`, `np.abs(ref)`, and `int(ref)` stay remote until you
+explicitly fetch them.
+
+```python
+import matplotlib.pyplot as plt
+import emout
+from emout.distributed import remote_figure, remote_scope
+
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    ymid = int(rdata.inp.ny // 2)
+
+    with remote_figure():
+        plt.figure(figsize=(18, 16))
+        rdata.phisp[-1, 180:400, ymid, :].plot()
+        (-rdata.exz[-1, 180:400, ymid, :]).plot()
+        plt.title("remote expression example")
+```
+
+Objects created inside `remote_scope()` are automatically `drop()`-ed when
+the context exits. This is the best fit when you want to reuse intermediate
+remote results.
+
+### Data-transfer mode (compatibility mode)
+
+This is the compatibility mode for existing `plot()`-centric code.
 The worker extracts the slice and transfers it locally; matplotlib runs on the client.
 **`plt.axhline()` and other customizations work freely.**
 
@@ -198,6 +230,27 @@ with remote_figure():
 # Free server memory when done
 result.drop()
 ```
+
+Because this route returns dedicated proxies (`RemoteProbabilityResult`,
+`RemoteHeatmap`), it is currently the most polished backtrace workflow.
+
+You can also run backtrace through `Emout.remote()` as a generic `RemoteRef`:
+
+```python
+with remote_scope():
+    rdata = data.remote()
+    result = rdata.backtrace.get_probabilities(
+        x, y, z, vx_range, vy_center, vz_range, ispec=0,
+    )
+
+    with remote_figure():
+        result.vxvz.plot(cmap="viridis")
+        result.plot_energy_spectrum(scale="log")
+```
+
+That path works, but it returns the generic `RemoteRef` interface rather than
+the specialized backtrace proxies, so `data.backtrace.get_probabilities(...)`
+is still the recommended backtrace entry point today.
 
 #### Local customisation with fetch()
 
