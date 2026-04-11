@@ -98,3 +98,33 @@ animator.plot(action="to_html")
 - `build_frame_updater()` — `mode`, `vmin`, `vmax` 等を細かく制御できる
 
 パネルごとに設定を変えたい場合は `build_frame_updater()` を使ってください。
+
+## リモート実行（`Emout.remote()`）
+
+`data.remote()` 経由でも `gifplot()` をそのまま呼べます。アニメーションのレンダリングは
+すべてワーカー上で走り、クライアントにはインライン HTML か GIF だけが戻ります。
+
+```python
+import emout
+from emout.distributed import remote_scope
+
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    # Jupyter にインライン表示（ワーカーが HTML を生成して返す）
+    rdata.phisp[:, 100, :, :].gifplot()
+
+    # 共有ファイルシステム上に GIF を直接保存
+    rdata.phisp[:, 100, :, :].gifplot(action="save", filename="/scratch/you/phisp.gif")
+
+    # 共有 FS を使いたくない場合は bytes で受け取る
+    gif_bytes = rdata.phisp[:, 100, :, :].gifplot(action="bytes")
+    from pathlib import Path
+    Path("phisp.gif").write_bytes(gif_bytes)
+```
+
+リモートモードでサポートされる `action` は `to_html` / `save` / `bytes` の 3 つだけです。
+`show` / `return` / `frames` はワーカー上では意味がない / シリアライズできないため
+`ValueError` を投げます。フレーム数や解像度が大きい場合、`to_html` の HTML 文字列は
+数十 MB に膨らみ得るので、長時間アニメーションには `action="bytes"`（または
+`action="save"` + 共有 FS 上のパス）を推奨します。

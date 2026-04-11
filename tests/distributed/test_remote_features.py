@@ -162,6 +162,21 @@ class FakeActorSession:
 
         return FakeFuture(RemoteSession.replay_figure(self, commands, fmt=fmt, dpi=dpi))
 
+    def render_gifplot_html(self, key, **gifplot_kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.render_gifplot_html(self, key, **gifplot_kwargs))
+
+    def render_gifplot_bytes(self, key, fmt="gif", **gifplot_kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.render_gifplot_bytes(self, key, fmt=fmt, **gifplot_kwargs))
+
+    def render_gifplot_save(self, key, filename, **gifplot_kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.render_gifplot_save(self, key, filename, **gifplot_kwargs))
+
     def drop(self, key):
         self._drops.append(key)
         self._cache.pop(key, None)
@@ -978,6 +993,131 @@ def test_remote_heatmap_plot_outside_recording_renders_on_server():
 
     assert len(render_calls) == 1
     assert render_calls[0] == ("k", "vx", "vz")
+
+
+class _DummyGifplottable:
+    """Stand-in for a cached object whose ``gifplot()`` the session renders.
+
+    We intentionally do not reuse the real :class:`Data` stack here: the
+    remote dispatcher is what these tests exercise, not gifplot itself
+    (which is covered extensively by ``tests/data/test_data_extended.py``).
+    """
+
+    def __init__(self):
+        self.calls = []
+
+    def gifplot(self, action="to_html", filename=None, **kwargs):
+        self.calls.append({"action": action, "filename": filename, **kwargs})
+        if action == "to_html":
+            from IPython.display import HTML
+
+            return HTML("<div class='mock-gif'>frames</div>")
+        if action == "save":
+            if filename is None:
+                raise AssertionError("filename must be forwarded for action='save'")
+            # Minimal GIF89a payload so tests can assert the magic header
+            with open(filename, "wb") as fh:
+                fh.write(b"GIF89a" + b"\x00" * 10)
+            return None
+        if action == "frames":
+            return "frame-updater"
+        raise ValueError(f"unsupported action: {action}")
+
+
+_needs_ipython = pytest.mark.skipif(
+    importlib.util.find_spec("IPython") is None,
+    reason="gifplot(action='to_html') requires IPython",
+)
+
+
+@_needs_ipython
+def test_remote_ref_gifplot_to_html_returns_ipython_html():
+    from IPython.display import HTML
+
+    from emout.distributed.remote_render import RemoteRef
+
+    session = FakeActorSession()
+    cached = _DummyGifplottable()
+    session._cache["anim_0"] = cached
+
+    ref = RemoteRef(session, "anim_0")
+    result = ref.gifplot()
+
+    assert isinstance(result, HTML)
+    assert "mock-gif" in result.data
+    assert cached.calls == [{"action": "to_html", "filename": None}]
+
+
+@_needs_ipython
+def test_remote_ref_gifplot_to_html_forwards_extra_kwargs():
+    from emout.distributed.remote_render import RemoteRef
+
+    session = FakeActorSession()
+    cached = _DummyGifplottable()
+    session._cache["anim_1"] = cached
+
+    ref = RemoteRef(session, "anim_1")
+    ref.gifplot(interval=50, repeat=False, axis=0)
+
+    assert cached.calls[0]["interval"] == 50
+    assert cached.calls[0]["repeat"] is False
+    assert cached.calls[0]["axis"] == 0
+    assert cached.calls[0]["action"] == "to_html"
+
+
+def test_remote_ref_gifplot_save_writes_file_on_worker(tmp_path):
+    from emout.distributed.remote_render import RemoteRef
+
+    session = FakeActorSession()
+    cached = _DummyGifplottable()
+    session._cache["anim_2"] = cached
+
+    target = tmp_path / "out.gif"
+    ref = RemoteRef(session, "anim_2")
+    result = ref.gifplot(action="save", filename=target)
+
+    assert result is None
+    assert target.exists()
+    assert target.read_bytes().startswith(b"GIF89a")
+    # filename is forwarded as str so the worker does not need a pathlib.Path
+    assert cached.calls[0]["filename"] == str(target)
+
+
+def test_remote_ref_gifplot_bytes_returns_gif_payload():
+    from emout.distributed.remote_render import RemoteRef
+
+    session = FakeActorSession()
+    cached = _DummyGifplottable()
+    session._cache["anim_3"] = cached
+
+    ref = RemoteRef(session, "anim_3")
+    payload = ref.gifplot(action="bytes")
+
+    assert isinstance(payload, bytes)
+    assert payload.startswith(b"GIF89a")
+    # The worker used a temporary file; the filename must not leak back
+    assert cached.calls[0]["action"] == "save"
+
+
+def test_remote_ref_gifplot_rejects_unsupported_actions():
+    from emout.distributed.remote_render import RemoteRef
+
+    session = FakeActorSession()
+    session._cache["anim_4"] = _DummyGifplottable()
+
+    ref = RemoteRef(session, "anim_4")
+    for bad_action in ("show", "return", "frames"):
+        with pytest.raises(ValueError, match=bad_action):
+            ref.gifplot(action=bad_action)
+
+    with pytest.raises(ValueError, match="filename"):
+        ref.gifplot(action="save")  # save requires filename
+
+    with pytest.raises(ValueError, match="filename"):
+        ref.gifplot(action="bytes", filename="x.gif")
+
+    with pytest.raises(ValueError, match="filename"):
+        ref.gifplot(filename="x.gif")  # to_html does not accept filename
 
 
 def test_stop_cluster_can_shutdown_by_address(monkeypatch):

@@ -98,3 +98,36 @@ Both create a `FrameUpdater` object. The difference:
 - `build_frame_updater()` gives you explicit control over `mode`, `vmin`, `vmax`, etc.
 
 Use `build_frame_updater()` when you need per-panel customization.
+
+## Remote execution (`Emout.remote()`)
+
+`gifplot()` works through `data.remote()` as well. The whole animation is
+rendered on the worker and only the inline HTML or GIF bytes are
+shipped back to the client.
+
+```python
+import emout
+from emout.distributed import remote_scope
+
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    # Inline display in Jupyter (the worker produces the HTML)
+    rdata.phisp[:, 100, :, :].gifplot()
+
+    # Save the GIF directly to a shared-filesystem path
+    rdata.phisp[:, 100, :, :].gifplot(action="save", filename="/scratch/you/phisp.gif")
+
+    # If the worker's filesystem is not shared with the client, grab the bytes
+    gif_bytes = rdata.phisp[:, 100, :, :].gifplot(action="bytes")
+    from pathlib import Path
+    Path("phisp.gif").write_bytes(gif_bytes)
+```
+
+Remote mode only supports `action="to_html"`, `"save"`, and `"bytes"`.
+`"show"`, `"return"`, and `"frames"` are not meaningful on a headless
+worker (or are not picklable), so they raise `ValueError`. Long or
+high-resolution animations can produce HTML strings of tens of
+megabytes (`ani.to_jshtml()` base64-encodes every frame), so prefer
+`action="bytes"` or `action="save"` with a shared-filesystem path for
+those.

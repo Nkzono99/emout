@@ -272,6 +272,22 @@ data.phisp[-1].plot_surfaces(ax=ax, surfaces=data.boundaries)
 ax.set_xlabel("x [m]")
 ```
 
+### アニメーション (`gifplot`)
+
+`gifplot()` もワーカー側で完結します。フレーム生成とエンコードは全部ワーカー上で走り、
+クライアントにはインライン HTML か GIF バイト列だけが返ります:
+
+```python
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    rdata.phisp[:, 100, :, :].gifplot()                                 # inline HTML
+    rdata.phisp[:, 100, :, :].gifplot(action="save", filename="out.gif")  # 共有 FS に保存
+    gif = rdata.phisp[:, 100, :, :].gifplot(action="bytes")             # bytes を受け取る
+```
+
+詳細は [アニメーションガイド](animation.ja.md) の「リモート実行」節を参照。
+
 ## 明示的な接続
 
 自動接続ではなく手動で接続する場合:

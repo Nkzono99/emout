@@ -472,6 +472,81 @@ class RemoteSession:
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
+    def render_gifplot_html(self, key: str, **gifplot_kwargs) -> str:
+        """Run ``cached_object.gifplot(action='to_html')`` and return the raw HTML string.
+
+        The returned value is the ``.data`` attribute of the
+        ``IPython.display.HTML`` object that :meth:`gifplot` produces, so
+        the client can re-wrap it without requiring the worker to
+        transfer an IPython object.
+        """
+        import matplotlib.pyplot as plt
+
+        obj = self._cache[key]
+        gifplot_kwargs = dict(gifplot_kwargs)
+        gifplot_kwargs["action"] = "to_html"
+        try:
+            html = obj.gifplot(**gifplot_kwargs)
+        finally:
+            plt.close("all")
+
+        if html is None:
+            raise RuntimeError("gifplot(action='to_html') returned None on the worker")
+        # IPython.display.HTML stores the markup in ``.data``; fall back to str()
+        return getattr(html, "data", None) or str(html)
+
+    def render_gifplot_bytes(
+        self,
+        key: str,
+        fmt: str = "gif",
+        **gifplot_kwargs,
+    ) -> bytes:
+        """Run ``cached_object.gifplot(action='save')`` into a temp file and return the bytes.
+
+        This avoids requiring a shared filesystem between the worker and
+        the client.
+        """
+        import os
+        import tempfile
+
+        import matplotlib.pyplot as plt
+
+        obj = self._cache[key]
+        gifplot_kwargs = dict(gifplot_kwargs)
+        gifplot_kwargs["action"] = "save"
+
+        with tempfile.NamedTemporaryFile(suffix=f".{fmt}", delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            gifplot_kwargs["filename"] = tmp_path
+            obj.gifplot(**gifplot_kwargs)
+            with open(tmp_path, "rb") as fh:
+                return fh.read()
+        finally:
+            plt.close("all")
+            try:
+                os.unlink(tmp_path)
+            except FileNotFoundError:
+                pass
+
+    def render_gifplot_save(self, key: str, filename: str, **gifplot_kwargs) -> bool:
+        """Run ``cached_object.gifplot(action='save', filename=filename)`` on the worker.
+
+        The ``filename`` path is resolved on the worker filesystem, which
+        typically means a shared filesystem in HPC deployments.
+        """
+        import matplotlib.pyplot as plt
+
+        obj = self._cache[key]
+        gifplot_kwargs = dict(gifplot_kwargs)
+        gifplot_kwargs["action"] = "save"
+        gifplot_kwargs["filename"] = filename
+        try:
+            obj.gifplot(**gifplot_kwargs)
+        finally:
+            plt.close("all")
+        return True
+
     def get_cached_plot_surfaces_metadata(
         self,
         key: str,
@@ -1132,6 +1207,82 @@ class RemoteRef:
         )
         display_image(img, ax=ax)
         return cmap, norm
+
+    def gifplot(
+        self,
+        *,
+        action: str = "to_html",
+        filename=None,
+        **gifplot_kwargs,
+    ):
+        """Render an animation on the worker and return a client-friendly result.
+
+        Unlike the local :meth:`~emout.core.data._base.Data.gifplot`,
+        only a subset of ``action`` values is supported in remote mode:
+
+        - ``"to_html"`` (default): the worker renders the animation to
+          HTML (``ani.to_jshtml()``) and returns the raw markup; this
+          method re-wraps it in :class:`IPython.display.HTML` on the
+          client, so Jupyter cells that end with this call render the
+          animation inline.
+        - ``"save"``: the worker saves the GIF to *filename* on its own
+          filesystem. Use this when the client and worker share a
+          filesystem (the typical HPC setup). Returns ``None``.
+        - ``"bytes"``: the worker renders the GIF into a temporary file
+          and returns the raw bytes. Use this when the worker's
+          filesystem is **not** shared with the client, or when you want
+          to control where the file lands locally.
+
+        The ``"show"``, ``"return"``, and ``"frames"`` actions are not
+        supported remotely and raise :class:`ValueError`. Long or
+        high-resolution animations produce very large HTML payloads
+        (``ani.to_jshtml()`` base64-encodes every frame); prefer
+        ``action="bytes"`` or ``action="save"`` for those.
+        """
+        if action in ("show", "return", "frames"):
+            raise ValueError(
+                f"RemoteRef.gifplot does not support action={action!r}; use 'to_html', 'save', or 'bytes'."
+            )
+
+        if action == "save":
+            if filename is None:
+                raise ValueError("gifplot(action='save') requires filename=...")
+            _await_remote(
+                self._session.render_gifplot_save(
+                    self._key,
+                    str(filename),
+                    **gifplot_kwargs,
+                )
+            )
+            return None
+
+        if action == "bytes":
+            if filename is not None:
+                raise ValueError("gifplot(action='bytes') does not accept filename=...")
+            return _await_remote(
+                self._session.render_gifplot_bytes(
+                    self._key,
+                    **gifplot_kwargs,
+                )
+            )
+
+        if action != "to_html":
+            raise ValueError(
+                f"gifplot(action={action!r}) is not supported in remote mode; use 'to_html', 'save', or 'bytes'."
+            )
+
+        if filename is not None:
+            raise ValueError("gifplot(action='to_html') does not accept filename=...")
+
+        html_str = _await_remote(
+            self._session.render_gifplot_html(
+                self._key,
+                **gifplot_kwargs,
+            )
+        )
+        from IPython.display import HTML
+
+        return HTML(html_str)
 
     def __array_ufunc__(self, ufunc, method: str, *inputs, **kwargs):
         if method == "at":
