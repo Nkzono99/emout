@@ -550,16 +550,30 @@ emout server stop
 emout server status
 ```
 
-### Usage from Python
+`emout server` now enables TLS authentication automatically. By default
+it keeps one active server session per user; if you intentionally need
+more than one, use `emout server start --allow-multiple --name <session>`
+and connect explicitly with `connect(name="<session>")`.
 
-When a server is running, `plot()` and slicing automatically use remote execution — **no code changes needed**.
+### Three usage modes
+
+| Mode | Entry point | What goes to the client | When to use |
+| --- | --- | --- | --- |
+| Compat (data-transfer) | bare `data.phisp[...].plot()` | Sliced numpy array (KB–MB) | Least disruptive; existing scripts work unchanged when a server is running |
+| Image | `with remote_figure()` | PNG/JPEG bytes or saved image file | Minimal local memory; full matplotlib runs on worker |
+| Explicit proxy (recommended) | `data.remote()` + `remote_scope()` | `RemoteRef` proxies (a few bytes each) | Heavy workflows, repeated visualisation, backtrace, gifplot |
+
+### Compat mode (data-transfer)
 
 ```python
-# Data-transfer mode (default): worker extracts slice, matplotlib runs locally
+# Worker extracts slice, matplotlib runs locally
 data.phisp[-1, :, 100, :].plot()
 plt.xlabel("x [m]")               # ← local matplotlib, full customization
+```
 
-# Image mode: all matplotlib runs on server, only PNG comes back
+### Image mode (`remote_figure`)
+
+```python
 from emout.distributed import remote_figure
 
 with remote_figure():
@@ -569,12 +583,172 @@ with remote_figure():
 # ← PNG displayed in Jupyter here
 ```
 
+For CLI / batch workflows, save the rendered image directly:
+
+```python
+with remote_figure(savefilepath="figures/phisp.png"):
+    data.phisp[-1, :, 100, :].plot()
+    plt.title("Saved remotely")
+
+# Format is inferred from the extension when fmt is omitted
+with remote_figure(savefilepath="figures/phisp.svg"):
+    data.phisp[-1, :, 100, :].plot()
+```
+
+When `savefilepath` is provided, the rendered bytes are written to disk.
+PNG/JPEG output is still displayed inline in IPython, while CLI / batch
+usage skips local display.
+
+`remote_figure` also supports explicit open/close and options:
+
+```python
+from emout.distributed import RemoteFigure
+
+rf = RemoteFigure(dpi=300, savefilepath="figures/phisp.png")
+rf.open()
+data.phisp[-1, :, 100, :].plot()
+rf.close()                         # ← replays commands on server, saves the image
+```
+
+### Explicit proxy mode — `Emout.remote()` + `remote_scope()`
+
+`Emout.remote()` returns a `RemoteEmout` proxy; attribute access and slicing return `RemoteRef`
+proxies whose real objects stay in worker memory. Expressions like `-ref`, `ref1 + ref2`,
+`np.abs(ref)`, `int(ref)` all stay remote until you fetch explicitly.
+
+`remote_scope()` tracks every ref created inside it and calls `drop()` on them when the scope
+exits — worker memory is released in one go.
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+import emout
+from emout.distributed import remote_figure, remote_scope
+
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    ymid = int(rdata.inp.ny // 2)            # int() coerces a RemoteRef → local int
+
+    phi  = rdata.phisp[-1, :, ymid, :]       # RemoteRef (no data transferred)
+    ez   = -rdata.exz[-1, :, ymid, :]        # still remote
+    peak = np.abs(ez).max()                  # numpy ufuncs dispatch through the ref
+
+    with remote_figure():
+        plt.figure(figsize=(12, 6))
+        phi.plot()
+        ez.plot()
+        plt.title(f"peak |Ez| = {float(peak):.2e}")
+```
+
+### `RemoteRef` — what you can do with it
+
+| Operation | Remote? | Notes |
+| --- | --- | --- |
+| `ref.plot()`, `ref.gifplot()`, `ref.plot_surfaces(...)` | yes | Renders on worker inside `remote_figure()` |
+| `-ref`, `ref + other`, `ref * 2` | yes | Returns a new `RemoteRef` |
+| `np.abs(ref)`, `np.sqrt(ref)`, other ufuncs | yes | Dispatched via `__array_ufunc__` |
+| `int(ref)`, `float(ref)` | fetch-then-coerce | Triggers a small transfer |
+| `ref.fetch()` | **transfer** | Returns a local array / `Data*` object |
+| `ref.drop()` | yes | Frees worker memory immediately |
+
+### Scope control — `open()` / `close()` / `clear()` and nesting
+
+`remote_scope()` can be used with `with`, or driven explicitly for Jupyter cells that span
+multiple blocks.
+
+```python
+from emout.distributed import remote_scope
+
+scope = remote_scope()
+scope.open()                         # enter scope (idempotent)
+
+rdata = data.remote()
+ref = rdata.phisp[-1, :, 100, :]
+ref.plot()
+# ... continue in later cells ...
+
+scope.close()                        # drops every ref registered to this scope
+```
+
+- `scope.clear()` — drops every registered ref but **keeps the scope open**. Use in long
+  loops where worker memory would otherwise grow every iteration.
+- `scope.close()` is idempotent; calling it twice is a no-op.
+- Scopes nest: refs are always registered to the **innermost** active scope. You can mix
+  `open()` and `with remote_scope():` as long as each is a **distinct** `remote_scope()`
+  instance.
+
+```python
+scope1 = remote_scope(); scope1.open()
+
+with remote_scope() as scope2:
+    ref_inner = rdata.phisp[-1, :, 100, :]   # tracked by scope2
+# scope2 auto-drops here; scope1 is still open
+
+ref_outer = rdata.exz[-1]                     # tracked by scope1
+scope1.close()
+```
+
+> **Footgun:** never hand the same instance to both `open()` and `with` — `__exit__` runs
+> once and the instance is then closed forever. Always create a new `remote_scope()` for
+> the inner `with`.
+
+### Remote gifplot
+
+`RemoteRef.gifplot()` runs frame generation **and** encoding on the worker; only the HTML
+(or GIF bytes) comes back.
+
+```python
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    # Inline HTML for Jupyter (default)
+    rdata.phisp[:, 100, :, :].gifplot()
+
+    # Save a GIF to a path visible to the worker (shared FS)
+    rdata.phisp[:, 100, :, :].gifplot(action="save", filename="phisp.gif")
+
+    # Raw GIF bytes in client memory
+    gif_bytes = rdata.phisp[:, 100, :, :].gifplot(action="bytes")
+```
+
+Actions `"show"`, `"return"`, `"frames"` are **not** supported over remote — they require
+objects that cannot be sent across the wire.
+
+### Remote backtrace
+
+Heavy particle-backtrace computations run once on the worker and stay there. Re-render with
+different visualisation parameters without recomputing.
+
+```python
+rdata = emout.Emout("output_dir").remote()
+
+with remote_scope():
+    result = rdata.backtrace.get_probabilities(
+        x, y, z, vx_range, vy_center, vz_range, ispec=0,
+    )
+
+    with remote_figure():
+        result.vxvz.plot(cmap="viridis")
+
+    with remote_figure():
+        result.plot_energy_spectrum(scale="log")
+
+    heatmap = result.vxvz.fetch()     # ← small local copy for custom annotation
+```
+
+Both `data.backtrace...` and `data.remote().backtrace...` return the same
+`RemoteProbabilityResult` / `RemoteBacktraceResult` proxies.
+
 ### Jupyter cell magic
 
 ```python
 %load_ext emout.distributed.remote_figure
 
 %%remote_figure --dpi 300 --fmt svg --figsize 12,6
+data.phisp[-1, :, 100, :].plot()
+
+%%remote_figure --savefilepath figures/phisp.png
 data.phisp[-1, :, 100, :].plot()
 ```
 
@@ -671,4 +845,6 @@ data.phisp[-1, :, ny // 2, :].plot()
 11. **`val_si` is a property**, not a method. Use `data.phisp[-1].val_si`, not `data.phisp[-1].val_si()`.
 12. **Data manipulation methods (`flip`, `mirror`, `tile`, `negate`, `scale`) return copies**. They do not modify the original array.
 13. **Phase-space shorthand** (`snap.xvx()`) works for any pair of `(x, y, z, vx, vy, vz)`. The first variable is the horizontal axis.
-14. **Remote execution is transparent**. When an emout server is running, existing code automatically uses it. No import or code changes needed for the data-transfer mode.
+14. **Remote execution is transparent in compat mode**. When an emout server is running, existing `data.phisp[...].plot()` code automatically uses it (worker extracts slice, client renders). For new code, prefer the explicit `data.remote()` + `remote_scope()` workflow — it keeps big arrays on the worker as `RemoteRef` proxies and frees them in one go at scope exit.
+15. **`remote_scope()` auto-drops refs** created inside it when the `with` block exits (or `close()` is called). Use `scope.clear()` inside long loops to release per-iteration refs without exiting the scope. Scopes nest: refs always attach to the innermost active scope.
+16. **`RemoteRef.gifplot()` only supports `action="to_html" | "save" | "bytes"`**. `"show"`, `"return"`, `"frames"` are compat-mode only — they cannot cross the worker boundary.
