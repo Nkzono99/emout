@@ -231,7 +231,7 @@ result.drop()
 これは専用 proxy (`RemoteProbabilityResult`, `RemoteHeatmap`) を返すため、現状では
 backtrace 用として最も完成度の高いルートです。
 
-`Emout.remote()` 経由でも generic `RemoteRef` として実行できます:
+`Emout.remote()` 経由でも同じく専用 proxy を返します:
 
 ```python
 with remote_scope():
@@ -245,8 +245,22 @@ with remote_scope():
         result.plot_energy_spectrum(scale="log")
 ```
 
-ただしこちらは専用 proxy ではなく generic `RemoteRef` なので、
-現時点では `data.backtrace.get_probabilities(...)` の方を推奨します。
+`Emout.remote()` 側ではさらに `get_backtrace()` / `get_backtraces()` も explicit に書けます:
+
+```python
+with remote_scope():
+    rdata = data.remote()
+    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
+    many = rdata.backtrace.get_backtraces(positions, velocities, ispec=0)
+
+    with remote_figure():
+        bt.tx.plot()
+        many.tvx.plot()
+```
+
+使い分けとしては、既存コードをほぼそのまま活かすなら `data.backtrace...`、
+他の field や境界と同じ explicit remote の流れに揃えたいなら `data.remote().backtrace...`
+が向いています。
 
 #### fetch() によるローカル加工
 

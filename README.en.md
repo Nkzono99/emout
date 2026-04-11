@@ -189,8 +189,9 @@ rf.close()
 
 Heavy backtrace computations run on the server and stay in server memory;
 re-render with different parameters without recomputation.
-Today, the dedicated `data.backtrace.get_probabilities(...)` proxy route is still the most polished backtrace API,
-while `data.remote().backtrace.get_probabilities(...)` also works through the generic `RemoteRef` path.
+Both `data.backtrace.get_probabilities(...)` and
+`data.remote().backtrace.get_probabilities(...)` now return dedicated
+backtrace proxies.
 
 **Cross-simulation comparison** is also supported:
 

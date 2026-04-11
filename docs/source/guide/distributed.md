@@ -234,7 +234,8 @@ result.drop()
 Because this route returns dedicated proxies (`RemoteProbabilityResult`,
 `RemoteHeatmap`), it is currently the most polished backtrace workflow.
 
-You can also run backtrace through `Emout.remote()` as a generic `RemoteRef`:
+You can also run backtrace through `Emout.remote()`, and it now returns the
+same dedicated backtrace proxies:
 
 ```python
 with remote_scope():
@@ -248,9 +249,23 @@ with remote_scope():
         result.plot_energy_spectrum(scale="log")
 ```
 
-That path works, but it returns the generic `RemoteRef` interface rather than
-the specialized backtrace proxies, so `data.backtrace.get_probabilities(...)`
-is still the recommended backtrace entry point today.
+On the explicit side, `get_backtrace()` and `get_backtraces()` are also
+available directly:
+
+```python
+with remote_scope():
+    rdata = data.remote()
+    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
+    many = rdata.backtrace.get_backtraces(positions, velocities, ispec=0)
+
+    with remote_figure():
+        bt.tx.plot()
+        many.tvx.plot()
+```
+
+In practice, use `data.backtrace...` when you want to keep existing code
+almost unchanged, and `data.remote().backtrace...` when you want a single
+explicit-remote workflow across fields, boundaries, and backtrace results.
 
 #### Local customisation with fetch()
 

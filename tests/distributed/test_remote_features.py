@@ -103,6 +103,21 @@ class FakeActorSession:
 
         return FakeFuture(RemoteSession.apply_array_function(self, key, func_name, args=args, kwargs=kwargs))
 
+    def compute_probabilities(self, key, emout_kwargs=None, **kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.compute_probabilities(self, key, emout_kwargs=emout_kwargs, **kwargs))
+
+    def compute_backtrace(self, key, emout_kwargs=None, **kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.compute_backtrace(self, key, emout_kwargs=emout_kwargs, **kwargs))
+
+    def compute_backtraces(self, key, emout_kwargs=None, **kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.compute_backtraces(self, key, emout_kwargs=emout_kwargs, **kwargs))
+
     def fetch_object(self, key):
         from emout.distributed.remote_render import RemoteSession
 
@@ -245,6 +260,75 @@ def test_remote_ref_supports_scalar_conversion_helpers():
 
     assert int(remote_data.inp.ny // 2) == 3
     assert float(remote_data.inp.ratio) == pytest.approx(1.5)
+
+
+def test_remote_emout_backtrace_returns_specialized_probability_proxy():
+    from emout.distributed.remote_render import RemoteBacktraceWrapper, RemoteEmout, RemoteProbabilityResult
+
+    class DummyBacktrace:
+        def __init__(self):
+            self.calls = []
+
+        def get_probabilities(self, *args, **kwargs):
+            self.calls.append((args, kwargs))
+            return {"kind": "probability"}
+
+    backtrace = DummyBacktrace()
+    session = FakeActorSession(emout=SimpleNamespace(backtrace=backtrace))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    wrapper = remote_data.backtrace
+    result = wrapper.get_probabilities(1, 2, 3, 4, 5, 6)
+
+    assert isinstance(wrapper, RemoteBacktraceWrapper)
+    assert isinstance(result, RemoteProbabilityResult)
+    assert result.fetch() == {"kind": "probability"}
+    assert backtrace.calls[0][1]["remote"] is False
+
+
+def test_remote_emout_backtrace_returns_specialized_backtrace_proxies():
+    from emout.core.backtrace.backtrace_result import BacktraceResult
+    from emout.core.backtrace.multi_backtrace_result import MultiBacktraceResult
+    from emout.distributed.remote_render import RemoteBacktraceResult, RemoteEmout
+    from emout.distributed.remote_render import RemoteXYData
+
+    single = BacktraceResult(
+        ts=np.arange(4, dtype=float),
+        probability=np.ones(4, dtype=float),
+        positions=np.arange(12, dtype=float).reshape(4, 3),
+        velocities=np.arange(12, dtype=float).reshape(4, 3) * 0.1,
+        unit=None,
+    )
+    multi = MultiBacktraceResult(
+        ts_list=np.arange(12, dtype=float).reshape(3, 4),
+        probabilities=np.array([1.0, 0.5, 0.25]),
+        positions_list=np.arange(36, dtype=float).reshape(3, 4, 3),
+        velocities_list=np.arange(36, dtype=float).reshape(3, 4, 3) * 0.1,
+        last_indexes=np.array([3, 2, 1]),
+        unit=None,
+    )
+
+    class DummyBacktrace:
+        def get_backtrace(self, *args, **kwargs):
+            return single
+
+        def get_backtraces(self, *args, **kwargs):
+            return multi
+
+    session = FakeActorSession(emout=SimpleNamespace(backtrace=DummyBacktrace()))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    single_result = remote_data.backtrace.get_backtrace(np.zeros(3), np.ones(3))
+    multi_result = remote_data.backtrace.get_backtraces(np.zeros((3, 3)), np.ones((3, 3)))
+    sampled = multi_result.sample(1, random_state=0)
+
+    assert isinstance(single_result, RemoteBacktraceResult)
+    assert isinstance(single_result.tx, RemoteXYData)
+    assert single_result.fetch() is single
+    assert isinstance(multi_result, RemoteBacktraceResult)
+    assert isinstance(multi_result.tvx, RemoteXYData)
+    assert isinstance(sampled, RemoteBacktraceResult)
+    assert sampled.fetch().ts_list.shape[0] == 1
 
 
 def test_remote_scope_auto_drops_registered_refs():

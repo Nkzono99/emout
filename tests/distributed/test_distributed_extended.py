@@ -1216,6 +1216,14 @@ class TestRemoteProbabilityResult:
         rpr.drop()
         session.drop.assert_called_once_with("key_0")
 
+    def test_fetch(self):
+        from emout.distributed.remote_render import RemoteProbabilityResult
+
+        session = MagicMock()
+        session.fetch_object.return_value.result.return_value = {"kind": "probability"}
+        rpr = RemoteProbabilityResult(session, "key_0")
+        assert rpr.fetch() == {"kind": "probability"}
+
 
 # ===================================================================
 # remote_render.py -- RemoteBacktraceResult
@@ -1241,6 +1249,14 @@ class TestRemoteBacktraceResult:
         xy = rbr.xvz
         assert isinstance(xy, RemoteXYData)
 
+    def test_t_axis_shorthand_is_supported(self):
+        from emout.distributed.remote_render import RemoteBacktraceResult, RemoteXYData
+
+        session = MagicMock()
+        rbr = RemoteBacktraceResult(session, "key_0")
+        xy = rbr.tx
+        assert isinstance(xy, RemoteXYData)
+
     def test_invalid_attr_raises(self):
         from emout.distributed.remote_render import RemoteBacktraceResult
 
@@ -1262,6 +1278,23 @@ class TestRemoteBacktraceResult:
         rbr = RemoteBacktraceResult(session, "key_0")
         rbr.drop()
         session.drop.assert_called_once_with("key_0")
+
+    def test_fetch(self):
+        from emout.distributed.remote_render import RemoteBacktraceResult
+
+        session = MagicMock()
+        session.fetch_object.return_value.result.return_value = {"kind": "backtrace"}
+        rbr = RemoteBacktraceResult(session, "key_0")
+        assert rbr.fetch() == {"kind": "backtrace"}
+
+    def test_sample_returns_remote_backtrace_result(self):
+        from emout.distributed.remote_render import RemoteBacktraceResult
+
+        session = MagicMock()
+        session.call_method.return_value.result.return_value = True
+        rbr = RemoteBacktraceResult(session, "key_0")
+        sampled = rbr.sample(2, random_state=1)
+        assert isinstance(sampled, RemoteBacktraceResult)
 
 
 # ===================================================================

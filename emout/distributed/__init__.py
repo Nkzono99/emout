@@ -12,6 +12,7 @@ if sys.version_info >= (3, 10):
     from .remote_figure import remote_figure, RemoteFigure, register_magics
     from .remote_render import (
         RemoteEmout,
+        RemoteBacktraceWrapper,
         RemoteRef,
         RemoteScope,
         RemoteSession,

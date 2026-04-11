@@ -154,6 +154,13 @@ class RemoteSession:
         self._cache[key] = result
         return True
 
+    def compute_backtrace(self, key: str, emout_kwargs=None, **kwargs) -> bool:
+        """Run a single-particle backtrace calculation and cache the result."""
+        data = self._resolve(emout_kwargs)
+        result = data.backtrace.get_backtrace(**kwargs)
+        self._cache[key] = result
+        return True
+
     def compute_backtraces(self, key: str, emout_kwargs=None, **kwargs) -> bool:
         """Run particle backtrace calculation and cache the result.
 
@@ -173,7 +180,10 @@ class RemoteSession:
             ``True`` on success.
         """
         data = self._resolve(emout_kwargs)
-        result = data.backtrace.get_backtraces_from_particles(**kwargs)
+        if "particles" in kwargs:
+            result = data.backtrace.get_backtraces_from_particles(**kwargs)
+        else:
+            result = data.backtrace.get_backtraces(**kwargs)
         self._cache[key] = result
         return True
 
@@ -863,6 +873,8 @@ class RemoteEmout:
         self._emout_kwargs = dict(emout_kwargs)
 
     def __getattr__(self, name: str):
+        if name == "backtrace":
+            return RemoteBacktraceWrapper(self._session, self._emout_kwargs)
         key = _next_key("ref")
         _await_remote(self._session.cache_emout_attr(key, self._emout_kwargs, name))
         return RemoteRef(self._session, key)
@@ -870,6 +882,86 @@ class RemoteEmout:
     def __repr__(self):
         directory = self._emout_kwargs.get("output_directory", self._emout_kwargs.get("directory"))
         return f"<RemoteEmout directory={directory!r}>"
+
+
+class RemoteBacktraceWrapper:
+    """Explicit-remote proxy for ``Emout.backtrace`` helper methods."""
+
+    def __init__(self, session: RemoteSession, emout_kwargs: dict[str, Any]):
+        self._session = session
+        self._emout_kwargs = dict(emout_kwargs)
+        self._ref: Optional[RemoteRef] = None
+
+    def _ensure_ref(self) -> "RemoteRef":
+        if self._ref is None:
+            key = _next_key("ref")
+            _await_remote(self._session.cache_emout_attr(key, self._emout_kwargs, "backtrace"))
+            self._ref = RemoteRef(self._session, key)
+        return self._ref
+
+    def get_backtrace(self, position, velocity, **kwargs) -> "RemoteBacktraceResult":
+        key = _next_key("bt")
+        _await_remote(
+            self._session.compute_backtrace(
+                key,
+                emout_kwargs=self._emout_kwargs,
+                position=position,
+                velocity=velocity,
+                **kwargs,
+            )
+        )
+        return RemoteBacktraceResult(self._session, key)
+
+    def get_backtraces(self, positions, velocities, **kwargs) -> "RemoteBacktraceResult":
+        key = _next_key("bt")
+        _await_remote(
+            self._session.compute_backtraces(
+                key,
+                emout_kwargs=self._emout_kwargs,
+                positions=positions,
+                velocities=velocities,
+                **kwargs,
+            )
+        )
+        return RemoteBacktraceResult(self._session, key)
+
+    def get_backtraces_from_particles(self, particles, **kwargs) -> "RemoteBacktraceResult":
+        key = _next_key("bt")
+        _await_remote(
+            self._session.compute_backtraces(
+                key,
+                emout_kwargs=self._emout_kwargs,
+                particles=particles,
+                **kwargs,
+            )
+        )
+        return RemoteBacktraceResult(self._session, key)
+
+    def get_probabilities(self, x, y, z, vx, vy, vz, **kwargs) -> "RemoteProbabilityResult":
+        key = _next_key("prob")
+        kwargs = dict(kwargs)
+        kwargs["remote"] = False
+        _await_remote(
+            self._session.compute_probabilities(
+                key,
+                emout_kwargs=self._emout_kwargs,
+                x=x,
+                y=y,
+                z=z,
+                vx=vx,
+                vy=vy,
+                vz=vz,
+                **kwargs,
+            )
+        )
+        return RemoteProbabilityResult(self._session, key)
+
+    def __getattr__(self, name: str):
+        return getattr(self._ensure_ref(), name)
+
+    def __repr__(self):
+        directory = self._emout_kwargs.get("output_directory", self._emout_kwargs.get("directory"))
+        return f"<RemoteBacktraceWrapper directory={directory!r}>"
 
 
 class RemoteRef:
@@ -1400,6 +1492,10 @@ class RemoteProbabilityResult:
         self._key = cache_key
         _register_remote_key(session, cache_key)
 
+    def fetch(self):
+        """Fetch the remote probability result as a local object."""
+        return _await_remote(self._session.fetch_object(self._key))
+
     def pair(self, var1: str, var2: str) -> RemoteHeatmap:
         return RemoteHeatmap(self._session, self._key, var1, var2)
 
@@ -1448,15 +1544,33 @@ class RemoteProbabilityResult:
 class RemoteBacktraceResult:
     """Proxy with the same interface as ``BacktraceResult`` / ``MultiBacktraceResult``."""
 
-    _AXES = ["x", "y", "z", "vx", "vy", "vz"]
+    _AXES = ["t", "x", "y", "z", "vx", "vy", "vz"]
 
     def __init__(self, session: RemoteSession, cache_key: str):
         self._session = session
         self._key = cache_key
         _register_remote_key(session, cache_key)
 
+    def fetch(self):
+        """Fetch the remote backtrace result as a local object."""
+        return _await_remote(self._session.fetch_object(self._key))
+
     def pair(self, var1: str, var2: str) -> RemoteXYData:
         return RemoteXYData(self._session, self._key, var1, var2)
+
+    def sample(self, indices, random_state: Optional[int] = None) -> "RemoteBacktraceResult":
+        """Sample trajectories on the worker and return another remote proxy."""
+        key = _next_key("bt")
+        _await_remote(
+            self._session.call_method(
+                key,
+                self._key,
+                "sample",
+                args=(indices,),
+                kwargs={"random_state": random_state},
+            )
+        )
+        return RemoteBacktraceResult(self._session, key)
 
     def drop(self) -> None:
         self._session.drop(self._key)

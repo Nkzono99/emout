@@ -188,8 +188,8 @@ rf.close()
 ```
 
 backtrace の重い計算もサーバーで実行し、可視化パラメータだけ変えて何度でも再描画できます。
-現状では backtrace は `data.backtrace.get_probabilities(...)` の専用 proxy ルートが最も完成度が高く、
-`data.remote().backtrace.get_probabilities(...)` も generic `RemoteRef` として利用可能です。
+`data.backtrace.get_probabilities(...)` でも `data.remote().backtrace.get_probabilities(...)` でも、
+どちらも専用 proxy を返せるようになっています。
 
 **複数シミュレーションの比較**も可能です:
 
