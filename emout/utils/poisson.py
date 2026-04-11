@@ -100,8 +100,11 @@ def poisson(
     for kz in range(rhok.shape[0]):
         modified_wave_number[kz, :, :] += boundaries[2].modified_wave_number(kz, nz)
 
-    # Solve the equation in the wavenumber domain
-    phik = rhok / modified_wave_number
+    # Solve the equation in the wavenumber domain.  The zero mode becomes
+    # singular when every axis is periodic/neumann; keep it masked here and
+    # fix the reference level explicitly below.
+    phik = np.zeros_like(rhok)
+    np.divide(rhok, modified_wave_number, out=phik, where=modified_wave_number != 0.0)
 
     # When all boundary conditions are periodic|neumann boundaries,
     # there is no reference for the potential and it is not uniquely determined,
@@ -111,9 +114,12 @@ def poisson(
 
     # FFT backward
     _phi = fft3d.backward(phik)
+    _phi = np.real_if_close(_phi, tol=1000)
+    if np.iscomplexobj(_phi):
+        _phi = _phi.real
 
     # Create an array of the same shape as the input rho array.
-    phi = np.zeros_like(rho)
+    phi = np.zeros(rho.shape, dtype=np.result_type(_phi, np.float64))
     phi[tuple(boundary.get_target_slice() for boundary in reversed(boundaries))] = _phi
 
     # In the above, the operation was performed on the array excluding the boundary values,

@@ -1,5 +1,7 @@
 """Tests for emout.utils.poisson — FFT-based Poisson solver."""
 
+import warnings
+
 import numpy as np
 import pytest
 
@@ -115,6 +117,22 @@ class TestPeriodicAnalytic:
         phi_expected[:, :, -1] = phi_expected[:, :, 0]
 
         np.testing.assert_allclose(phi, phi_expected, atol=1e-10)
+
+    def test_periodic_solver_avoids_runtime_and_complex_warnings(self):
+        """The singular zero mode should be handled without divide/cast warnings."""
+        nx, ny, nz = 32, 4, 4
+        shape = _grid_shape(nx, ny, nz)
+        x = np.arange(nx + 1, dtype=float)
+
+        rho = np.zeros(shape)
+        rho[:, :, :] = np.sin(2.0 * np.pi * x / nx)[np.newaxis, np.newaxis, :]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            warnings.simplefilter("error", np.exceptions.ComplexWarning)
+            phi = poisson(rho, dx=1.0, epsilon_0=1.0)
+
+        assert np.isrealobj(phi)
 
 
 # ---------------------------------------------------------------------------
