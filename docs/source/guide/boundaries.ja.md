@@ -1,8 +1,8 @@
 # 境界メッシュ (`data.boundaries`)
 
-MPIEMSES の `&ptcond` で定義された finbound / legacy 境界型を、
-`data.boundaries` から Python オブジェクトとして扱えます。
-各境界は `MeshSurface3D` を返し、3D フィールドプロットへのオーバーレイや個別のスタイル指定が可能です。
+MPIEMSES の `&ptcond` で定義した finbound / legacy 境界を、
+`data.boundaries` から Python オブジェクトとして触れます。各境界は
+`MeshSurface3D` を返すので、3D フィールドプロットに重ね描きしたり、個別にスタイルを変えたりできます。
 
 > **注意: `mesh()` の単位は SI がデフォルト**。`data.boundaries[0].mesh()` は
 > 既定で SI 単位 (m) の頂点座標を返します。グリッド単位のメッシュが欲しい場合
@@ -100,8 +100,8 @@ data.boundaries.mesh(per={0: dict(ntheta=64)})
 
 ## 利用可能なメッシュサーフェスクラス
 
-各境界型は以下の `MeshSurface3D` サブクラスにマッピングされます
-（`emout.plot.surface_cut` からインポート可能）:
+各境界型は下表の `MeshSurface3D` サブクラスに対応します
+（クラス自体は `emout.plot.surface_cut` から直接インポートできます）:
 
 | クラス | 対応する型 |
 | --- | --- |

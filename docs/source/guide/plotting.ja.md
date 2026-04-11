@@ -1,6 +1,6 @@
 # プロット (`plot`)
 
-`plot()` は emout で最もよく使う機能です。データの次元に応じて自動的に適切な可視化を選択します。
+`plot()` は emout でいちばんよく使う機能です。スライス後の次元に応じて、自動で 1D ラインプロットと 2D カラーマップを切り替えます。
 
 ## 2D カラーマップ
 
@@ -79,7 +79,7 @@ data.j1xy[-1, 100, :, :].plot()
 
 ## SI 単位と EMSES 単位
 
-デフォルトでは `plot()` が軸ラベルと値を SI 単位に変換します。EMSES の生の単位で表示するには:
+`plot()` は既定で軸ラベルと値を SI 単位に変換します。EMSES の内部単位のまま表示したい場合は:
 
 ```python
 data.phisp[-1, 100, :, :].plot(use_si=False)
@@ -106,7 +106,7 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 
 ## 3D プロット（PyVista）
 
-3D 可視化にはオプションの PyVista 依存をインストールします:
+3D プロットを使うには PyVista を追加インストールしてください:
 
 ```bash
 pip install "emout[pyvista]"
@@ -124,9 +124,9 @@ data.j1xyz[-1].plot3d(mode="stream", show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
 ```
 
-### メッシュサーフェス描画
+### メッシュサーフェスの描画
 
-メッシュサーフェスを指定して面ごとに 3D レンダリングできます:
+`MeshSurface3D` を指定すると、面ごとにスタイルを変えながら 3D に描画できます:
 
 ```python
 import matplotlib.pyplot as plt

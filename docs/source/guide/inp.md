@@ -144,4 +144,6 @@ dx = 0.5
 to_c = 10000.0
 ```
 
-If no conversion key is present, `data.unit` will be `None` and SI features (`val_si`, `use_si=True`) will fall back to raw EMSES units.
+If no conversion key is present, `data.unit` is `None`, and calling
+`val_si` or `plot(use_si=True)` raises `AttributeError`. See the
+Prerequisites section of the [units guide](units.md) for workarounds.

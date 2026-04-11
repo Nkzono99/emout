@@ -22,8 +22,8 @@ import emout
 data = emout.Emout("output_dir")
 ```
 
-`Emout` はディレクトリ内の HDF5 ファイルとパラメータファイル（`plasma.inp` または `plasma.toml`）をスキャンします。
-変数名は EMSES のファイル名規則から自動的に解決されます:
+`Emout` はディレクトリ内の HDF5 ファイルとパラメータファイル（`plasma.inp` または `plasma.toml`）を読み込み、
+EMSES のファイル名規則から変数名を自動で決めます:
 
 | 属性 | ファイルパターン | 説明 |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ data.phisp[-1, :, data.inp.ny // 2, :].plot()
 
 ## 追加出力の結合
 
-シミュレーションが追加ディレクトリに継続出力した場合:
+出力が複数のディレクトリに分かれている場合（途中で再投入したジョブなど）:
 
 ```python
 # 自動検出
@@ -75,7 +75,7 @@ data = emout.Emout("output_dir", append_directories=["output_dir_2", "output_dir
 
 ## 粒子データ
 
-EMSES の粒子出力は種ごとに自動的にまとめられます:
+粒子の出力は種ごとに 1 つのオブジェクトにまとまっています:
 
 ```python
 p4 = data.p4              # 種4

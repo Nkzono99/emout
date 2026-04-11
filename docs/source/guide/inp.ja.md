@@ -1,6 +1,6 @@
 # パラメータファイル (`data.inp`)
 
-emout は EMSES のパラメータファイル（`plasma.inp` / `plasma.toml`）を読み込み、属性アクセスできる辞書風のオブジェクトとして提供します。
+emout は EMSES のパラメータファイル（`plasma.inp` / `plasma.toml`）を読み込み、辞書のようにも属性のようにも触れるオブジェクトで返します。
 
 ## パラメータへのアクセス
 
@@ -135,7 +135,7 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 - `dx`: グリッド間隔（メートル [m]）
 - `to_c`: EMSES 内部単位での光速
 
-このキーにより `data.unit` を通じた SI 単位変換が有効になります。`plasma.toml` では以下のように記述します:
+このキーを書いておくと `data.unit` 経由の SI 単位変換が使えるようになります。`plasma.toml` では次のように書きます:
 
 ```toml
 [meta.unit_conversion]
@@ -143,4 +143,4 @@ dx = 0.5
 to_c = 10000.0
 ```
 
-変換キーが存在しない場合、`data.unit` は `None` になり、SI 関連機能（`val_si`, `use_si=True`）は EMSES の生の単位のまま動作します。
+変換キーがない場合は `data.unit` が `None` になり、`val_si` や `plot(use_si=True)` を呼ぶと `AttributeError` になります。対処は [単位変換ガイド](units.ja.md) の「前提条件」を参照してください。
