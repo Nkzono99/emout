@@ -10,7 +10,6 @@ Design
 
 from __future__ import annotations
 
-import contextlib
 import itertools
 import json
 import operator
@@ -898,24 +897,34 @@ class RemoteSession:
 
 
 class RemoteScope:
-    """Context manager that auto-releases remote cache entries on exit."""
+    """Scope that tracks :class:`RemoteRef` creations and releases them.
+
+    Supports three interchangeable usage patterns:
+
+    - ``with remote_scope(): ...`` — classic context-manager form.
+    - ``scope.open() / scope.close()`` — explicit open/close, handy in
+      Jupyter when you do not want to indent a whole cell.
+    - ``scope.clear()`` — drop everything registered so far **without**
+      leaving the scope, i.e. a manual GC sweep in the middle of a
+      long-running session.
+
+    Exit cleanup is idempotent: calling ``close()`` (or leaving the
+    ``with`` block) twice is safe.
+    """
 
     def __init__(self):
         self._entries: list[tuple[Any, str]] = []
+        self._active: bool = False
+
+    # ---- internal -----------------------------------------------------
 
     def _register(self, session, key: str) -> None:
         self._entries.append((session, key))
 
-    def __enter__(self) -> "RemoteScope":
-        _scope_stack.append(self)
-        return self
-
-    def __exit__(self, exc_type, exc, tb) -> None:
-        if _scope_stack and _scope_stack[-1] is self:
-            _scope_stack.pop()
-        elif self in _scope_stack:
-            _scope_stack.remove(self)
-
+    def _drop_registered(self) -> None:
+        """Drop every registered ref and reset the entry list."""
+        if not self._entries:
+            return
         seen: set[tuple[int, str]] = set()
         for session, key in reversed(self._entries):
             ident = (id(session), key)
@@ -930,14 +939,68 @@ class RemoteScope:
                     ResourceWarning,
                     stacklevel=2,
                 )
+        self._entries.clear()
+
+    def _detach_from_stack(self) -> None:
+        if _scope_stack and _scope_stack[-1] is self:
+            _scope_stack.pop()
+        elif self in _scope_stack:
+            _scope_stack.remove(self)
+        self._active = False
+
+    # ---- context manager protocol -------------------------------------
+
+    def __enter__(self) -> "RemoteScope":
+        if not self._active:
+            _scope_stack.append(self)
+            self._active = True
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self._detach_from_stack()
+        self._drop_registered()
+
+    # ---- explicit open/close/clear ------------------------------------
+
+    def open(self) -> "RemoteScope":
+        """Start tracking remote refs.
+
+        Equivalent to entering the ``with`` block. Calling ``open()``
+        twice on the same scope is a no-op.
+        """
+        return self.__enter__()
+
+    def close(self) -> None:
+        """Stop tracking and drop every ref registered while active.
+
+        Equivalent to leaving the ``with`` block. Safe to call twice —
+        the second call is a no-op because ``_drop_registered`` clears
+        the entry list after its first run.
+        """
+        self.__exit__(None, None, None)
+
+    def clear(self) -> None:
+        """Drop currently-registered refs without leaving the scope.
+
+        Use this as a manual GC sweep during a long session:
+
+        >>> scope = remote_scope()
+        >>> scope.open()
+        >>> for i in range(100):
+        ...     ref = rdata.phisp[i].fetch()
+        ...     scope.clear()        # release per-iteration ref
+        >>> scope.close()
+        """
+        self._drop_registered()
 
 
-@contextlib.contextmanager
-def remote_scope():
-    """Auto-drop remote objects created inside the ``with`` block."""
-    scope = RemoteScope()
-    with scope:
-        yield scope
+def remote_scope() -> RemoteScope:
+    """Return a :class:`RemoteScope`.
+
+    The returned object supports both ``with remote_scope(): ...`` and
+    explicit ``scope.open() / scope.close() / scope.clear()`` usage.
+    """
+    return RemoteScope()
 
 
 class RemoteEmout:

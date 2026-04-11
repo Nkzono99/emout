@@ -119,6 +119,106 @@ with remote_scope():
 `remote_scope()` の内側で作られた remote object は、`with` を抜けると自動で `drop()`
 されます。ブロック内では中間結果を何度でも再利用しつつ、ワーカー側のメモリ管理は任せられます。
 
+#### `open()` / `close()` — Jupyter 向け明示記法
+
+`with` でセル全体をインデントしたくない場合は、`open()` / `close()` を直接呼べます。
+セルを跨いで scope を持ち続けることもできます:
+
+```python
+from emout.distributed import remote_scope
+
+scope = remote_scope()
+scope.open()
+
+rdata = data.remote()
+ref = rdata.phisp[-1, :, 100, :]
+ref.plot()
+
+# ...別のセルや別の処理でそのまま rdata / ref を使える...
+
+scope.close()   # ここで溜まった remote object をすべて drop
+```
+
+`close()` は何度呼んでも安全（2 回目以降は no-op）なので、途中で例外が出る
+セルの末尾で `try/finally` を組まなくてもよいケースが多いです。
+
+#### `clear()` — scope を維持したままの手動 GC
+
+ループで大量に中間 ref を作るような場合、`clear()` で **scope を閉じずに**
+溜まった ref だけを解放できます:
+
+```python
+scope = remote_scope()
+scope.open()
+rdata = data.remote()
+
+for t in range(100):
+    ref = rdata.phisp[t, :, 100, :]
+    arr = ref.fetch()
+    # ... 処理 ...
+    scope.clear()   # このイテレーションの ref を drop、scope は継続
+
+scope.close()
+```
+
+`scope.clear()` のあとも scope は開いたままなので、**後続で作る ref は
+引き続き同じ scope に登録**されます。長時間セッションでワーカー側
+メモリが単調増加するのを防ぐのに便利です。
+
+#### スコープのネスト
+
+`remote_scope` はスタックとして動きます。外側の scope を開いたまま、
+内側にもう 1 つ scope を作ることができます。新しく作られた ref は
+**常に一番内側の scope に登録**されるので、内側を閉じればそれだけが
+drop され、外側はそのまま active のまま残ります:
+
+```python
+# open/open/close/close パターン
+scope1 = remote_scope()
+scope1.open()
+
+scope2 = remote_scope()
+scope2.open()
+
+ref_inner = rdata.phisp[-1, :, 100, :]   # scope2 に登録
+scope2.close()                             # ref_inner だけ drop
+
+ref_outer = rdata.exz[-1]                  # scope1 に登録
+scope1.close()                             # ref_outer を drop
+```
+
+`with` 文と明示 `open()` を混ぜても問題なくネストできます:
+
+```python
+scope1 = remote_scope()
+scope1.open()
+
+with remote_scope() as scope2:
+    ref_inner = rdata.phisp[-1, :, 100, :]   # scope2 に登録
+# with を抜けた時点で scope2 が自動 drop、scope1 は継続
+
+ref_outer = rdata.exz[-1]                     # scope1 に登録
+scope1.close()
+```
+
+> **落とし穴: 同じ scope インスタンスを `open()` と `with` の両方で使わない。**
+> 下のコードは一見正しく見えますが、`with scope:` が中で `__exit__` を呼び出すため、
+> `with` を抜けた時点で `scope` は **閉じています**。そのあとに作った ref はどの
+> scope にも tracked されず、`scope.close()` も no-op になります:
+>
+> ```python
+> scope = remote_scope()
+> scope.open()
+> with scope:                    # ← 同じ scope を with に渡してはいけない
+>     ref = rdata.phisp[-1]
+> # ここで scope はすでに閉じている
+> leaked = rdata.phisp[-2]      # ← どの scope にも登録されない！
+> scope.close()                  # ← no-op
+> ```
+>
+> 混在が必要なら、**内側は新しい `remote_scope()` インスタンスを作る** のが
+> 正解です（上の `with remote_scope() as scope2:` の例）。
+
 ### データ転送モード（互換モード）
 
 既存の `plot()` コードをそのまま活かしたい場合の互換モードです。

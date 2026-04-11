@@ -121,6 +121,109 @@ Objects created inside `remote_scope()` are automatically `drop()`-ed when
 the context exits, so you can reuse intermediate remote results many times
 within the block without having to manage worker-side cleanup yourself.
 
+#### `open()` / `close()` — explicit form for Jupyter
+
+If you do not want to indent a whole cell under `with`, call `open()`
+and `close()` directly. The scope survives across cells, so you can
+keep `rdata` and every registered ref alive for as long as you need:
+
+```python
+from emout.distributed import remote_scope
+
+scope = remote_scope()
+scope.open()
+
+rdata = data.remote()
+ref = rdata.phisp[-1, :, 100, :]
+ref.plot()
+
+# ...continue working in other cells with rdata / ref...
+
+scope.close()   # drops every registered ref in one go
+```
+
+`close()` is idempotent, so you rarely need a `try/finally` — calling
+it twice is a no-op.
+
+#### `clear()` — manual GC while the scope stays open
+
+In loops that create many intermediate refs, `clear()` drops every
+registered ref **without** leaving the scope:
+
+```python
+scope = remote_scope()
+scope.open()
+rdata = data.remote()
+
+for t in range(100):
+    ref = rdata.phisp[t, :, 100, :]
+    arr = ref.fetch()
+    # ... work with arr ...
+    scope.clear()   # release this iteration's refs, keep the scope
+
+scope.close()
+```
+
+After `clear()` the scope is still active, so refs created afterwards
+continue to be tracked by the same scope. This is the tool of choice
+for long-running sessions where you would otherwise see worker memory
+grow monotonically.
+
+#### Nesting scopes
+
+`remote_scope` behaves like a stack. You can open an outer scope and
+create another one inside it; every new ref is registered to **the
+innermost active scope**, so closing the inner scope drops only its
+refs and leaves the outer scope running:
+
+```python
+# open/open/close/close
+scope1 = remote_scope()
+scope1.open()
+
+scope2 = remote_scope()
+scope2.open()
+
+ref_inner = rdata.phisp[-1, :, 100, :]   # tracked by scope2
+scope2.close()                             # drops ref_inner only
+
+ref_outer = rdata.exz[-1]                  # tracked by scope1
+scope1.close()                             # drops ref_outer
+```
+
+Mixing explicit `open()` with a ``with`` block nests cleanly too:
+
+```python
+scope1 = remote_scope()
+scope1.open()
+
+with remote_scope() as scope2:
+    ref_inner = rdata.phisp[-1, :, 100, :]   # tracked by scope2
+# scope2 auto-drops here; scope1 is still open
+
+ref_outer = rdata.exz[-1]                     # tracked by scope1
+scope1.close()
+```
+
+> **Foot-gun: never use the same scope instance with both ``open()`` and
+> a ``with`` block.** The snippet below looks fine but breaks — ``with
+> scope:`` calls ``__exit__`` on the instance, so ``scope`` is already
+> closed by the time the block returns. Subsequent refs are tracked by
+> **nothing**, and ``scope.close()`` becomes a no-op:
+>
+> ```python
+> scope = remote_scope()
+> scope.open()
+> with scope:                    # ← do NOT hand the same scope to `with`
+>     ref = rdata.phisp[-1]
+> # scope is already closed here
+> leaked = rdata.phisp[-2]      # ← not tracked by any scope!
+> scope.close()                  # ← no-op
+> ```
+>
+> When you need both styles, open **a new** ``remote_scope()`` inside
+> the outer one (see the example above with ``with remote_scope() as scope2:``).
+
 ### Data-transfer mode (compatibility mode)
 
 This is the compatibility mode for existing `plot()`-centric code.

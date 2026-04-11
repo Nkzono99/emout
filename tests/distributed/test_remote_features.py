@@ -361,6 +361,164 @@ def test_remote_scope_auto_drops_registered_refs():
     assert session._drops == ["ref_2", "ref_1"]
 
 
+def test_remote_scope_open_close_drops_registered_refs():
+    """Explicit open()/close() must behave like a ``with`` block."""
+    from emout.distributed.remote_render import RemoteRef, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"ref_1": 1, "ref_2": 2}
+
+    scope = remote_scope()
+    scope.open()
+    RemoteRef(session, "ref_1")
+    RemoteRef(session, "ref_2")
+
+    assert session._drops == []  # nothing dropped yet
+    scope.close()
+    assert session._drops == ["ref_2", "ref_1"]
+
+    # close() is idempotent — calling it again is a no-op
+    scope.close()
+    assert session._drops == ["ref_2", "ref_1"]
+
+
+def test_remote_scope_clear_releases_refs_but_stays_active():
+    """clear() drops registered refs without leaving the scope,
+    so refs created afterwards are still tracked by the same scope."""
+    from emout.distributed.remote_render import RemoteRef, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"ref_1": 1, "ref_2": 2, "ref_3": 3}
+
+    scope = remote_scope()
+    scope.open()
+    try:
+        RemoteRef(session, "ref_1")
+        RemoteRef(session, "ref_2")
+        scope.clear()
+        # ref_1 and ref_2 must be dropped, but the scope is still active
+        assert session._drops == ["ref_2", "ref_1"]
+
+        # A ref created after clear() must still be tracked
+        RemoteRef(session, "ref_3")
+    finally:
+        scope.close()
+
+    assert session._drops == ["ref_2", "ref_1", "ref_3"]
+
+
+def test_remote_scope_open_is_idempotent():
+    """Calling open() twice must not push the same scope twice."""
+    from emout.distributed.remote_render import RemoteRef, _scope_stack, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"ref_1": 1}
+
+    scope = remote_scope()
+    scope.open()
+    scope.open()  # second call is a no-op
+
+    # Exactly one entry on the scope stack
+    assert _scope_stack.count(scope) == 1
+
+    try:
+        RemoteRef(session, "ref_1")
+    finally:
+        scope.close()
+
+    assert session._drops == ["ref_1"]
+    assert scope not in _scope_stack
+
+
+def test_remote_scope_nested_open_close_routes_refs_to_inner_scope():
+    """scope1.open() → scope2.open() → refs → scope2.close() → scope1.close().
+
+    Refs created while both scopes are active must be registered only
+    to the innermost scope (i.e. ``_scope_stack[-1]``).
+    """
+    from emout.distributed.remote_render import RemoteRef, _scope_stack, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"inner_1": 1, "inner_2": 2, "outer_only": 3}
+
+    scope1 = remote_scope()
+    scope2 = remote_scope()
+    scope1.open()
+    try:
+        scope2.open()
+        assert _scope_stack[-1] is scope2
+        RemoteRef(session, "inner_1")
+        RemoteRef(session, "inner_2")
+        scope2.close()
+        # inner refs are dropped, scope1 is still on the stack
+        assert session._drops == ["inner_2", "inner_1"]
+        assert _scope_stack[-1] is scope1
+
+        # A ref created after scope2 closed must land in scope1
+        RemoteRef(session, "outer_only")
+    finally:
+        scope1.close()
+
+    assert session._drops == ["inner_2", "inner_1", "outer_only"]
+    assert scope1 not in _scope_stack
+    assert scope2 not in _scope_stack
+
+
+def test_remote_scope_open_can_nest_with_remote_scope_statement():
+    """``scope1.open()`` → ``with remote_scope() as scope2:`` must work.
+
+    The inner ``with`` block pushes a fresh scope on top of scope1, so
+    refs created inside the block land in scope2 and are dropped on
+    block exit. Refs created outside the block continue to land in
+    scope1.
+    """
+    from emout.distributed.remote_render import RemoteRef, _scope_stack, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"inner_1": 1, "inner_2": 2, "outer_only": 3}
+
+    scope1 = remote_scope()
+    scope1.open()
+    try:
+        with remote_scope() as scope2:
+            assert _scope_stack[-1] is scope2
+            RemoteRef(session, "inner_1")
+            RemoteRef(session, "inner_2")
+        # Exiting the with block popped scope2 and dropped its refs
+        assert session._drops == ["inner_2", "inner_1"]
+        assert scope2 not in _scope_stack
+        assert _scope_stack[-1] is scope1
+
+        RemoteRef(session, "outer_only")
+    finally:
+        scope1.close()
+
+    assert session._drops == ["inner_2", "inner_1", "outer_only"]
+    assert scope1 not in _scope_stack
+
+
+def test_remote_scope_can_be_reopened_after_close():
+    """A scope instance may be reused by calling open() → close() twice."""
+    from emout.distributed.remote_render import RemoteRef, _scope_stack, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"first": 1, "second": 2}
+
+    scope = remote_scope()
+
+    scope.open()
+    RemoteRef(session, "first")
+    scope.close()
+    assert session._drops == ["first"]
+    assert scope not in _scope_stack
+
+    scope.open()  # re-enter the same instance
+    RemoteRef(session, "second")
+    scope.close()
+    assert session._drops == ["first", "second"]
+    assert scope not in _scope_stack
+
+
 def test_remote_scope_can_nest_with_remote_figure(monkeypatch):
     from emout.distributed.remote_figure import remote_figure
     from emout.distributed import remote_render
