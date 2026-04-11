@@ -1099,6 +1099,39 @@ def test_remote_ref_gifplot_bytes_returns_gif_payload():
     assert cached.calls[0]["action"] == "save"
 
 
+def test_remote_emout_phisp_slice_gifplot_chain_bytes(tmp_path):
+    """End-to-end: ``rdata.phisp[:, 100, :, :].gifplot(action='bytes')``.
+
+    Exercises the compound expression that composes ``RemoteEmout.__getattr__``
+    (caches ``data.phisp``), ``RemoteRef.__getitem__`` (caches the Data3d
+    slice on the worker), and ``RemoteRef.gifplot`` (dispatches through
+    :meth:`RemoteSession.render_gifplot_bytes`).
+    """
+    from emout.distributed.remote_render import RemoteEmout
+
+    class _DummySeries:
+        """Mimics ``GridDataSeries[tuple_index]`` well enough for this test."""
+
+        def __init__(self):
+            self.slice_calls = []
+
+        def __getitem__(self, index):
+            self.slice_calls.append(index)
+            return _DummyGifplottable()
+
+    series = _DummySeries()
+    session = FakeActorSession(emout=SimpleNamespace(phisp=series))
+    rdata = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    payload = rdata.phisp[:, 100, :, :].gifplot(action="bytes")
+
+    # (slice(None), 100, slice(None), slice(None)) must reach the worker
+    # untouched — ``RemoteRef._encode_remote_arg`` passes slices through.
+    assert series.slice_calls == [(slice(None), 100, slice(None), slice(None))]
+    assert isinstance(payload, bytes)
+    assert payload.startswith(b"GIF89a")
+
+
 def test_remote_ref_gifplot_rejects_unsupported_actions():
     from emout.distributed.remote_render import RemoteRef
 
