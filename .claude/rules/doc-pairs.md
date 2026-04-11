@@ -7,6 +7,6 @@
 - `README.md` ⇔ `README.en.md`
 - `CLAUDE.md` ⇔ `AGENTS.md`（同一内容をコピー）
 - `docs/source/guide/*.md` ⇔ `docs/source/guide/*.ja.md`
-  - `quickstart` / `plotting` / `animation` / `inp` / `units` / `boundaries` / `distributed`
+  - `quickstart` / `plotting` / `animation` / `inp` / `units` / `boundaries` / `backtrace` / `distributed`
 
 </important>

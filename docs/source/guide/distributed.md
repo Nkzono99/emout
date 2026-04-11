@@ -118,8 +118,8 @@ with remote_scope():
 ```
 
 Objects created inside `remote_scope()` are automatically `drop()`-ed when
-the context exits. This is the best fit when you want to reuse intermediate
-remote results.
+the context exits, so you can reuse intermediate remote results many times
+within the block without having to manage worker-side cleanup yourself.
 
 ### Data-transfer mode (compatibility mode)
 
@@ -206,71 +206,57 @@ data.phisp[-1, :, 100, :].plot()
 
 ### Backtrace integration
 
-Heavy computation runs once on the server; results stay in server memory.
-Re-render with different visualization parameters without recomputation.
+Heavy particle-backtrace computations run once on the server; the result
+stays in worker memory. Re-render with different visualisation parameters
+without recomputing.
 
 ```python
-# Computation (runs on server, result cached in server memory)
+# Computation (runs on server, result cached in worker memory)
 result = data.backtrace.get_probabilities(
     x, y, z, vx_range, vy_center, vz_range, ispec=0,
 )
 
-# Visualize repeatedly (no recomputation)
+# Visualise repeatedly using the same result (no recomputation)
 with remote_figure():
     result.vxvz.plot(cmap="viridis")
     plt.title("Velocity distribution (vx-vz)")
 
 with remote_figure():
-    result.vxvy.plot(cmap="plasma")
-
-with remote_figure():
     result.plot_energy_spectrum(scale="log")
     plt.xlabel("Energy [eV]")
 
-# Free server memory when done
+# Free worker memory when done
 result.drop()
 ```
 
-Because this route returns dedicated proxies (`RemoteProbabilityResult`,
-`RemoteHeatmap`), it is currently the most polished backtrace workflow.
-
-You can also run backtrace through `Emout.remote()`, and it now returns the
-same dedicated backtrace proxies:
+Both `data.backtrace...` and `data.remote().backtrace...` return the same
+dedicated proxies (`RemoteProbabilityResult` / `RemoteBacktraceResult`).
+Use the former when you want to keep existing code almost unchanged, and
+the latter when you want one explicit-remote workflow across fields,
+boundaries, and backtrace results:
 
 ```python
 with remote_scope():
     rdata = data.remote()
+
+    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
     result = rdata.backtrace.get_probabilities(
         x, y, z, vx_range, vy_center, vz_range, ispec=0,
     )
 
     with remote_figure():
-        result.vxvz.plot(cmap="viridis")
-        result.plot_energy_spectrum(scale="log")
-```
-
-On the explicit side, `get_backtrace()` and `get_backtraces()` are also
-available directly:
-
-```python
-with remote_scope():
-    rdata = data.remote()
-    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
-    many = rdata.backtrace.get_backtraces(positions, velocities, ispec=0)
-
-    with remote_figure():
         bt.tx.plot()
-        many.tvx.plot()
+        result.vxvz.plot(cmap="viridis")
 ```
 
-In practice, use `data.backtrace...` when you want to keep existing code
-almost unchanged, and `data.remote().backtrace...` when you want a single
-explicit-remote workflow across fields, boundaries, and backtrace results.
+For the backtrace API itself (`BacktraceResult` / `MultiBacktraceResult` /
+`ProbabilityResult`, shorthand attribute access, axis lists), see the
+dedicated [backtrace guide](backtrace.md).
 
 #### Local customisation with fetch()
 
 If you need full matplotlib control (e.g. custom annotations, shared colour bars),
-use `fetch()` to transfer the small result arrays to the client:
+use `fetch()` to pull the small result arrays back to the client:
 
 ```python
 heatmap = result.vxvz.fetch()   # → local HeatmapData
@@ -320,7 +306,7 @@ the same login node gets a different port automatically (e.g. UID 36291
 ports are probed until a free one is found.  Set
 `EMOUT_DASK_SCHED_PORT` to override.
 
-### Limitations
+## Limitations
 
 - Python >= 3.10 with `dask` and `distributed` installed.
 - All simulation directories must be accessible from the worker node

@@ -74,6 +74,7 @@ See the user guide for detailed usage of each feature.
 | **Parameters** | `data.inp.nx`, `data.toml.species[0].wp` | [→ Parameters](https://nkzono99.github.io/emout/guide/inp.html) |
 | **Unit conversion** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ Units](https://nkzono99.github.io/emout/guide/units.html) |
 | **Boundary meshes** | `data.boundaries.mesh()`, overlay on `plot_surfaces` | [→ Boundaries](https://nkzono99.github.io/emout/guide/boundaries.html) |
+| **Backtrace** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ Quick Start](https://nkzono99.github.io/emout/guide/quickstart.html) |
 | **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
 
@@ -187,11 +188,13 @@ rf.close()
 # local_data.phisp[-1, :, 100, :].plot()
 ```
 
-Heavy backtrace computations run on the server and stay in server memory;
+Heavy backtrace computations run on the server and stay in worker memory;
 re-render with different parameters without recomputation.
 Both `data.backtrace.get_probabilities(...)` and
-`data.remote().backtrace.get_probabilities(...)` now return dedicated
-backtrace proxies.
+`data.remote().backtrace.get_probabilities(...)` return dedicated
+backtrace proxies — see the
+[backtrace guide](https://nkzono99.github.io/emout/guide/backtrace.html)
+for the API itself.
 
 **Cross-simulation comparison** is also supported:
 

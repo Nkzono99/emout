@@ -117,7 +117,7 @@ with remote_scope():
 ```
 
 `remote_scope()` の内側で作られた remote object は、`with` を抜けると自動で `drop()`
-されます。中間結果を再利用したい場合に最も向いています。
+されます。ブロック内では中間結果を何度でも再利用しつつ、ワーカー側のメモリ管理は任せられます。
 
 ### データ転送モード（互換モード）
 
@@ -203,69 +203,55 @@ data.phisp[-1, :, 100, :].plot()
 
 ### backtrace 連携
 
-重い計算はサーバーで 1 回だけ実行し、結果をサーバーメモリに保持。
-可視化パラメータを変えて何度でも再レンダリングできます。
+重い粒子バックトレースはサーバーで 1 回だけ実行し、結果をワーカーのメモリに保持します。
+可視化パラメータを変えながら何度でも再描画でき、再計算は走りません。
 
 ```python
-# 計算（サーバーで実行、結果はサーバーメモリに保持）
+# 計算（サーバーで実行、結果はワーカーにキャッシュ）
 result = data.backtrace.get_probabilities(
     x, y, z, vx_range, vy_center, vz_range, ispec=0,
 )
 
-# 可視化を繰り返す（再計算なし）
+# 同じ result を使い回して何度でも再描画
 with remote_figure():
     result.vxvz.plot(cmap="viridis")
     plt.title("速度分布 (vx-vz)")
 
 with remote_figure():
-    result.vxvy.plot(cmap="plasma")
-
-with remote_figure():
     result.plot_energy_spectrum(scale="log")
     plt.xlabel("Energy [eV]")
 
-# 不要になったらサーバーメモリを解放
+# 不要になったらワーカーメモリを解放
 result.drop()
 ```
 
-これは専用 proxy (`RemoteProbabilityResult`, `RemoteHeatmap`) を返すため、現状では
-backtrace 用として最も完成度の高いルートです。
-
-`Emout.remote()` 経由でも同じく専用 proxy を返します:
+`data.backtrace...` と `data.remote().backtrace...` のどちらを使っても、返り値は
+同じ専用 proxy (`RemoteProbabilityResult` / `RemoteBacktraceResult`) です。
+既存コードの流れを活かすなら前者、field や境界と同じ explicit-remote のスタイルに
+揃えたいなら後者を選びます:
 
 ```python
 with remote_scope():
     rdata = data.remote()
+
+    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
     result = rdata.backtrace.get_probabilities(
         x, y, z, vx_range, vy_center, vz_range, ispec=0,
     )
 
     with remote_figure():
-        result.vxvz.plot(cmap="viridis")
-        result.plot_energy_spectrum(scale="log")
-```
-
-`Emout.remote()` 側ではさらに `get_backtrace()` / `get_backtraces()` も explicit に書けます:
-
-```python
-with remote_scope():
-    rdata = data.remote()
-    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
-    many = rdata.backtrace.get_backtraces(positions, velocities, ispec=0)
-
-    with remote_figure():
         bt.tx.plot()
-        many.tvx.plot()
+        result.vxvz.plot(cmap="viridis")
 ```
 
-使い分けとしては、既存コードをほぼそのまま活かすなら `data.backtrace...`、
-他の field や境界と同じ explicit remote の流れに揃えたいなら `data.remote().backtrace...`
-が向いています。
+バックトレース API そのもの（`BacktraceResult` / `MultiBacktraceResult` /
+`ProbabilityResult` のショートハンドや軸一覧）は、専用の
+[バックトレースガイド](backtrace.ja.md) を参照してください。
 
 #### fetch() によるローカル加工
 
 matplotlib で自由にカスタマイズしたい場合（独自アノテーション、共有カラーバーなど）、
-`fetch()` で小さな結果配列をクライアントに転送できます:
+`fetch()` で結果を小さなローカル配列として取り出せます:
 
 ```python
 heatmap = result.vxvz.fetch()   # → ローカルの HeatmapData
