@@ -804,14 +804,23 @@ class TestRemoteFigure:
         assert rf.fmt == "png"
         assert rf.dpi == 150
         assert rf.figsize is None
+        assert rf.savefilepath is None
 
-    def test_custom_parameters(self):
+    def test_custom_parameters(self, tmp_path):
         from emout.distributed.remote_figure import RemoteFigure
 
-        rf = RemoteFigure(fmt="svg", dpi=300, figsize=(12, 8))
+        rf = RemoteFigure(fmt="svg", dpi=300, figsize=(12, 8), savefilepath=tmp_path / "figure.svg")
         assert rf.fmt == "svg"
         assert rf.dpi == 300
         assert rf.figsize == (12, 8)
+        assert rf.savefilepath == tmp_path / "figure.svg"
+
+    def test_savefilepath_infers_format(self, tmp_path):
+        from emout.distributed.remote_figure import RemoteFigure
+
+        rf = RemoteFigure(savefilepath=tmp_path / "figure.jpeg")
+        assert rf.fmt == "jpeg"
+        assert rf.savefilepath == tmp_path / "figure.jpeg"
 
     def test_open_sets_recording(self, monkeypatch):
         from emout.distributed.remote_figure import RemoteFigure
@@ -915,6 +924,52 @@ class TestRemoteFigure:
         commands, fmt, dpi = replayed[0]
         assert any(c[1] == "xlabel" for c in commands)
         assert fmt == "png"
+        assert displayed == [b"fake-png"]
+
+    def test_close_saves_image_without_display_in_cli(self, monkeypatch, tmp_path):
+        from emout.distributed.remote_figure import RemoteFigure
+        import emout.distributed.remote_render as rr_mod
+
+        displayed = []
+
+        class FakeSession:
+            def replay_figure(self, commands, fmt="png", dpi=150):
+                return FakeFuture(b"fake-png")
+
+        monkeypatch.setattr(rr_mod, "get_or_create_session", lambda **kw: FakeSession())
+        monkeypatch.setattr(rr_mod, "display_image", lambda img_bytes: displayed.append(img_bytes))
+        monkeypatch.setattr(_rf_mod, "_has_active_ipython", lambda: False)
+
+        savepath = tmp_path / "plots" / "figure.png"
+        rf = RemoteFigure(session=FakeSession(), savefilepath=savepath)
+        rf.open()
+        _rf_mod.record_plt_call("xlabel", ("test",), {})
+        rf.close()
+
+        assert savepath.read_bytes() == b"fake-png"
+        assert displayed == []
+
+    def test_close_saves_image_and_displays_in_ipython(self, monkeypatch, tmp_path):
+        from emout.distributed.remote_figure import RemoteFigure
+        import emout.distributed.remote_render as rr_mod
+
+        displayed = []
+
+        class FakeSession:
+            def replay_figure(self, commands, fmt="png", dpi=150):
+                return FakeFuture(b"fake-png")
+
+        monkeypatch.setattr(rr_mod, "get_or_create_session", lambda **kw: FakeSession())
+        monkeypatch.setattr(rr_mod, "display_image", lambda img_bytes: displayed.append(img_bytes))
+        monkeypatch.setattr(_rf_mod, "_has_active_ipython", lambda: True)
+
+        savepath = tmp_path / "figure.png"
+        rf = RemoteFigure(session=FakeSession(), savefilepath=savepath)
+        rf.open()
+        _rf_mod.record_plt_call("xlabel", ("test",), {})
+        rf.close()
+
+        assert savepath.read_bytes() == b"fake-png"
         assert displayed == [b"fake-png"]
 
     def test_figsize_adds_figure_command(self, monkeypatch):
@@ -1056,6 +1111,23 @@ class TestRemoteFigureContextManager:
 
         assert is_recording() is False
 
+    def test_savefilepath_writes_file(self, monkeypatch, tmp_path):
+        from emout.distributed.remote_figure import remote_figure as rf_ctx
+        import emout.distributed.remote_render as rr_mod
+
+        class FakeSession:
+            def replay_figure(self, commands, fmt="png", dpi=150):
+                return FakeFuture(b"fake-png")
+
+        monkeypatch.setattr(rr_mod, "display_image", lambda img_bytes: None)
+        monkeypatch.setattr(_rf_mod, "_has_active_ipython", lambda: False)
+
+        savepath = tmp_path / "remote.png"
+        with rf_ctx(session=FakeSession(), savefilepath=savepath):
+            _rf_mod.record_plt_call("xlabel", ("saved",), {})
+
+        assert savepath.read_bytes() == b"fake-png"
+
 
 # ===================================================================
 # remote_figure.py -- _parse_magic_line
@@ -1107,11 +1179,23 @@ class TestParseMagicLine:
         result = _parse_magic_line("--emout-dir /tmp/output")
         assert result == {"emout_dir": "/tmp/output"}
 
+    def test_savefilepath(self):
+        from emout.distributed.remote_figure import _parse_magic_line
+
+        result = _parse_magic_line("--savefilepath output/figure.png")
+        assert result == {"savefilepath": "output/figure.png"}
+
     def test_combined(self):
         from emout.distributed.remote_figure import _parse_magic_line
 
-        result = _parse_magic_line("--dpi 300 --fmt svg --figsize 10,5 --emout-dir /sim")
-        assert result == {"dpi": 300, "fmt": "svg", "figsize": (10.0, 5.0), "emout_dir": "/sim"}
+        result = _parse_magic_line("--dpi 300 --fmt svg --figsize 10,5 --emout-dir /sim --savefilepath out.svg")
+        assert result == {
+            "dpi": 300,
+            "fmt": "svg",
+            "figsize": (10.0, 5.0),
+            "emout_dir": "/sim",
+            "savefilepath": "out.svg",
+        }
 
     def test_unknown_tokens_ignored(self):
         from emout.distributed.remote_figure import _parse_magic_line

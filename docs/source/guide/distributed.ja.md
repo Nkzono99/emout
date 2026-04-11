@@ -19,6 +19,10 @@ with remote_figure():
     data.phisp[-1,:,100,:].plot()  →  全操作をサーバーで実行
     plt.xlabel("custom")           →  (コマンドとして記録)
                                    ←  PNG bytes (~50 KB) だけ返る
+
+with remote_figure(savefilepath="figure.png"):
+    data.phisp[-1,:,100,:].plot()  →  サーバー側で描画
+                                   ←  画像をファイル保存
 ```
 
 ### 共有セッション アーキテクチャ
@@ -49,6 +53,8 @@ with remote_figure(figsize=(12, 5)):
 ```
 
 すべてのコマンドは同一の worker 上で再生されます。クライアントにデータは転送されません。
+`savefilepath` を指定すると、CLI / バッチ実行でも生成画像をそのまま保存できます。
+拡張子があれば出力フォーマットはそこから推定されます。
 
 ## セットアップ
 

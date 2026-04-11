@@ -178,6 +178,15 @@ with remote_figure():
     plt.axhline(y=50, color="red")
     plt.title("カスタムタイトル")
 
+# CLI / バッチ実行ではファイル保存も可能
+with remote_figure(savefilepath="figures/phisp.png"):
+    local_data.phisp[-1, :, 100, :].plot()
+    plt.title("saved remotely")
+
+# 拡張子からフォーマットを推定
+with remote_figure(savefilepath="figures/phisp.svg"):
+    local_data.phisp[-1, :, 100, :].plot()
+
 # open/close 形式 — 既存コードへの導入が容易
 from emout.distributed import RemoteFigure
 
@@ -191,6 +200,9 @@ rf.close()
 # %%remote_figure
 # local_data.phisp[-1, :, 100, :].plot()
 ```
+
+`savefilepath` を指定すると画像はそのまま保存されます。IPython では PNG/JPEG を
+従来どおり inline 表示しつつ、CLI / バッチ実行ではローカル表示を行いません。
 
 backtrace の重い計算もサーバーで実行し、可視化パラメータだけ変えて何度でも再描画できます。
 `data.backtrace.get_probabilities(...)` でも `data.remote().backtrace.get_probabilities(...)` でも、

@@ -23,7 +23,8 @@ from __future__ import annotations
 import contextlib
 import itertools
 import warnings
-from typing import Any, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, List, Optional, Tuple, Union
 
 # ---------------------------------------------------------------------------
 # Global recording state
@@ -513,6 +514,36 @@ def _build_subplots_proxies(figure_id: str, nrows: int, ncols: int, squeeze: boo
     return arr, grid
 
 
+def _resolve_output_format(fmt: Optional[str], savefilepath: Optional[Path]) -> str:
+    if fmt is not None:
+        return fmt
+    if savefilepath is None:
+        return "png"
+    suffix = savefilepath.suffix.lower().lstrip(".")
+    if not suffix:
+        return "png"
+    if suffix == "jpg":
+        return "jpeg"
+    return suffix
+
+
+def _save_image_bytes(img_bytes: bytes, savefilepath: Path) -> None:
+    savefilepath.parent.mkdir(parents=True, exist_ok=True)
+    savefilepath.write_bytes(img_bytes)
+
+
+def _has_active_ipython() -> bool:
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        return False
+    return get_ipython() is not None
+
+
+def _can_display_image(fmt: str) -> bool:
+    return fmt.lower() in {"png", "jpg", "jpeg"}
+
+
 # ---------------------------------------------------------------------------
 # RemoteFigure class -- open/close and context manager
 # ---------------------------------------------------------------------------
@@ -532,11 +563,16 @@ class RemoteFigure:
     emout_kwargs : dict, optional
         Argument set for reconstructing ``Emout(...)``.
     fmt : str
-        Output image format.
+        Output image format. Defaults to ``png`` unless inferred from
+        *savefilepath*.
     dpi : int
         Output resolution.
     figsize : tuple, optional
         Figure size (width, height).
+    savefilepath : str or Path, optional
+        Save rendered image bytes to this path. When provided, the image
+        is still displayed in active IPython sessions for displayable
+        formats.
 
     Usage::
 
@@ -558,14 +594,16 @@ class RemoteFigure:
         session=None,
         emout_dir: Optional[str] = None,
         emout_kwargs: Optional[dict[str, Any]] = None,
-        fmt: str = "png",
+        fmt: Optional[str] = None,
         dpi: int = 150,
         figsize: Optional[Tuple[float, float]] = None,
+        savefilepath: Optional[Union[Path, str]] = None,
     ):
         self._init_session = session
         self._emout_dir = emout_dir
         self._emout_kwargs = emout_kwargs
-        self.fmt = fmt
+        self.savefilepath = Path(savefilepath).expanduser() if savefilepath is not None else None
+        self.fmt = _resolve_output_format(fmt, self.savefilepath)
         self.dpi = dpi
         self.figsize = figsize
         self._originals: dict[str, Any] = {}
@@ -730,7 +768,7 @@ class RemoteFigure:
         return self
 
     def close(self) -> None:
-        """Stop recording and replay commands on the shared worker to display the image."""
+        """Stop recording and replay commands on the shared worker."""
         if not self._opened:
             return
 
@@ -752,9 +790,21 @@ class RemoteFigure:
                 fmt=self.fmt,
                 dpi=self.dpi,
             ).result()
-            from .remote_render import display_image
 
-            display_image(img_bytes)
+            if self.savefilepath is not None:
+                _save_image_bytes(img_bytes, self.savefilepath)
+
+            if _can_display_image(self.fmt):
+                if self.savefilepath is None or _has_active_ipython():
+                    from .remote_render import display_image
+
+                    display_image(img_bytes)
+            elif self.savefilepath is None:
+                warnings.warn(
+                    f"Format {self.fmt!r} cannot be displayed automatically; use savefilepath to keep the output.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
         _reset_recording_state()
         self._opened = False
@@ -788,9 +838,10 @@ def remote_figure(
     session=None,
     emout_dir: Optional[str] = None,
     emout_kwargs: Optional[dict[str, Any]] = None,
-    fmt: str = "png",
+    fmt: Optional[str] = None,
     dpi: int = 150,
     figsize: Optional[Tuple[float, float]] = None,
+    savefilepath: Optional[Union[Path, str]] = None,
 ):
     """Context manager that executes matplotlib operations on the server side.
 
@@ -804,11 +855,16 @@ def remote_figure(
         Argument set for reconstructing ``Emout(...)``.
         Used when ``input_path`` / ``output_directory`` are involved.
     fmt : str
-        Output image format.
+        Output image format. Defaults to ``png`` unless inferred from
+        *savefilepath*.
     dpi : int
         Output resolution.
     figsize : tuple, optional
         Figure size (width, height).
+    savefilepath : str or Path, optional
+        Save rendered image bytes to this path. In CLI/batch usage this
+        suppresses local display; in IPython, PNG/JPEG output is also
+        displayed inline.
 
     Usage::
 
@@ -825,6 +881,7 @@ def remote_figure(
         fmt=fmt,
         dpi=dpi,
         figsize=figsize,
+        savefilepath=savefilepath,
     )
     rf.open()
     try:
@@ -859,6 +916,9 @@ def _parse_magic_line(line: str) -> dict[str, Any]:
             i += 2
         elif tok == "--emout-dir" and i + 1 < len(tokens):
             kwargs["emout_dir"] = tokens[i + 1]
+            i += 2
+        elif tok == "--savefilepath" and i + 1 < len(tokens):
+            kwargs["savefilepath"] = tokens[i + 1]
             i += 2
         else:
             i += 1

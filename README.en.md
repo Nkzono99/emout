@@ -179,6 +179,15 @@ with remote_figure():
     plt.axhline(y=50, color="red")
     plt.title("Custom title")
 
+# Save directly to a file in CLI / batch jobs
+with remote_figure(savefilepath="figures/phisp.png"):
+    local_data.phisp[-1, :, 100, :].plot()
+    plt.title("saved remotely")
+
+# The output format is inferred from the extension
+with remote_figure(savefilepath="figures/phisp.svg"):
+    local_data.phisp[-1, :, 100, :].plot()
+
 # open/close style — easy to retrofit existing code
 from emout.distributed import RemoteFigure
 
@@ -192,6 +201,10 @@ rf.close()
 # %%remote_figure
 # local_data.phisp[-1, :, 100, :].plot()
 ```
+
+When `savefilepath` is provided, the rendered bytes are written to disk.
+PNG/JPEG output is still shown inline in IPython, while CLI / batch
+usage skips local display.
 
 Heavy backtrace computations run on the server and stay in worker memory;
 re-render with different parameters without recomputation.

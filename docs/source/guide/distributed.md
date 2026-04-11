@@ -19,6 +19,10 @@ with remote_figure():
     data.phisp[-1,:,100,:].plot()  → all operations on server
     plt.xlabel("custom")           → (recorded as commands)
                                    ← only PNG bytes (~50 KB)
+
+with remote_figure(savefilepath="figure.png"):
+    data.phisp[-1,:,100,:].plot()  → render on server
+                                   ← save the image to a file
 ```
 
 ### Shared Session Architecture
@@ -49,6 +53,9 @@ with remote_figure(figsize=(12, 5)):
 ```
 
 All commands are replayed on the same worker — no data is transferred to the client.
+If `savefilepath` is provided, the rendered image can be saved directly in
+CLI / batch workflows. When the path has an extension, the output format
+is inferred from it.
 
 ## Setup
 
