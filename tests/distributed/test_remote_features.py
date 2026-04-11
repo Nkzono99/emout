@@ -1,5 +1,6 @@
 import importlib.util
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -20,6 +21,73 @@ class FakeFuture:
 
     def result(self):
         return self._value
+
+
+class FakeActorSession:
+    def __init__(self, emout=None):
+        self._cache = {}
+        self._instances = {"default": emout} if emout is not None else {}
+        self._drops = []
+
+    def _resolve(self, emout_kwargs=None):
+        if not self._instances:
+            raise RuntimeError("No fake Emout is registered")
+        return next(iter(self._instances.values()))
+
+    def _decode_remote_value(self, value):
+        from emout.distributed.remote_render import RemoteSession
+
+        return RemoteSession._decode_remote_value(self, value)
+
+    def cache_emout_attr(self, key, emout_kwargs, name):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.cache_emout_attr(self, key, emout_kwargs, name))
+
+    def cache_attr(self, key, parent_key, name):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.cache_attr(self, key, parent_key, name))
+
+    def cache_getitem(self, key, parent_key, index):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.cache_getitem(self, key, parent_key, index))
+
+    def call_cached(self, key, parent_key, args=(), kwargs=None):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.call_cached(self, key, parent_key, args=args, kwargs=kwargs))
+
+    def call_method(self, key, parent_key, method_name, args=(), kwargs=None):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.call_method(self, key, parent_key, method_name, args=args, kwargs=kwargs))
+
+    def apply_function(self, key, parent_key, func, args=(), kwargs=None):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.apply_function(self, key, parent_key, func, args=args, kwargs=kwargs))
+
+    def fetch_object(self, key):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.fetch_object(self, key))
+
+    def render_cached_plot(self, key, fmt="png", dpi=150, **plot_kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.render_cached_plot(self, key, fmt=fmt, dpi=dpi, **plot_kwargs))
+
+    def replay_figure(self, commands, fmt="png", dpi=150):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.replay_figure(self, commands, fmt=fmt, dpi=dpi))
+
+    def drop(self, key):
+        self._drops.append(key)
+        self._cache.pop(key, None)
+        return FakeFuture(True)
 
 
 def test_fetch_field_returns_numpy_payload():
@@ -47,6 +115,160 @@ def test_fetch_field_returns_numpy_payload():
 
     assert np.array_equal(payload["array"], np.arange(4).reshape(2, 2))
     assert payload["name"] == "phisp"
+
+
+def test_emout_remote_returns_remote_proxy(monkeypatch):
+    from emout.core.facade import Emout
+    from emout.distributed import remote_render
+
+    fake_session = object()
+    emout = Emout.__new__(Emout)
+    emout._dir_inspector = SimpleNamespace(
+        _input_directory=Path("/tmp/input"),
+        append_directories=[],
+        inpfilename="plasma.toml",
+        main_directory=Path("/tmp/output"),
+        input_path=Path("/tmp/input/plasma.toml"),
+    )
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: fake_session)
+
+    proxy = emout.remote()
+
+    assert isinstance(proxy, remote_render.RemoteEmout)
+    assert proxy._session is fake_session
+
+
+def test_remote_ref_supports_dynamic_method_calls():
+    from emout.distributed.remote_render import RemoteEmout, RemoteRef
+
+    array = np.arange(12).reshape(3, 4)
+    session = FakeActorSession(emout=SimpleNamespace(phisp=array))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    sl = remote_data.phisp[1]
+    mean_ref = sl.mean()
+
+    assert isinstance(sl, RemoteRef)
+    assert isinstance(mean_ref, RemoteRef)
+    assert mean_ref.fetch() == pytest.approx(array[1].mean())
+    assert sl.shape.fetch() == array[1].shape
+
+
+def test_remote_scope_auto_drops_registered_refs():
+    from emout.distributed.remote_render import RemoteRef, remote_scope
+
+    session = FakeActorSession()
+    session._cache = {"ref_1": 1, "ref_2": 2}
+
+    with remote_scope():
+        ref1 = RemoteRef(session, "ref_1")
+        ref2 = RemoteRef(session, "ref_2")
+        assert ref1.fetch() == 1
+        assert ref2.fetch() == 2
+
+    assert session._drops == ["ref_2", "ref_1"]
+
+
+def test_remote_scope_can_nest_with_remote_figure(monkeypatch):
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed import remote_render
+    from emout.distributed.remote_render import RemoteRef, remote_scope
+
+    displayed = []
+
+    class PlotObject:
+        def __init__(self):
+            self.calls = []
+
+        def plot(self, **plot_kwargs):
+            import matplotlib.pyplot as plt
+
+            self.calls.append(plot_kwargs)
+            plt.plot([0.0, 1.0], [0.0, 1.0], color=plot_kwargs.get("color", "blue"))
+
+    plot_object = PlotObject()
+    session = FakeActorSession()
+    session._cache["plot_0"] = plot_object
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    with remote_scope():
+        ref = RemoteRef(session, "plot_0")
+        with remote_figure():
+            assert ref.plot(color="red") is None
+
+    assert plot_object.calls == [{"color": "red"}]
+    assert len(displayed) == 1
+    assert displayed[0][0]
+    assert session._drops == ["plot_0"]
+
+
+def test_remote_figure_replays_subplot_field_plot_and_axes_overlay(monkeypatch):
+    from emout.distributed import remote_figure
+    from emout.distributed import remote_render
+    from emout.core.data.data import Data2d
+
+    displayed = []
+    open_kwargs = {
+        "directory": "/tmp/input",
+        "output_directory": "/tmp/output",
+        "input_path": "/tmp/input/plasma.toml",
+        "append_directories": [],
+        "inpfilename": "plasma.toml",
+    }
+
+    data = Data2d(np.arange(4, dtype=float).reshape(2, 2), filename="dummy.h5", name="phisp")
+    data._emout_open_kwargs = open_kwargs
+    replay_data = Data2d(np.arange(4, dtype=float).reshape(2, 2), filename="dummy.h5", name="phisp")
+    replay_data._emout_open_kwargs = None
+
+    class Holder:
+        def __getitem__(self, index):
+            return replay_data
+
+    session = FakeActorSession(emout=SimpleNamespace(phisp=Holder()))
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: session)
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    with remote_figure():
+        ax = plt.subplot(111)
+        assert data.plot() is None
+        ax.axhline(0.5, color="red", linewidth=0.5)
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
+def test_remote_figure_replays_figure_add_axes_plot3d_and_tick_params(monkeypatch):
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed import remote_render
+
+    displayed = []
+    session = FakeActorSession()
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    with remote_figure(session=session):
+        fig = plt.figure(figsize=(4, 3))
+        ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], projection="3d")
+        ax.plot3D([0.0, 1.0], [0.0, 1.0], [0.0, 1.0], color="black", linewidth=0.5)
+        ax.set_xlim(0.0, 1.0)
+        ax.xaxis.set_tick_params(pad=4)
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
 
 
 def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch):

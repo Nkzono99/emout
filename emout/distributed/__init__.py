@@ -11,6 +11,9 @@ if sys.version_info >= (3, 10):
     from .client import start_cluster, stop_cluster, connect
     from .remote_figure import remote_figure, RemoteFigure, register_magics
     from .remote_render import (
+        RemoteEmout,
+        RemoteRef,
+        RemoteScope,
         RemoteSession,
         RemoteProbabilityResult,
         RemoteBacktraceResult,
@@ -19,4 +22,5 @@ if sys.version_info >= (3, 10):
         display_image,
         get_or_create_session,
         clear_sessions,
+        remote_scope,
     )

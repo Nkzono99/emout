@@ -821,11 +821,54 @@ class TestRemoteFigure:
         rf = RemoteFigure(figsize=(10, 6))
         rf.open()
 
-        figure_cmds = [c for c in _rf_mod._commands if c[0] == "plt" and c[1] == "figure"]
+        figure_cmds = [c for c in _rf_mod._commands if c[0] == "figure_call" and c[2] == "figure"]
         assert len(figure_cmds) == 1
-        assert figure_cmds[0][3] == {"figsize": (10, 6)}
+        assert figure_cmds[0][4] == {"figsize": (10, 6)}
 
         rf.close()
+
+    def test_subplot_returns_axes_proxy_and_records_axes_call(self, monkeypatch):
+        from emout.distributed.remote_figure import AxesProxy, RemoteFigure
+        import emout.distributed.remote_render as rr_mod
+        import matplotlib.pyplot as plt
+
+        monkeypatch.setattr(rr_mod, "get_or_create_session", lambda **kw: None)
+
+        rf = RemoteFigure()
+        rf.open()
+        try:
+            ax = plt.subplot(111)
+            ax.axhline(0.5, color="red")
+            commands = list(_rf_mod._commands)
+        finally:
+            rf.close()
+
+        assert isinstance(ax, AxesProxy)
+        assert any(cmd[0] == "figure_call" and cmd[2] == "subplot" for cmd in commands)
+        assert any(cmd[0] == "axes_call" and cmd[2] == "axhline" for cmd in commands)
+
+    def test_figure_proxy_records_add_axes_axis_and_spine_calls(self, monkeypatch):
+        from emout.distributed.remote_figure import RemoteFigure
+        import emout.distributed.remote_render as rr_mod
+        import matplotlib.pyplot as plt
+
+        monkeypatch.setattr(rr_mod, "get_or_create_session", lambda **kw: None)
+
+        rf = RemoteFigure()
+        rf.open()
+        try:
+            fig = plt.figure()
+            ax = fig.add_axes([0.1, 0.1, 0.8, 0.8], projection="3d")
+            ax.xaxis.set_tick_params(pad=10)
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+            commands = list(_rf_mod._commands)
+        finally:
+            rf.close()
+
+        assert any(cmd[0] == "figure_call" and cmd[1] is not None and cmd[2] == "add_axes" for cmd in commands)
+        assert any(cmd[0] == "axis_call" and cmd[2] == "xaxis" and cmd[3] == "set_tick_params" for cmd in commands)
+        assert any(cmd[0] == "spine_call" and cmd[2] == "left" and cmd[3] == "set_visible" for cmd in commands)
 
     def test_del_warns_if_not_closed(self, monkeypatch):
         from emout.distributed.remote_figure import RemoteFigure

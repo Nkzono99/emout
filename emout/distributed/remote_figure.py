@@ -21,6 +21,7 @@ is hard to introduce into existing code::
 from __future__ import annotations
 
 import contextlib
+import itertools
 import warnings
 from typing import Any, List, Optional, Tuple
 
@@ -31,13 +32,66 @@ from typing import Any, List, Optional, Tuple
 _recording: bool = False
 _commands: List[Tuple[str, Any, ...]] = []
 _session: Any = None  # the shared RemoteSession bound during recording
+_proxy_counter = itertools.count()
+_current_figure_id: Optional[str] = None
+_current_axes_id: Optional[str] = None
+
+_PLOT_PROXY_MARKER = "__remote_plot_proxy__"
+
+
+def _next_proxy_id(prefix: str) -> str:
+    return f"{prefix}_{next(_proxy_counter)}"
+
+
+def _set_current(figure_id: Optional[str] = None, axes_id: Optional[str] = None) -> None:
+    global _current_figure_id, _current_axes_id
+    if figure_id is not None:
+        _current_figure_id = figure_id
+    _current_axes_id = axes_id
+
+
+def _encode_command_value(value):
+    proxy_kind = getattr(value, "_remote_plot_kind", None)
+    proxy_id = getattr(value, "_remote_plot_id", None)
+    if proxy_kind is not None and proxy_id is not None:
+        payload = {"kind": proxy_kind, "id": proxy_id}
+        figure_id = getattr(value, "_figure_id", None)
+        axis_name = getattr(value, "_axis_name", None)
+        spine_name = getattr(value, "_spine_name", None)
+        if figure_id is not None:
+            payload["figure_id"] = figure_id
+        if axis_name is not None:
+            payload["axis_name"] = axis_name
+        if spine_name is not None:
+            payload["spine_name"] = spine_name
+        return {_PLOT_PROXY_MARKER: payload}
+    if isinstance(value, dict):
+        return {k: _encode_command_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_encode_command_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_encode_command_value(v) for v in value)
+    return value
+
+
+def _encode_target_spec(target):
+    if target is None:
+        return None
+    if isinstance(target, list):
+        return [_encode_target_spec(item) for item in target]
+    if isinstance(target, tuple):
+        return tuple(_encode_target_spec(item) for item in target)
+    return _encode_command_value(target)
 
 
 def _reset_recording_state() -> None:
-    global _recording, _commands, _session
+    global _recording, _commands, _session, _proxy_counter, _current_figure_id, _current_axes_id
     _recording = False
     _commands = []
     _session = None
+    _proxy_counter = itertools.count()
+    _current_figure_id = None
+    _current_axes_id = None
 
 
 def is_recording() -> bool:
@@ -52,12 +106,90 @@ def record_field_plot(
     emout_kwargs: Optional[dict[str, Any]] = None,
 ) -> None:
     """Record a ``Data*.plot()`` command with the Emout identity."""
-    _commands.append(("field_plot", attr_name, recipe_index, plot_kwargs, emout_kwargs))
+    _commands.append(
+        (
+            "field_plot",
+            attr_name,
+            recipe_index,
+            _encode_command_value(plot_kwargs),
+            _encode_command_value(emout_kwargs),
+        )
+    )
 
 
 def record_plt_call(method: str, args: tuple, kwargs: dict) -> None:
     """Record a ``plt.*`` call."""
-    _commands.append(("plt", method, args, kwargs))
+    _commands.append(("plt", method, _encode_command_value(args), _encode_command_value(kwargs)))
+
+
+def record_figure_call(method: str, args: tuple, kwargs: dict, target=None, figure_id: Optional[str] = None) -> None:
+    """Record a figure-creation or figure-level call."""
+    _commands.append(
+        (
+            "figure_call",
+            figure_id,
+            method,
+            _encode_command_value(args),
+            _encode_command_value(kwargs),
+            _encode_target_spec(target),
+        )
+    )
+
+
+def record_axes_call(ax_id: str, method: str, args: tuple, kwargs: dict) -> None:
+    """Record an ``Axes`` method call."""
+    _commands.append(("axes_call", ax_id, method, _encode_command_value(args), _encode_command_value(kwargs)))
+
+
+def record_axis_call(ax_id: str, axis_name: str, method: str, args: tuple, kwargs: dict) -> None:
+    """Record an ``Axis`` method call."""
+    _commands.append(
+        (
+            "axis_call",
+            ax_id,
+            axis_name,
+            method,
+            _encode_command_value(args),
+            _encode_command_value(kwargs),
+        )
+    )
+
+
+def record_spine_call(ax_id: str, spine_name: str, method: str, args: tuple, kwargs: dict) -> None:
+    """Record a spine method call."""
+    _commands.append(
+        (
+            "spine_call",
+            ax_id,
+            spine_name,
+            method,
+            _encode_command_value(args),
+            _encode_command_value(kwargs),
+        )
+    )
+
+
+def record_proxy_attr_set(kind: str, proxy_id: str, name: str, value) -> None:
+    """Record attribute assignment on a proxy object."""
+    _commands.append(("proxy_setattr", kind, proxy_id, name, _encode_command_value(value)))
+
+
+def record_colorbar_call(colorbar_id: str, method: str, args: tuple, kwargs: dict) -> None:
+    """Record a colorbar method call."""
+    _commands.append(
+        (
+            "colorbar_call",
+            colorbar_id,
+            method,
+            _encode_command_value(args),
+            _encode_command_value(kwargs),
+        )
+    )
+
+
+def record_cached_plot(cache_key: str, plot_kwargs: dict) -> None:
+    """Record ``RemoteRef.plot()`` for replay on the worker."""
+    _commands.append(("cached_plot", cache_key, _encode_command_value(plot_kwargs)))
 
 
 def record_boundary_plot(
@@ -65,17 +197,17 @@ def record_boundary_plot(
     emout_kwargs: Optional[dict[str, Any]] = None,
 ) -> None:
     """Record a ``BoundaryCollection.plot()`` command."""
-    _commands.append(("boundary_plot", plot_kwargs, emout_kwargs))
+    _commands.append(("boundary_plot", _encode_command_value(plot_kwargs), _encode_command_value(emout_kwargs)))
 
 
 def record_backtrace_render(cache_key: str, var1: str, var2: str, plot_kwargs: dict) -> None:
     """Record a ``RemoteHeatmap.plot()`` / ``RemoteXYData.plot()`` command."""
-    _commands.append(("backtrace_render", cache_key, var1, var2, plot_kwargs))
+    _commands.append(("backtrace_render", cache_key, var1, var2, _encode_command_value(plot_kwargs)))
 
 
 def record_energy_spectrum(cache_key: str, spec_kwargs: dict) -> None:
     """Record a ``RemoteProbabilityResult.plot_energy_spectrum()`` command."""
-    _commands.append(("energy_spectrum", cache_key, spec_kwargs))
+    _commands.append(("energy_spectrum", cache_key, _encode_command_value(spec_kwargs)))
 
 
 def bind_session(session) -> None:
@@ -128,6 +260,209 @@ _PLT_METHODS = [
     "figure",
     "savefig",
 ]
+
+_PLT_PROXY_METHODS = [
+    "figure",
+    "subplot",
+    "subplots",
+    "gca",
+    "gcf",
+    "sca",
+]
+
+
+class _RemotePlotProxyBase:
+    _remote_plot_kind: str
+    _remote_plot_id: str
+
+    def __setattr__(self, name: str, value) -> None:
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+            return
+        record_proxy_attr_set(self._remote_plot_kind, self._remote_plot_id, name, value)
+
+    def __repr__(self):
+        return f"<{type(self).__name__} id={self._remote_plot_id!r}>"
+
+
+class FigureProxy(_RemotePlotProxyBase):
+    """Client-side proxy for a remote matplotlib Figure."""
+
+    def __init__(self, figure_id: str):
+        object.__setattr__(self, "_remote_plot_kind", "figure")
+        object.__setattr__(self, "_remote_plot_id", figure_id)
+
+    def add_axes(self, *args, **kwargs):
+        ax = AxesProxy(_next_proxy_id("ax"), self._remote_plot_id)
+        record_figure_call("add_axes", args, kwargs, target=ax, figure_id=self._remote_plot_id)
+        _set_current(self._remote_plot_id, ax._remote_plot_id)
+        return ax
+
+    def add_subplot(self, *args, **kwargs):
+        ax = AxesProxy(_next_proxy_id("ax"), self._remote_plot_id)
+        record_figure_call("add_subplot", args, kwargs, target=ax, figure_id=self._remote_plot_id)
+        _set_current(self._remote_plot_id, ax._remote_plot_id)
+        return ax
+
+    def colorbar(self, *args, **kwargs):
+        cax = kwargs.get("cax")
+        cax_proxy = cax if isinstance(cax, AxesProxy) else AxesProxy(_next_proxy_id("ax"), self._remote_plot_id)
+        cbar = ColorbarProxy(_next_proxy_id("cbar"), cax_proxy)
+        record_figure_call(
+            "colorbar",
+            args,
+            kwargs,
+            target={"colorbar": cbar, "cax": cax_proxy},
+            figure_id=self._remote_plot_id,
+        )
+        return cbar
+
+    def __getattr__(self, name: str):
+        def _recorder(*args, **kwargs):
+            record_figure_call(name, args, kwargs, figure_id=self._remote_plot_id)
+            return None
+
+        return _recorder
+
+
+class AxesProxy(_RemotePlotProxyBase):
+    """Client-side proxy for a remote matplotlib Axes."""
+
+    def __init__(self, axes_id: str, figure_id: Optional[str] = None):
+        object.__setattr__(self, "_remote_plot_kind", "axes")
+        object.__setattr__(self, "_remote_plot_id", axes_id)
+        object.__setattr__(self, "_figure_id", figure_id)
+
+    @property
+    def figure(self):
+        if self._figure_id is None:
+            raise AttributeError("This AxesProxy is not bound to a figure")
+        return FigureProxy(self._figure_id)
+
+    @property
+    def xaxis(self):
+        return AxisProxy(self._remote_plot_id, "xaxis", self._figure_id)
+
+    @property
+    def yaxis(self):
+        return AxisProxy(self._remote_plot_id, "yaxis", self._figure_id)
+
+    @property
+    def zaxis(self):
+        return AxisProxy(self._remote_plot_id, "zaxis", self._figure_id)
+
+    @property
+    def spines(self):
+        return SpinesProxy(self._remote_plot_id, self._figure_id)
+
+    def __getattr__(self, name: str):
+        def _recorder(*args, **kwargs):
+            _set_current(self._figure_id, self._remote_plot_id)
+            record_axes_call(self._remote_plot_id, name, args, kwargs)
+            return None
+
+        return _recorder
+
+
+class AxisProxy(_RemotePlotProxyBase):
+    """Client-side proxy for ``Axes.xaxis`` / ``yaxis`` / ``zaxis``."""
+
+    def __init__(self, axes_id: str, axis_name: str, figure_id: Optional[str] = None):
+        object.__setattr__(self, "_remote_plot_kind", "axis")
+        object.__setattr__(self, "_remote_plot_id", axes_id)
+        object.__setattr__(self, "_axis_name", axis_name)
+        object.__setattr__(self, "_figure_id", figure_id)
+
+    def __getattr__(self, name: str):
+        def _recorder(*args, **kwargs):
+            _set_current(self._figure_id, self._remote_plot_id)
+            record_axis_call(self._remote_plot_id, self._axis_name, name, args, kwargs)
+            return None
+
+        return _recorder
+
+
+class SpineProxy(_RemotePlotProxyBase):
+    """Client-side proxy for a single axes spine."""
+
+    def __init__(self, axes_id: str, spine_name: str, figure_id: Optional[str] = None):
+        object.__setattr__(self, "_remote_plot_kind", "spine")
+        object.__setattr__(self, "_remote_plot_id", axes_id)
+        object.__setattr__(self, "_spine_name", spine_name)
+        object.__setattr__(self, "_figure_id", figure_id)
+
+    def __getattr__(self, name: str):
+        def _recorder(*args, **kwargs):
+            _set_current(self._figure_id, self._remote_plot_id)
+            record_spine_call(self._remote_plot_id, self._spine_name, name, args, kwargs)
+            return None
+
+        return _recorder
+
+
+class SpinesProxy:
+    """Container proxy for ``Axes.spines``."""
+
+    _ORDER = ("left", "right", "bottom", "top")
+
+    def __init__(self, axes_id: str, figure_id: Optional[str] = None):
+        self._axes_id = axes_id
+        self._figure_id = figure_id
+
+    def __getitem__(self, name: str):
+        return SpineProxy(self._axes_id, name, self._figure_id)
+
+    def values(self):
+        return [self[name] for name in self._ORDER]
+
+
+class ColorbarProxy(_RemotePlotProxyBase):
+    """Client-side proxy for a remote matplotlib Colorbar."""
+
+    def __init__(self, colorbar_id: str, cax_proxy: AxesProxy):
+        object.__setattr__(self, "_remote_plot_kind", "colorbar")
+        object.__setattr__(self, "_remote_plot_id", colorbar_id)
+        object.__setattr__(self, "_ax_proxy", cax_proxy)
+        object.__setattr__(self, "_figure_id", getattr(cax_proxy, "_figure_id", None))
+
+    @property
+    def ax(self):
+        return self._ax_proxy
+
+    def __getattr__(self, name: str):
+        def _recorder(*args, **kwargs):
+            record_colorbar_call(self._remote_plot_id, name, args, kwargs)
+            return None
+
+        return _recorder
+
+
+def _infer_subplots_shape(args: tuple, kwargs: dict) -> tuple[int, int, bool]:
+    nrows = kwargs.get("nrows", 1)
+    ncols = kwargs.get("ncols", 1)
+    if len(args) >= 1:
+        nrows = args[0]
+    if len(args) >= 2:
+        ncols = args[1]
+    return int(nrows), int(ncols), bool(kwargs.get("squeeze", True))
+
+
+def _build_subplots_proxies(figure_id: str, nrows: int, ncols: int, squeeze: bool):
+    import numpy as np
+
+    grid: list[list[AxesProxy]] = []
+    for _row in range(nrows):
+        row = []
+        for _col in range(ncols):
+            row.append(AxesProxy(_next_proxy_id("ax"), figure_id))
+        grid.append(row)
+
+    arr = np.array(grid, dtype=object)
+    if squeeze:
+        arr = np.squeeze(arr)
+        if nrows == 1 and ncols == 1:
+            return grid[0][0], grid
+    return arr, grid
 
 
 # ---------------------------------------------------------------------------
@@ -221,24 +556,104 @@ class RemoteFigure:
         _session = session
 
         if self.figsize is not None:
-            _commands.append(("plt", "figure", (), {"figsize": self.figsize}))
+            fig = FigureProxy(_next_proxy_id("fig"))
+            record_figure_call("figure", (), {"figsize": self.figsize}, target=fig)
+            _set_current(fig._remote_plot_id, None)
 
         # Monkey-patch plt functions to record instead of execute
         import matplotlib.pyplot as plt
 
         self._originals = {}
-        for name in _PLT_METHODS:
+        for name in sorted(set(_PLT_METHODS + _PLT_PROXY_METHODS)):
             orig = getattr(plt, name, None)
             if orig is not None:
                 self._originals[name] = orig
 
-                def _make_recorder(n):
-                    def _recorder(*args, **kwargs):
-                        record_plt_call(n, args, kwargs)
+                if name == "figure":
 
-                    return _recorder
+                    def _record_figure(*args, **kwargs):
+                        fig = FigureProxy(_next_proxy_id("fig"))
+                        record_figure_call("figure", args, kwargs, target=fig)
+                        _set_current(fig._remote_plot_id, None)
+                        return fig
 
-                setattr(plt, name, _make_recorder(name))
+                    setattr(plt, name, _record_figure)
+
+                elif name == "subplot":
+
+                    def _record_subplot(*args, **kwargs):
+                        figure_id = _current_figure_id or _next_proxy_id("fig")
+                        ax = AxesProxy(_next_proxy_id("ax"), figure_id)
+                        record_figure_call(
+                            "subplot", args, kwargs, target={"figure": FigureProxy(figure_id), "axes": ax}
+                        )
+                        _set_current(figure_id, ax._remote_plot_id)
+                        return ax
+
+                    setattr(plt, name, _record_subplot)
+
+                elif name == "subplots":
+
+                    def _record_subplots(*args, **kwargs):
+                        figure_id = _next_proxy_id("fig")
+                        nrows, ncols, squeeze = _infer_subplots_shape(args, kwargs)
+                        axes_return, axes_grid = _build_subplots_proxies(figure_id, nrows, ncols, squeeze)
+                        record_figure_call(
+                            "subplots",
+                            args,
+                            kwargs,
+                            target={"figure": FigureProxy(figure_id), "axes_grid": axes_grid},
+                        )
+                        first_ax = axes_grid[0][0]
+                        _set_current(figure_id, first_ax._remote_plot_id)
+                        return FigureProxy(figure_id), axes_return
+
+                    setattr(plt, name, _record_subplots)
+
+                elif name == "gcf":
+
+                    def _record_gcf(*args, **kwargs):
+                        if _current_figure_id is None:
+                            fig = FigureProxy(_next_proxy_id("fig"))
+                            record_figure_call("figure", args, kwargs, target=fig)
+                            _set_current(fig._remote_plot_id, None)
+                            return fig
+                        return FigureProxy(_current_figure_id)
+
+                    setattr(plt, name, _record_gcf)
+
+                elif name == "gca":
+
+                    def _record_gca(*args, **kwargs):
+                        if _current_axes_id is not None:
+                            return AxesProxy(_current_axes_id, _current_figure_id)
+                        figure_id = _current_figure_id or _next_proxy_id("fig")
+                        ax = AxesProxy(_next_proxy_id("ax"), figure_id)
+                        record_figure_call("gca", args, kwargs, target={"figure": FigureProxy(figure_id), "axes": ax})
+                        _set_current(figure_id, ax._remote_plot_id)
+                        return ax
+
+                    setattr(plt, name, _record_gca)
+
+                elif name == "sca":
+
+                    def _record_sca(ax, *args, **kwargs):
+                        if isinstance(ax, AxesProxy):
+                            _set_current(ax._figure_id, ax._remote_plot_id)
+                        record_plt_call("sca", (ax, *args), kwargs)
+                        return ax
+
+                    setattr(plt, name, _record_sca)
+
+                else:
+
+                    def _make_recorder(n):
+                        def _recorder(*args, **kwargs):
+                            record_plt_call(n, args, kwargs)
+
+                        return _recorder
+
+                    setattr(plt, name, _make_recorder(name))
 
         self._opened = True
         return self

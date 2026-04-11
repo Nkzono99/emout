@@ -330,3 +330,17 @@ class Emout:
         if self._dir_inspector.input_path is not None:
             kwargs["input_path"] = str(self._dir_inspector.input_path)
         return kwargs
+
+    def remote(self):
+        """Return a remote proxy backed by the shared Dask session."""
+        from emout.distributed.remote_render import RemoteEmout, get_or_create_session
+
+        session = get_or_create_session(
+            emout_kwargs=self._remote_open_kwargs,
+            emout_dir=self._dir_inspector.main_directory,
+        )
+        if session is None:
+            raise RuntimeError(
+                "No Dask session is available. Call emout.distributed.connect() or start an emout server first."
+            )
+        return RemoteEmout(session, self._remote_open_kwargs)
