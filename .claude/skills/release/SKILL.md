@@ -111,7 +111,24 @@ EOF
 ### 6. Verify
 
 - Check that the release page looks correct: `gh release view vX.Y.Z`
-- If a PyPI publish workflow exists, confirm it triggered
+- Confirm the PyPI publish workflow ran and succeeded. emout has
+  `.github/workflows/python-publish.yml` configured with
+  `on: release: types: [published]`, so `gh release create` triggers
+  it automatically within a few seconds:
+
+  ```bash
+  # The newest run should be vX.Y.Z / release / success
+  gh run list --workflow=python-publish.yml --limit 3
+
+  # Independent check against PyPI itself (uses the public JSON API)
+  curl -sS https://pypi.org/pypi/emout/json \
+    | python -c "import json,sys; d=json.load(sys.stdin); print('latest:', d['info']['version'])"
+  ```
+
+  If the workflow run is still `in_progress`, wait and re-check. If it
+  finishes `failure`, inspect with `gh run view <run-id> --log` — do
+  **not** delete the tag to retry; instead, fix forward with a new
+  patch release.
 
 ## Common mistakes
 
@@ -121,3 +138,4 @@ EOF
 - **Wrong bump level** — dropping Python 3.8 is a breaking change (major or minor, ask the user).
 - **Highlights が空** — 必ず 1 個以上入れる。ユーザーが最初に読む場所。
 - **Summary を英語で書く** — emout のユーザーは日本語話者が多いため、冒頭は日本語で。
+- **PyPI チェックをスキップ** — GitHub リリースが作れても PyPI 側の publish が失敗していることはあるので、上の `gh run list` と `curl` の両方を実行してから「完了」と報告する。
