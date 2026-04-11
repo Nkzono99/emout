@@ -681,6 +681,29 @@ class RemoteFigure:
 
                     setattr(plt, name, _record_sca)
 
+                elif name == "colorbar":
+
+                    def _record_colorbar(*args, **kwargs):
+                        figure_id = _current_figure_id
+                        if figure_id is None:
+                            fig = FigureProxy(_next_proxy_id("fig"))
+                            record_figure_call("figure", (), {}, target=fig)
+                            figure_id = fig._remote_plot_id
+                            _set_current(figure_id, None)
+                        cax = kwargs.get("cax")
+                        cax_proxy = cax if isinstance(cax, AxesProxy) else AxesProxy(_next_proxy_id("ax"), figure_id)
+                        cbar = ColorbarProxy(_next_proxy_id("cbar"), cax_proxy)
+                        record_figure_call(
+                            "colorbar",
+                            args,
+                            kwargs,
+                            target={"colorbar": cbar, "cax": cax_proxy},
+                            figure_id=figure_id,
+                        )
+                        return cbar
+
+                    setattr(plt, name, _record_colorbar)
+
                 else:
 
                     def _make_recorder(n):

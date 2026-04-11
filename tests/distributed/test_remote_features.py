@@ -387,6 +387,33 @@ def test_remote_figure_records_data3d_plot_surfaces_without_fetch_field(monkeypa
     assert displayed[0][0]
 
 
+def test_remote_figure_replays_pyplot_colorbar_proxy(monkeypatch):
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed import remote_render
+
+    displayed = []
+    session = FakeActorSession()
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib import cm, colors
+
+    with remote_figure(session=session):
+        fig = plt.figure(figsize=(4, 3))
+        cax = fig.add_axes([0.82, 0.15, 0.05, 0.7])
+        mappable = cm.ScalarMappable(norm=colors.Normalize(vmin=0.0, vmax=1.0), cmap="viridis")
+        cbar = plt.colorbar(mappable, cax=cax)
+        cbar.set_label("phi")
+        cbar.ax.tick_params(labelsize=8)
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
 def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch):
     from emout.distributed import remote_figure
     from emout.distributed import remote_render

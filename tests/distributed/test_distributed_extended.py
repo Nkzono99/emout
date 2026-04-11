@@ -893,6 +893,31 @@ class TestRemoteFigure:
         assert any(cmd[0] == "axis_call" and cmd[2] == "xaxis" and cmd[3] == "set_tick_params" for cmd in commands)
         assert any(cmd[0] == "spine_call" and cmd[2] == "left" and cmd[3] == "set_visible" for cmd in commands)
 
+    def test_pyplot_colorbar_returns_proxy(self, monkeypatch):
+        from emout.distributed.remote_figure import ColorbarProxy, RemoteFigure
+        import emout.distributed.remote_render as rr_mod
+        import matplotlib.pyplot as plt
+        from matplotlib import cm, colors
+
+        monkeypatch.setattr(rr_mod, "get_or_create_session", lambda **kw: None)
+
+        rf = RemoteFigure()
+        rf.open()
+        try:
+            fig = plt.figure()
+            cax = fig.add_axes([0.82, 0.15, 0.04, 0.7])
+            mappable = cm.ScalarMappable(norm=colors.Normalize(vmin=0.0, vmax=1.0), cmap="viridis")
+            cbar = plt.colorbar(mappable, cax=cax)
+            cbar.set_label("phi")
+            cbar.ax.tick_params(labelsize=8)
+            commands = list(_rf_mod._commands)
+        finally:
+            rf.close()
+
+        assert isinstance(cbar, ColorbarProxy)
+        assert any(cmd[0] == "figure_call" and cmd[2] == "colorbar" for cmd in commands)
+        assert any(cmd[0] == "colorbar_call" and cmd[2] == "set_label" for cmd in commands)
+
     def test_del_warns_if_not_closed(self, monkeypatch):
         from emout.distributed.remote_figure import RemoteFigure
         import emout.distributed.remote_render as rr_mod
