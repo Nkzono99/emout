@@ -52,7 +52,8 @@ All commands are replayed on the same worker — no data is transferred to the c
 
 ## Setup
 
-On Python 3.10+, `pip install emout` automatically includes Dask. No extra install step is needed.
+On Python 3.10+, `pip install emout` automatically includes Dask and the
+TLS dependency used by `emout server`. No extra setup is needed.
 
 ### 1. Start the server (once, in a terminal)
 
@@ -60,18 +61,31 @@ On Python 3.10+, `pip install emout` automatically includes Dask. No extra insta
 emout server start --partition gr20001a --memory 60G --walltime 03:00:00
 ```
 
-The InfiniBand IP is auto-detected and saved to `~/.emout/server.json`.
+The InfiniBand IP is auto-detected. `emout` also generates per-user TLS
+credentials automatically, stores them with user-only permissions, and
+mirrors the active session to `~/.emout/server.json`.
 
 ```
-Scheduler running at tcp://10.10.64.2:8786
+Session: default
+Scheduler running at tls://10.10.64.2:8786
 Detected IP: 10.10.64.2
 Workers: 1
 ```
 
+By default, only one active server session is allowed per user. To run
+an additional session intentionally, give it a name:
+
+```bash
+emout server start --allow-multiple --name batch2 --memory 120G
+emout server status --all
+emout server stop --name batch2
+```
+
 ### 2. Use from scripts
 
-With `server.json` present, existing code still works through the compatibility mode.
-For new code, prefer the explicit `Emout.remote()` workflow:
+With the active session saved, existing code still works through the
+compatibility mode. The compat mode always follows the active/default
+session. For new code, prefer the explicit `Emout.remote()` workflow:
 
 ```python
 import emout
@@ -90,6 +104,15 @@ with remote_scope():
 ```bash
 emout server stop
 ```
+
+Additional named sessions can be stopped with `emout server stop --name <session>`
+or all at once with `emout server stop --all`.
+
+If a worker job is cancelled with `scancel` or disappears after walltime
+timeout, the next `emout server start` / auto-connect treats that session
+as stale and clears the saved state automatically. Remote execution fails
+fast instead of waiting forever: compatibility mode falls back to local
+execution, while explicit remote usage asks you to restart the server.
 
 ## Usage Modes
 
@@ -404,8 +427,9 @@ To connect manually instead of auto-connecting:
 
 ```python
 from emout.distributed import connect
-client = connect()                         # auto-detect from ~/.emout/server.json
-client = connect("tcp://10.10.64.2:8786")  # explicit address
+client = connect()                                          # active/default session
+client = connect(name="batch2")                             # additional named session
+client = connect("tls://10.10.64.2:8786", name="batch2")    # explicit address + saved credentials
 ```
 
 ## Environment variables

@@ -33,6 +33,7 @@ dependencies = [
   "psutil",
   "dask; python_version >= '3.10'",
   "distributed; python_version >= '3.10'",
+  "cryptography; python_version >= '3.10'",
 ]
 
 classifiers = [
@@ -54,6 +55,7 @@ distributed = [
   "psutil",
   "dask; python_version >= \"3.10\"",
   "distributed; python_version >= \"3.10\"",
+  "cryptography; python_version >= \"3.10\"",
 ]
 dev = [
   "pytest",

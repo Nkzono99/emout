@@ -1,7 +1,7 @@
 """Network and cluster configuration helpers.
 
-Resolves local IP addresses, checks port availability, and manages
-the ``~/.emout/server.json`` state file used by the CLI.
+Resolves local IP addresses and checks port availability for
+distributed execution.
 """
 
 # emout/distributed/config.py
@@ -13,10 +13,6 @@ import socket
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-
-_STATE_DIR = Path.home() / ".emout"
-_STATE_FILE = _STATE_DIR / "server.json"
-
 
 # Linux kernel ARPHRD_* constants (include/uapi/linux/if_arp.h)
 _ARPHRD_INFINIBAND = 32
@@ -109,6 +105,10 @@ def _is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
 
 class DaskConfig:
     """Environment-variable-based Dask cluster configuration."""
+
+    @property
+    def protocol(self) -> str:
+        return os.environ.get("EMOUT_DASK_PROTOCOL", "tls")
 
     @property
     def scheduler_ip(self) -> str:

@@ -6,8 +6,10 @@ import argparse
 import json
 import os
 import signal
+import stat
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -22,11 +24,16 @@ from emout import cli
 @pytest.fixture(autouse=True)
 def _isolate_state_file(tmp_path, monkeypatch):
     """Redirect the state file to a temp directory for every test."""
-    state_dir = tmp_path / ".emout"
-    state_file = state_dir / "server.json"
-    monkeypatch.setattr(cli, "_STATE_DIR", state_dir)
-    monkeypatch.setattr(cli, "_STATE_FILE", state_file)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
     yield
+
+
+def _active_state_file(tmp_path: Path) -> Path:
+    return tmp_path / ".emout" / "server.json"
+
+
+def _session_state_file(tmp_path: Path, name: str = "default") -> Path:
+    return tmp_path / ".emout" / "servers" / name / "state.json"
 
 
 def _parse(argv: list[str]) -> argparse.Namespace:
@@ -42,6 +49,8 @@ def _parse(argv: list[str]) -> argparse.Namespace:
     server_sub = server.add_subparsers(dest="server_command")
 
     start = server_sub.add_parser("start")
+    start.add_argument("--name", default="default")
+    start.add_argument("--allow-multiple", action="store_true")
     start.add_argument("--scheduler-ip", default=None)
     start.add_argument("--scheduler-port", type=int, default=None)
     start.add_argument("--partition", default=None)
@@ -53,9 +62,13 @@ def _parse(argv: list[str]) -> argparse.Namespace:
     start.set_defaults(func=cli.cmd_server_start)
 
     stop = server_sub.add_parser("stop")
+    stop.add_argument("--name", default=None)
+    stop.add_argument("--all", action="store_true")
     stop.set_defaults(func=cli.cmd_server_stop)
 
     status = server_sub.add_parser("status")
+    status.add_argument("--name", default=None)
+    status.add_argument("--all", action="store_true")
     status.set_defaults(func=cli.cmd_server_status)
 
     return parser.parse_args(argv)
@@ -73,16 +86,18 @@ class TestStateHelpers:
         data = {"address": "tcp://10.0.0.1:8786", "pid": 12345}
         cli._save_state(data)
         loaded = cli._load_state()
-        assert loaded == data
+        assert loaded["address"] == data["address"]
+        assert loaded["pid"] == data["pid"]
+        assert loaded["name"] == "default"
 
     def test_load_returns_none_when_absent(self, tmp_path):
         assert cli._load_state() is None
 
     def test_clear_removes_file(self, tmp_path):
         cli._save_state({"address": "x"})
-        assert cli._STATE_FILE.exists()
+        assert _active_state_file(tmp_path).exists()
         cli._clear_state()
-        assert not cli._STATE_FILE.exists()
+        assert not _active_state_file(tmp_path).exists()
 
     def test_clear_is_idempotent(self, tmp_path):
         """Clearing when file does not exist should not raise."""
@@ -91,11 +106,20 @@ class TestStateHelpers:
 
     def test_save_creates_parent_dirs(self, tmp_path):
         """_save_state must create ~/.emout if it doesn't exist."""
-        # The directory is created by _save_state itself
-        assert not cli._STATE_DIR.exists() or cli._STATE_DIR.exists()
         cli._save_state({"key": "val"})
-        assert cli._STATE_DIR.is_dir()
-        assert json.loads(cli._STATE_FILE.read_text()) == {"key": "val"}
+        state_dir = tmp_path / ".emout"
+        assert state_dir.is_dir()
+        assert json.loads(_active_state_file(tmp_path).read_text())["key"] == "val"
+
+    def test_save_uses_private_permissions(self, tmp_path):
+        cli._save_state({"address": "x"})
+        session_dir = tmp_path / ".emout" / "servers" / "default"
+        active = _active_state_file(tmp_path)
+        session_state = _session_state_file(tmp_path)
+
+        assert stat.S_IMODE(session_dir.stat().st_mode) == 0o700
+        assert stat.S_IMODE(active.stat().st_mode) == 0o600
+        assert stat.S_IMODE(session_state.stat().st_mode) == 0o600
 
 
 # ===================================================================
@@ -118,6 +142,8 @@ class TestArgParsing:
     def test_server_start_defaults(self):
         args = _parse(["server", "start"])
         assert args.func is cli.cmd_server_start
+        assert args.name == "default"
+        assert args.allow_multiple is False
         assert args.scheduler_ip is None
         assert args.scheduler_port is None
         assert args.partition is None
@@ -132,6 +158,9 @@ class TestArgParsing:
             [
                 "server",
                 "start",
+                "--name",
+                "analysis",
+                "--allow-multiple",
                 "--scheduler-ip",
                 "10.0.0.1",
                 "--scheduler-port",
@@ -150,6 +179,8 @@ class TestArgParsing:
                 "02:00:00",
             ]
         )
+        assert args.name == "analysis"
+        assert args.allow_multiple is True
         assert args.scheduler_ip == "10.0.0.1"
         assert args.scheduler_port == 9999
         assert args.partition == "gpu"
@@ -162,10 +193,129 @@ class TestArgParsing:
     def test_server_stop(self):
         args = _parse(["server", "stop"])
         assert args.func is cli.cmd_server_stop
+        assert args.name is None
+        assert args.all is False
 
     def test_server_status(self):
         args = _parse(["server", "status"])
         assert args.func is cli.cmd_server_status
+        assert args.name is None
+        assert args.all is False
+
+
+# ===================================================================
+# cmd_server_start
+# ===================================================================
+
+
+class TestCmdServerStart:
+    def _patch_start_dependencies(self, monkeypatch):
+        fake_security = SimpleNamespace(
+            cluster_kwargs=lambda: {
+                "ca_file": "/tmp/ca.pem",
+                "scheduler_cert": "/tmp/scheduler-cert.pem",
+                "scheduler_key": "/tmp/scheduler-key.pem",
+                "worker_cert": "/tmp/worker-cert.pem",
+                "worker_key": "/tmp/worker-key.pem",
+                "client_cert": "/tmp/client-cert.pem",
+                "client_key": "/tmp/client-key.pem",
+            },
+            client_state=lambda: {
+                "ca_file": "/tmp/ca.pem",
+                "client_cert": "/tmp/client-cert.pem",
+                "client_key": "/tmp/client-key.pem",
+                "require_encryption": True,
+            },
+        )
+        monkeypatch.setattr("emout.distributed.security.ensure_cluster_security", lambda **kwargs: fake_security)
+
+        fake_client = MagicMock()
+        fake_client.scheduler_info.return_value = {"address": "tls://10.0.0.1:8786", "workers": {"w1": {}}}
+        fake_client._emout_worker_job_ids = [12345]
+        monkeypatch.setattr("emout.distributed.client.start_cluster", lambda **kwargs: fake_client)
+        monkeypatch.setattr(cli, "cmd_server_stop", lambda args: None)
+
+        import time
+
+        monkeypatch.setattr(time, "sleep", lambda seconds: (_ for _ in ()).throw(KeyboardInterrupt()))
+        return fake_client
+
+    def test_start_saves_active_state(self, monkeypatch, tmp_path):
+        self._patch_start_dependencies(monkeypatch)
+
+        args = SimpleNamespace(
+            name="default",
+            allow_multiple=False,
+            scheduler_ip="10.0.0.1",
+            scheduler_port=8786,
+            partition=None,
+            processes=None,
+            threads=None,
+            cores=None,
+            memory=None,
+            walltime=None,
+        )
+
+        cli.cmd_server_start(args)
+
+        active = json.loads(_active_state_file(tmp_path).read_text())
+        session = json.loads(_session_state_file(tmp_path, "default").read_text())
+        assert active["address"] == "tls://10.0.0.1:8786"
+        assert session["protocol"] == "tls"
+        assert session["name"] == "default"
+        assert session["worker_job_ids"] == [12345]
+        assert isinstance(session["started_at"], float)
+
+    def test_start_rejects_second_session_without_allow_multiple(self, monkeypatch, capsys):
+        existing = {"name": "default", "address": "tls://10.0.0.1:8786", "pid": 1, "protocol": "tls"}
+        monkeypatch.setattr(cli, "_live_states", lambda prune_stale=True: [existing])
+
+        args = SimpleNamespace(
+            name="extra",
+            allow_multiple=False,
+            scheduler_ip=None,
+            scheduler_port=None,
+            partition=None,
+            processes=None,
+            threads=None,
+            cores=None,
+            memory=None,
+            walltime=None,
+        )
+
+        cli.cmd_server_start(args)
+
+        out = capsys.readouterr().out
+        assert "already running" in out.lower()
+
+    def test_start_additional_named_session_keeps_active_default(self, monkeypatch, tmp_path):
+        cli._save_state({"address": "tls://10.0.0.1:8786", "pid": 111, "protocol": "tls"}, name="default")
+        monkeypatch.setattr(
+            cli,
+            "_live_states",
+            lambda prune_stale=True: [cli._load_state("default")],
+        )
+        self._patch_start_dependencies(monkeypatch)
+
+        args = SimpleNamespace(
+            name="extra",
+            allow_multiple=True,
+            scheduler_ip="10.0.0.2",
+            scheduler_port=8787,
+            partition=None,
+            processes=None,
+            threads=None,
+            cores=None,
+            memory=None,
+            walltime=None,
+        )
+
+        cli.cmd_server_start(args)
+
+        active = json.loads(_active_state_file(tmp_path).read_text())
+        extra = json.loads(_session_state_file(tmp_path, "extra").read_text())
+        assert active["name"] == "default"
+        assert extra["name"] == "extra"
 
 
 # ===================================================================
@@ -178,51 +328,40 @@ class TestCmdServerStop:
 
     def test_no_running_server(self, capsys):
         """When no state file exists, print a message and return."""
-        cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
         out = capsys.readouterr().out
         assert "No running server found" in out
 
-    def test_stop_calls_stop_cluster(self, monkeypatch, capsys):
-        """When a state file exists, stop_cluster is called with the address."""
+    def test_stop_calls_stop_cluster(self, monkeypatch, capsys, tmp_path):
+        """When a state file exists, stop_cluster is called with the saved state."""
         cli._save_state({"address": "tcp://10.0.0.1:8786", "pid": 99999999})
 
         stopped = []
         monkeypatch.setattr(
-            "emout.cli.stop_cluster",
-            lambda address=None: stopped.append(address),
-            raising=False,
+            "emout.distributed.client.stop_cluster",
+            lambda **kwargs: stopped.append(kwargs["state"]["address"]),
         )
-        # Mock the import inside cmd_server_stop
-        import emout.distributed.client as client_mod
 
-        monkeypatch.setattr(client_mod, "stop_cluster", lambda address=None: stopped.append(address))
-
-        # Patch the lazy import
-        def fake_stop(address=None):
-            stopped.append(address)
-
-        with patch.dict("sys.modules", {}):
-            monkeypatch.setattr("emout.distributed.client.stop_cluster", fake_stop)
-            cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
 
         assert "tcp://10.0.0.1:8786" in stopped
-        assert not cli._STATE_FILE.exists()
+        assert not _active_state_file(tmp_path).exists()
         assert "Server stopped" in capsys.readouterr().out
 
-    def test_stop_handles_failed_stop_cluster(self, monkeypatch, capsys):
+    def test_stop_handles_failed_stop_cluster(self, monkeypatch, capsys, tmp_path):
         """If stop_cluster raises, the state is still cleared."""
         cli._save_state({"address": "tcp://10.0.0.1:8786", "pid": 99999999})
 
-        def raise_error(address=None):
+        def raise_error(**_kwargs):
             raise RuntimeError("connection refused")
 
         monkeypatch.setattr("emout.distributed.client.stop_cluster", raise_error)
-        cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
 
         out = capsys.readouterr().out
         assert "Failed to stop server cleanly" in out
         assert "Cleared saved server state" in out
-        assert not cli._STATE_FILE.exists()
+        assert not _active_state_file(tmp_path).exists()
 
     def test_stop_sends_sigterm_to_pid(self, monkeypatch, capsys):
         """When a PID is in the state, SIGTERM should be sent."""
@@ -233,7 +372,7 @@ class TestCmdServerStop:
         killed = []
         monkeypatch.setattr(os, "kill", lambda pid, sig: killed.append((pid, sig)))
 
-        cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
 
         assert (fake_pid, signal.SIGTERM) in killed
 
@@ -248,7 +387,7 @@ class TestCmdServerStop:
 
         monkeypatch.setattr(os, "kill", kill_raise)
         # Should not raise
-        cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
         assert "Server stopped" in capsys.readouterr().out
 
     def test_stop_handles_permission_error(self, monkeypatch, capsys):
@@ -261,7 +400,7 @@ class TestCmdServerStop:
             raise PermissionError("not allowed")
 
         monkeypatch.setattr(os, "kill", kill_perm)
-        cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
         out = capsys.readouterr().out
         assert "Could not signal server process" in out
 
@@ -273,8 +412,25 @@ class TestCmdServerStop:
         killed = []
         monkeypatch.setattr(os, "kill", lambda pid, sig: killed.append((pid, sig)))
 
-        cli.cmd_server_stop(SimpleNamespace())
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=False))
         assert killed == []
+
+    def test_stop_all_stops_each_saved_session(self, monkeypatch, capsys):
+        cli._save_state({"address": "tcp://one:1", "pid": 111}, name="default", make_active=True)
+        cli._save_state({"address": "tcp://two:2", "pid": 222}, name="extra", make_active=False)
+
+        stopped = []
+        monkeypatch.setattr(
+            "emout.distributed.client.stop_cluster",
+            lambda **kwargs: stopped.append(kwargs["state"]["name"]),
+        )
+        monkeypatch.setattr(os, "kill", lambda pid, sig: None)
+
+        cli.cmd_server_stop(SimpleNamespace(name=None, all=True))
+
+        assert stopped == ["default", "extra"]
+        out = capsys.readouterr().out
+        assert "Stopped 2 server sessions" in out
 
 
 # ===================================================================
@@ -286,64 +442,60 @@ class TestCmdServerStatus:
     """cmd_server_status should print state information."""
 
     def test_no_server(self, capsys):
-        cli.cmd_server_status(SimpleNamespace())
+        cli.cmd_server_status(SimpleNamespace(name=None, all=False))
         assert "No running server" in capsys.readouterr().out
 
     def test_status_prints_address_and_pid(self, monkeypatch, capsys):
         cli._save_state({"address": "tcp://10.0.0.1:8786", "pid": 12345})
+        monkeypatch.setattr(cli, "_probe_state", lambda state: (True, {"workers": {"w1": {}, "w2": {}}}))
 
-        # Mock the dask import so we don't need a real cluster
-        fake_client_cls = MagicMock()
-        fake_client_instance = MagicMock()
-        fake_client_instance.scheduler_info.return_value = {"workers": {"w1": {}, "w2": {}}}
-        fake_client_cls.return_value = fake_client_instance
-
-        fake_dask_distributed = MagicMock()
-        fake_dask_distributed.Client = fake_client_cls
-
-        with patch.dict("sys.modules", {"dask": MagicMock(), "dask.distributed": fake_dask_distributed}):
-            cli.cmd_server_status(SimpleNamespace())
+        cli.cmd_server_status(SimpleNamespace(name=None, all=False))
 
         out = capsys.readouterr().out
         assert "tcp://10.0.0.1:8786" in out
         assert "12345" in out
+        assert "Protocol" in out
 
     def test_status_handles_connection_error(self, monkeypatch, capsys):
         cli._save_state({"address": "tcp://10.0.0.1:8786", "pid": 12345})
+        monkeypatch.setattr(cli, "_probe_state", lambda state: (False, None))
 
-        def raise_on_import(*args, **kwargs):
-            raise ConnectionRefusedError("cannot connect")
-
-        fake_dask_distributed = MagicMock()
-        fake_dask_distributed.Client.side_effect = raise_on_import
-
-        with patch.dict("sys.modules", {"dask": MagicMock(), "dask.distributed": fake_dask_distributed}):
-            cli.cmd_server_status(SimpleNamespace())
+        cli.cmd_server_status(SimpleNamespace(name=None, all=False))
 
         out = capsys.readouterr().out
         assert "tcp://10.0.0.1:8786" in out
         assert "Cannot connect" in out
 
-    def test_status_missing_pid(self, capsys):
+    def test_status_missing_pid(self, monkeypatch, capsys):
         """State without 'pid' should show 'unknown'."""
         cli._save_state({"address": "tcp://10.0.0.1:8786"})
+        monkeypatch.setattr(cli, "_probe_state", lambda state: (False, None))
 
-        # Make dask import fail so we skip the connection attempt
-        with patch.dict("sys.modules", {"dask": MagicMock(), "dask.distributed": MagicMock(side_effect=ImportError)}):
-            # Just test the output before the connection attempt
-            # Use a simpler approach: mock the whole try block
-            pass
-
-        # Directly test: the function prints PID as 'unknown'
-        cli._save_state({"address": "tcp://10.0.0.1:8786"})
-        fake_dask_distributed = MagicMock()
-        fake_dask_distributed.Client.side_effect = Exception("no dask")
-
-        with patch.dict("sys.modules", {"dask": MagicMock(), "dask.distributed": fake_dask_distributed}):
-            cli.cmd_server_status(SimpleNamespace())
+        cli.cmd_server_status(SimpleNamespace(name=None, all=False))
 
         out = capsys.readouterr().out
         assert "unknown" in out
+
+    def test_status_all_prints_named_sessions(self, monkeypatch, capsys):
+        cli._save_state({"address": "tcp://one:1", "pid": 111}, name="default", make_active=True)
+        cli._save_state({"address": "tcp://two:2", "pid": 222}, name="extra", make_active=False)
+        monkeypatch.setattr(cli, "_probe_state", lambda state: (True, {"workers": {}}))
+
+        cli.cmd_server_status(SimpleNamespace(name=None, all=True))
+
+        out = capsys.readouterr().out
+        assert "Session: default" in out
+        assert "Session: extra" in out
+
+    def test_status_shows_missing_worker_reason(self, monkeypatch, capsys):
+        cli._save_state({"address": "tcp://10.0.0.1:8786", "pid": 12345})
+        monkeypatch.setattr(cli, "_probe_state", lambda state: (True, {"workers": {}}))
+        monkeypatch.setattr("emout.distributed.client.no_worker_reason", lambda state, info=None: "workers were lost")
+
+        cli.cmd_server_status(SimpleNamespace(name=None, all=False))
+
+        out = capsys.readouterr().out
+        assert "workers were lost" in out
 
 
 # ===================================================================

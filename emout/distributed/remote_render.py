@@ -11,7 +11,6 @@ Design
 from __future__ import annotations
 
 import itertools
-import json
 import operator
 import sys
 import warnings
@@ -1892,16 +1891,20 @@ def get_or_create_session(
         client = None
 
     if client is None:
-        state_file = Path.home() / ".emout" / "server.json"
-        if state_file.exists():
-            try:
-                state = json.loads(state_file.read_text())
-                from dask.distributed import Client
+        try:
+            from .client import connect
 
-                client = Client(state["address"])
-            except Exception:
-                return None
-        else:
+            client = connect(require_workers=True)
+        except Exception as exc:
+            warnings.warn(str(exc))
+            return None
+    else:
+        try:
+            from .client import ensure_client_has_workers
+
+            ensure_client_has_workers(client)
+        except Exception as exc:
+            warnings.warn(str(exc))
             return None
 
     if _shared_session is None:

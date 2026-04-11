@@ -74,6 +74,8 @@ class SimpleDaskCluster:
         env_mods: list[str] | None = None,
         logdir: str | Path | None = None,
         sbatch_extra: list[str] | None = None,
+        protocol: str = "tcp",
+        security_files: dict[str, str] | None = None,
     ):
         """
         Parameters
@@ -101,6 +103,10 @@ class SimpleDaskCluster:
             Uses the current directory if None.
         sbatch_extra : list[str] | None, default=None
             Additional sbatch options (e.g. ["--mem-per-cpu=2000M"]).
+        protocol : str, default="tcp"
+            Communication protocol passed to Dask (e.g. ``"tcp"`` or ``"tls"``).
+        security_files : dict[str, str] | None, default=None
+            TLS certificate / key file paths used when ``protocol="tls"``.
         """
         self.scheduler_ip = scheduler_ip
         self.scheduler_port = scheduler_port
@@ -112,6 +118,8 @@ class SimpleDaskCluster:
         self.walltime = walltime
         self.env_mods = env_mods or []
         self.sbatch_extra = sbatch_extra or []
+        self.protocol = protocol
+        self.security_files = security_files or {}
 
         # Log directory
         if logdir is None:
@@ -146,6 +154,19 @@ class SimpleDaskCluster:
             "--port",
             str(self.scheduler_port),
         ]
+        if self.protocol != "tcp":
+            cmd.extend(["--protocol", self.protocol])
+        if self.protocol == "tls":
+            cmd.extend(
+                [
+                    "--tls-ca-file",
+                    self.security_files["ca_file"],
+                    "--tls-cert",
+                    self.security_files["scheduler_cert"],
+                    "--tls-key",
+                    self.security_files["scheduler_key"],
+                ]
+            )
         if no_dashboard:
             cmd.append("--no-dashboard")
 
@@ -262,7 +283,11 @@ class SimpleDaskCluster:
         script_lines.append("")
 
         # dask-worker command
-        script_lines.append("dask worker tcp://${HOST}:${PORT} \\")
+        script_lines.append(f"dask worker {self.protocol}://${{HOST}}:${{PORT}} \\")
+        if self.protocol == "tls":
+            script_lines.append(f"    --tls-ca-file {self.security_files['ca_file']} \\")
+            script_lines.append(f"    --tls-cert {self.security_files['worker_cert']} \\")
+            script_lines.append(f"    --tls-key {self.security_files['worker_key']} \\")
         script_lines.append(f"    --nthreads {self.threads} \\")
         script_lines.append(f"    --no-dashboard --memory-limit {self.memory}")
         script_lines.append("")
@@ -297,13 +322,27 @@ class SimpleDaskCluster:
         if self._client is not None:
             return self._client
 
-        sched_addr = f"tcp://{self.scheduler_ip}:{self.scheduler_port}"
+        sched_addr = f"{self.protocol}://{self.scheduler_ip}:{self.scheduler_port}"
         print(f"[SimpleDaskCluster] Connecting Dask Client to {sched_addr} ...")
+
+        security = None
+        if self.protocol == "tls":
+            from distributed.security import Security
+
+            security = Security(
+                tls_ca_file=self.security_files["ca_file"],
+                tls_client_cert=self.security_files["client_cert"],
+                tls_client_key=self.security_files["client_key"],
+                require_encryption=True,
+            )
 
         t0 = time.time()
         while True:
             try:
-                self._client = Client(sched_addr, timeout=timeout)
+                kwargs = {"timeout": timeout}
+                if security is not None:
+                    kwargs["security"] = security
+                self._client = Client(sched_addr, **kwargs)
                 break
             except Exception as e:
                 elapsed = time.time() - t0

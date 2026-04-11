@@ -146,6 +146,11 @@ The older “auto-remote when a server is running” behavior is still kept as a
 emout server start --partition gr20001a --memory 60G
 ```
 
+`emout server` configures TLS authentication automatically and, by
+default, allows one active server per user. If you intentionally need an
+additional session, use
+`emout server start --allow-multiple --name <session>`.
+
 ```python
 import matplotlib.pyplot as plt
 import emout

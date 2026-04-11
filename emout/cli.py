@@ -12,32 +12,74 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import signal
 import sys
 from pathlib import Path
+from typing import Any
 
-_STATE_DIR = Path.home() / ".emout"
-_STATE_FILE = _STATE_DIR / "server.json"
-
-
-def _save_state(data: dict) -> None:
-    """Persist server state (address, PID) to ``~/.emout/server.json``."""
-    _STATE_DIR.mkdir(parents=True, exist_ok=True)
-    _STATE_FILE.write_text(json.dumps(data, indent=2))
-
-
-def _load_state() -> dict | None:
-    """Load server state from ``~/.emout/server.json``, or ``None`` if absent."""
-    if _STATE_FILE.exists():
-        return json.loads(_STATE_FILE.read_text())
-    return None
+from emout.distributed.server_state import (
+    DEFAULT_SERVER_NAME,
+    active_state_file,
+    clear_server_state,
+    list_server_states,
+    load_server_state,
+    normalize_server_name,
+    save_server_state,
+    server_session_dir,
+)
 
 
-def _clear_state() -> None:
-    """Remove the ``~/.emout/server.json`` state file if it exists."""
-    _STATE_FILE.unlink(missing_ok=True)
+def _save_state(data: dict, *, name: str | None = None, make_active: bool = True) -> dict:
+    """Persist server state."""
+    return save_server_state(data, name=name, make_active=make_active)
+
+
+def _load_state(name: str | None = None) -> dict[str, Any] | None:
+    """Load persisted server state."""
+    return load_server_state(name)
+
+
+def _clear_state(name: str | None = None) -> None:
+    """Remove persisted server state."""
+    clear_server_state(name)
+
+
+def _pid_is_alive(pid: int | None) -> bool:
+    if not isinstance(pid, int):
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _probe_state(state: dict[str, Any]) -> tuple[bool, dict[str, Any] | None]:
+    from emout.distributed.client import get_cluster_info, state_lost_workers
+
+    try:
+        info = get_cluster_info(state, timeout="3s")
+        if state_lost_workers(state, info):
+            return False, info
+        return True, info
+    except Exception:
+        if state_lost_workers(state):
+            return False, None
+        return _pid_is_alive(state.get("pid")), None
+
+
+def _live_states(prune_stale: bool = True) -> list[dict[str, Any]]:
+    live: list[dict[str, Any]] = []
+    for state in list_server_states():
+        is_live, _info = _probe_state(state)
+        if is_live:
+            live.append(state)
+        elif prune_stale:
+            _clear_state(state["name"])
+    return live
 
 
 # ---------------------------------------------------------------------------
@@ -46,21 +88,32 @@ def _clear_state() -> None:
 
 
 def cmd_server_start(args):
-    """Start a Dask scheduler and worker, then block until Ctrl-C.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Parsed CLI arguments including scheduler-ip, scheduler-port,
-        partition, processes, threads, cores, memory, and walltime.
-    """
+    """Start a Dask scheduler and worker, then block until Ctrl-C."""
     from emout.distributed.client import start_cluster
     from emout.distributed.config import DaskConfig
+    from emout.distributed.security import ensure_cluster_security
 
     cfg = DaskConfig()
+    server_name = normalize_server_name(args.name)
+    live_states = _live_states(prune_stale=True)
+
+    current = next((state for state in live_states if state["name"] == server_name), None)
+    if current is not None:
+        print(f"Server session '{server_name}' is already running at {current['address']}.")
+        return
+
+    if live_states and not args.allow_multiple:
+        running = ", ".join(state["name"] for state in live_states)
+        print("Another emout server session is already running.")
+        print(f"Running sessions: {running}")
+        print("Use '--allow-multiple --name <session>' to start an additional session.")
+        return
+
+    scheduler_ip = args.scheduler_ip or cfg.scheduler_ip
+    security = ensure_cluster_security(server_name=server_name, scheduler_host=scheduler_ip)
 
     client = start_cluster(
-        scheduler_ip=args.scheduler_ip,
+        scheduler_ip=scheduler_ip,
         scheduler_port=args.scheduler_port or cfg.scheduler_port,
         partition=args.partition,
         processes=args.processes,
@@ -68,20 +121,36 @@ def cmd_server_start(args):
         cores=args.cores,
         memory=args.memory,
         walltime=args.walltime,
+        server_name=server_name,
+        protocol="tls",
+        security_files=security.cluster_kwargs(),
     )
 
     addr = client.scheduler_info()["address"]
     n_workers = len(client.scheduler_info().get("workers", {}))
-    _save_state({"address": addr, "pid": os.getpid()})
+    make_active = (not live_states) or (not args.allow_multiple)
+    state = _save_state(
+        {
+            "address": addr,
+            "pid": os.getpid(),
+            "protocol": "tls",
+            "session_dir": str(server_session_dir(server_name)),
+            "started_at": __import__("time").time(),
+            "worker_job_ids": list(getattr(client, "_emout_worker_job_ids", [])),
+            "tls": security.client_state(),
+        },
+        name=server_name,
+        make_active=make_active,
+    )
 
-    from emout.distributed.config import _get_local_ip
-
-    detected_ip = _get_local_ip()
-
+    print(f"Session: {server_name}")
     print(f"Scheduler running at {addr}")
-    print(f"Detected IP: {detected_ip}")
+    print(f"Detected IP: {scheduler_ip}")
     print(f"Workers: {n_workers}")
-    print(f"State saved to {_STATE_FILE}")
+    print(f"State saved to {active_state_file() if make_active else Path(state['session_dir']) / 'state.json'}")
+    if not make_active:
+        print()
+        print(f"Connect explicitly with: from emout.distributed import connect; connect(name='{server_name}')")
     print()
     print("Scripts will auto-connect — just use emout normally:")
     print("  data = emout.Emout('output_dir')")
@@ -92,14 +161,14 @@ def cmd_server_start(args):
     print("Press Ctrl-C to stop the server.")
 
     try:
-        client.scheduler_info()  # keep the process alive
+        client.scheduler_info()
         import time
 
         while True:
             time.sleep(60)
     except KeyboardInterrupt:
         print("\nShutting down...")
-        cmd_server_stop(args)
+        cmd_server_stop(argparse.Namespace(name=server_name, all=False))
 
 
 # ---------------------------------------------------------------------------
@@ -107,24 +176,12 @@ def cmd_server_start(args):
 # ---------------------------------------------------------------------------
 
 
-def cmd_server_stop(_args):
-    """Stop the running Dask server and clean up the state file.
-
-    Parameters
-    ----------
-    _args : argparse.Namespace
-        Parsed CLI arguments (unused).
-    """
+def _stop_one_server(state: dict[str, Any]) -> bool:
     from emout.distributed.client import stop_cluster
-
-    state = _load_state()
-    if state is None:
-        print("No running server found.")
-        return
 
     stopped_cleanly = True
     try:
-        stop_cluster(address=state.get("address"))
+        stop_cluster(state=state)
     except Exception as exc:
         stopped_cleanly = False
         print(f"Failed to stop server cleanly: {exc}")
@@ -138,9 +195,33 @@ def cmd_server_stop(_args):
         except PermissionError:
             print(f"Could not signal server process PID {pid}.")
 
-    _clear_state()
-    if stopped_cleanly:
-        print("Server stopped.")
+    _clear_state(state["name"])
+    return stopped_cleanly
+
+
+def cmd_server_stop(args):
+    """Stop the running Dask server and clean up the saved state."""
+    if getattr(args, "all", False):
+        states = list_server_states()
+    else:
+        target_name = normalize_server_name(args.name) if getattr(args, "name", None) else None
+        state = _load_state(target_name)
+        states = [] if state is None else [state]
+
+    if not states:
+        print("No running server found.")
+        return
+
+    all_clean = True
+    for state in states:
+        print(f"Stopping session '{state['name']}'...")
+        all_clean = _stop_one_server(state) and all_clean
+
+    if all_clean:
+        if len(states) == 1:
+            print("Server stopped.")
+        else:
+            print(f"Stopped {len(states)} server sessions.")
     else:
         print("Cleared saved server state.")
 
@@ -150,31 +231,45 @@ def cmd_server_stop(_args):
 # ---------------------------------------------------------------------------
 
 
-def cmd_server_status(_args):
-    """Print the current Dask server address, PID, and worker count.
+def _print_state_status(state: dict[str, Any]) -> None:
+    from emout.distributed.client import no_worker_reason
 
-    Parameters
-    ----------
-    _args : argparse.Namespace
-        Parsed CLI arguments (unused).
-    """
-    state = _load_state()
+    print(f"Session: {state['name']}")
+    print(f"Server address: {state['address']}")
+    print(f"PID: {state.get('pid', 'unknown')}")
+    print(f"Protocol: {state.get('protocol', 'tcp')}")
+
+    is_live, info = _probe_state(state)
+    if info is not None:
+        n_workers = len(info.get("workers", {}))
+        print(f"Workers: {n_workers}")
+        if n_workers == 0:
+            print(no_worker_reason(state, info))
+    elif is_live:
+        print("Workers: unknown (scheduler starting or not reachable yet)")
+    else:
+        print("Cannot connect: scheduler is not reachable")
+
+
+def cmd_server_status(args):
+    """Print the current Dask server status."""
+    if getattr(args, "all", False):
+        states = list_server_states()
+        if not states:
+            print("No running server.")
+            return
+        for index, state in enumerate(states):
+            if index:
+                print()
+            _print_state_status(state)
+        return
+
+    target_name = normalize_server_name(args.name) if getattr(args, "name", None) else None
+    state = _load_state(target_name)
     if state is None:
         print("No running server.")
         return
-    print(f"Server address: {state['address']}")
-    print(f"PID: {state.get('pid', 'unknown')}")
-
-    try:
-        from dask.distributed import Client
-
-        c = Client(state["address"], timeout="3s")
-        info = c.scheduler_info()
-        n_workers = len(info.get("workers", {}))
-        print(f"Workers: {n_workers}")
-        c.close()
-    except Exception as e:
-        print(f"Cannot connect: {e}")
+    _print_state_status(state)
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +297,6 @@ def cmd_inspect(args):
 
     print(f"Directory: {data.directory}")
 
-    # Input file
     if data.inp is not None:
         inp = data.inp
         print("Input file: plasma.inp")
@@ -223,16 +317,13 @@ def cmd_inspect(args):
     if data.toml is not None:
         print("TOML config: plasma.toml")
 
-    # Unit info
     if data.unit is not None:
         print("Unit conversion: available")
     else:
         print("Unit conversion: not available (no conversion key in inp)")
 
-    # Simulation validity
     print(f"Completed: {data.is_valid()}")
 
-    # Scan HDF5 files
     print()
     h5_files = sorted(data.directory.glob("*00_0000.h5"))
     if h5_files:
@@ -253,13 +344,11 @@ def cmd_inspect(args):
     else:
         print("Grid data files: none found")
 
-    # Particle files
     p_files = sorted(data.directory.glob("p*00_0000.h5"))
     if p_files:
         species = sorted(set(f.name[1] for f in p_files if f.name[1].isdigit()))
         print(f"\nParticle species: {', '.join(species)}")
 
-    # Diagnostic files
     diag_files = []
     for name in ("icur", "pbody"):
         candidate = data.directory / name
@@ -279,7 +368,6 @@ def main():
     parser = argparse.ArgumentParser(prog="emout", description="emout CLI")
     sub = parser.add_subparsers(dest="command")
 
-    # inspect
     inspect_parser = sub.add_parser("inspect", help="Show simulation metadata")
     inspect_parser.add_argument(
         "directory",
@@ -289,12 +377,16 @@ def main():
     )
     inspect_parser.set_defaults(func=cmd_inspect)
 
-    # server
     server = sub.add_parser("server", help="Manage the Dask render server")
     server_sub = server.add_subparsers(dest="server_command")
 
-    # server start
     start = server_sub.add_parser("start", help="Start scheduler + workers")
+    start.add_argument("--name", default=DEFAULT_SERVER_NAME, help="Server session name (default: default)")
+    start.add_argument(
+        "--allow-multiple",
+        action="store_true",
+        help="Allow additional named server sessions for the same user",
+    )
     start.add_argument("--scheduler-ip", default=None)
     start.add_argument("--scheduler-port", type=int, default=None)
     start.add_argument("--partition", default=None)
@@ -305,12 +397,14 @@ def main():
     start.add_argument("--walltime", default=None)
     start.set_defaults(func=cmd_server_start)
 
-    # server stop
     stop = server_sub.add_parser("stop", help="Stop the running server")
+    stop.add_argument("--name", default=None, help="Named server session to stop")
+    stop.add_argument("--all", action="store_true", help="Stop all saved server sessions")
     stop.set_defaults(func=cmd_server_stop)
 
-    # server status
     status = server_sub.add_parser("status", help="Show server status")
+    status.add_argument("--name", default=None, help="Named server session to inspect")
+    status.add_argument("--all", action="store_true", help="Show all saved server sessions")
     status.set_defaults(func=cmd_server_status)
 
     args = parser.parse_args()

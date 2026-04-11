@@ -970,6 +970,9 @@ def test_get_or_create_session_returns_shared_session(monkeypatch):
     submissions = []
 
     class FakeClient:
+        def scheduler_info(self):
+            return {"workers": {"w1": {}}}
+
         def submit(self, cls, *args, **kwargs):
             submissions.append((cls, args, kwargs))
             return FakeFuture(object())

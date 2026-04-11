@@ -353,6 +353,21 @@ class TestStartCluster:
         from emout.distributed import client as client_mod
 
         monkeypatch.setattr(client_mod, "_global_cluster", None)
+        monkeypatch.setattr(
+            client_mod,
+            "ensure_cluster_security",
+            lambda **kwargs: SimpleNamespace(
+                cluster_kwargs=lambda: {
+                    "ca_file": "/tmp/ca.pem",
+                    "scheduler_cert": "/tmp/scheduler-cert.pem",
+                    "scheduler_key": "/tmp/scheduler-key.pem",
+                    "worker_cert": "/tmp/worker-cert.pem",
+                    "worker_key": "/tmp/worker-key.pem",
+                    "client_cert": "/tmp/client-cert.pem",
+                    "client_key": "/tmp/client-key.pem",
+                }
+            ),
+        )
 
         calls = []
         fake_client = MagicMock()
@@ -388,8 +403,10 @@ class TestStartCluster:
         assert result is fake_client
         assert calls[0][0] == "init"
         assert calls[0][1]["scheduler_ip"] == "10.0.0.1"
+        assert calls[0][1]["protocol"] == "tls"
         assert "start_scheduler" in calls
         assert ("submit_worker", 1) in calls
+        assert getattr(fake_client, "_emout_worker_job_ids") == [12345]
 
         monkeypatch.setattr(client_mod, "_global_cluster", None)
 
@@ -412,6 +429,21 @@ class TestStartCluster:
         from emout.distributed import client as client_mod
 
         monkeypatch.setattr(client_mod, "_global_cluster", None)
+        monkeypatch.setattr(
+            client_mod,
+            "ensure_cluster_security",
+            lambda **kwargs: SimpleNamespace(
+                cluster_kwargs=lambda: {
+                    "ca_file": "/tmp/ca.pem",
+                    "scheduler_cert": "/tmp/scheduler-cert.pem",
+                    "scheduler_key": "/tmp/scheduler-key.pem",
+                    "worker_cert": "/tmp/worker-cert.pem",
+                    "worker_key": "/tmp/worker-key.pem",
+                    "client_cert": "/tmp/client-cert.pem",
+                    "client_key": "/tmp/client-key.pem",
+                }
+            ),
+        )
 
         init_kwargs = {}
 
@@ -436,6 +468,7 @@ class TestStartCluster:
 
         assert init_kwargs["scheduler_ip"] == "1.2.3.4"
         assert init_kwargs["partition"] == "gpu_partition"
+        assert init_kwargs["protocol"] == "tls"
 
         monkeypatch.setattr(client_mod, "_global_cluster", None)
 
@@ -524,6 +557,56 @@ class TestConnect:
 
         with pytest.raises(RuntimeError, match="emout server is not running"):
             client_mod.connect()
+
+    def test_connect_require_workers_clears_stale_state(self, monkeypatch, tmp_path):
+        import dask.distributed
+        from emout.distributed import client as client_mod
+
+        state_dir = tmp_path / ".emout"
+        state_dir.mkdir()
+        state_file = state_dir / "server.json"
+        state_file.write_text(
+            json.dumps(
+                {
+                    "name": "default",
+                    "address": "tcp://auto:5555",
+                    "pid": 123456,
+                    "started_at": 1.0,
+                    "worker_job_ids": [999],
+                }
+            )
+        )
+
+        events = []
+
+        class FakeClient:
+            def __init__(self, address):
+                self.address = address
+
+            def scheduler_info(self):
+                return {"workers": {}}
+
+            def shutdown(self):
+                events.append("shutdown")
+
+            def close(self):
+                events.append("close")
+
+        monkeypatch.setattr(dask.distributed, "Client", FakeClient)
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        monkeypatch.setattr(client_mod, "_pid_is_alive", lambda pid: False)
+        monkeypatch.setattr(client_mod, "query_worker_job_states", lambda state, timeout=3.0: {})
+        monkeypatch.setattr(client_mod.time, "monotonic", lambda: 10.0)
+        monkeypatch.setattr(client_mod, "clear_server_state", lambda name=None: events.append(("clear", name)))
+        monkeypatch.setattr(client_mod, "clear_sessions", lambda: events.append("clear_sessions"))
+        monkeypatch.setattr(client_mod.os, "kill", lambda pid, sig: events.append(("kill", pid, sig)))
+
+        with pytest.raises(RuntimeError, match="saved server state was cleared"):
+            client_mod.connect(require_workers=True, worker_timeout=0.0)
+
+        assert "shutdown" in events
+        assert ("clear", "default") in events
+        assert "clear_sessions" in events
 
 
 # ===================================================================
@@ -1137,7 +1220,8 @@ class TestSessionManagement:
         monkeypatch.setattr(dask.distributed, "default_client", _raise)
         monkeypatch.setattr(Path, "home", lambda: Path("/nonexistent"))
 
-        result = remote_render.get_or_create_session(emout_dir="/tmp")
+        with pytest.warns(UserWarning, match="emout server is not running"):
+            result = remote_render.get_or_create_session(emout_dir="/tmp")
         assert result is None
 
     def test_get_or_create_reuses_session(self, monkeypatch):
@@ -1148,6 +1232,9 @@ class TestSessionManagement:
         remote_render.clear_sessions()
 
         class FakeClient:
+            def scheduler_info(self):
+                return {"workers": {"w1": {}}}
+
             def submit(self, cls, *args, **kwargs):
                 return FakeFuture(object())
 
@@ -1159,6 +1246,31 @@ class TestSessionManagement:
         assert s1 is s2
 
         remote_render.clear_sessions()
+
+    def test_get_or_create_returns_none_when_worker_is_missing(self, monkeypatch):
+        import dask.distributed
+        from emout.distributed import remote_render
+
+        remote_render.clear_sessions()
+
+        class FakeClient:
+            def scheduler_info(self):
+                return {"workers": {}}
+
+        monkeypatch.setattr(dask.distributed, "default_client", lambda: FakeClient())
+
+        from emout.distributed import client as client_mod
+
+        monkeypatch.setattr(
+            client_mod,
+            "ensure_client_has_workers",
+            lambda client, **kwargs: (_ for _ in ()).throw(RuntimeError("workers are gone")),
+        )
+
+        with pytest.warns(UserWarning, match="workers are gone"):
+            result = remote_render.get_or_create_session(emout_dir="/tmp/a")
+
+        assert result is None
 
 
 # ===================================================================
