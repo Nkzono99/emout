@@ -53,7 +53,13 @@ data.phisp[-1]        # Last timestep
 data.phisp[-1, :, data.inp.ny // 2, :].plot()
 ```
 
-Slicing follows the axis order `(t, z, y, x)`. After slicing out a 2D or 1D array, call `.plot()` to visualize it with SI unit labels.
+After slicing out a 2D or 1D array, call `.plot()` to visualize it with SI unit labels.
+
+> **Note: slice axis order is `(t, z, y, x)`** — this is the reverse of the
+> `(x, y, z)` convention you may be used to from NumPy. The example above
+> reads as `t=-1` (last step), `z=:` (all), `y=ny/2` (fixed), `x=:` (all),
+> which produces an xz-plane. Every slice expression in `emout` uses this
+> order, so rewrite slices copied in from other code before using them.
 
 ## Appended Simulation Outputs
 

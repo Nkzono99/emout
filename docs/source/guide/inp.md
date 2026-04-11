@@ -21,6 +21,12 @@ data.inp.tmgrid.nx
 data.inp.nx                 # Group name omitted
 ```
 
+> **Warning: the shorthand does not detect duplicate names.** If the
+> same parameter name exists in more than one group, `data.inp["nx"]`
+> silently returns **whichever match it finds first** in group
+> iteration order — no error is raised. Always qualify possibly
+> ambiguous parameters with `data.inp["group_name"]["param"]`.
+
 ## Commonly Used Parameters
 
 ### Grid

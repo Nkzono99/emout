@@ -4,6 +4,12 @@ MPIEMSES の `&ptcond` で定義された finbound / legacy 境界型を、
 `data.boundaries` から Python オブジェクトとして扱えます。
 各境界は `MeshSurface3D` を返し、3D フィールドプロットへのオーバーレイや個別のスタイル指定が可能です。
 
+> **注意: `mesh()` の単位は SI がデフォルト**。`data.boundaries[0].mesh()` は
+> 既定で SI 単位 (m) の頂点座標を返します。グリッド単位のメッシュが欲しい場合
+> （例: EMSES のグリッド上の別処理にそのまま渡したい場合）は
+> `mesh(use_si=False)` を明示してください。`plot_surfaces()` へオーバーレイするときは、
+> フィールド側の軸単位と揃えておかないと境界だけずれて見える原因になります。
+
 ## アクセス
 
 ```python

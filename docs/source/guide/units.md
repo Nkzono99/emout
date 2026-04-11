@@ -23,7 +23,17 @@ to_c = 10000.0
 - `dx`: Grid spacing in meters [m]
 - `to_c`: Speed of light in EMSES normalized units
 
-If no key is present, `data.unit` is `None`.
+If no key is present, `data.unit` is `None`. In that state,
+`data.unit.v.trans(...)` / `.reverse(...)` and `data.phisp[-1].val_si`
+all raise `AttributeError`, so you need one of the following:
+
+- **Recommended:** add the `!!key ...` line at the top of `plasma.inp`
+  (or the `[meta.unit_conversion]` section to `plasma.toml`)
+- If you only need to inspect the data in normalized units, pass
+  `use_si=False` and work with the raw grid values
+  (`plot(use_si=False)`, `np.asarray(data.phisp[-1])`, …)
+- In scripts, guard with `if data.unit is not None:` before any
+  conversion call
 
 ## Using Unit Translators
 
@@ -47,6 +57,10 @@ si_velocity = data.unit.v.reverse(4.107)    # 4.107 EMSES → m/s
 | --- | --- | --- |
 | `trans(x)` | SI → EMSES | Setting initial conditions, comparing with theory |
 | `reverse(x)` | EMSES → SI | Interpreting simulation results |
+
+> **Mnemonic:** `trans` "translates into simulation", `reverse`
+> "reverts back to reality (SI)". When in doubt, remember that
+> analysis almost always uses `reverse`.
 
 ## Direct SI Values from Data
 

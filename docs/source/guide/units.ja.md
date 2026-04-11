@@ -24,6 +24,14 @@ to_c = 10000.0
 - `to_c`: EMSES 規格化単位での光速
 
 キーが存在しない場合、`data.unit` は `None` になります。
+この状態では `data.unit.v.trans(...)` / `.reverse(...)` や `data.phisp[-1].val_si`
+はすべて `AttributeError` になるので、次のいずれかで対処してください:
+
+- **推奨:** `plasma.inp` 先頭に `!!key ...` 行を追加する
+  （`plasma.toml` なら `[meta.unit_conversion]` セクションを追加）
+- 単位変換なしで解析する場合は、`use_si=False` を指定して生のグリッド値で作業する
+  （`plot(use_si=False)`、`np.asarray(data.phisp[-1])` など）
+- スクリプト内で分岐する場合は `if data.unit is not None:` でガードする
 
 ## 単位変換器の使い方
 
@@ -47,6 +55,10 @@ si_velocity = data.unit.v.reverse(4.107)    # 4.107 EMSES → m/s
 | --- | --- | --- |
 | `trans(x)` | SI → EMSES | 初期条件の設定、理論値との比較 |
 | `reverse(x)` | EMSES → SI | シミュレーション結果の解釈 |
+
+> **覚え方:** `trans` は「simulation に translate（持ち込む）」、
+> `reverse` は「reality（SI）に revert（戻す）」。方向を迷ったら
+> 「解析するときはほぼ必ず `reverse`」と覚えておくと実用的です。
 
 ## データからの SI 値の直接取得
 

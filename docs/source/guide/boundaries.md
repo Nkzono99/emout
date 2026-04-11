@@ -4,6 +4,14 @@ The `finbound` / legacy boundaries defined under MPIEMSES's `&ptcond` are expose
 as Python objects via `data.boundaries`. Each boundary produces a `MeshSurface3D`
 that you can overlay onto a 3D field plot or style individually.
 
+> **Note: `mesh()` returns SI units by default.** `data.boundaries[0].mesh()`
+> gives you vertex coordinates in metres. Pass `mesh(use_si=False)`
+> explicitly when you want grid-unit meshes (for example when feeding the
+> mesh into a grid-space computation). When overlaying via
+> `plot_surfaces()`, make sure the field axis units and the mesh units
+> agree — mismatched units show up as boundaries that look slightly
+> offset from the field.
+
 ## Access
 
 ```python
