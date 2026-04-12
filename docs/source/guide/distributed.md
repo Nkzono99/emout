@@ -10,19 +10,21 @@ Login node (Jupyter)                 Compute node (SLURM worker)
 
 emout server start              →    Scheduler + Worker start
                                      ↕ InfiniBand high-speed comm
+rdata = emout.Emout("dir").remote()
+with remote_scope():
+    with remote_figure():
+        rdata.phisp[-1,:,100,:].plot()  → HDF5 load + rendering on server
+        plt.xlabel("custom")            → (recorded as commands)
+                                        ← only PNG bytes (~50 KB)
+
+    with remote_figure(savefilepath="figure.png"):
+        rdata.phisp[-1,:,100,:].plot()  → render on server
+                                        ← save the image to a file
+
 data = emout.Emout("dir")
-data.phisp[-1,:,100,:].plot()   →    HDF5 load → 2D slice → transfer
-                                ←    small array (few KB)
-plt.xlabel("custom")                 ← local matplotlib rendering
-
-with remote_figure():
-    data.phisp[-1,:,100,:].plot()  → all operations on server
-    plt.xlabel("custom")           → (recorded as commands)
-                                   ← only PNG bytes (~50 KB)
-
-with remote_figure(savefilepath="figure.png"):
-    data.phisp[-1,:,100,:].plot()  → render on server
-                                   ← save the image to a file
+data.phisp[-1,:,100,:].plot()      → HDF5 load → 2D slice → transfer
+                                   ← small array (few KB)
+plt.xlabel("custom")                     ← local matplotlib rendering
 ```
 
 ### Shared Session Architecture
@@ -36,20 +38,23 @@ This means **results from different simulations can be freely mixed** in
 the same `remote_figure()` block:
 
 ```python
-data_a = emout.Emout("/path/to/sim_a")
-data_b = emout.Emout("/path/to/sim_b")
+from emout.distributed import remote_scope
+
+data_a = emout.Emout("/path/to/sim_a").remote()
+data_b = emout.Emout("/path/to/sim_b").remote()
 
 result_a = data_a.backtrace.get_probabilities(...)
 result_b = data_b.backtrace.get_probabilities(...)
 
-with remote_figure(figsize=(12, 5)):
-    plt.subplot(1, 2, 1)
-    data_a.phisp[-1, :, 100, :].plot()
-    plt.title("Sim A: potential")
+with remote_scope():
+    with remote_figure(figsize=(12, 5)):
+        plt.subplot(1, 2, 1)
+        data_a.phisp[-1, :, 100, :].plot()
+        plt.title("Sim A: potential")
 
-    plt.subplot(1, 2, 2)
-    result_b.vxvz.plot(cmap="plasma")
-    plt.title("Sim B: backtrace")
+        plt.subplot(1, 2, 2)
+        result_b.vxvz.plot(cmap="plasma")
+        plt.title("Sim B: backtrace")
 ```
 
 All commands are replayed on the same worker — no data is transferred to the client.
@@ -90,21 +95,25 @@ emout server stop --name batch2
 
 ### 2. Use from scripts
 
-With the active session saved, existing code still works through the
-compatibility mode. The compat mode always follows the active/default
-session. For new code, prefer the explicit `Emout.remote()` workflow:
+For new code, start from `Emout.remote()` plus `remote_scope()`.
+That is the most natural workflow for worker-side reuse and cleanup:
 
 ```python
 import emout
 from emout.distributed import remote_figure, remote_scope
 
-data = emout.Emout("output_dir").remote()
+rdata = emout.Emout("output_dir").remote()
 
 with remote_scope():
-    ymid = int(data.inp.ny // 2)
+    ymid = int(rdata.inp.ny // 2)
     with remote_figure():
-        data.phisp[-1, :, ymid, :].plot()
+        rdata.phisp[-1, :, ymid, :].plot()
 ```
+
+If the active session is saved, existing code still works through the
+compatibility mode. The compat mode only follows the active/default
+session. For additional named sessions, connect explicitly. The compat
+workflow is summarized later under "Data-transfer mode".
 
 ### 3. Stop the server
 
@@ -123,7 +132,7 @@ execution, while explicit remote usage asks you to restart the server.
 
 ## Usage Modes
 
-### Recommended mode (`Emout.remote()`)
+### Recommended mode (`Emout.remote()` + `remote_scope()`)
 
 This keeps worker-side objects alive as `RemoteRef` proxies while letting
 you write code close to normal `emout` / `numpy` style. Expressions such as
@@ -254,22 +263,6 @@ scope1.close()
 > When you need both styles, open **a new** ``remote_scope()`` inside
 > the outer one (see the example above with ``with remote_scope() as scope2:``).
 
-### Data-transfer mode (compatibility mode)
-
-This is the compatibility mode for existing `plot()`-centric code.
-The worker extracts the slice and transfers it locally; matplotlib runs on the client.
-**`plt.axhline()` and other customizations work freely.**
-
-```python
-data.phisp[-1, :, 100, :].plot()
-plt.axhline(y=50, color="red")    # ← local matplotlib
-plt.xlabel("x [m]")
-plt.title("Custom title")
-plt.savefig("output.png")
-```
-
-Only a 2D slice (KB–MB) is transferred; the full 3D array stays on the worker.
-
 ### Image mode (`remote_figure`)
 
 **All matplotlib operations run on the server**; only PNG bytes come back.
@@ -336,6 +329,23 @@ data.phisp[-1, :, 100, :].plot()
 | `--fmt` | `-f` | Image format (`png`, `svg`, …) | `png` |
 | `--figsize` | | `width,height` | matplotlib default |
 | `--emout-dir` | | Emout directory for session lookup | auto |
+
+### Data-transfer mode (compatibility mode)
+
+This is the compatibility mode for existing `plot()`-centric code.
+The worker extracts the slice and transfers it locally; matplotlib runs
+on the client. **For new code, prefer `Emout.remote()` / `remote_scope()`**,
+and keep this mode mainly for low-friction migration of older scripts.
+
+```python
+data.phisp[-1, :, 100, :].plot()
+plt.axhline(y=50, color="red")    # ← local matplotlib
+plt.xlabel("x [m]")
+plt.title("Custom title")
+plt.savefig("output.png")
+```
+
+Only a 2D slice (KB–MB) is transferred; the full 3D array stays on the worker.
 
 ### Backtrace integration
 
