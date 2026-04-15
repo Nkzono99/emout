@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jupyter": {
+      "command": "emout",
+      "args": ["jupyter", "mcp"]
+    }
+  }
+}

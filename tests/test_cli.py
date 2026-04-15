@@ -689,3 +689,63 @@ class TestMain:
         monkeypatch.setattr("sys.argv", ["emout", "server"])
         cli.main()
         # argparse prints help or does nothing; either way, no crash
+
+
+class TestJupyterCli:
+    """Tests for the ``emout jupyter`` subcommands (no real Jupyter needed)."""
+
+    def test_status_with_no_state(self, monkeypatch, capsys):
+        monkeypatch.setattr("sys.argv", ["emout", "jupyter", "status"])
+        cli.main()
+        assert "No Jupyter server state" in capsys.readouterr().out
+
+    def test_stop_with_no_state(self, monkeypatch, capsys):
+        monkeypatch.setattr("sys.argv", ["emout", "jupyter", "stop"])
+        cli.main()
+        assert "No Jupyter server state" in capsys.readouterr().out
+
+    def test_mcp_without_state_exits(self, monkeypatch, capsys):
+        monkeypatch.setattr("sys.argv", ["emout", "jupyter", "mcp"])
+        with pytest.raises(SystemExit) as excinfo:
+            cli.main()
+        assert excinfo.value.code == 1
+        assert "no Jupyter session" in capsys.readouterr().err
+
+    def test_resolve_path_notebook_file(self, tmp_path):
+        nb = tmp_path / "foo.ipynb"
+        nb.write_text("{}")
+        root, name = cli._resolve_jupyter_path(str(nb))
+        assert root == tmp_path.resolve()
+        assert name == "foo.ipynb"
+
+    def test_resolve_path_directory(self, tmp_path):
+        root, name = cli._resolve_jupyter_path(str(tmp_path))
+        assert root == tmp_path.resolve()
+        assert name == ""
+
+    def test_status_reads_saved_state(self, tmp_path, monkeypatch, capsys):
+        state_file = tmp_path / ".emout" / "jupyter.json"
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text(
+            json.dumps(
+                {
+                    "url": "http://127.0.0.1:8888",
+                    "token": "secretvalue",
+                    "notebook": "plot_articles.ipynb",
+                    "root_dir": str(tmp_path),
+                    "pid": -1,
+                    "started_at": 0.0,
+                }
+            )
+        )
+        monkeypatch.setattr("sys.argv", ["emout", "jupyter", "status"])
+        cli.main()
+        out = capsys.readouterr().out
+        assert "http://127.0.0.1:8888" in out
+        assert "plot_articles.ipynb" in out
+        # token hidden by default
+        assert "secretvalue" not in out
+
+        monkeypatch.setattr("sys.argv", ["emout", "jupyter", "status", "--show-token"])
+        cli.main()
+        assert "secretvalue" in capsys.readouterr().out

@@ -6,15 +6,24 @@ Usage::
     emout server stop                # 停止
     emout server status              # 起動中のアドレスを表示
 
+    emout jupyter start [PATH]       # Jupyter サーバー + MCP 連携
+    emout jupyter stop
+    emout jupyter status
+
 起動中のサーバーにはスクリプトから ``emout.distributed.connect()`` で接続する。
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import secrets
+import shutil
 import signal
+import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +36,7 @@ from emout.distributed.server_state import (
     normalize_server_name,
     save_server_state,
     server_session_dir,
+    state_root_dir,
 )
 
 
@@ -359,6 +369,197 @@ def cmd_inspect(args):
 
 
 # ---------------------------------------------------------------------------
+# jupyter start / stop / status / mcp
+# ---------------------------------------------------------------------------
+
+
+def _jupyter_state_file() -> Path:
+    return state_root_dir() / "jupyter.json"
+
+
+def _load_jupyter_state() -> dict[str, Any] | None:
+    path = _jupyter_state_file()
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _save_jupyter_state(state: dict[str, Any]) -> None:
+    path = _jupyter_state_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2))
+
+
+def _clear_jupyter_state() -> None:
+    path = _jupyter_state_file()
+    if path.exists():
+        path.unlink()
+
+
+def _resolve_jupyter_path(raw: str | None) -> tuple[Path, str]:
+    """Split a user-provided path into (root_dir, notebook_name).
+
+    - ``./``         → (cwd, "")
+    - ``notebook``   → (cwd, "notebook.ipynb") if it exists, else (cwd, "")
+    - ``foo.ipynb``  → (foo.parent, foo.name)
+    - ``some/dir``   → (some/dir, "")
+    """
+    if not raw:
+        return Path.cwd().resolve(), ""
+    candidate = Path(raw).expanduser()
+    if candidate.is_file() and candidate.suffix == ".ipynb":
+        return candidate.parent.resolve(), candidate.name
+    if candidate.is_dir():
+        return candidate.resolve(), ""
+    # Treat as a notebook name relative to cwd if the .ipynb exists.
+    as_notebook = candidate.with_suffix(".ipynb") if candidate.suffix != ".ipynb" else candidate
+    if as_notebook.is_file():
+        return as_notebook.parent.resolve(), as_notebook.name
+    # Fall back to treating the input as a root dir (even if missing, jupyter
+    # will surface the error).
+    return candidate.resolve(), ""
+
+
+def cmd_jupyter_start(args):
+    """Start a Jupyter server with a saved token for MCP consumption."""
+    if shutil.which("jupyter") is None:
+        print("Error: 'jupyter' command not found. Install it with 'pip install jupyter'.")
+        sys.exit(1)
+
+    existing = _load_jupyter_state()
+    if existing is not None and _pid_is_alive(existing.get("pid")):
+        print(f"Jupyter server already running at {existing['url']} (PID {existing['pid']}).")
+        print("Stop it first with 'emout jupyter stop'.")
+        return
+
+    root_dir, notebook = _resolve_jupyter_path(args.path)
+    token = args.token or secrets.token_hex(16)
+    host = args.host
+    port = args.port
+    url = f"http://{host}:{port}"
+
+    cmd = [
+        "jupyter",
+        "server",
+        f"--IdentityProvider.token={token}",
+        f"--ServerApp.root_dir={root_dir}",
+        f"--ServerApp.ip={host}",
+        f"--ServerApp.port={port}",
+        "--no-browser",
+    ]
+
+    proc = subprocess.Popen(cmd)
+    state = {
+        "url": url,
+        "token": token,
+        "notebook": notebook,
+        "root_dir": str(root_dir),
+        "pid": proc.pid,
+        "started_at": time.time(),
+    }
+    _save_jupyter_state(state)
+
+    print(f"Jupyter server starting at {url}")
+    print(f"  root_dir:  {root_dir}")
+    if notebook:
+        print(f"  notebook:  {notebook}")
+    print(f"  token:     {token}")
+    print(f"  PID:       {proc.pid}")
+    print(f"  state:     {_jupyter_state_file()}")
+    print()
+    print("Claude Code MCP は '.claude/mcp.json' の 'emout jupyter mcp' 経由で自動接続します。")
+    print("停止するには別ターミナルから 'emout jupyter stop' を実行、")
+    print("またはこのプロセスで Ctrl-C。")
+    print()
+
+    try:
+        proc.wait()
+    except KeyboardInterrupt:
+        print("\nStopping Jupyter server...")
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+    finally:
+        _clear_jupyter_state()
+
+
+def cmd_jupyter_stop(args):
+    """Stop the Jupyter server started by ``emout jupyter start``."""
+    state = _load_jupyter_state()
+    if state is None:
+        print("No Jupyter server state found.")
+        return
+
+    pid = state.get("pid")
+    if isinstance(pid, int) and _pid_is_alive(pid):
+        try:
+            os.kill(pid, signal.SIGTERM)
+            print(f"Sent SIGTERM to Jupyter server PID {pid}.")
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            print(f"Could not signal PID {pid}; clearing state only.")
+
+    _clear_jupyter_state()
+    print("Jupyter state cleared.")
+
+
+def cmd_jupyter_status(args):
+    """Print the current Jupyter session info."""
+    state = _load_jupyter_state()
+    if state is None:
+        print("No Jupyter server state found.")
+        return
+
+    pid = state.get("pid")
+    alive = _pid_is_alive(pid) if isinstance(pid, int) else False
+    print(f"URL:       {state.get('url')}")
+    print(f"root_dir:  {state.get('root_dir')}")
+    notebook = state.get("notebook")
+    if notebook:
+        print(f"notebook:  {notebook}")
+    print(f"PID:       {pid} ({'alive' if alive else 'dead'})")
+    if args.show_token:
+        print(f"token:     {state.get('token')}")
+    else:
+        print("token:     (use --show-token to reveal)")
+
+
+def cmd_jupyter_mcp(args):
+    """Exec ``jupyter_mcp_server`` with env vars sourced from the saved state.
+
+    Intended to be invoked by Claude Code MCP configuration, not directly
+    by the user.
+    """
+    state = _load_jupyter_state()
+    if state is None:
+        print(
+            "emout jupyter mcp: no Jupyter session found. Run 'emout jupyter start [PATH]' first.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    url = state["url"]
+    token = state["token"]
+    notebook = state.get("notebook") or ""
+
+    env = os.environ.copy()
+    env["DOCUMENT_URL"] = url
+    env["DOCUMENT_TOKEN"] = token
+    env["RUNTIME_URL"] = url
+    env["RUNTIME_TOKEN"] = token
+    if notebook:
+        env["DOCUMENT_ID"] = notebook
+
+    os.execvpe(sys.executable, [sys.executable, "-m", "jupyter_mcp_server"], env)
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -406,6 +607,38 @@ def main():
     status.add_argument("--name", default=None, help="Named server session to inspect")
     status.add_argument("--all", action="store_true", help="Show all saved server sessions")
     status.set_defaults(func=cmd_server_status)
+
+    jup = sub.add_parser("jupyter", help="Manage the Jupyter server used by Claude Code MCP")
+    jup_sub = jup.add_subparsers(dest="jupyter_command")
+
+    jup_start = jup_sub.add_parser("start", help="Start Jupyter server and save state")
+    jup_start.add_argument(
+        "path",
+        nargs="?",
+        default=None,
+        help="Notebook file (.ipynb) or root directory (default: current directory)",
+    )
+    jup_start.add_argument("--port", type=int, default=8888, help="Port (default: 8888)")
+    jup_start.add_argument("--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)")
+    jup_start.add_argument("--token", default=None, help="Fixed token (default: random 32-hex)")
+    jup_start.set_defaults(func=cmd_jupyter_start)
+
+    jup_stop = jup_sub.add_parser("stop", help="Stop the running Jupyter server")
+    jup_stop.set_defaults(func=cmd_jupyter_stop)
+
+    jup_status = jup_sub.add_parser("status", help="Show Jupyter server status")
+    jup_status.add_argument(
+        "--show-token",
+        action="store_true",
+        help="Print the token (omit by default to avoid leaking to shared logs)",
+    )
+    jup_status.set_defaults(func=cmd_jupyter_status)
+
+    jup_mcp = jup_sub.add_parser(
+        "mcp",
+        help="Launch jupyter_mcp_server with saved credentials (for Claude Code MCP)",
+    )
+    jup_mcp.set_defaults(func=cmd_jupyter_mcp)
 
     args = parser.parse_args()
     if hasattr(args, "func"):
