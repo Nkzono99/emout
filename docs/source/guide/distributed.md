@@ -279,6 +279,25 @@ with remote_figure():
 # ← PNG displayed in Jupyter here
 ```
 
+#### Receiving a FigureProxy via `as fig`
+
+`remote_figure(...)` yields a `FigureProxy` bound to the `Figure` that
+will be constructed on the worker, so you can grab it with `as fig` and
+call `fig.add_axes(...)` directly. This skips `plt.figure()` entirely
+and is convenient when you need a multi-axes layout — for example, a 3D
+plot with a dedicated colorbar axes:
+
+```python
+with remote_figure(figsize=(13, 6), dpi=300) as fig:
+    ax = fig.add_axes([0.13, 0.11, 0.57, 0.78], projection="3d")
+    cax = fig.add_axes([0.74, 0.12, 0.025, 0.76])
+    data.phisp[-1].plot_surfaces(ax=ax, surfaces=data.boundaries)
+    ax.view_init(elev=36, azim=-110)
+    plt.colorbar(cax=cax, label=r"$\phi$ (V)")
+```
+
+`fig` is bound to a `FigureProxy` even when `figsize` is omitted.
+
 #### `open()` / `close()` style
 
 When adding `with` blocks to existing code is cumbersome, use `RemoteFigure`

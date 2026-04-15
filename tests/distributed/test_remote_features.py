@@ -656,6 +656,50 @@ def test_remote_figure_replays_figure_add_axes_plot3d_and_tick_params(monkeypatc
     assert displayed[0][0]
 
 
+def test_remote_figure_yields_figure_proxy_via_as_clause(monkeypatch):
+    from emout.distributed.remote_figure import FigureProxy, remote_figure
+    from emout.distributed import remote_render
+
+    displayed = []
+    session = FakeActorSession()
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+
+    with remote_figure(session=session, figsize=(5, 4)) as fig:
+        assert isinstance(fig, FigureProxy)
+        ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+        ax.plot([0.0, 1.0], [0.0, 1.0], color="black")
+        ax.set_xlabel("x")
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
+def test_remote_figure_yields_figure_proxy_without_figsize(monkeypatch):
+    from emout.distributed.remote_figure import FigureProxy, remote_figure
+    from emout.distributed import remote_render
+
+    displayed = []
+    session = FakeActorSession()
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+
+    with remote_figure(session=session) as fig:
+        assert isinstance(fig, FigureProxy)
+        ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+        ax.plot([0.0, 1.0], [1.0, 0.0])
+
+    assert len(displayed) == 1
+
+
 def test_remote_figure_supports_surface_cut_helpers(monkeypatch):
     from emout.distributed.remote_figure import remote_figure
     from emout.distributed import remote_render
@@ -905,8 +949,12 @@ def test_remote_figure_auto_creates_session_from_recorded_field_plot(monkeypatch
 
     assert len(commands_seen) == 1
     commands, fmt, dpi = commands_seen[0]
-    assert len(commands) == 1
-    kind, name, recipe_index, plot_kwargs, emout_kwargs = commands[0]
+    # remote_figure() always pre-records a plt.figure() so callers can
+    # bind it with ``as fig``; the field plot follows as the second command.
+    assert len(commands) == 2
+    assert commands[0][0] == "figure_call"
+    assert commands[0][2] == "figure"
+    kind, name, recipe_index, plot_kwargs, emout_kwargs = commands[1]
     assert kind == "field_plot"
     assert name == "phisp"
     assert recipe_index == (0, 0, slice(0, 2, 1), slice(0, 2, 1))

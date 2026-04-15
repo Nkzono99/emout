@@ -587,6 +587,12 @@ class RemoteFigure:
         data.phisp[-1, :, 100, :].plot()
         plt.xlabel("x [m]")
         rf.close()
+
+    After ``open()`` the ``fig`` attribute holds a :class:`FigureProxy`
+    that forwards calls to the matplotlib ``Figure`` constructed on the
+    worker, so callers can issue ``rf.fig.add_axes(...)`` or use the
+    ``remote_figure(...) as fig`` contextmanager form without going
+    through ``plt.figure()``.
     """
 
     def __init__(
@@ -606,6 +612,7 @@ class RemoteFigure:
         self.fmt = _resolve_output_format(fmt, self.savefilepath)
         self.dpi = dpi
         self.figsize = figsize
+        self.fig: Optional[FigureProxy] = None
         self._originals: dict[str, Any] = {}
         self._opened = False
 
@@ -641,10 +648,12 @@ class RemoteFigure:
         _commands = []
         _session = session
 
+        fig_kwargs: dict[str, Any] = {}
         if self.figsize is not None:
-            fig = FigureProxy(_next_proxy_id("fig"))
-            record_figure_call("figure", (), {"figsize": self.figsize}, target=fig)
-            _set_current(fig._remote_plot_id, None)
+            fig_kwargs["figsize"] = self.figsize
+        self.fig = FigureProxy(_next_proxy_id("fig"))
+        record_figure_call("figure", (), fig_kwargs, target=self.fig)
+        _set_current(self.fig._remote_plot_id, None)
 
         # Monkey-patch plt functions to record instead of execute
         import matplotlib.pyplot as plt
@@ -781,6 +790,7 @@ class RemoteFigure:
         for name, orig in self._originals.items():
             setattr(plt, name, orig)
         self._originals = {}
+        self.fig = None
 
         # Replay all commands on the shared session
         replay_session = self._init_session or _session
@@ -873,6 +883,15 @@ def remote_figure(
             plt.axhline(y=50, color="red")
             plt.xlabel("x [m]")
         # <- PNG is displayed in Jupyter
+
+    The context manager yields a :class:`FigureProxy` bound to a
+    ``Figure`` that is created on the worker, which lets callers build
+    the layout without going through ``plt.figure()``::
+
+        with remote_figure(figsize=(13, 6), dpi=300) as fig:
+            ax = fig.add_axes([0.1, 0.1, 0.6, 0.8], projection="3d")
+            cax = fig.add_axes([0.78, 0.15, 0.04, 0.7])
+            data.phisp[-1].plot_surfaces(ax=ax, surfaces=data.boundaries)
     """
     rf = RemoteFigure(
         session=session,
@@ -885,7 +904,7 @@ def remote_figure(
     )
     rf.open()
     try:
-        yield
+        yield rf.fig
     finally:
         rf.close()
 

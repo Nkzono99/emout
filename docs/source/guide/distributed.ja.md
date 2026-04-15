@@ -273,6 +273,24 @@ with remote_figure():
 # ← ここで PNG が Jupyter に表示される
 ```
 
+#### `as fig` で FigureProxy を受け取る
+
+`remote_figure(...)` はワーカー側に作られる `Figure` の `FigureProxy` を
+yield するため、`as fig` でそのまま受け取って `fig.add_axes(...)` 等を
+呼び出せます。`plt.figure()` を経由しなくても複数 axes のレイアウトを
+組めるので、カラーバー枠を分けた 3D プロットなどで便利です:
+
+```python
+with remote_figure(figsize=(13, 6), dpi=300) as fig:
+    ax = fig.add_axes([0.13, 0.11, 0.57, 0.78], projection="3d")
+    cax = fig.add_axes([0.74, 0.12, 0.025, 0.76])
+    data.phisp[-1].plot_surfaces(ax=ax, surfaces=data.boundaries)
+    ax.view_init(elev=36, azim=-110)
+    plt.colorbar(cax=cax, label=r"$\phi$ (V)")
+```
+
+`figsize` を省略した場合でも `fig` には `FigureProxy` がバインドされます。
+
 #### `open()` / `close()` 形式
 
 既存コードに `with` ブロックを追加するのが面倒な場合、`RemoteFigure` の
