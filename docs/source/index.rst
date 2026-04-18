@@ -5,7 +5,7 @@ emout
 
 .. include:: ../../README.md
    :parser: myst_parser.sphinx_
-   :start-after: [![License: MIT]
+   :start-after: ](LICENSE)
    :end-before: ## インストール
 
 .. toctree::
