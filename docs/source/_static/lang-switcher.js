@@ -5,27 +5,95 @@
  * - Filters the sidebar toctree to show only the active language.
  * - Persists the choice in localStorage.
  *
- * Guide pages use the *.ja.html / *.html naming convention.
+ * Page naming convention:
+ *   - Guide:  quickstart.ja.html (JA) / quickstart.html (EN mirror)
+ *   - Index:  index.html (JA)         / index.en.html (EN mirror)
  */
+const STORAGE_KEY = "emout-docs-lang";
+
+// Early redirect: if the user previously chose a language, send them to the
+// matching counterpart before the page paints. Runs at script-load time so
+// there is no flash of the wrong language.
+(function redirectToPreferredLang() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return;
+    const path = window.location.pathname;
+    const isGuide = path.includes("/guide/");
+    const isGuideJa = isGuide && path.endsWith(".ja.html");
+    const isGuideEn = isGuide && !isGuideJa;
+    const isIndexEn = /\/index\.en\.html$/.test(path);
+    const isIndexJa =
+      !isGuide && !isIndexEn && (path.endsWith("/") || /\/index\.html$/.test(path));
+
+    let target = null;
+    if (stored === "en" && isGuideJa) {
+      target = path.replace(/\.ja\.html$/, ".html");
+    } else if (stored === "ja" && isGuideEn) {
+      target = path.replace(/\.html$/, ".ja.html");
+    } else if (stored === "en" && isIndexJa) {
+      target = path.endsWith("/")
+        ? path + "index.en.html"
+        : path.replace(/\/index\.html$/, "/index.en.html");
+    } else if (stored === "ja" && isIndexEn) {
+      target = path.replace(/\/index\.en\.html$/, "/index.html");
+    }
+    if (target && target !== path) {
+      window.location.replace(target + window.location.hash);
+    }
+  } catch (_e) {
+    // Ignore — redirect is best-effort.
+  }
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
-  const STORAGE_KEY = "emout-docs-lang";
   const path = window.location.pathname;
-  const isJaPage = path.endsWith(".ja.html") || path.endsWith(".ja/");
 
-  // Determine initial language: page URL > localStorage > default ja
-  const lang = isJaPage ? "ja" : (localStorage.getItem(STORAGE_KEY) || "ja");
-
-  // Compute the counterpart URL (only for guide pages)
   const isGuide = path.includes("/guide/");
+  const isGuideJa = isGuide && path.endsWith(".ja.html");
+  const isGuideEn = isGuide && !isGuideJa;
+
+  const isIndexEn = /\/index\.en\.html$/.test(path);
+  const isIndex = !isGuide && (path.endsWith("/") || /\/index(\.en)?\.html$/.test(path));
+  const isIndexJa = isIndex && !isIndexEn;
+
+  // The current page's language, if it can be determined from the URL.
+  const pageLang = (isGuideJa || isIndexJa)
+    ? "ja"
+    : (isGuideEn || isIndexEn ? "en" : null);
+
+  // Prefer the page's own language over localStorage so that the selector
+  // reflects what the user is actually looking at. Non-localized pages
+  // (e.g. API reference) fall back to the stored preference.
+  const lang = pageLang || localStorage.getItem(STORAGE_KEY) || "ja";
+
+  // Keep localStorage in sync when landing on a localized page directly.
+  if (pageLang) {
+    localStorage.setItem(STORAGE_KEY, pageLang);
+  }
+
+  // Compute the counterpart URL in the target language (null if unavailable).
   function counterpartUrl(targetLang) {
-    if (!isGuide) return null;
-    if (targetLang === "ja" && !isJaPage) {
-      return path.replace(/\.html$/, ".ja.html");
+    if (isGuide) {
+      if (targetLang === "ja" && isGuideEn) {
+        return path.replace(/\.html$/, ".ja.html");
+      }
+      if (targetLang === "en" && isGuideJa) {
+        return path.replace(/\.ja\.html$/, ".html");
+      }
+      return null;
     }
-    if (targetLang === "en" && isJaPage) {
-      return path.replace(/\.ja\.html$/, ".html");
+    if (isIndex) {
+      if (targetLang === "en" && isIndexJa) {
+        if (path.endsWith("/")) return path + "index.en.html";
+        return path.replace(/\/index\.html$/, "/index.en.html");
+      }
+      if (targetLang === "ja" && isIndexEn) {
+        return path.replace(/\/index\.en\.html$/, "/index.html");
+      }
+      return null;
     }
-    return null; // already on the target language
+    return null;
   }
 
   // --- Sidebar filtering ---
@@ -35,28 +103,26 @@ document.addEventListener("DOMContentLoaded", () => {
       const a = li.querySelector("a");
       if (!a) return;
       const href = a.getAttribute("href") || "";
-      // Only filter guide entries (those linking to *.ja.html or guide/*.html)
       const isJaLink = href.endsWith(".ja.html") || href.includes(".ja.html");
       const isGuideLink = href.includes("guide/") || href.endsWith(".ja.html") ||
-        // relative links within guide pages
         /^(quickstart|plotting|animation|inp|units|boundaries|distributed)/.test(href);
 
       if (!isGuideLink) return; // don't touch API Reference etc.
 
+      // href="#" means the current page's self-link in the sidebar.
+      if (href === "#") {
+        if (activeLang === "ja") {
+          li.style.display = (isGuideJa || isIndexJa) ? "" : "none";
+        } else {
+          li.style.display = (isGuideJa || isIndexJa) ? "none" : "";
+        }
+        return;
+      }
+
       if (activeLang === "ja") {
-        li.style.display = isJaLink || li.classList.contains("current-page") && isJaPage ? "" : "none";
-        // Show Japanese entries; for current page (which uses # href), check page lang
-        if (href === "#") {
-          li.style.display = isJaPage ? "" : "none";
-        } else {
-          li.style.display = isJaLink ? "" : "none";
-        }
+        li.style.display = isJaLink ? "" : "none";
       } else {
-        if (href === "#") {
-          li.style.display = isJaPage ? "none" : "";
-        } else {
-          li.style.display = isJaLink ? "none" : "";
-        }
+        li.style.display = isJaLink ? "none" : "";
       }
     });
   }
@@ -84,14 +150,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const newLang = select.value;
       localStorage.setItem(STORAGE_KEY, newLang);
 
-      // Navigate to counterpart if on a guide page
       const url = counterpartUrl(newLang);
       if (url) {
         window.location.href = url;
       } else {
-        // Non-guide page: just update sidebar filtering
         filterSidebar(newLang);
-        // Sync all switcher dropdowns on the page
         document.querySelectorAll(".lang-switcher").forEach((s) => {
           s.value = newLang;
         });
@@ -122,6 +185,5 @@ document.addEventListener("DOMContentLoaded", () => {
     createSwitcher(wrapper);
   }
 
-  // --- Apply initial sidebar filter ---
   filterSidebar(lang);
 });

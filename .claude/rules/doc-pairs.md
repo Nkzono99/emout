@@ -10,6 +10,7 @@
 
 - `README.md`（canonical, JA）⇔ `README.en.md`（mirror, EN）
 - `CLAUDE.md`（canonical, JA）⇔ `AGENTS.md`（同一内容をコピー）
+- `docs/source/index.rst`（canonical, JA）⇔ `docs/source/index.en.rst`（mirror, EN, `:orphan:`）
 - `docs/source/guide/*.ja.md`（canonical, JA）⇔ `docs/source/guide/*.md`（mirror, EN）
   - `quickstart` / `plotting` / `animation` / `inp` / `units` / `boundaries` / `backtrace` / `distributed`
 
