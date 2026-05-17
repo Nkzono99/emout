@@ -171,6 +171,39 @@ result = data.backtrace.get_probabilities(
 )
 ```
 
+### MPI backend
+
+The default backend is unchanged and uses the threaded `vdsolverf.emses`
+functions.  When `vdist-solver-fortran[mpi]` is installed, you can opt in to
+particle-parallel MPI without changing the result object:
+
+```python
+# Use when the script itself is launched with MPI, e.g.
+# srun -n 8 python script.py
+result = data.backtrace.get_probabilities(
+    x=20.0, y=32.0, z=40.0,
+    vx=(-3e5, 3e5, 64),
+    vy=0.0,
+    vz=(-3e5, 3e5, 64),
+    max_step=10000,
+    parallel="mpi",
+    n_threads=2,
+)
+
+# Or launch Slurm from the current Python process.
+result = data.backtrace.get_probabilities(
+    x=20.0, y=32.0, z=40.0,
+    vx=(-3e5, 3e5, 64),
+    vy=0.0,
+    vz=(-3e5, 3e5, 64),
+    max_step=10000,
+    parallel="srun",
+    ntasks=8,
+    n_threads=2,
+    cpus_per_task=2,
+)
+```
+
 ### 2-D heatmap projections
 
 `result.pair(var1, var2)` integrates out the four unselected axes

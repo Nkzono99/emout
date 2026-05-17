@@ -165,6 +165,39 @@ result = data.backtrace.get_probabilities(
 )
 ```
 
+### MPI backend
+
+デフォルトは従来通り、`vdsolverf.emses` のスレッド並列 backend です。
+`vdist-solver-fortran[mpi]` を入れた環境では、結果オブジェクトを変えずに
+粒子並列 MPI backend を明示できます。
+
+```python
+# Python スクリプト自体を MPI 起動する場合:
+# srun -n 8 python script.py
+result = data.backtrace.get_probabilities(
+    x=20.0, y=32.0, z=40.0,
+    vx=(-3e5, 3e5, 64),
+    vy=0.0,
+    vz=(-3e5, 3e5, 64),
+    max_step=10000,
+    parallel="mpi",
+    n_threads=2,
+)
+
+# 通常の Python プロセスから Slurm に投げる場合:
+result = data.backtrace.get_probabilities(
+    x=20.0, y=32.0, z=40.0,
+    vx=(-3e5, 3e5, 64),
+    vy=0.0,
+    vz=(-3e5, 3e5, 64),
+    max_step=10000,
+    parallel="srun",
+    ntasks=8,
+    n_threads=2,
+    cpus_per_task=2,
+)
+```
+
 ### 2D ヒートマップへの射影
 
 `result.pair(var1, var2)` は選ばれていない 4 軸を台形則で積分し、

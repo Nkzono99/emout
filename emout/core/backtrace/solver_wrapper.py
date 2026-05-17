@@ -5,6 +5,7 @@ parameters, and optional Dask-based remote execution, then delegates
 to the underlying ODE solver.
 """
 
+from importlib import import_module
 from typing import Any, List, Sequence, Tuple, Union
 
 import numpy as np
@@ -14,6 +15,30 @@ from .multi_backtrace_result import MultiBacktraceResult
 from .probability_result import ProbabilityResult
 
 from emout.distributed.utils import run_backend
+
+
+def _select_vdsolverf_backend(name: str, kwargs: dict):
+    if "parallel" in kwargs:
+        parallel = kwargs.pop("parallel")
+    else:
+        parallel = kwargs.pop("backend", "thread")
+    if parallel is None:
+        parallel = "thread"
+    if callable(parallel):
+        return parallel
+
+    parallel_name = str(parallel).lower()
+    if parallel_name in ("thread", "threads", "openmp", "serial", "default"):
+        backend = import_module("vdsolverf.emses")
+        return getattr(backend, name)
+    if parallel_name == "mpi":
+        backend = import_module("vdsolverf.emses.mpi")
+        return getattr(backend, name)
+    if parallel_name in ("srun", "slurm"):
+        backend = import_module("vdsolverf.emses.mpi")
+        return getattr(backend, f"srun_{name}")
+
+    raise ValueError(f"parallel must be one of 'thread', 'mpi', 'srun', or a backend callable; got {parallel!r}")
 
 
 class BacktraceWrapper:
@@ -85,7 +110,8 @@ class BacktraceWrapper:
             Trajectory data containing times, probability, positions, and velocities.
         """
         from vdsolverf.core import Particle
-        from vdsolverf.emses import get_backtrace as _backend
+
+        _backend = _select_vdsolverf_backend("get_backtrace", kwargs)
 
         particle = Particle(position, velocity)
 
@@ -147,7 +173,8 @@ class BacktraceWrapper:
             Aggregated trajectory data for all particles.
         """
         from vdsolverf.core import Particle
-        from vdsolverf.emses import get_backtraces as _backend
+
+        _backend = _select_vdsolverf_backend("get_backtraces", kwargs)
 
         if positions.shape != velocities.shape:
             raise ValueError("positions and velocities must have the same shape")
@@ -217,7 +244,7 @@ class BacktraceWrapper:
         MultiBacktraceResult
             Aggregated trajectory data for all particles.
         """
-        from vdsolverf.emses import get_backtraces as _backend
+        _backend = _select_vdsolverf_backend("get_backtraces", kwargs)
 
         ts_list, probabilities, positions_list, velocities_list, last_indexes = run_backend(
             _backend,
@@ -331,7 +358,8 @@ class BacktraceWrapper:
                 return RemoteProbabilityResult(session, key)
 
         from vdsolverf.core import PhaseGrid
-        from vdsolverf.emses import get_probabilities as _backend
+
+        _backend = _select_vdsolverf_backend("get_probabilities", kwargs)
 
         phase_grid = PhaseGrid(x, y, z, vx, vy, vz)
         phases = phase_grid.create_grid()  # shape = (N_points, 6)
@@ -420,7 +448,8 @@ class BacktraceWrapper:
             Raw probability array returned by the backend.
         """
         from vdsolverf.core import Particle
-        from vdsolverf.emses import get_probabilities as _backend
+
+        _backend = _select_vdsolverf_backend("get_probabilities", kwargs)
 
         if positions.shape != velocities.shape:
             raise ValueError("positions and velocities must have the same shape")
@@ -477,7 +506,7 @@ class BacktraceWrapper:
         Any
             Raw probability array returned by the backend.
         """
-        from vdsolverf.emses import get_probabilities as _backend
+        _backend = _select_vdsolverf_backend("get_probabilities", kwargs)
 
         return run_backend(
             _backend,
