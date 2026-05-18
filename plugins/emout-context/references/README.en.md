@@ -6,7 +6,7 @@ Lang: [English](README.en.md) | [日本語](README.md)
 [![Python](https://img.shields.io/pypi/pyversions/emout.svg)](https://pypi.org/project/emout/)
 [![Docs](https://github.com/Nkzono99/emout/actions/workflows/docs.yaml/badge.svg)](https://nkzono99.github.io/emout/)
 [![CodeQL](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Nkzono99/emout/blob/main/LICENSE)
 
 **Python library for analyzing and visualizing [EMSES](https://github.com/Nkzono99/MPIEMSES3D) simulation outputs**
 
@@ -21,7 +21,7 @@ emout is:
 
 - **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](plugins/emout-context/README.en.md) — install with `emout codex install-plugin`, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](plugins/README.en.md))
+- **Codex plugin:** [emout Context](../README.en.md) — install with `emout codex install-plugin`, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](../../README.en.md))
 
 ---
 
@@ -260,13 +260,13 @@ Bug reports, feature requests, and pull requests are welcome.
 - **Pull requests:** branch off `main`, keep `pytest -q` green, and submit
 - **Docs:** `README.md` (Japanese) and `README.en.md` (English) are kept in sync — please update both
 
-The development environment and repo layout are covered in [AGENTS.md](AGENTS.md).
+The development environment and repo layout are covered in [AGENTS.md](https://github.com/Nkzono99/emout/blob/main/AGENTS.md).
 
 ---
 
 ## License
 
-[MIT License](LICENSE)
+[MIT License](https://github.com/Nkzono99/emout/blob/main/LICENSE)
 
 ## Links
 

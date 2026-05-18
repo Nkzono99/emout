@@ -6,7 +6,7 @@ Lang: [日本語](README.md) | [English](README.en.md)
 [![Python](https://img.shields.io/pypi/pyversions/emout.svg)](https://pypi.org/project/emout/)
 [![Docs](https://github.com/Nkzono99/emout/actions/workflows/docs.yaml/badge.svg)](https://nkzono99.github.io/emout/)
 [![CodeQL](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Nkzono99/emout/blob/main/LICENSE)
 
 **[EMSES](https://github.com/Nkzono99/MPIEMSES3D) シミュレーション出力の解析・可視化 Python ライブラリ**
 
@@ -21,7 +21,7 @@ emout でできること:
 
 - **ドキュメント:** [ユーザーガイド (日本語/English)](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](plugins/emout-context/README.md) — `emout codex install-plugin` で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを Codex に相談できます（[導入手順](plugins/README.md)）
+- **Codex plugin:** [emout Context](../README.md) — `emout codex install-plugin` で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを Codex に相談できます（[導入手順](../../README.md)）
 
 ---
 
@@ -255,13 +255,13 @@ result.vxvz.plot()
 - **PR:** `main` から作業ブランチを切り、`pytest -q` がグリーンの状態で送ってください
 - **ドキュメント:** `README.md`（日本語）と `README.en.md`（英語）は対応する形で維持されています。片方を更新したらもう片方にも反映してください
 
-開発環境のセットアップやディレクトリ構成は [AGENTS.md](AGENTS.md) にまとまっています。
+開発環境のセットアップやディレクトリ構成は [AGENTS.md](https://github.com/Nkzono99/emout/blob/main/AGENTS.md) にまとまっています。
 
 ---
 
 ## ライセンス
 
-[MIT License](LICENSE)
+[MIT License](https://github.com/Nkzono99/emout/blob/main/LICENSE)
 
 ## リンク
 

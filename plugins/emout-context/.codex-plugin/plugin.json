@@ -1,0 +1,40 @@
+{
+  "name": "emout-context",
+  "version": "0.1.0",
+  "description": "Context, workflows, and skills for emout users analyzing EMSES simulation outputs.",
+  "author": {
+    "name": "Nkzono99",
+    "email": "j-nakazono@stu.kobe-u.ac.jp",
+    "url": "https://github.com/Nkzono99"
+  },
+  "homepage": "https://github.com/Nkzono99/emout/tree/main/plugins/emout-context",
+  "repository": "https://github.com/Nkzono99/emout",
+  "license": "MIT",
+  "keywords": [
+    "emout",
+    "emses",
+    "hdf5",
+    "visualization",
+    "simulation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "emout Context",
+    "shortDescription": "User-facing guidance for loading, plotting, scripting, diagnosing, and reporting emout analyses.",
+    "longDescription": "Skills and bundled references for using emout with EMSES outputs: loading HDF5 grids and text diagnostics, slicing data in the correct axis order, applying SI conversion, generating and improving visualization scripts, using boundary meshes, remote_scope, remote_figure, and RemoteFigure for large HPC outputs, diagnosing common failures, reviewing analysis scripts, collecting maintainer-ready feedback, and preparing concise GitHub issues.",
+    "developerName": "Nkzono99",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/Nkzono99/emout",
+    "defaultPrompt": [
+      "Create an emout visualization script for this EMSES output directory.",
+      "Diagnose this emout loading or plotting error.",
+      "Improve my emout analysis script and use remote_figure for large data.",
+      "Draft feedback for an emout bug or improvement request."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

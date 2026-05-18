@@ -16,14 +16,18 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import os
 import secrets
+import shlex
 import shutil
 import signal
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +44,14 @@ from emout.distributed.server_state import (
 )
 
 
+CODEX_PLUGIN_MARKETPLACE_NAME = "emout"
+CODEX_PLUGIN_DISPLAY_NAME = "emout Context"
+CODEX_PLUGIN_DEFAULT_SOURCE = "Nkzono99/emout"
+CODEX_PLUGIN_DEFAULT_REF = "main"
+CODEX_PLUGIN_SPARSE_PATHS = (".agents/plugins", "plugins/emout-context")
+PYPI_JSON_URL = "https://pypi.org/pypi/emout/json"
+
+
 def _save_state(data: dict, *, name: str | None = None, make_active: bool = True) -> dict:
     """Persist server state."""
     return save_server_state(data, name=name, make_active=make_active)
@@ -53,6 +65,81 @@ def _load_state(name: str | None = None) -> dict[str, Any] | None:
 def _clear_state(name: str | None = None) -> None:
     """Remove persisted server state."""
     clear_server_state(name)
+
+
+def _get_installed_version(package: str = "emout") -> str:
+    """Return the installed package version."""
+    return importlib.metadata.version(package)
+
+
+def _fetch_latest_pypi_version(url: str = PYPI_JSON_URL, timeout: float = 3.0) -> str:
+    """Fetch the latest emout version from the PyPI JSON API."""
+    request = urllib.request.Request(url, headers={"User-Agent": f"emout/{_get_installed_version()} update-check"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    return str(payload["info"]["version"])
+
+
+def _compare_versions(current: str, latest: str) -> int:
+    """Compare two version strings.
+
+    Returns ``-1`` when *current* is older, ``0`` when equal, and ``1`` when
+    *current* is newer. Prefer ``packaging`` when available, but keep the CLI
+    dependency-free for normal installs.
+    """
+    try:
+        from packaging.version import InvalidVersion, Version
+
+        try:
+            current_version = Version(current)
+            latest_version = Version(latest)
+        except InvalidVersion:
+            raise ValueError
+        return (current_version > latest_version) - (current_version < latest_version)
+    except Exception:
+        if current == latest:
+            return 0
+        return _compare_simple_versions(current, latest)
+
+
+def _compare_simple_versions(current: str, latest: str) -> int:
+    """Best-effort comparison for simple dotted numeric versions."""
+    current_parts = _simple_version_parts(current)
+    latest_parts = _simple_version_parts(latest)
+    return (current_parts > latest_parts) - (current_parts < latest_parts)
+
+
+def _simple_version_parts(version: str) -> tuple[int, ...]:
+    """Extract numeric version components for fallback comparison."""
+    import re
+
+    parts = [int(part) for part in re.findall(r"\d+", version)]
+    return tuple(parts or [0])
+
+
+def cmd_version(args):
+    """Print the installed emout version and optionally check PyPI."""
+    current = _get_installed_version()
+    print(f"emout {current}")
+
+    if not args.check_update:
+        return
+
+    try:
+        latest = _fetch_latest_pypi_version(timeout=args.timeout)
+    except (OSError, urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError) as exc:
+        print(f"Could not check PyPI for updates: {exc}")
+        return
+
+    print(f"Latest PyPI version: {latest}")
+    comparison = _compare_versions(current, latest)
+    if comparison < 0:
+        print("Update available.")
+        print("Run: python -m pip install -U emout")
+    elif comparison == 0:
+        print("You are using the latest PyPI version.")
+    else:
+        print("Installed version is newer than the latest PyPI release.")
 
 
 def _pid_is_alive(pid: int | None) -> bool:
@@ -560,6 +647,130 @@ def cmd_jupyter_mcp(args):
 
 
 # ---------------------------------------------------------------------------
+# codex plugin install / upgrade
+# ---------------------------------------------------------------------------
+
+
+def _print_codex_cli_install_hint() -> None:
+    """Print a short Codex CLI installation hint."""
+    print("Codex CLI was not found on PATH.")
+    print()
+    print("Install Codex CLI first, then run this command again:")
+    print("  npm install -g @openai/codex")
+    print("  codex --login")
+    print("  emout codex install-plugin")
+    print()
+    print("Official Codex CLI guide:")
+    print("  https://help.openai.com/en/articles/11096431-openai-codex-ligetting-started")
+
+
+def _print_codex_plugin_next_steps() -> None:
+    """Print the manual enablement steps required after marketplace registration."""
+    print()
+    print("Next steps:")
+    print("  1. Run: codex")
+    print("  2. Open /plugins inside Codex")
+    print(f"  3. Install '{CODEX_PLUGIN_DISPLAY_NAME}'")
+    print("  4. Restart Codex")
+    print()
+    print("After restart, you can ask from a simulation output directory, for example:")
+    print("  emout で phisp を xz 平面に可視化する script を作って。remote_figure を使って。")
+
+
+def _require_codex_cli() -> None:
+    """Exit with installation guidance when the Codex CLI is unavailable."""
+    if shutil.which("codex") is None:
+        _print_codex_cli_install_hint()
+        sys.exit(1)
+
+
+def _codex_marketplace_add_command(args) -> list[str]:
+    """Build the `codex plugin marketplace add` command for emout."""
+    local = getattr(args, "local", None)
+    if local:
+        return ["codex", "plugin", "marketplace", "add", str(Path(local).expanduser())]
+
+    command = ["codex", "plugin", "marketplace", "add", args.source]
+    if args.ref:
+        command.extend(["--ref", args.ref])
+    for sparse_path in CODEX_PLUGIN_SPARSE_PATHS:
+        command.extend(["--sparse", sparse_path])
+    return command
+
+
+def _run_codex_command(command: list[str]) -> None:
+    """Run a Codex CLI command and surface a concise failure."""
+    try:
+        subprocess.run(command, check=True)
+    except FileNotFoundError:
+        _print_codex_cli_install_hint()
+        sys.exit(1)
+    except subprocess.CalledProcessError as exc:
+        print()
+        print(f"Codex CLI command failed with exit code {exc.returncode}:")
+        print(f"  {shlex.join(command)}")
+        print()
+        print("If the marketplace is already registered, update it with:")
+        print("  emout codex upgrade-plugin")
+        sys.exit(exc.returncode or 1)
+
+
+def cmd_codex_install_plugin(args):
+    """Register the emout Codex plugin marketplace."""
+    _require_codex_cli()
+    command = _codex_marketplace_add_command(args)
+    print("Registering the emout Codex plugin marketplace:")
+    print(f"  {shlex.join(command)}")
+
+    if getattr(args, "dry_run", False):
+        _print_codex_plugin_next_steps()
+        return
+
+    _run_codex_command(command)
+    print()
+    print("Marketplace registered.")
+    _print_codex_plugin_next_steps()
+
+
+def cmd_codex_upgrade_plugin(args):
+    """Upgrade the registered emout Codex plugin marketplace."""
+    _require_codex_cli()
+    marketplace = getattr(args, "marketplace", CODEX_PLUGIN_MARKETPLACE_NAME)
+    command = ["codex", "plugin", "marketplace", "upgrade", marketplace]
+    print("Upgrading the emout Codex plugin marketplace:")
+    print(f"  {shlex.join(command)}")
+
+    if getattr(args, "dry_run", False):
+        return
+
+    _run_codex_command(command)
+    print()
+    print("Marketplace upgraded. Restart Codex after upgrading installed plugins.")
+
+
+def _add_codex_install_args(parser: argparse.ArgumentParser) -> None:
+    """Add shared options for plugin marketplace installation commands."""
+    parser.add_argument(
+        "--source",
+        default=CODEX_PLUGIN_DEFAULT_SOURCE,
+        help=f"GitHub repo, Git URL, or Codex marketplace source (default: {CODEX_PLUGIN_DEFAULT_SOURCE})",
+    )
+    parser.add_argument(
+        "--ref",
+        default=CODEX_PLUGIN_DEFAULT_REF,
+        help=f"Git ref for --source (default: {CODEX_PLUGIN_DEFAULT_REF})",
+    )
+    parser.add_argument(
+        "--local",
+        nargs="?",
+        const=".",
+        default=None,
+        help="Register a local emout checkout as the marketplace root instead of GitHub",
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Print the Codex CLI command without running it")
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -568,6 +779,20 @@ def main():
     """Entry point for the ``emout`` CLI."""
     parser = argparse.ArgumentParser(prog="emout", description="emout CLI")
     sub = parser.add_subparsers(dest="command")
+
+    version_parser = sub.add_parser("version", help="Show emout version")
+    version_parser.add_argument(
+        "--check-update",
+        action="store_true",
+        help="Check PyPI for a newer emout release",
+    )
+    version_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=3.0,
+        help="PyPI update-check timeout in seconds (default: 3)",
+    )
+    version_parser.set_defaults(func=cmd_version)
 
     inspect_parser = sub.add_parser("inspect", help="Show simulation metadata")
     inspect_parser.add_argument(
@@ -639,6 +864,30 @@ def main():
         help="Launch jupyter_mcp_server with saved credentials (for Claude Code MCP)",
     )
     jup_mcp.set_defaults(func=cmd_jupyter_mcp)
+
+    codex = sub.add_parser("codex", help="Install or update the emout Codex plugin")
+    codex_sub = codex.add_subparsers(dest="codex_command")
+
+    codex_install = codex_sub.add_parser("install-plugin", help="Register the emout Codex plugin marketplace")
+    _add_codex_install_args(codex_install)
+    codex_install.set_defaults(func=cmd_codex_install_plugin)
+
+    codex_upgrade = codex_sub.add_parser("upgrade-plugin", help="Upgrade the registered emout Codex plugin marketplace")
+    codex_upgrade.add_argument(
+        "marketplace",
+        nargs="?",
+        default=CODEX_PLUGIN_MARKETPLACE_NAME,
+        help=f"Marketplace name to upgrade (default: {CODEX_PLUGIN_MARKETPLACE_NAME})",
+    )
+    codex_upgrade.add_argument("--dry-run", action="store_true", help="Print the Codex CLI command without running it")
+    codex_upgrade.set_defaults(func=cmd_codex_upgrade_plugin)
+
+    install_codex_plugin = sub.add_parser(
+        "install-codex-plugin",
+        help="Alias for 'emout codex install-plugin'",
+    )
+    _add_codex_install_args(install_codex_plugin)
+    install_codex_plugin.set_defaults(func=cmd_codex_install_plugin)
 
     args = parser.parse_args()
     if hasattr(args, "func"):

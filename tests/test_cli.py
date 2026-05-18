@@ -203,6 +203,56 @@ class TestArgParsing:
         assert args.all is False
 
 
+class TestVersionCli:
+    """Tests for version display and update checking."""
+
+    def test_compare_versions(self):
+        assert cli._compare_versions("2.14.0", "2.14.1") < 0
+        assert cli._compare_versions("2.14.0", "2.14.0") == 0
+        assert cli._compare_versions("2.15.0", "2.14.9") > 0
+
+    def test_version_without_update_check(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli, "_get_installed_version", lambda package="emout": "2.14.0")
+
+        cli.cmd_version(SimpleNamespace(check_update=False, timeout=3.0))
+
+        out = capsys.readouterr().out
+        assert out == "emout 2.14.0\n"
+
+    def test_version_check_update_available(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli, "_get_installed_version", lambda package="emout": "2.14.0")
+        monkeypatch.setattr(cli, "_fetch_latest_pypi_version", lambda timeout=3.0: "2.15.0")
+
+        cli.cmd_version(SimpleNamespace(check_update=True, timeout=3.0))
+
+        out = capsys.readouterr().out
+        assert "emout 2.14.0" in out
+        assert "Latest PyPI version: 2.15.0" in out
+        assert "Update available" in out
+        assert "python -m pip install -U emout" in out
+
+    def test_version_check_latest(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli, "_get_installed_version", lambda package="emout": "2.14.0")
+        monkeypatch.setattr(cli, "_fetch_latest_pypi_version", lambda timeout=3.0: "2.14.0")
+
+        cli.cmd_version(SimpleNamespace(check_update=True, timeout=3.0))
+
+        assert "latest PyPI version" in capsys.readouterr().out
+
+    def test_version_check_handles_network_failure(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli, "_get_installed_version", lambda package="emout": "2.14.0")
+
+        def fail(timeout=3.0):
+            raise OSError("network unavailable")
+
+        monkeypatch.setattr(cli, "_fetch_latest_pypi_version", fail)
+
+        cli.cmd_version(SimpleNamespace(check_update=True, timeout=3.0))
+
+        out = capsys.readouterr().out
+        assert "Could not check PyPI" in out
+
+
 # ===================================================================
 # cmd_server_start
 # ===================================================================
@@ -749,3 +799,71 @@ class TestJupyterCli:
         monkeypatch.setattr("sys.argv", ["emout", "jupyter", "status", "--show-token"])
         cli.main()
         assert "secretvalue" in capsys.readouterr().out
+
+
+class TestCodexPluginCli:
+    """Tests for emout Codex plugin installation helpers."""
+
+    def test_marketplace_add_command_uses_sparse_github_source(self):
+        args = SimpleNamespace(local=None, source="Nkzono99/emout", ref="main")
+        command = cli._codex_marketplace_add_command(args)
+
+        assert command == [
+            "codex",
+            "plugin",
+            "marketplace",
+            "add",
+            "Nkzono99/emout",
+            "--ref",
+            "main",
+            "--sparse",
+            ".agents/plugins",
+            "--sparse",
+            "plugins/emout-context",
+        ]
+
+    def test_marketplace_add_command_uses_local_checkout(self, tmp_path):
+        args = SimpleNamespace(local=str(tmp_path), source="ignored", ref="ignored")
+        command = cli._codex_marketplace_add_command(args)
+
+        assert command == ["codex", "plugin", "marketplace", "add", str(tmp_path)]
+
+    def test_install_plugin_missing_codex_prints_install_hint(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli.shutil, "which", lambda name: None)
+        args = SimpleNamespace(local=None, source="Nkzono99/emout", ref="main", dry_run=False)
+
+        with pytest.raises(SystemExit) as excinfo:
+            cli.cmd_codex_install_plugin(args)
+
+        assert excinfo.value.code == 1
+        out = capsys.readouterr().out
+        assert "Codex CLI was not found" in out
+        assert "npm install -g @openai/codex" in out
+
+    def test_install_plugin_runs_codex_and_prints_next_steps(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli.shutil, "which", lambda name: "/usr/bin/codex")
+        calls = []
+
+        def fake_run(command, check):
+            calls.append((command, check))
+
+        monkeypatch.setattr(cli.subprocess, "run", fake_run)
+        args = SimpleNamespace(local=None, source="Nkzono99/emout", ref="main", dry_run=False)
+
+        cli.cmd_codex_install_plugin(args)
+
+        assert calls == [(cli._codex_marketplace_add_command(args), True)]
+        out = capsys.readouterr().out
+        assert "Marketplace registered" in out
+        assert "Open /plugins" in out
+        assert "emout Context" in out
+
+    def test_upgrade_plugin_runs_codex_upgrade(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli.shutil, "which", lambda name: "/usr/bin/codex")
+        calls = []
+        monkeypatch.setattr(cli.subprocess, "run", lambda command, check: calls.append((command, check)))
+
+        cli.cmd_codex_upgrade_plugin(SimpleNamespace(marketplace="emout", dry_run=False))
+
+        assert calls == [(["codex", "plugin", "marketplace", "upgrade", "emout"], True)]
+        assert "Marketplace upgraded" in capsys.readouterr().out

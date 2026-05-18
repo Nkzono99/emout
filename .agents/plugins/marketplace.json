@@ -1,0 +1,20 @@
+{
+  "name": "emout",
+  "interface": {
+    "displayName": "emout Plugins"
+  },
+  "plugins": [
+    {
+      "name": "emout-context",
+      "source": {
+        "source": "local",
+        "path": "./plugins/emout-context"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
