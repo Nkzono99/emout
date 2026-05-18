@@ -13,6 +13,7 @@ ParticleData, ParticleDataSeries, MultiParticleDataSeries
 """
 
 from .data import Data, Data1d, Data2d, Data3d, Data4d
+from emout.local_data_policy import LocalDataAccessDisabledError
 from .vector_data import VectorData, VectorData2d, VectorData3d
 from .griddata_series import GridDataSelection, GridDataSeries
 from .particle_data import ParticleData

@@ -16,6 +16,16 @@ import logging as _logging
 from .core import data
 from .core.data import VectorData, VectorData2d, VectorData3d
 from .core.facade import Emout
+from .local_data_policy import (
+    LocalDataAccessDisabledError,
+    disable_local_data_access,
+    enable_local_data_access,
+    get_local_data_policy,
+    is_local_data_access_disabled,
+    local_data_policy,
+    reset_local_data_policy,
+    set_local_data_policy,
+)
 from .utils.emsesinp import InpFile, UnitConversionKey
 from .utils.units import Units
 

@@ -166,6 +166,11 @@ emout server start --partition gr20001a --memory 60G
 制限されます。追加セッションが必要な場合は
 `emout server start --allow-multiple --name <session>` を使ってください。
 
+ログインノードで field 配列を誤ってローカル materialize したくない場合は、
+`emout.disable_local_data_access()` または
+`EMOUT_LOCAL_DATA_POLICY=remote_required` を使えます。`Emout(...,
+local_data_policy="allow")` で小さいデータだけ明示的にローカル読み込みを許可できます。
+
 ```python
 import matplotlib.pyplot as plt
 import emout

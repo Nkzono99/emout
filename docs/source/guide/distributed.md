@@ -115,6 +115,47 @@ compatibility mode. The compat mode only follows the active/default
 session. For additional named sessions, connect explicitly. The compat
 workflow is summarized later under "Data-transfer mode".
 
+### Disable local field reads
+
+When you do not want a login node to accidentally materialize a large
+field array, disable local field-data access:
+
+```python
+import emout
+
+emout.disable_local_data_access()
+
+data = emout.Emout("output_dir")
+data.phisp[-1].materialize()  # LocalDataAccessDisabledError
+```
+
+The setting also applies to existing `Emout` instances. Pass
+`Emout(..., local_data_policy="allow")` when a specific small dataset is
+allowed to read fields locally:
+
+```python
+small = emout.Emout("small_output", local_data_policy="allow")
+```
+
+Use the context manager for temporary exceptions:
+
+```python
+with emout.local_data_policy("allow"):
+    small_slice = data.phisp[-1, :10, :10, :10]
+```
+
+To enforce the policy for a whole shell session, set:
+
+```bash
+export EMOUT_LOCAL_DATA_POLICY=remote_required
+```
+
+Metadata access such as `data.phisp.shape` and `data.phisp.grid_shape`
+still works under `remote_required`. Analyses that need actual field data
+should use `data.remote()` / `RemoteRef`. When a remote session is
+available, `plot()` returns an image to the client instead of transferring
+the field array.
+
 ### 3. Stop the server
 
 ```bash

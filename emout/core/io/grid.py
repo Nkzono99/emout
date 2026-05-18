@@ -19,6 +19,8 @@ import numpy as np
 from tqdm import tqdm as _tqdm_terminal
 from tqdm.notebook import tqdm as _tqdm_notebook
 
+from emout.local_data_policy import normalize_local_data_policy
+
 from ..data.griddata_series import GridDataSeries
 from ..data.vector_data import VectorData2d, VectorData3d
 from ..relocation.electric import relocated_electric_field
@@ -53,7 +55,12 @@ class GridDataLoader:
     ``rb*``), and multi-axis vector fields (``{name}xy``, ``{name}xyz``).
     """
 
-    def __init__(self, dir_inspector: DirectoryInspector, name2unit_map: dict[str, Any]):
+    def __init__(
+        self,
+        dir_inspector: DirectoryInspector,
+        name2unit_map: dict[str, Any],
+        local_data_policy: str | None = None,
+    ):
         """Initialize the loader.
 
         Parameters
@@ -65,6 +72,7 @@ class GridDataLoader:
         """
         self.dir_inspector = dir_inspector
         self.name2unit_map = name2unit_map
+        self.local_data_policy = normalize_local_data_policy(local_data_policy)
 
     def load(self, name: str) -> Any:
         """Load grid data by name, handling relocated and vector fields.
@@ -182,6 +190,7 @@ class GridDataLoader:
             tunit=tunit,
             axisunit=axisunit,
             valunit=valunit,
+            local_data_policy=self.local_data_policy,
         )
         series._emout_dir = str(self.dir_inspector.main_directory)
         series._emout_open_kwargs = {
@@ -189,6 +198,7 @@ class GridDataLoader:
             "append_directories": [str(path) for path in self.dir_inspector.append_directories],
             "inpfilename": self.dir_inspector.inpfilename,
             "output_directory": str(self.dir_inspector.main_directory),
+            "local_data_policy": "allow",
         }
         if self.dir_inspector.input_path is not None:
             series._emout_open_kwargs["input_path"] = str(self.dir_inspector.input_path)

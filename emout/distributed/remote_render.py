@@ -19,6 +19,8 @@ from typing import Any, Optional
 
 import numpy as np
 
+from emout.local_data_policy import LOCAL_DATA_POLICY_ALLOW
+
 _key_counter = itertools.count()
 _REMOTE_REF_MARKER = "__remote_ref__"
 _scope_stack: list["RemoteScope"] = []
@@ -107,6 +109,7 @@ class RemoteSession:
         """Lazy-load and cache an Emout instance by its normalized kwargs."""
         import json as _json
 
+        emout_kwargs = {**emout_kwargs, "local_data_policy": LOCAL_DATA_POLICY_ALLOW}
         cache_key = _json.dumps(emout_kwargs, sort_keys=True)
         if cache_key not in self._instances:
             import emout
@@ -1849,6 +1852,8 @@ def _normalize_emout_kwargs(
             normalized["output_directory"] = str(Path(emout_dir).resolve())
     else:
         normalized = dict(emout_kwargs)
+
+    normalized["local_data_policy"] = LOCAL_DATA_POLICY_ALLOW
 
     for key in ("directory", "input_path", "output_directory"):
         value = normalized.get(key)

@@ -15,9 +15,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
+from emout.local_data_policy import (
+    require_local_data_access,
+    is_local_data_access_disabled,
+    normalize_local_data_policy,
+)
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo, UnitTranslator
 
+from ._base import _REMOTE_PLOT_HANDLED
 from .data import Data1d, Data2d, Data3d, Data4d
 
 _MATERIALIZED_UNSET = object()
@@ -137,6 +143,7 @@ class GridDataSeries:
         tunit: UnitTranslator = None,
         axisunit: UnitTranslator = None,
         valunit: UnitTranslator = None,
+        local_data_policy: Union[str, None] = None,
     ):
         """Create a 3-D time-series data object.
 
@@ -156,6 +163,7 @@ class GridDataSeries:
         self.tunit = tunit
         self.axisunit = axisunit
         self.valunit = valunit
+        self._local_data_policy = normalize_local_data_policy(local_data_policy)
 
         self.name = name
         self._emout_dir = None  # set by GridLoader to enable remote rendering
@@ -204,6 +212,7 @@ class GridDataSeries:
         numpy.ndarray
             Time-series data for the specified range.
         """
+        self._require_local_data_access("read time series", f"{self.name}.time_series")
         series = []
         indexes = sorted(self._index2key.keys())
         for index in indexes:
@@ -238,6 +247,16 @@ class GridDataSeries:
         return self._grid_shape
 
     @property
+    def shape(self) -> Tuple[int, int, int, int]:
+        """Return the logical 4-D shape as ``(t, z, y, x)`` without reading data."""
+        return (len(self), *self.grid_shape)
+
+    @property
+    def ndim(self) -> int:
+        """Return the number of logical dimensions."""
+        return 4
+
+    @property
     def lazy(self) -> "GridDataSelection":
         """Return a lazy 4-D selector for staged indexing.
 
@@ -251,11 +270,15 @@ class GridDataSeries:
 
     def _read_selection(self, index: int, spatial_item) -> np.ndarray:
         """Read only the requested spatial subset for one timestep."""
+        self._require_local_data_access("read field data", f"{self.name}[{index}]")
         if index not in self._index2key:
             raise IndexError(f"Time index {index} does not exist. Available indices: {sorted(self._index2key.keys())}")
 
         key = self._index2key[index]
         return np.array(self.group[key][spatial_item])
+
+    def _require_local_data_access(self, operation: str, target: Union[str, None] = None) -> None:
+        require_local_data_access(self._local_data_policy, operation, target)
 
     def _create_data_with_index(self, index: int) -> Data3d:
         """Create a Data3d snapshot for the given time index.
@@ -444,6 +467,7 @@ class MultiGridDataSeries(GridDataSeries):
         self._grid_shape = self.series[0].grid_shape
         self._emout_dir = getattr(self.series[0], "_emout_dir", None)
         self._emout_open_kwargs = getattr(self.series[0], "_emout_open_kwargs", None)
+        self._local_data_policy = getattr(self.series[0], "_local_data_policy", None)
 
     def __repr__(self) -> str:
         return f"<MultiGridDataSeries: name={self.name!r}, timesteps={len(self)}, segments={len(self.series)}>"
@@ -499,6 +523,7 @@ class MultiGridDataSeries(GridDataSeries):
         numpy.ndarray
             Time-series data for the specified range.
         """
+        self._require_local_data_access("read time series", f"{self.name}.time_series")
         series = np.concatenate([data.time_series(x, y, z) for data in self.series])
         return series
 
@@ -588,6 +613,7 @@ class MultiGridDataSeries(GridDataSeries):
 
     def _read_selection(self, index: int, spatial_item) -> np.ndarray:
         """Read only the requested spatial subset for one timestep."""
+        self._require_local_data_access("read field data", f"{self.name}[{index}]")
         if index < 0:
             index += len(self)
         if index < 0 or index >= len(self):
@@ -650,6 +676,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
         self.valunit = series.valunit
         self._emout_dir = getattr(series, "_emout_dir", None)
         self._emout_open_kwargs = getattr(series, "_emout_open_kwargs", None)
+        self._local_data_policy = getattr(series, "_local_data_policy", None)
         self._axis_lengths = (len(series), *series.grid_shape)
         self._materialized = _MATERIALIZED_UNSET
 
@@ -750,31 +777,40 @@ class GridDataSelection(NDArrayOperatorsMixin):
         return self.shape[0]
 
     def __iter__(self):
+        self._require_local_data_access("iterate materialized field data", self._target_name())
         return iter(self.materialize())
 
     def __getattr__(self, name):
+        if name in {"__array_interface__", "__array_struct__"}:
+            raise AttributeError(name)
+        self._require_local_data_access("access materialized field attribute", f"{self._target_name()}.{name}")
         return getattr(self.materialize(), name)
 
     def __array__(self, dtype=None):
+        self._require_local_data_access("convert field data to a NumPy array", self._target_name())
         array = self.materialize()
         if hasattr(array, "to_numpy"):
             array = array.to_numpy()
         return np.asarray(array, dtype=dtype)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        self._require_local_data_access("apply a NumPy ufunc to field data", self._target_name())
         resolved_inputs = tuple(_materialize_nested(value) for value in inputs)
         resolved_kwargs = {key: _materialize_nested(value) for key, value in kwargs.items()}
         return getattr(ufunc, method)(*resolved_inputs, **resolved_kwargs)
 
     def __array_function__(self, func, types, args, kwargs):
+        self._require_local_data_access("apply a NumPy function to field data", self._target_name())
         resolved_args = tuple(_materialize_nested(value) for value in args)
         resolved_kwargs = {key: _materialize_nested(value) for key, value in kwargs.items()}
         return func(*resolved_args, **resolved_kwargs)
 
     def __reduce__(self):
+        self._require_local_data_access("pickle materialized field data", self._target_name())
         return self.materialize().__reduce__()
 
     def __reduce_ex__(self, protocol):
+        self._require_local_data_access("pickle materialized field data", self._target_name())
         return self.materialize().__reduce_ex__(protocol)
 
     def _expand_item(self, item):
@@ -795,6 +831,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
     def __getitem__(self, item):
         if self._materialized is not _MATERIALIZED_UNSET:
+            self._require_local_data_access("slice materialized field data", self._target_name())
             return self.materialize()[item]
 
         item = self._expand_item(item)
@@ -808,7 +845,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
             selectors[axis] = _compose_selector(selectors[axis], sub_selector, self._axis_lengths[axis])
 
         result = type(self)(self.series, tuple(selectors))
-        if result.ndim <= 3:
+        if result.ndim <= 3 and not result._local_data_access_disabled():
             return result.materialize()
         return result
 
@@ -828,6 +865,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
     def to_numpy(self) -> np.ndarray:
         """Materialise the current selection as a plain NumPy array."""
+        self._require_local_data_access("convert field data to a NumPy array", self._target_name())
         array = self.materialize()
         if hasattr(array, "to_numpy"):
             return array.to_numpy()
@@ -835,6 +873,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
     def materialize(self):
         """Materialise the current selection as a Data object or scalar."""
+        self._require_local_data_access("materialize field data locally", self._target_name())
         if self._materialized is not _MATERIALIZED_UNSET:
             return self._materialized
 
@@ -876,11 +915,13 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
         data._emout_dir = self._emout_dir
         data._emout_open_kwargs = self._emout_open_kwargs
+        data._local_data_policy = self._local_data_policy
         self._materialized = data
         return data
 
     def min(self):
         """Return the minimum value without materialising the full 4-D array."""
+        self._require_local_data_access("compute a local field minimum", self._target_name())
         if self._materialized is not _MATERIALIZED_UNSET:
             return self.materialize().min()
 
@@ -898,6 +939,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
     def max(self):
         """Return the maximum value without materialising the full 4-D array."""
+        self._require_local_data_access("compute a local field maximum", self._target_name())
         if self._materialized is not _MATERIALIZED_UNSET:
             return self.materialize().max()
 
@@ -925,6 +967,7 @@ class GridDataSelection(NDArrayOperatorsMixin):
         **kwargs,
     ) -> FrameUpdater:
         """Build a frame updater for lazy 4-D selections."""
+        self._require_local_data_access("build a local animation frame updater", self._target_name())
         if use_si and self.valunit is not None:
             vmin = vmin if vmin is not None else self.valunit.reverse(self.min())
             vmax = vmax if vmax is not None else self.valunit.reverse(self.max())
@@ -1001,5 +1044,72 @@ class GridDataSelection(NDArrayOperatorsMixin):
         )
 
     def plot(self, **kwargs):
-        """Delegate to the materialised :class:`Data4d`."""
+        """Plot the selection, using remote rendering when local reads are disabled."""
+        remote = self._try_remote_plot(**kwargs)
+        if remote is _REMOTE_PLOT_HANDLED:
+            return None
         return self.materialize().plot(**kwargs)
+
+    def _local_data_access_disabled(self) -> bool:
+        return is_local_data_access_disabled(self._local_data_policy)
+
+    def _require_local_data_access(self, operation: str, target: Union[str, None] = None) -> None:
+        require_local_data_access(self._local_data_policy, operation, target)
+
+    def _target_name(self) -> str:
+        return f"{self.name}{self._to_recipe_index()}"
+
+    def _to_recipe_index(self):
+        """Reconstruct a GridDataSeries[index]-style tuple from selectors."""
+        result = []
+        for selector in self._selectors:
+            result.append(selector)
+        return tuple(result)
+
+    def _get_remote_open_kwargs(self):
+        if self._emout_open_kwargs is not None:
+            return dict(self._emout_open_kwargs)
+        if self._emout_dir is None:
+            return None
+        return {"directory": str(self._emout_dir)}
+
+    def _try_remote_plot(self, **plot_kwargs):
+        """Render this selection remotely when local field reads are disabled."""
+        remote_kwargs = self._get_remote_open_kwargs()
+
+        from emout.distributed.remote_figure import (
+            is_recording,
+            record_field_plot,
+            request_session,
+        )
+
+        if is_recording():
+            if remote_kwargs is None and self._local_data_access_disabled():
+                self._require_local_data_access("record a remote field plot", self._target_name())
+            request_session(remote_kwargs)
+            record_field_plot(self.name, self._to_recipe_index(), plot_kwargs, emout_kwargs=remote_kwargs)
+            return _REMOTE_PLOT_HANDLED
+
+        if not self._local_data_access_disabled():
+            return None
+
+        if remote_kwargs is None:
+            self._require_local_data_access("plot field data locally", self._target_name())
+
+        from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session
+
+        session = get_or_create_session(emout_kwargs=remote_kwargs)
+        if session is None:
+            self._require_local_data_access("plot field data without a remote session", self._target_name())
+
+        ax = plot_kwargs.pop("ax", None)
+        img = _await_remote(
+            session.render_field(
+                self.name,
+                self._to_recipe_index(),
+                emout_kwargs=remote_kwargs,
+                **plot_kwargs,
+            )
+        )
+        display_image(img, ax=ax)
+        return _REMOTE_PLOT_HANDLED

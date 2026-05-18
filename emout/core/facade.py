@@ -11,6 +11,10 @@ from typing import List, Union
 
 import pandas as pd
 
+from emout.local_data_policy import (
+    LOCAL_DATA_POLICY_ALLOW,
+    normalize_local_data_policy,
+)
 from emout.utils import InpFile, Units
 
 from .backtrace.solver_wrapper import BacktraceWrapper
@@ -39,6 +43,7 @@ class Emout:
         inpfilename: Union[Path, str] = "plasma.inp",
         input_path: Union[Path, str, None] = None,
         output_directory: Union[Path, str, None] = None,
+        local_data_policy: Union[str, None] = None,
     ):
         """Initialize the Emout facade.
 
@@ -60,7 +65,12 @@ class Emout:
         output_directory : Path or str or None, optional
             Directory containing simulation output files.
             Defaults to *directory* when not specified.
+        local_data_policy : {'allow', 'remote_required'} or None, optional
+            Per-instance override for local field-data access. ``None``
+            inherits the process/context/env policy.
         """
+        self._local_data_policy = normalize_local_data_policy(local_data_policy)
+
         self._dir_inspector = DirectoryInspector(
             directory=directory,
             append_directories=append_directories or ad,
@@ -72,6 +82,7 @@ class Emout:
         self._grid_loader = GridDataLoader(
             dir_inspector=self._dir_inspector,
             name2unit_map=Emout.name2unit,
+            local_data_policy=self._local_data_policy,
         )
 
     @property
@@ -326,6 +337,7 @@ class Emout:
             "append_directories": [str(path) for path in self._dir_inspector.append_directories],
             "inpfilename": self._dir_inspector.inpfilename,
             "output_directory": str(self._dir_inspector.main_directory),
+            "local_data_policy": LOCAL_DATA_POLICY_ALLOW,
         }
         if self._dir_inspector.input_path is not None:
             kwargs["input_path"] = str(self._dir_inspector.input_path)

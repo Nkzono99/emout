@@ -167,6 +167,11 @@ default, allows one active server per user. If you intentionally need an
 additional session, use
 `emout server start --allow-multiple --name <session>`.
 
+To prevent accidental local materialization of field arrays on a login
+node, use `emout.disable_local_data_access()` or set
+`EMOUT_LOCAL_DATA_POLICY=remote_required`. Pass `Emout(...,
+local_data_policy="allow")` when a small dataset may read fields locally.
+
 ```python
 import matplotlib.pyplot as plt
 import emout

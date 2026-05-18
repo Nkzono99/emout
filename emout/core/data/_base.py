@@ -12,6 +12,11 @@ from typing import Callable, List, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 
+from emout.local_data_policy import (
+    is_local_data_access_disabled,
+    normalize_local_data_policy,
+    require_local_data_access,
+)
 import emout.utils as utils
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo
@@ -50,6 +55,7 @@ class Data(np.ndarray):
         slice_axes=None,
         axisunits=None,
         valunit=None,
+        local_data_policy=None,
     ):
         """Create a new Data instance.
 
@@ -95,6 +101,7 @@ class Data(np.ndarray):
 
         obj.axisunits = axisunits
         obj.valunit = valunit
+        obj._local_data_policy = normalize_local_data_policy(local_data_policy)
 
         if xslice is None:
             xslice = slice(0, obj.shape[3], 1)
@@ -150,6 +157,7 @@ class Data(np.ndarray):
             "slice_axes": new_obj.slice_axes,
             "axisunits": new_obj.axisunits,
             "valunit": new_obj.valunit,
+            "local_data_policy": getattr(new_obj, "_local_data_policy", None),
         }
 
         # Lazy imports to avoid circular dependency
@@ -249,6 +257,7 @@ class Data(np.ndarray):
         self.valunit = getattr(obj, "valunit", None)
         self._emout_dir = getattr(obj, "_emout_dir", None)
         self._emout_open_kwargs = getattr(obj, "_emout_open_kwargs", None)
+        self._local_data_policy = getattr(obj, "_local_data_policy", None)
 
     @property
     def filename(self) -> Path:
@@ -432,6 +441,7 @@ class Data(np.ndarray):
         Data
             Field values in SI units.
         """
+        self._require_local_data_access("convert field values to SI units locally", self._target_name())
         return self.valunit.reverse(self)
 
     @property
@@ -459,6 +469,7 @@ class Data(np.ndarray):
         Data
             Copy of the data with masked elements replaced by NaN.
         """
+        self._require_local_data_access("mask field data locally", self._target_name())
         masked = self.copy()
         if isinstance(mask, np.ndarray):
             masked[mask] = np.nan
@@ -468,6 +479,7 @@ class Data(np.ndarray):
 
     def to_numpy(self) -> np.ndarray:
         """Convert to a plain NumPy ndarray."""
+        self._require_local_data_access("convert field data to a NumPy array", self._target_name())
         return np.array(self)
 
     def negate(self) -> "Data":
@@ -485,6 +497,7 @@ class Data(np.ndarray):
         --------
         >>> data.ex[-1, :, ny//2, :].negate().mirror('z').plot()
         """
+        self._require_local_data_access("negate field data locally", self._target_name())
         return self._rebuild(-np.asarray(self), changed_ax=0, new_len=self.shape[0])
 
     def scale(self, factor: float) -> "Data":
@@ -504,6 +517,7 @@ class Data(np.ndarray):
         --------
         >>> data.phisp[-1].scale(1e3).plot()
         """
+        self._require_local_data_access("scale field data locally", self._target_name())
         return self._rebuild(np.asarray(self) * factor, changed_ax=0, new_len=self.shape[0])
 
     def flip(self, axis=0) -> "Data":
@@ -527,6 +541,7 @@ class Data(np.ndarray):
         --------
         >>> data.phisp[-1, :, ny//2, :].flip('z').plot()
         """
+        self._require_local_data_access("flip field data locally", self._target_name())
         ax = self._resolve_axis(axis)
         return self._rebuild(np.flip(np.asarray(self), axis=ax), changed_ax=ax, new_len=self.shape[ax])
 
@@ -572,6 +587,7 @@ class Data(np.ndarray):
         >>> d = data.phisp[-1, :, ny//2, :]
         >>> d.mirror('z').plot()  # 2x domain with reflection
         """
+        self._require_local_data_access("mirror field data locally", self._target_name())
         ax = self._resolve_axis(axis)
         flipped = np.flip(self, axis=ax)
         # Trim the first element of the flipped part to avoid duplicating
@@ -610,6 +626,7 @@ class Data(np.ndarray):
         >>> d.tile(1, 'z').plot()   # 2x periodic domain
         >>> d.mirror('z').tile(1, 'z').plot()  # 4x (reflect + periodic)
         """
+        self._require_local_data_access("tile field data locally", self._target_name())
         ax = self._resolve_axis(axis)
         arr = np.asarray(self)
         if include_edge:
@@ -655,6 +672,7 @@ class Data(np.ndarray):
             slice_axes=list(self.slice_axes),
             axisunits=self.axisunits,
             valunit=self.valunit,
+            local_data_policy=self._local_data_policy,
         )
         obj._emout_dir = getattr(self, "_emout_dir", None)
         obj._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
@@ -681,7 +699,7 @@ class Data(np.ndarray):
         return {"directory": str(emout_dir)}
 
     def _try_remote_plot(self, **plot_kwargs):
-        """Record a plot command if inside remote_figure(); otherwise use data transfer mode."""
+        """Record or dispatch plot commands when remote rendering is available."""
         remote_kwargs = self._get_remote_open_kwargs()
 
         # --- Inside remote_figure() context: record command only ---
@@ -692,22 +710,47 @@ class Data(np.ndarray):
         )
 
         if is_recording():
+            if remote_kwargs is None and self._local_data_access_disabled():
+                self._require_local_data_access("record a remote field plot", self._target_name())
             request_session(remote_kwargs)
             recipe_index = self._to_recipe_index()
             record_field_plot(self.name, recipe_index, plot_kwargs, emout_kwargs=remote_kwargs)
             return _REMOTE_PLOT_HANDLED
 
+        # --- Strict mode: render remotely and return image bytes only. ---
+        if self._local_data_access_disabled():
+            if remote_kwargs is None:
+                self._require_local_data_access("plot field data locally", self._target_name())
+
+            from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session
+
+            session = get_or_create_session(emout_kwargs=remote_kwargs)
+            if session is None:
+                self._require_local_data_access("plot field data without a remote session", self._target_name())
+
+            ax = plot_kwargs.pop("ax", None)
+            img = _await_remote(
+                session.render_field(
+                    self.name,
+                    self._to_recipe_index(),
+                    emout_kwargs=remote_kwargs,
+                    **plot_kwargs,
+                )
+            )
+            display_image(img, ax=ax)
+            return _REMOTE_PLOT_HANDLED
+
         # --- Outside remote_figure + Dask session available: data transfer mode ---
         if remote_kwargs is None:
             return None
-        from emout.distributed.remote_render import get_or_create_session
+        from emout.distributed.remote_render import _await_remote, get_or_create_session
 
         session = get_or_create_session(emout_kwargs=remote_kwargs)
         if session is None:
             return None
 
         recipe_index = self._to_recipe_index()
-        payload = session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs).result()
+        payload = _await_remote(session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs))
 
         local_data = type(self)(
             payload["array"],
@@ -719,7 +762,17 @@ class Data(np.ndarray):
         local_data.slice_axes = payload["slice_axes"]
         local_data._emout_dir = None  # prevent recursion
         local_data._emout_open_kwargs = None
+        local_data._local_data_policy = "allow"
         return local_data.plot(**plot_kwargs)
+
+    def _local_data_access_disabled(self) -> bool:
+        return is_local_data_access_disabled(getattr(self, "_local_data_policy", None))
+
+    def _require_local_data_access(self, operation: str, target: Union[str, None] = None) -> None:
+        require_local_data_access(getattr(self, "_local_data_policy", None), operation, target)
+
+    def _target_name(self) -> str:
+        return f"{self.name}{self._to_recipe_index()}"
 
     def plot(self, **kwargs):
         """Plot the data (subclass-specific)."""
@@ -757,6 +810,7 @@ class Data(np.ndarray):
         vmax : float, optional
             Colour-map maximum, by default None
         """
+        self._require_local_data_access("build a local animation frame updater", self._target_name())
         if use_si:
             vmin = vmin if vmin is not None else self.valunit.reverse(self.min())
             vmax = vmax if vmax is not None else self.valunit.reverse(self.max())
@@ -835,6 +889,7 @@ class Data(np.ndarray):
         object
             Animation object, HTML string, or FrameUpdater depending on *action*.
         """
+        self._require_local_data_access("create a local animation", self._target_name())
         if to_html:
             warnings.warn(
                 "The 'to_html' flag is deprecated. Please use gifplot(action='to_html') instead.",
