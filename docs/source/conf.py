@@ -1,7 +1,20 @@
 import os
 import sys
+import warnings
 
 sys.path.insert(0, os.path.abspath("../../"))
+
+try:
+    from sphinx.deprecation import RemovedInSphinx10Warning
+except ImportError:
+    RemovedInSphinx10Warning = None
+
+if RemovedInSphinx10Warning is not None:
+    warnings.filterwarnings(
+        "ignore",
+        category=RemovedInSphinx10Warning,
+        module=r"sphinx_autodoc_typehints\._parser",
+    )
 
 # Configuration file for the Sphinx documentation builder.
 #

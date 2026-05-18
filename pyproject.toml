@@ -93,3 +93,8 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::pyparsing.exceptions.PyparsingDeprecationWarning",
+]

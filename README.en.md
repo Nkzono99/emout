@@ -21,7 +21,7 @@ emout is:
 
 - **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](plugins/emout-context/README.en.md) — install with `emout codex install-plugin`, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](plugins/README.en.md))
+- **Codex plugin:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.en.md) — install with `emout codex install-plugin`, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md))
 
 ---
 
@@ -49,7 +49,7 @@ The emout Codex plugin, `emout Context`, makes emout's axis order, unit conversi
 emout codex install-plugin
 ```
 
-After this command registers the Codex marketplace, start Codex and install `emout Context` from `/plugins`. For manual setup or marketplace updates, see [Codex plugin installation](plugins/README.en.md).
+After this command registers the Codex marketplace, start Codex and install `emout Context` from `/plugins`. For manual setup or marketplace updates, see [Codex plugin installation](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md).
 
 ---
 

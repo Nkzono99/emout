@@ -25,10 +25,12 @@ def get_indices_in_pitch_range(
 
     Parameters
     ----------
-    velocities : np.ndarray, shape (N, 3)
-        Velocity vectors for each particle (m/s). N is the number of samples.
-    B : np.ndarray, shape (3,)
-        Magnetic field vector (T) or direction vector. Must be non-zero.
+    velocities : np.ndarray
+        Velocity vectors for each particle (m/s), shaped ``(N, 3)``.
+        N is the number of samples.
+    B : np.ndarray
+        Magnetic field vector (T) or direction vector, shaped ``(3,)``.
+        Must be non-zero.
     a_deg : float
         Lower bound of the pitch angle (degrees). 0 <= a_deg < b_deg <= 180.
     b_deg : float
@@ -139,17 +141,19 @@ def compute_energy_flux_histograms(
 
     Parameters
     ----------
-    velocities : np.ndarray, shape (N, 3)
-        Velocity vectors for each particle (m/s). N is the number of samples.
-    probs : np.ndarray, shape (N,)
-        Probability or weight corresponding to each velocity vector.
-    B : np.ndarray, shape (3,)
-        Magnetic field vector (T) or direction vector.
+    velocities : np.ndarray
+        Velocity vectors for each particle (m/s), shaped ``(N, 3)``.
+        N is the number of samples.
+    probs : np.ndarray
+        Probability or weight corresponding to each velocity vector, shaped
+        ``(N,)``.
+    B : np.ndarray
+        Magnetic field vector (T) or direction vector, shaped ``(3,)``.
     mass : float
         Particle mass (kg).
-    energy_bins : int or np.ndarray, shape (M+1,)
+    energy_bins : int or np.ndarray
         - int: let numpy.histogram auto-generate bin edges.
-        - np.ndarray: use these bin edges directly.
+        - np.ndarray: use these bin edges directly, shaped ``(M+1,)``.
     pitch_ranges : list of (a_deg, b_deg, direction) | None
         List specifying pitch-angle ranges and directions. Each tuple has
         the form ``(a_deg, b_deg, direction)`` where direction is one of
@@ -161,8 +165,8 @@ def compute_energy_flux_histograms(
     histograms : dict[str, (hist, bin_edges)]
         Keys have the format ``f"{a_deg:02d}-{b_deg:02d}_{direction}"``.
         Values are ``(hist, bin_edges)`` tuples where:
-        - hist: total energy flux (eV x v x prob) per bin, shape=(M,)
-        - bin_edges: bin boundaries in eV, shape=(M+1,)
+        - hist: total energy flux (eV x v x prob) per bin, shaped ``(M,)``
+        - bin_edges: bin boundaries in eV, shaped ``(M+1,)``
     """
 
     N = velocities.shape[0]
@@ -230,13 +234,13 @@ def plot_energy_fluxes(
     ----------
     velocities_list : list[np.ndarray]
         List of length T, each element a velocity array of shape (NT, 3).
-    x : np.ndarray, shape (T,)
-        x-axis values corresponding to each velocity list.
+    x : np.ndarray
+        x-axis values corresponding to each velocity list, shaped ``(T,)``.
     mass : float
         Particle mass (kg).
-    energy_bins : int or np.ndarray, shape (M+1,)
+    energy_bins : int or np.ndarray
         - int: let numpy.histogram auto-generate bin edges across all series.
-        - np.ndarray: use these bin edges directly.
+        - np.ndarray: use these bin edges directly, shaped ``(M+1,)``.
     use_probs : bool, default=False
         If True, read per-series probabilities from *probs_list* and
         include them in the energy-flux weights. If False, assume
@@ -331,17 +335,19 @@ def plot_energy_flux(
 
     Parameters
     ----------
-    velocities : np.ndarray, shape (N, 3)
-        Velocity vectors for each particle (m/s). N is the number of samples.
-    probs : np.ndarray, shape (N,)
-        Probability or weight corresponding to each velocity vector.
-    B : np.ndarray, shape (3,)
-        Magnetic field vector (T) or direction vector.
+    velocities : np.ndarray
+        Velocity vectors for each particle (m/s), shaped ``(N, 3)``.
+        N is the number of samples.
+    probs : np.ndarray
+        Probability or weight corresponding to each velocity vector, shaped
+        ``(N,)``.
+    B : np.ndarray
+        Magnetic field vector (T) or direction vector, shaped ``(3,)``.
     mass : float
         Particle mass (kg).
-    energy_bins : int or np.ndarray, shape (M+1,)
+    energy_bins : int or np.ndarray
         - int: let numpy.histogram auto-generate bin edges.
-        - np.ndarray: use these bin edges directly.
+        - np.ndarray: use these bin edges directly, shaped ``(M+1,)``.
     pitch_ranges : list of (a_deg, b_deg, direction) | None
         Pitch-angle ranges and direction specifier list. None uses the
         default 6-class decomposition.
