@@ -41,6 +41,18 @@ emout version --check-update
 
 ---
 
+## Codex Plugin
+
+The emout Codex plugin, `emout Context`, makes emout's axis order, unit conversion, plotting, `remote_figure`, and troubleshooting context available when Codex is started in simulation output directories or other repositories.
+
+```bash
+emout codex install-plugin
+```
+
+After this command registers the Codex marketplace, start Codex and install `emout Context` from `/plugins`. For manual setup or marketplace updates, see [Codex plugin installation](plugins/README.en.md).
+
+---
+
 ## Quick Start
 
 ```python

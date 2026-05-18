@@ -41,6 +41,18 @@ emout version --check-update
 
 ---
 
+## Codex plugin
+
+emout の Codex plugin `emout Context` は、シミュレーション出力ディレクトリや別 repo で Codex を起動したときにも、emout の軸順序・単位変換・可視化・`remote_figure`・トラブルシュートの文脈を使えるようにします。
+
+```bash
+emout codex install-plugin
+```
+
+このコマンドで Codex marketplace を登録したあと、Codex を起動して `/plugins` から `emout Context` を install してください。手動導入や marketplace 更新は [Codex plugin 導入手順](plugins/README.md) を参照してください。
+
+---
+
 ## クイックスタート
 
 ```python
