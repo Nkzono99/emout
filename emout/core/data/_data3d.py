@@ -8,7 +8,7 @@ import numpy as np
 
 from emout.utils.util import apply_offset
 
-from ._base import Data
+from ._base import Data, _REMOTE_PLOT_HANDLED
 
 
 class Data3d(Data):
@@ -85,6 +85,14 @@ class Data3d(Data):
             ``(fig, ax)`` for ``mode='cont'``; ``None`` for unsupported
             modes.
         """
+        remote = None
+        if not args:
+            remote = self._try_remote_plot(mode=mode, use_si=use_si, offsets=offsets, **kwargs)
+        if remote is not None:
+            return None if remote is _REMOTE_PLOT_HANDLED else remote
+        if self._local_data_access_disabled():
+            self._require_local_data_access("plot field data locally", self._target_name())
+
         if mode == "auto":
             mode = "cont"
 
@@ -128,6 +136,7 @@ class Data3d(Data):
         **kwargs,
     ):
         """Render three-dimensional data with PyVista."""
+        self._require_local_data_access("render field data with PyVista locally", self._target_name())
         from emout.plot.pyvista_plot import plot_scalar_volume
 
         if self.valunit is None:
@@ -178,6 +187,7 @@ class Data3d(Data):
         Path
             Path to the written file.
         """
+        self._require_local_data_access("export field data to VTK locally", self._target_name())
         filepath = Path(filename)
         if filepath.suffix != ".vti":
             filepath = filepath.with_suffix(".vti")
@@ -252,6 +262,9 @@ class Data3d(Data):
         tuple
             ``(cmap, norm)`` returned by ``plot_surfaces``.
         """
+        if self._local_data_access_disabled():
+            self._require_local_data_access("plot field surfaces locally", self._target_name())
+
         remote_kwargs = self._get_remote_open_kwargs()
         if remote_kwargs is not None:
             from emout.distributed.remote_figure import (

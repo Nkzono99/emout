@@ -266,6 +266,7 @@ class Data2d(Data):
         **kwargs,
     ):
         """Render two-dimensional data as a plane in 3-D space with PyVista."""
+        self._require_local_data_access("render field data with PyVista locally", self._target_name())
         from emout.plot.pyvista_plot import plot_scalar_plane
 
         if self.valunit is None:

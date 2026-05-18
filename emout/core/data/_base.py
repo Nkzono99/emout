@@ -710,9 +710,12 @@ class Data(np.ndarray):
         )
 
         if is_recording():
-            if remote_kwargs is None and self._local_data_access_disabled():
-                self._require_local_data_access("record a remote field plot", self._target_name())
-            request_session(remote_kwargs)
+            session = request_session(remote_kwargs)
+            if session is None and self._local_data_access_disabled():
+                self._require_local_data_access(
+                    "record a remote field plot without a remote session",
+                    self._target_name(),
+                )
             recipe_index = self._to_recipe_index()
             record_field_plot(self.name, recipe_index, plot_kwargs, emout_kwargs=remote_kwargs)
             return _REMOTE_PLOT_HANDLED

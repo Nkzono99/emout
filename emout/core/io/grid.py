@@ -19,7 +19,7 @@ import numpy as np
 from tqdm import tqdm as _tqdm_terminal
 from tqdm.notebook import tqdm as _tqdm_notebook
 
-from emout.local_data_policy import normalize_local_data_policy
+from emout.local_data_policy import normalize_local_data_policy, require_local_data_access
 
 from ..data.griddata_series import GridDataSeries
 from ..data.vector_data import VectorData2d, VectorData3d
@@ -88,6 +88,11 @@ class GridDataLoader:
         if m:
             fld = m.group(1)  # e.g. 'ex', 'by'
             logger.debug(f"Relocated field requested: {fld}")
+            require_local_data_access(
+                self.local_data_policy,
+                "create relocated field data locally",
+                f"r{fld}",
+            )
             self._create_relocated_field_hdf5(fld)
 
         skip_2d_vector_parse = False

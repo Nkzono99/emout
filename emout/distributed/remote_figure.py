@@ -250,7 +250,7 @@ def bind_session(session) -> None:
         _session = session
 
 
-def request_session(emout_kwargs: Optional[dict[str, Any]]) -> None:
+def request_session(emout_kwargs: Optional[dict[str, Any]]):
     """Resolve and bind the shared session.
 
     Called by ``Data._try_remote_plot()`` and
@@ -258,12 +258,13 @@ def request_session(emout_kwargs: Optional[dict[str, Any]]) -> None:
     """
     global _session
     if emout_kwargs is None:
-        return
+        return _session
     from .remote_render import get_or_create_session
 
     session = get_or_create_session(emout_kwargs=emout_kwargs)
     if session is not None:
         _session = session
+    return _session
 
 
 # ---------------------------------------------------------------------------

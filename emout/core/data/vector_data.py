@@ -77,6 +77,15 @@ class VectorData(utils.Group):
         n = len(self.objs)
         return f"<VectorData: name={self.name!r}, components={n}, shape={self.shape}>"
 
+    def _require_local_data_access(self, operation: str) -> None:
+        for component in self.objs:
+            require = getattr(component, "_require_local_data_access", None)
+            if require is None:
+                continue
+            target_name = getattr(component, "_target_name", None)
+            target = target_name() if callable(target_name) else getattr(component, "name", self.name)
+            require(operation, target)
+
     def negate(self) -> "VectorData":
         """Return a new VectorData with all components sign-flipped.
 
@@ -220,6 +229,7 @@ class VectorData(utils.Group):
             If True, use SI units; otherwise use EMSES grid units,
             by default False
         """
+        self._require_local_data_access("build a local vector animation frame updater")
         updater = FrameUpdater(self, axis, title, notitle, offsets, use_si, **kwargs)
 
         return updater
@@ -409,6 +419,7 @@ class VectorData(utils.Group):
         ValueError
             If the data is not two-dimensional.
         """
+        self._require_local_data_access("plot vector field locally")
         if self.objs[0].valunit is None:
             use_si = False
 
@@ -481,6 +492,7 @@ class VectorData(utils.Group):
         **kwargs,
     ):
         """Render three-dimensional vector field with PyVista."""
+        self._require_local_data_access("render vector field with PyVista locally")
         if self.x_data.ndim != 3:
             raise ValueError("plot_pyvista on VectorData requires 3D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
@@ -552,6 +564,7 @@ class VectorData(utils.Group):
         -------
         Axes3D
         """
+        self._require_local_data_access("plot vector field locally")
         if self.x_data.ndim != 3:
             raise ValueError("plot3d_mpl requires 3-D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
