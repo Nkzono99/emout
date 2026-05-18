@@ -29,7 +29,7 @@ def test_files_with_modern_annotations_enable_future_annotations():
     offending = []
 
     for path in sorted(root.rglob("*.py")):
-        source = path.read_text()
+        source = path.read_text(encoding="utf-8")
         tree = ast.parse(source)
         if _uses_modern_annotation_syntax(tree) and "from __future__ import annotations" not in source:
             offending.append(path.relative_to(root.parent).as_posix())

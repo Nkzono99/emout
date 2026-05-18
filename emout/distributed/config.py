@@ -14,6 +14,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 # Linux kernel ARPHRD_* constants (include/uapi/linux/if_arp.h)
 _ARPHRD_INFINIBAND = 32
 _ARPHRD_ETHER = 1
@@ -78,13 +79,21 @@ def _get_local_ip() -> str:
     return best_ip
 
 
-def _pick_port(ip: str, max_retries: int = 20) -> int:
-    """Choose a free port derived from the user's UID.
+def _port_seed() -> int:
+    """Return a platform-specific process owner seed for default port selection."""
+    getuid = getattr(os, "getuid", None)
+    if getuid is not None:
+        return getuid()
+    return os.getpid()
 
-    Starts with ``10000 + (UID % 50000)`` and increments until a port
+
+def _pick_port(ip: str, max_retries: int = 20) -> int:
+    """Choose a free port derived from the process owner when possible.
+
+    Starts with ``10000 + (seed % 50000)`` and increments until a port
     that is not already in use is found.
     """
-    base = 10000 + (os.getuid() % 50000)
+    base = 10000 + (_port_seed() % 50000)
     for i in range(max_retries):
         port = base + i
         if port > 65535:

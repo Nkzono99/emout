@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -306,9 +305,9 @@ class TestPickPort:
         assert port >= 10000
 
     def test_pick_port_skips_open_ports(self, monkeypatch):
-        from emout.distributed.config import _pick_port
+        from emout.distributed.config import _pick_port, _port_seed
 
-        base = 10000 + (os.getuid() % 50000)
+        base = 10000 + (_port_seed() % 50000)
 
         def fake_open(ip, port, timeout=0.3):
             return port == base
@@ -318,10 +317,10 @@ class TestPickPort:
         assert port == base + 1
 
     def test_pick_port_fallback_when_all_taken(self, monkeypatch):
-        from emout.distributed.config import _pick_port
+        from emout.distributed.config import _pick_port, _port_seed
 
         monkeypatch.setattr("emout.distributed.config._is_port_open", lambda ip, port, timeout=0.3: True)
-        base = 10000 + (os.getuid() % 50000)
+        base = 10000 + (_port_seed() % 50000)
         port = _pick_port("127.0.0.1", max_retries=5)
         assert port == base
 

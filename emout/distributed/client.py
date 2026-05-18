@@ -53,6 +53,8 @@ def _pid_is_alive(pid: Any) -> bool:
         return False
     except PermissionError:
         return True
+    except OSError:
+        return False
     return True
 
 
@@ -162,7 +164,7 @@ def cleanup_saved_server_state(state: Mapping[str, Any], client=None) -> None:
     if isinstance(pid, int) and pid != os.getpid():
         try:
             os.kill(pid, signal.SIGTERM)
-        except (ProcessLookupError, PermissionError):
+        except (ProcessLookupError, PermissionError, OSError):
             pass
 
     clear_server_state(state.get("name"))

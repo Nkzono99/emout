@@ -151,6 +151,8 @@ def _pid_is_alive(pid: int | None) -> bool:
         return False
     except PermissionError:
         return True
+    except OSError:
+        return False
     return True
 
 
@@ -291,6 +293,8 @@ def _stop_one_server(state: dict[str, Any]) -> bool:
             pass
         except PermissionError:
             print(f"Could not signal server process PID {pid}.")
+        except OSError:
+            pass
 
     _clear_state(state["name"])
     return stopped_cleanly
@@ -591,6 +595,8 @@ def cmd_jupyter_stop(args):
             pass
         except PermissionError:
             print(f"Could not signal PID {pid}; clearing state only.")
+        except OSError:
+            pass
 
     _clear_jupyter_state()
     print("Jupyter state cleared.")

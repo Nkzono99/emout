@@ -117,6 +117,12 @@ class TestStateHelpers:
         active = _active_state_file(tmp_path)
         session_state = _session_state_file(tmp_path)
 
+        assert session_dir.is_dir()
+        assert active.exists()
+        assert session_state.exists()
+        if os.name == "nt":
+            return
+
         assert stat.S_IMODE(session_dir.stat().st_mode) == 0o700
         assert stat.S_IMODE(active.stat().st_mode) == 0o600
         assert stat.S_IMODE(session_state.stat().st_mode) == 0o600

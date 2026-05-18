@@ -499,6 +499,9 @@ class TestGenerateWorkerScript:
     def test_script_is_executable(self, tmp_path):
         cluster = _make_cluster(tmp_path)
         script_path = cluster._generate_worker_script()
+        if sys.platform == "win32":
+            assert script_path.exists()
+            return
         mode = script_path.stat().st_mode
         assert mode & 0o744 == 0o744
 

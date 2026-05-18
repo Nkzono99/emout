@@ -171,8 +171,10 @@ class TestDataFileInfo:
         assert info.directory == Path("/tmp/test").resolve()
 
     def test_str(self):
+        from pathlib import Path
+
         info = DataFileInfo("/tmp/test/data.h5")
-        assert str(info) == "/tmp/test/data.h5"
+        assert str(info) == str(Path("/tmp/test/data.h5"))
 
 
 # ---------------------------------------------------------------------------
