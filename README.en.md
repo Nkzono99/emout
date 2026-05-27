@@ -186,6 +186,29 @@ EMOUT_ARTICLE_NAME=fig1 \
 python fig1.py
 ```
 
+`EMOUT_ARTICLE_NAME` is optional. When omitted, records are saved under
+`default`, so a notebook or one script can collect all figures into a
+single bundle. Recreating `Emout()` with the same `article_name` appends
+only slices that are not already recorded.
+
+When a script opens multiple simulation outputs, records are separated per
+source under `article-records/datasets/<source>/default/`. Replay on another
+machine first matches sources by directory basename. If multiple outputs have
+the same basename, pass a stable `article_source_name` in the normal script.
+
+```python
+data = [
+    emout.Emout("case_a/output", article_source_name="case_a"),
+    emout.Emout("case_b/output", article_source_name="case_b"),
+]
+```
+
+Recorded `data.h5` files use HDF5 gzip compression. To package a whole
+bundle as `.tar.gz` or `.zip` for publication, set `EMOUT_ARTICLE_ARCHIVE=1`
+(`.tar.gz`) / `EMOUT_ARTICLE_ARCHIVE=zip`, or pass `article_archive=True` /
+`article_archive="zip"`. Replay automatically extracts the matching archive
+when the extracted directory is not present.
+
 The same settings can be passed as arguments.
 
 ```python
@@ -194,6 +217,7 @@ data = emout.Emout(
     article_mode="record",
     article_records_path="article-records",
     article_name="fig1",
+    article_archive="zip",
 )
 ```
 

@@ -40,6 +40,8 @@ class Emout:
         article_records_path: Union[Path, str, None] = None,
         records_path: Union[Path, str, None] = None,
         article_name: Union[str, None] = None,
+        article_source_name: Union[str, None] = None,
+        article_archive: Union[bool, str, None] = None,
         **kwargs,
     ):
         """Return a replay proxy when article replay mode is requested."""
@@ -51,6 +53,8 @@ class Emout:
                 article_records_path=article_records_path,
                 records_path=records_path,
                 article_name=article_name,
+                article_source_name=article_source_name,
+                article_archive=article_archive,
             )
             if config.mode == "replay":
                 return ArticleReplayEmout(kwargs.get("output_directory") or directory, config)
@@ -69,6 +73,8 @@ class Emout:
         article_records_path: Union[Path, str, None] = None,
         records_path: Union[Path, str, None] = None,
         article_name: Union[str, None] = None,
+        article_source_name: Union[str, None] = None,
+        article_archive: Union[bool, str, None] = None,
     ):
         """Initialize the Emout facade.
 
@@ -101,6 +107,14 @@ class Emout:
         article_name : str or None, optional
             Per-figure/article record name. ``None`` reads
             ``EMOUT_ARTICLE_NAME`` or falls back to ``"default"``.
+        article_source_name : str or None, optional
+            Stable source key for article record/replay. Use this when a
+            script opens multiple simulation outputs with the same basename
+            and must replay on another machine.
+        article_archive : bool, str, or None, optional
+            Whether record mode should also write an archive for each article
+            bundle. ``True`` writes ``.tar.gz``; ``"zip"`` writes ``.zip``.
+            ``None`` reads ``EMOUT_ARTICLE_ARCHIVE``.
         """
         from emout.article import ArticleRecorder, resolve_config
 
@@ -109,6 +123,8 @@ class Emout:
             article_records_path=article_records_path,
             records_path=records_path,
             article_name=article_name,
+            article_source_name=article_source_name,
+            article_archive=article_archive,
         )
         if article_config.mode == "replay":
             # __new__ returns an ArticleReplayEmout for the base Emout class.

@@ -185,6 +185,29 @@ EMOUT_ARTICLE_NAME=fig1 \
 python fig1.py
 ```
 
+`EMOUT_ARTICLE_NAME` は省略できます。その場合は `default` という名前で保存されるため、
+notebook や 1 本のスクリプトで作るすべての figure を 1 つの bundle にまとめられます。
+同じ `article_name` で `Emout()` を作り直した場合も、既存 bundle に未記録スライスだけを
+追記します。
+
+複数の simulation output を開く場合、record は source ごとに
+`article-records/datasets/<source>/default/` へ分かれます。別環境で replay するときは
+まず source directory の basename で対応付けます。同じ basename の output が複数ある場合は、
+通常実行時から安定した `article_source_name` を指定してください。
+
+```python
+data = [
+    emout.Emout("case_a/output", article_source_name="case_a"),
+    emout.Emout("case_b/output", article_source_name="case_b"),
+]
+```
+
+record された `data.h5` は HDF5 gzip 圧縮で保存されます。公開用に bundle 全体を
+`.tar.gz` または `.zip` にまとめたい場合は `EMOUT_ARTICLE_ARCHIVE=1`
+（`.tar.gz`）/ `EMOUT_ARTICLE_ARCHIVE=zip`、または `article_archive=True` /
+`article_archive="zip"` を指定します。replay 時は展開済み directory がなくても、
+対応する archive があれば自動で展開して読み込みます。
+
 引数でも指定できます。
 
 ```python
@@ -193,6 +216,7 @@ data = emout.Emout(
     article_mode="record",
     article_records_path="article-records",
     article_name="fig1",
+    article_archive="zip",
 )
 ```
 

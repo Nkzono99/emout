@@ -1,6 +1,7 @@
 """Tests for article data recording and replay."""
 
 import json
+import shutil
 
 import h5py
 import numpy as np
@@ -108,6 +109,197 @@ def test_record_deduplicates_same_field_selection(article_sim, tmp_path):
     assert len(manifest["records"]) == 1
     with h5py.File(record_dir / "data.h5", "r") as h5:
         assert list(h5["records"]) == ["record_000000"]
+        assert h5["records/record_000000"].compression == "gzip"
+
+
+def test_default_article_name_records_multiple_figures_together(article_sim, tmp_path):
+    records = tmp_path / "records"
+
+    data = emout.Emout(
+        article_sim,
+        article_mode="record",
+        article_records_path=records,
+    )
+    phisp = data.phisp[-1, :, 1, :].to_numpy()
+    ex = data.ex[-1, :, 2, :].to_numpy()
+
+    replay = emout.Emout(
+        article_sim,
+        article_mode="replay",
+        article_records_path=records,
+    )
+
+    np.testing.assert_array_equal(replay.phisp[-1, :, 1, :].to_numpy(), phisp)
+    np.testing.assert_array_equal(replay.ex[-1, :, 2, :].to_numpy(), ex)
+    record_dir = next(records.glob("datasets/*/default"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert [record["field"] for record in manifest["records"]] == ["phisp", "ex"]
+
+
+def test_record_mode_appends_to_existing_article_bundle(article_sim, tmp_path):
+    records = tmp_path / "records"
+
+    first = emout.Emout(
+        article_sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="all_figures",
+    )
+    phisp = first.phisp[-1, :, 1, :].to_numpy()
+
+    second = emout.Emout(
+        article_sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="all_figures",
+    )
+    duplicate = second.phisp[-1, :, 1, :].to_numpy()
+    ex = second.ex[-1, :, 2, :].to_numpy()
+
+    replay = emout.Emout(
+        article_sim,
+        article_mode="replay",
+        article_records_path=records,
+        article_name="all_figures",
+    )
+
+    np.testing.assert_array_equal(duplicate, phisp)
+    np.testing.assert_array_equal(replay.phisp[-1, :, 1, :].to_numpy(), phisp)
+    np.testing.assert_array_equal(replay.ex[-1, :, 2, :].to_numpy(), ex)
+    record_dir = next(records.glob("datasets/*/all_figures"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert [record["field"] for record in manifest["records"]] == ["phisp", "ex"]
+    with h5py.File(record_dir / "data.h5", "r") as h5:
+        assert list(h5["records"]) == ["record_000000", "record_000001"]
+
+
+def test_replay_multiple_sources_by_basename_after_path_change(tmp_path):
+    records = tmp_path / "records"
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    run_a = source_root / "run_a"
+    run_b = source_root / "run_b"
+    run_a.mkdir()
+    run_b.mkdir()
+    _write_field(run_a, "phisp", offset=100)
+    _write_field(run_b, "phisp", offset=200)
+    create_inpfile(run_a / "plasma.inp")
+    create_inpfile(run_b / "plasma.inp")
+
+    data = [
+        emout.Emout(run_a, article_mode="record", article_records_path=records),
+        emout.Emout(run_b, article_mode="record", article_records_path=records),
+    ]
+    expected = [item.phisp[-1, :, 1, :].to_numpy() for item in data]
+
+    replay_root = tmp_path / "replay"
+    replay_root.mkdir()
+    with pytest.warns(RuntimeWarning, match="source basename"):
+        replay_a = emout.Emout(replay_root / "run_a", article_mode="replay", article_records_path=records)
+    with pytest.warns(RuntimeWarning, match="source basename"):
+        replay_b = emout.Emout(replay_root / "run_b", article_mode="replay", article_records_path=records)
+    replay = [replay_a, replay_b]
+
+    np.testing.assert_array_equal(replay[0].phisp[-1, :, 1, :].to_numpy(), expected[0])
+    np.testing.assert_array_equal(replay[1].phisp[-1, :, 1, :].to_numpy(), expected[1])
+
+
+def test_article_source_name_replays_multiple_same_basename_sources_on_new_paths(tmp_path):
+    records = tmp_path / "records"
+    run_a = tmp_path / "case_a" / "output"
+    run_b = tmp_path / "case_b" / "output"
+    run_a.mkdir(parents=True)
+    run_b.mkdir(parents=True)
+    _write_field(run_a, "phisp", offset=100)
+    _write_field(run_b, "phisp", offset=200)
+    create_inpfile(run_a / "plasma.inp")
+    create_inpfile(run_b / "plasma.inp")
+
+    data = [
+        emout.Emout(run_a, article_mode="record", article_records_path=records, article_source_name="case_a"),
+        emout.Emout(run_b, article_mode="record", article_records_path=records, article_source_name="case_b"),
+    ]
+    expected = [item.phisp[-1, :, 1, :].to_numpy() for item in data]
+
+    replay = [
+        emout.Emout(
+            tmp_path / "new_a" / "output",
+            article_mode="replay",
+            article_records_path=records,
+            article_source_name="case_a",
+        ),
+        emout.Emout(
+            tmp_path / "new_b" / "output",
+            article_mode="replay",
+            article_records_path=records,
+            article_source_name="case_b",
+        ),
+    ]
+
+    np.testing.assert_array_equal(replay[0].phisp[-1, :, 1, :].to_numpy(), expected[0])
+    np.testing.assert_array_equal(replay[1].phisp[-1, :, 1, :].to_numpy(), expected[1])
+    assert (records / "datasets" / "case_a" / "default" / "manifest.json").exists()
+    assert (records / "datasets" / "case_b" / "default" / "manifest.json").exists()
+
+
+def test_article_archive_replays_after_extracted_bundle_is_removed(article_sim, tmp_path):
+    records = tmp_path / "records"
+
+    data = emout.Emout(
+        article_sim,
+        article_mode="record",
+        article_records_path=records,
+        article_source_name="case_a",
+        article_archive=True,
+    )
+    expected = data.phisp[-1, :, 1, :].to_numpy()
+
+    record_dir = records / "datasets" / "case_a" / "default"
+    archive_path = record_dir.parent / "default.tar.gz"
+    assert archive_path.exists()
+    shutil.rmtree(record_dir)
+    (record_dir.parent / "source.json").unlink()
+
+    replay = emout.Emout(
+        tmp_path / "new_root" / "output",
+        article_mode="replay",
+        article_records_path=records,
+        article_source_name="case_a",
+    )
+
+    np.testing.assert_array_equal(replay.phisp[-1, :, 1, :].to_numpy(), expected)
+    assert (record_dir / "manifest.json").exists()
+    assert (record_dir.parent / "source.json").exists()
+
+
+def test_article_zip_archive_replays_after_extracted_bundle_is_removed(article_sim, tmp_path):
+    records = tmp_path / "records"
+
+    data = emout.Emout(
+        article_sim,
+        article_mode="record",
+        article_records_path=records,
+        article_source_name="case_zip",
+        article_archive="zip",
+    )
+    expected = data.phisp[-1, :, 1, :].to_numpy()
+
+    record_dir = records / "datasets" / "case_zip" / "default"
+    archive_path = record_dir.parent / "default.zip"
+    assert archive_path.exists()
+    shutil.rmtree(record_dir)
+    (record_dir.parent / "source.json").unlink()
+
+    replay = emout.Emout(
+        tmp_path / "new_root" / "output",
+        article_mode="replay",
+        article_records_path=records,
+        article_source_name="case_zip",
+    )
+
+    np.testing.assert_array_equal(replay.phisp[-1, :, 1, :].to_numpy(), expected)
+    assert (record_dir / "manifest.json").exists()
+    assert (record_dir.parent / "source.json").exists()
 
 
 def test_record_dataset_write_failure_keeps_existing_bundle(article_sim, tmp_path, monkeypatch):

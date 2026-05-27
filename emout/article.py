@@ -11,7 +11,9 @@ import hashlib
 import json
 import os
 import shutil
+import tarfile
 import warnings
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +35,8 @@ ENV_MODE = "EMOUT_ARTICLE_MODE"
 ENV_RECORDS_PATH = "EMOUT_ARTICLE_RECORDS_PATH"
 ENV_RECORDS_PATH_ALIAS = "EMOUT_RECORDS_PATH"
 ENV_NAME = "EMOUT_ARTICLE_NAME"
+ENV_SOURCE_NAME = "EMOUT_ARTICLE_SOURCE_NAME"
+ENV_ARCHIVE = "EMOUT_ARTICLE_ARCHIVE"
 
 SCHEMA_VERSION = 1
 
@@ -44,6 +48,8 @@ class ArticleConfig:
     mode: str
     records_path: Path | None
     article_name: str
+    source_name: str | None
+    archive_format: str | None
 
 
 def resolve_config(
@@ -52,6 +58,8 @@ def resolve_config(
     article_records_path: str | Path | None = None,
     records_path: str | Path | None = None,
     article_name: str | None = None,
+    article_source_name: str | None = None,
+    article_archive: bool | str | None = None,
 ) -> ArticleConfig:
     """Resolve article settings from explicit arguments and environment."""
     mode = article_mode if article_mode is not None else os.getenv(ENV_MODE, "normal")
@@ -69,16 +77,48 @@ def resolve_config(
         )
 
     resolved_name = article_name or os.getenv(ENV_NAME) or "default"
-    return ArticleConfig(mode=mode, records_path=resolved_records_path, article_name=resolved_name)
+    resolved_source_name = article_source_name or os.getenv(ENV_SOURCE_NAME)
+    resolved_archive = _archive_format(article_archive if article_archive is not None else os.getenv(ENV_ARCHIVE))
+    return ArticleConfig(
+        mode=mode,
+        records_path=resolved_records_path,
+        article_name=resolved_name,
+        source_name=resolved_source_name,
+        archive_format=resolved_archive,
+    )
 
 
-def source_id(source_path: str | Path) -> str:
+def _archive_format(value: bool | str | None) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "tar.gz" if value else None
+    normalized = value.strip().lower()
+    if normalized in {"", "0", "false", "no", "off", "none"}:
+        return None
+    if normalized in {"1", "true", "yes", "on", "tar", "tar.gz", "tgz"}:
+        return "tar.gz"
+    if normalized == "zip":
+        return "zip"
+    raise ValueError("article_archive must be a boolean, 'tar.gz', or 'zip'.")
+
+
+def _safe_name(name: str) -> str:
+    safe = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in name)
+    if not safe:
+        raise ValueError("article source name must contain at least one safe character.")
+    return safe
+
+
+def source_id(source_path: str | Path, source_name: str | None = None) -> str:
     """Return a stable record directory name for a source path."""
+    if source_name is not None:
+        return _safe_name(source_name)
     path = Path(source_path).expanduser()
     resolved = path.resolve(strict=False)
     digest = hashlib.sha1(str(resolved).encode("utf-8")).hexdigest()[:10]
     stem = resolved.name or "dataset"
-    safe_stem = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in stem)
+    safe_stem = _safe_name(stem)
     return f"{safe_stem}-{digest}"
 
 
@@ -86,7 +126,7 @@ def resolve_record_dir(source_path: str | Path, config: ArticleConfig) -> Path:
     """Return the directory for one source dataset and article name."""
     if config.records_path is None:
         raise ValueError("records_path is required outside normal article mode.")
-    return config.records_path / "datasets" / source_id(source_path) / config.article_name
+    return config.records_path / "datasets" / source_id(source_path, config.source_name) / config.article_name
 
 
 def resolve_existing_record_dir(source_path: str | Path, config: ArticleConfig) -> Path:
@@ -94,11 +134,29 @@ def resolve_existing_record_dir(source_path: str | Path, config: ArticleConfig) 
     record_dir = resolve_record_dir(source_path, config)
     if record_dir.exists():
         return record_dir
+    if _existing_archive_path(record_dir) is not None:
+        return _ensure_record_dir_extracted(record_dir)
 
     if config.records_path is None:
         raise ValueError("records_path is required for article replay.")
 
-    matches = sorted((config.records_path / "datasets").glob(f"*/{config.article_name}"))
+    basename_matches = _find_record_dirs_by_source_basename(source_path, config)
+    if len(basename_matches) == 1:
+        warnings.warn(
+            f"Article record for {source_path!s} was not found at {record_dir}; "
+            f"falling back to the matching source basename record {basename_matches[0]}.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return _ensure_record_dir_extracted(basename_matches[0])
+    if len(basename_matches) > 1:
+        raise FileNotFoundError(
+            f"Article record not found for {source_path!s}; multiple records with source basename "
+            f"{Path(source_path).name!r} and article name {config.article_name!r} exist. "
+            "Pass article_source_name to Emout() to disambiguate the dataset."
+        )
+
+    matches = _matching_record_dirs(config.records_path / "datasets", config.article_name)
     if len(matches) == 1:
         warnings.warn(
             f"Article record for {source_path!s} was not found at {record_dir}; "
@@ -106,12 +164,195 @@ def resolve_existing_record_dir(source_path: str | Path, config: ArticleConfig) 
             RuntimeWarning,
             stacklevel=2,
         )
-        return matches[0]
+        return _ensure_record_dir_extracted(matches[0])
     if not matches:
         raise FileNotFoundError(f"Article record not found: {record_dir}")
     raise FileNotFoundError(
         f"Article record not found for {source_path!s}; multiple '{config.article_name}' records exist."
     )
+
+
+def _find_record_dirs_by_source_basename(source_path: str | Path, config: ArticleConfig) -> list[Path]:
+    if config.records_path is None:
+        return []
+    source_basename = Path(source_path).expanduser().name
+    if not source_basename:
+        return []
+    safe_basename = _safe_name(source_basename)
+    candidates = sorted((config.records_path / "datasets").glob(f"{safe_basename}-*/{config.article_name}"))
+    archive_candidates = sorted(
+        (config.records_path / "datasets").glob(f"{safe_basename}-*/{config.article_name}.tar.gz")
+    )
+    archive_candidates.extend(
+        sorted((config.records_path / "datasets").glob(f"{safe_basename}-*/{config.article_name}.zip"))
+    )
+    matches = set()
+    for candidate in candidates:
+        source = _read_record_source_json(candidate)
+        if source is None:
+            matches.add(candidate)
+        elif _source_basename_matches(source, source_basename):
+            matches.add(candidate)
+    for archive_candidate in archive_candidates:
+        candidate = _record_dir_from_archive(archive_candidate)
+        source = _read_archive_source_json(archive_candidate)
+        if source is None or _source_basename_matches(source, source_basename):
+            matches.add(candidate)
+    return sorted(matches)
+
+
+def _matching_record_dirs(datasets_dir: Path, article_name: str) -> list[Path]:
+    matches = {path for path in datasets_dir.glob(f"*/{article_name}")}
+    matches.update(_record_dir_from_archive(path) for path in datasets_dir.glob(f"*/{article_name}.tar.gz"))
+    matches.update(_record_dir_from_archive(path) for path in datasets_dir.glob(f"*/{article_name}.zip"))
+    return sorted(matches)
+
+
+def _source_basename_matches(source: dict[str, Any], source_basename: str) -> bool:
+    recorded_basename = source.get("source_basename")
+    if recorded_basename is None and source.get("source_path"):
+        recorded_basename = Path(source["source_path"]).name
+    return recorded_basename is None or recorded_basename == source_basename
+
+
+def _read_record_source_json(record_dir: Path) -> dict[str, Any] | None:
+    source_json = record_dir.parent / "source.json"
+    if not source_json.exists():
+        return None
+    try:
+        return json.loads(source_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _read_archive_source_json(archive_path: Path) -> dict[str, Any] | None:
+    if archive_path.name.endswith(".zip"):
+        return _read_zip_source_json(archive_path)
+    return _read_tar_source_json(archive_path)
+
+
+def _read_tar_source_json(archive_path: Path) -> dict[str, Any] | None:
+    try:
+        with tarfile.open(archive_path, "r:gz") as archive:
+            try:
+                member = archive.getmember("source.json")
+            except KeyError:
+                return None
+            extracted = archive.extractfile(member)
+            if extracted is None:
+                return None
+            return json.loads(extracted.read().decode("utf-8"))
+    except (tarfile.TarError, json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return None
+
+
+def _read_zip_source_json(archive_path: Path) -> dict[str, Any] | None:
+    try:
+        with zipfile.ZipFile(archive_path, "r") as archive:
+            return json.loads(archive.read("source.json").decode("utf-8"))
+    except (KeyError, zipfile.BadZipFile, json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return None
+
+
+def _archive_path(record_dir: Path, archive_format: str) -> Path:
+    suffix = ".tar.gz" if archive_format == "tar.gz" else ".zip"
+    return record_dir.parent / f"{record_dir.name}{suffix}"
+
+
+def _archive_paths(record_dir: Path) -> list[Path]:
+    return [_archive_path(record_dir, "tar.gz"), _archive_path(record_dir, "zip")]
+
+
+def _existing_archive_path(record_dir: Path) -> Path | None:
+    for archive_path in _archive_paths(record_dir):
+        if archive_path.exists():
+            return archive_path
+    return None
+
+
+def _record_dir_from_archive(archive_path: Path) -> Path:
+    name = archive_path.name
+    if name.endswith(".tar.gz"):
+        return archive_path.parent / name[: -len(".tar.gz")]
+    if name.endswith(".zip"):
+        return archive_path.parent / name[: -len(".zip")]
+    else:
+        raise ValueError(f"Unsupported article archive name: {archive_path}")
+
+
+def _ensure_record_dir_extracted(record_dir: Path) -> Path:
+    if not record_dir.exists():
+        archive_path = _existing_archive_path(record_dir)
+        if archive_path is not None:
+            _extract_archive(archive_path, record_dir)
+    return record_dir
+
+
+def _extract_archive(archive_path: Path, record_dir: Path) -> None:
+    if archive_path.name.endswith(".zip"):
+        _extract_zip_archive(archive_path, record_dir)
+    else:
+        _extract_tar_archive(archive_path, record_dir)
+
+
+def _extract_tar_archive(archive_path: Path, record_dir: Path) -> None:
+    record_dir.parent.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive_path, "r:gz") as archive:
+        members = archive.getmembers()
+        root = record_dir.parent.resolve(strict=False)
+        for member in members:
+            target = (record_dir.parent / member.name).resolve(strict=False)
+            if root != target and root not in target.parents:
+                raise ValueError(f"Unsafe article archive member path: {member.name}")
+        archive.extractall(record_dir.parent, members=members, filter="data")
+
+
+def _extract_zip_archive(archive_path: Path, record_dir: Path) -> None:
+    record_dir.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(archive_path, "r") as archive:
+        root = record_dir.parent.resolve(strict=False)
+        for member_name in archive.namelist():
+            target = (record_dir.parent / member_name).resolve(strict=False)
+            if root != target and root not in target.parents:
+                raise ValueError(f"Unsafe article archive member path: {member_name}")
+        archive.extractall(record_dir.parent)
+
+
+def _write_archive(record_dir: Path, archive_format: str) -> None:
+    archive_path = _archive_path(record_dir, archive_format)
+    if archive_format == "zip":
+        _write_zip_archive(record_dir, archive_path)
+    else:
+        _write_tar_archive(record_dir, archive_path)
+
+
+def _write_tar_archive(record_dir: Path, archive_path: Path) -> None:
+    tmp_path = archive_path.with_name(f".{archive_path.name}.tmp")
+    tmp_path.unlink(missing_ok=True)
+    try:
+        with tarfile.open(tmp_path, "w:gz") as archive:
+            archive.add(record_dir, arcname=record_dir.name)
+            source_json = record_dir.parent / "source.json"
+            if source_json.exists():
+                archive.add(source_json, arcname="source.json")
+        tmp_path.replace(archive_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+def _write_zip_archive(record_dir: Path, archive_path: Path) -> None:
+    tmp_path = archive_path.with_name(f".{archive_path.name}.tmp")
+    tmp_path.unlink(missing_ok=True)
+    try:
+        with zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+            for path in sorted(record_dir.rglob("*")):
+                archive.write(path, arcname=str(path.relative_to(record_dir.parent)))
+            source_json = record_dir.parent / "source.json"
+            if source_json.exists():
+                archive.write(source_json, arcname="source.json")
+        tmp_path.replace(archive_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 def _load_manifest(record_dir: Path) -> dict[str, Any]:
@@ -239,8 +480,18 @@ class ArticleRecorder:
 
         self.record_dir.mkdir(parents=True, exist_ok=True)
         self._staging_data_path.unlink(missing_ok=True)
-        self._write_manifest()
+        if self.manifest_path.exists():
+            self._load_existing_manifest()
+        else:
+            self.data_path.unlink(missing_ok=True)
+            self._write_manifest()
         self._write_source_json()
+
+    def _load_existing_manifest(self) -> None:
+        """Load an existing record bundle so notebooks can append figures."""
+        manifest = _load_manifest(self.record_dir)
+        self.records = list(manifest["records"])
+        self._dataset_by_key = {_record_key(record.get("field"), record["selector"]): record for record in self.records}
 
     def write_input(self, inp: InpFile | None) -> None:
         """Save the input file required for unit reconstruction."""
@@ -313,7 +564,10 @@ class ArticleRecorder:
 
         try:
             with h5py.File(self._staging_data_path, "a") as h5:
-                h5.create_dataset(dataset_path, data=array)
+                if array.ndim > 0 and array.size > 0:
+                    h5.create_dataset(dataset_path, data=array, compression="gzip", compression_opts=4, shuffle=True)
+                else:
+                    h5.create_dataset(dataset_path, data=array)
             self._staging_data_path.replace(self.data_path)
         finally:
             self._staging_data_path.unlink(missing_ok=True)
@@ -322,14 +576,17 @@ class ArticleRecorder:
         source = {
             "schema_version": SCHEMA_VERSION,
             "source_path": str(self.source_path),
+            "source_basename": self.source_path.name,
             "source_path_hash": hashlib.sha1(str(self.source_path).encode("utf-8")).hexdigest(),
             "article_name": self.config.article_name,
+            "article_source_name": self.config.source_name,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "recorded_files": self._recorded_file_hashes(),
         }
         source_path = self.dataset_dir / "source.json"
         source_path.parent.mkdir(parents=True, exist_ok=True)
         _write_json_atomic(source_path, source)
+        self._sync_archive()
 
     def _recorded_file_hashes(self) -> dict[str, str]:
         files = {}
@@ -347,6 +604,11 @@ class ArticleRecorder:
             "records": self.records,
         }
         _write_json_atomic(self.manifest_path, manifest)
+        self._sync_archive()
+
+    def _sync_archive(self) -> None:
+        if self.config.archive_format is not None:
+            _write_archive(self.record_dir, self.config.archive_format)
 
 
 class ArticleReplayEmout:
