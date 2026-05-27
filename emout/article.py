@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import shutil
+import warnings
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,12 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from emout.core.data.selectors import (
+    compose_selector as _compose_selector,
+    normalize_item as _normalize_item_base,
+    selector_length as _selector_length,
+)
+from emout.core.io.diagnostics import read_icur, read_pbody
 from emout.utils import InpFile, UnitTranslator, Units
 
 ENV_MODE = "EMOUT_ARTICLE_MODE"
@@ -93,12 +100,67 @@ def resolve_existing_record_dir(source_path: str | Path, config: ArticleConfig) 
 
     matches = sorted((config.records_path / "datasets").glob(f"*/{config.article_name}"))
     if len(matches) == 1:
+        warnings.warn(
+            f"Article record for {source_path!s} was not found at {record_dir}; "
+            f"falling back to the single matching article record {matches[0]}.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         return matches[0]
     if not matches:
         raise FileNotFoundError(f"Article record not found: {record_dir}")
     raise FileNotFoundError(
         f"Article record not found for {source_path!s}; multiple '{config.article_name}' records exist."
     )
+
+
+def _load_manifest(record_dir: Path) -> dict[str, Any]:
+    manifest_path = record_dir / "manifest.json"
+    data_path = record_dir / "data.h5"
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Article manifest not found: {manifest_path}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    schema_version = manifest.get("schema_version")
+    if schema_version != SCHEMA_VERSION:
+        raise ValueError(f"Unsupported article manifest schema_version {schema_version!r}; expected {SCHEMA_VERSION}.")
+    records = manifest.get("records")
+    if not isinstance(records, list):
+        raise ValueError(f"Invalid article manifest records in {manifest_path}")
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ValueError(f"Invalid article manifest record at index {index} in {manifest_path}")
+        for key in ("dataset", "field", "selector", "slices", "slice_axes"):
+            if key not in record:
+                raise ValueError(f"Invalid article manifest record {index}: missing {key!r}")
+    if records and not data_path.exists():
+        raise FileNotFoundError(f"Article data file not found: {data_path}")
+    if records:
+        with h5py.File(data_path, "r") as h5:
+            for index, record in enumerate(records):
+                dataset_path = record["dataset"]
+                if dataset_path not in h5:
+                    raise ValueError(f"Invalid article manifest record {index}: dataset {dataset_path!r} is missing")
+                shape = record.get("shape")
+                if shape is not None and list(h5[dataset_path].shape) != list(shape):
+                    raise ValueError(f"Invalid article manifest record {index}: dataset shape does not match manifest")
+    return manifest
+
+
+def _verify_source_json(record_dir: Path) -> None:
+    source_path = record_dir.parent / "source.json"
+    if not source_path.exists():
+        return
+
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+    recorded_files = source.get("recorded_files") or {}
+    for filename, expected_hash in recorded_files.items():
+        path = record_dir / filename
+        if not path.exists():
+            raise FileNotFoundError(f"Recorded article file is missing: {path}")
+        actual_hash = _sha256_file(path)
+        if actual_hash != expected_hash:
+            raise ValueError(f"Recorded article file hash mismatch: {path}")
 
 
 def attach_recorder(obj: Any, recorder: "ArticleRecorder | None", source_shape: tuple[int, ...] | None = None) -> Any:
@@ -134,6 +196,33 @@ def record_data_access(data: Any, kind: str, kwargs: dict[str, Any] | None = Non
     recorder.record_data(data, kind=kind, kwargs=kwargs)
 
 
+def _record_key(field: str | None, selector: list[Any]) -> str:
+    payload = {"field": field, "selector": selector}
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+def _raise_unsupported_replay_api(name: str) -> None:
+    raise NotImplementedError(
+        f"Article replay does not provide {name}. "
+        "Only recorded grid slices, input metadata, diagnostics, and boundaries are available."
+    )
+
+
+def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f".{path.name}.tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    tmp_path.replace(path)
+
+
+def _sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
 class ArticleRecorder:
     """Persist article data records for one :class:`emout.Emout` source."""
 
@@ -143,12 +232,13 @@ class ArticleRecorder:
         self.record_dir = resolve_record_dir(self.source_path, config)
         self.dataset_dir = self.record_dir.parent
         self.data_path = self.record_dir / "data.h5"
+        self._staging_data_path = self.record_dir / ".data.h5.tmp"
         self.manifest_path = self.record_dir / "manifest.json"
         self.records: list[dict[str, Any]] = []
+        self._dataset_by_key: dict[str, dict[str, Any]] = {}
 
         self.record_dir.mkdir(parents=True, exist_ok=True)
-        if self.data_path.exists():
-            self.data_path.unlink()
+        self._staging_data_path.unlink(missing_ok=True)
         self._write_manifest()
         self._write_source_json()
 
@@ -156,6 +246,7 @@ class ArticleRecorder:
         """Save the input file required for unit reconstruction."""
         if inp is not None:
             inp.save(self.record_dir / "plasma.inp", convkey=inp.convkey)
+            self._write_source_json()
 
     def copy_input_path(self, input_path: str | Path | None) -> None:
         """Copy the original input file when it exists."""
@@ -164,6 +255,7 @@ class ArticleRecorder:
         src = Path(input_path)
         if src.exists():
             shutil.copyfile(src, self.record_dir / src.name)
+            self._write_source_json()
 
     def copy_source_files(self, input_directory: str | Path, output_directory: str | Path) -> None:
         """Copy small source-side files useful for article replay."""
@@ -178,18 +270,21 @@ class ArticleRecorder:
             src = output_directory / filename
             if src.exists():
                 shutil.copyfile(src, self.record_dir / filename)
+        self._write_source_json()
 
     def record_data(self, data: Any, *, kind: str, kwargs: dict[str, Any] | None = None) -> None:
         """Append a consumed data slice to the article bundle."""
         if not hasattr(data, "slices"):
             return
 
+        selector = _encode_selector_tuple(_to_recipe_index(data))
+        key = _record_key(getattr(data, "name", None), selector)
+        if key in self._dataset_by_key:
+            return
+
         record_id = f"record_{len(self.records):06d}"
         dataset_path = f"records/{record_id}"
         array = np.asarray(data)
-
-        with h5py.File(self.data_path, "a") as h5:
-            h5.create_dataset(dataset_path, data=array)
 
         record = {
             "id": record_id,
@@ -199,14 +294,29 @@ class ArticleRecorder:
             "shape": list(array.shape),
             "source_shape": list(getattr(data, "_article_source_shape", ())),
             "slices": [_encode_slice(slc) for slc in data.slices],
-            "selector": _encode_selector_tuple(_to_recipe_index(data)),
+            "selector": selector,
             "slice_axes": list(data.slice_axes),
             "axisunits": [_encode_unit(unit) for unit in getattr(data, "axisunits", [])],
             "valunit": _encode_unit(getattr(data, "valunit", None)),
             "kwargs": _jsonable(kwargs or {}),
         }
+        self._write_dataset(dataset_path, array)
         self.records.append(record)
+        self._dataset_by_key[key] = record
         self._write_manifest()
+
+    def _write_dataset(self, dataset_path: str, array: np.ndarray) -> None:
+        """Atomically add one dataset to ``data.h5``."""
+        self._staging_data_path.unlink(missing_ok=True)
+        if self.data_path.exists():
+            shutil.copyfile(self.data_path, self._staging_data_path)
+
+        try:
+            with h5py.File(self._staging_data_path, "a") as h5:
+                h5.create_dataset(dataset_path, data=array)
+            self._staging_data_path.replace(self.data_path)
+        finally:
+            self._staging_data_path.unlink(missing_ok=True)
 
     def _write_source_json(self) -> None:
         source = {
@@ -215,10 +325,19 @@ class ArticleRecorder:
             "source_path_hash": hashlib.sha1(str(self.source_path).encode("utf-8")).hexdigest(),
             "article_name": self.config.article_name,
             "created_at": datetime.now(timezone.utc).isoformat(),
+            "recorded_files": self._recorded_file_hashes(),
         }
         source_path = self.dataset_dir / "source.json"
         source_path.parent.mkdir(parents=True, exist_ok=True)
-        source_path.write_text(json.dumps(source, indent=2, sort_keys=True), encoding="utf-8")
+        _write_json_atomic(source_path, source)
+
+    def _recorded_file_hashes(self) -> dict[str, str]:
+        files = {}
+        for filename in ("plasma.inp", "plasma.toml", "icur", "pbody"):
+            path = self.record_dir / filename
+            if path.exists():
+                files[filename] = _sha256_file(path)
+        return files
 
     def _write_manifest(self) -> None:
         manifest = {
@@ -227,7 +346,7 @@ class ArticleRecorder:
             "source_path": str(self.source_path),
             "records": self.records,
         }
-        self.manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+        _write_json_atomic(self.manifest_path, manifest)
 
 
 class ArticleReplayEmout:
@@ -238,7 +357,8 @@ class ArticleReplayEmout:
         self._config = config
         self._record_dir = resolve_existing_record_dir(self._source_path, config)
         self._data_path = self._record_dir / "data.h5"
-        self._manifest = json.loads((self._record_dir / "manifest.json").read_text(encoding="utf-8"))
+        self._manifest = _load_manifest(self._record_dir)
+        _verify_source_json(self._record_dir)
         self._records = self._manifest.get("records", [])
         self._records_by_field: dict[str, list[dict[str, Any]]] = {}
         for record in self._records:
@@ -282,8 +402,8 @@ class ArticleReplayEmout:
         return self._unit
 
     def is_valid(self) -> bool:
-        """Replay bundles are valid when the manifest and data file exist."""
-        return self._data_path.exists()
+        """Return whether the replay bundle has the files required by its manifest."""
+        return not self._records or self._data_path.exists()
 
     def available_fields(self) -> list[str]:
         """Return recorded scalar field names."""
@@ -294,29 +414,14 @@ class ArticleReplayEmout:
         """Return the recorded ``icur`` diagnostic file as a DataFrame."""
         if self._inp is None:
             raise RuntimeError("icur replay requires a recorded plasma.inp")
-        path = self._record_dir / "icur"
-        if not path.exists():
-            raise FileNotFoundError(f"'icur' file not found in article record: {path}")
-
-        names = []
-        for ispec in range(self._inp.nspec):
-            names.append(f"{ispec + 1}_step")
-            for ipc in range(self._inp.npc):
-                names.append(f"{ispec + 1}_body{ipc + 1}")
-                names.append(f"{ispec + 1}_body{ipc + 1}_ema")
-        return pd.read_csv(path, sep=r"\s+", header=None, names=names)
+        return read_icur(self._record_dir / "icur", self._inp)
 
     @property
     def pbody(self) -> pd.DataFrame:
         """Return the recorded ``pbody`` diagnostic file as a DataFrame."""
         if self._inp is None:
             raise RuntimeError("pbody replay requires a recorded plasma.inp")
-        path = self._record_dir / "pbody"
-        if not path.exists():
-            raise FileNotFoundError(f"'pbody' file not found in article record: {path}")
-
-        names = ["step"] + [f"body{i + 1}" for i in range(self._inp.npc + 1)]
-        return pd.read_csv(path, sep=r"\s+", names=names)
+        return read_pbody(self._record_dir / "pbody", self._inp)
 
     @property
     def boundaries(self):
@@ -325,22 +430,32 @@ class ArticleReplayEmout:
 
         return BoundaryCollection(self._inp, self._unit)
 
+    @property
+    def backtrace(self):
+        """Backtrace is not part of article replay bundles."""
+        _raise_unsupported_replay_api("backtrace")
+
+    def remote(self, *args, **kwargs):
+        """Remote execution is not available for article replay bundles."""
+        _raise_unsupported_replay_api("remote")
+
+    def particle(self, *args, **kwargs):
+        """Particle files are not part of article replay bundles."""
+        _raise_unsupported_replay_api("particle")
+
     def __getattr__(self, name: str):
         """Resolve recorded scalar and vector field names."""
-        import re
-
         if name in self._records_by_field:
             return ArticleSeries(self, name)
 
-        m3 = re.match(r"^(.+?)([xyz])([xyz])([xyz])$", name)
-        if m3 and len(set(m3.groups()[1:])) == 3:
-            base, axis1, axis2, axis3 = m3.groups()
-            return _build_vector([getattr(self, f"{base}{axis}") for axis in (axis1, axis2, axis3)], name)
+        from emout.core.data.vector_resolver import resolve_vector_name
 
-        m2 = re.match(r"(.+)([xyz])([xyz])$", name)
-        if m2:
-            base, axis1, axis2 = m2.groups()
-            return _build_vector([getattr(self, f"{base}{axis}") for axis in (axis1, axis2)], name)
+        try:
+            vector = resolve_vector_name(name, lambda component: getattr(self, component), fallback_3d=False)
+        except AttributeError:
+            vector = None
+        if vector is not None:
+            return vector
 
         raise AttributeError(f"Article replay field is not recorded: {name}")
 
@@ -348,29 +463,20 @@ class ArticleReplayEmout:
         with h5py.File(self._data_path, "r") as h5:
             array = np.array(h5[record["dataset"]])
 
-        params = {
-            "filename": self._data_path,
-            "name": record.get("field"),
-            "tslice": _decode_slice(record["slices"][0]),
-            "zslice": _decode_slice(record["slices"][1]),
-            "yslice": _decode_slice(record["slices"][2]),
-            "xslice": _decode_slice(record["slices"][3]),
-            "slice_axes": list(record["slice_axes"]),
-            "axisunits": [_decode_unit(unit) for unit in record.get("axisunits", [])],
-            "valunit": _decode_unit(record.get("valunit")),
-        }
+        from emout.core.data.factory import data_from_array
 
-        from emout.core.data.data import Data1d, Data2d, Data3d, Data4d
-
-        if array.ndim == 1:
-            return Data1d(array, **params)
-        if array.ndim == 2:
-            return Data2d(array, **params)
-        if array.ndim == 3:
-            return Data3d(array, **params)
-        if array.ndim == 4:
-            return Data4d(array, **params)
-        return array.item() if array.ndim == 0 else array
+        return data_from_array(
+            array,
+            filename=self._data_path,
+            name=record.get("field"),
+            tslice=_decode_slice(record["slices"][0]),
+            zslice=_decode_slice(record["slices"][1]),
+            yslice=_decode_slice(record["slices"][2]),
+            xslice=_decode_slice(record["slices"][3]),
+            slice_axes=list(record["slice_axes"]),
+            axisunits=[_decode_unit(unit) for unit in record.get("axisunits", [])],
+            valunit=_decode_unit(record.get("valunit")),
+        )
 
     def _find_record(self, field: str, selectors: tuple[Any, ...]) -> dict[str, Any]:
         encoded_selector = _encode_selector_tuple(selectors)
@@ -446,12 +552,6 @@ class ArticleSelection:
         return self.materialize().plot(**kwargs)
 
 
-def _build_vector(objs: list[Any], name: str):
-    from emout.core.data.vector_data import VectorData
-
-    return VectorData(objs, name=name)
-
-
 def _to_recipe_index(data: Any) -> tuple[Any, ...]:
     if hasattr(data, "_to_recipe_index"):
         return tuple(data._to_recipe_index())
@@ -466,39 +566,7 @@ def _to_recipe_index(data: Any) -> tuple[Any, ...]:
 
 
 def _normalize_item(item: Any, shape: tuple[int, ...]) -> tuple[Any, ...]:
-    if not isinstance(item, tuple):
-        item = (item,)
-    if item.count(Ellipsis) > 1:
-        raise IndexError("an index can only have a single ellipsis ('...')")
-    if Ellipsis in item:
-        idx = item.index(Ellipsis)
-        fill = (slice(None),) * (len(shape) - (len(item) - 1))
-        item = item[:idx] + fill + item[idx + 1 :]
-    if len(item) > len(shape):
-        raise IndexError(f"too many indices for {len(shape)}-dimensional article data")
-    item = item + (slice(None),) * (len(shape) - len(item))
-    return tuple(_normalize_selector(selector, size) for selector, size in zip(item, shape))
-
-
-def _normalize_selector(selector: Any, size: int) -> Any:
-    if isinstance(selector, slice):
-        rng = range(*selector.indices(size))
-        return slice(rng.start, rng.stop, rng.step)
-    if isinstance(selector, list):
-        return tuple(_normalize_index(index, size) for index in selector)
-    if isinstance(selector, tuple):
-        return tuple(_normalize_index(index, size) for index in selector)
-    if isinstance(selector, (int, np.integer)):
-        return _normalize_index(int(selector), size)
-    raise TypeError(f"Unsupported selector type {type(selector).__name__}; expected int, slice, list, or tuple")
-
-
-def _normalize_index(index: int, size: int) -> int:
-    if index < 0:
-        index += size
-    if index < 0 or index >= size:
-        raise IndexError(f"index {index} is out of bounds for axis with size {size}")
-    return index
+    return _normalize_item_base(item, shape, target="article data")
 
 
 def _compose_item(
@@ -518,42 +586,6 @@ def _compose_item(
         axis = slice_axes[dim]
         result[axis] = _compose_selector(result[axis], sub_selector, shape[axis])
     return tuple(result)
-
-
-def _compose_selector(base_selector: Any, sub_selector: Any, size: int) -> Any:
-    values = _selector_positions(base_selector, size)
-    if isinstance(sub_selector, (int, np.integer)):
-        return values[_normalize_index(int(sub_selector), len(values))]
-    if isinstance(sub_selector, slice):
-        return _selector_to_compact(values[sub_selector])
-    if isinstance(sub_selector, list):
-        return tuple(values[_normalize_index(index, len(values))] for index in sub_selector)
-    if isinstance(sub_selector, tuple):
-        return tuple(values[_normalize_index(index, len(values))] for index in sub_selector)
-    raise TypeError(f"Unsupported selector type {type(sub_selector).__name__}; expected int, slice, list, or tuple")
-
-
-def _selector_positions(selector: Any, size: int) -> tuple[int, ...]:
-    if isinstance(selector, int):
-        return (selector,)
-    if isinstance(selector, slice):
-        return tuple(range(*selector.indices(size)))
-    return tuple(selector)
-
-
-def _selector_length(selector: Any, size: int) -> int:
-    return len(_selector_positions(selector, size))
-
-
-def _selector_to_compact(values: tuple[int, ...]) -> Any:
-    if len(values) == 1:
-        return slice(values[0], values[0] + 1, 1)
-    if not values:
-        return slice(0, 0, 1)
-    step = values[1] - values[0]
-    if all((right - left) == step for left, right in zip(values, values[1:])):
-        return slice(values[0], values[-1] + step, step)
-    return tuple(values)
 
 
 def _source_shape_from_record(record: dict[str, Any]) -> list[int]:

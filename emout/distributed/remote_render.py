@@ -448,10 +448,11 @@ class RemoteSession:
 
         data = self._resolve(emout_kwargs)
         arr = getattr(data, attr_name)[index]
+        plot_args = tuple(plot_kwargs.pop("_emout_plot_args", ()))
 
         def _draw(fig, ax):
             plt.sca(ax)
-            arr.plot(**plot_kwargs)
+            arr.plot(*plot_args, **plot_kwargs)
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
@@ -569,6 +570,30 @@ class RemoteSession:
             "vmax": float(norm.vmax),
         }
 
+    def get_plot_surfaces_metadata(
+        self,
+        attr_name: str,
+        index: tuple,
+        emout_kwargs=None,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        cmap_name="jet",
+    ) -> dict:
+        """Return colormap metadata for ``Data3d.plot_surfaces(...)``."""
+        from emout.plot.surface_cut.viz import _make_norm
+
+        data = self._resolve(emout_kwargs)
+        obj = getattr(data, attr_name)[index]
+        effective_si = bool(use_si) and getattr(obj, "valunit", None) is not None
+        array = np.asarray(obj.val_si if effective_si else obj, dtype=np.float64)
+        norm = _make_norm(vmin=vmin, vmax=vmax, robust_data=array)
+        return {
+            "cmap_name": cmap_name,
+            "vmin": float(norm.vmin),
+            "vmax": float(norm.vmax),
+        }
+
     def render_cached_plot_surfaces(
         self,
         key: str,
@@ -623,7 +648,8 @@ class RemoteSession:
     def render_plot_surfaces(
         self,
         attr_name: str,
-        t_index: int,
+        index,
+        surfaces=None,
         use_si: bool = True,
         fmt: str = "png",
         dpi: int = 150,
@@ -632,13 +658,16 @@ class RemoteSession:
     ) -> bytes:
         """Render Data3d.plot_surfaces on the worker and return image bytes."""
         data = self._resolve(emout_kwargs)
-        data3d = getattr(data, attr_name)[t_index]
-        boundaries = data.boundaries
+        data3d = getattr(data, attr_name)[index]
+        if surfaces is None:
+            surfaces = data.boundaries
+        surfaces = self._decode_remote_value(surfaces)
+        plot_kwargs = self._decode_remote_value(plot_kwargs)
 
         def _draw(fig, ax):
             ax = fig.add_subplot(111, projection="3d")
             data3d._plot_surfaces_local(
-                surfaces=boundaries,
+                surfaces=surfaces,
                 ax=ax,
                 use_si=use_si,
                 **plot_kwargs,
@@ -768,9 +797,10 @@ class RemoteSession:
                 _, attr_name, recipe_index, plot_kwargs, emout_kwargs = cmd
                 plot_kwargs = _decode(plot_kwargs)
                 emout_kwargs = _decode(emout_kwargs)
+                plot_args = tuple(plot_kwargs.pop("_emout_plot_args", ()))
                 data = self._resolve(emout_kwargs)
                 arr = getattr(data, attr_name)[recipe_index]
-                arr.plot(**plot_kwargs)
+                arr.plot(*plot_args, **plot_kwargs)
 
             elif kind == "plot_surfaces":
                 _, attr_name, recipe_index, surfaces, plot_kwargs, emout_kwargs = cmd

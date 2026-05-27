@@ -235,6 +235,11 @@ class BoundaryCollection:
         types = ", ".join(b.btype for b in self._boundaries)
         return f"<BoundaryCollection [{types}]>"
 
+    @property
+    def types(self) -> Tuple[str, ...]:
+        """Return boundary type names included in this collection."""
+        return tuple(boundary.btype for boundary in self._boundaries)
+
     # -- composition ---------------------------------------------------------
 
     def __add__(self, other):

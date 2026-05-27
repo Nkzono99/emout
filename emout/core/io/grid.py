@@ -22,7 +22,7 @@ from tqdm.notebook import tqdm as _tqdm_notebook
 from emout.local_data_policy import normalize_local_data_policy, require_local_data_access
 
 from ..data.griddata_series import GridDataSeries
-from ..data.vector_data import VectorData2d, VectorData3d
+from ..data.vector_resolver import resolve_vector_name
 from ..relocation.electric import relocated_electric_field
 from ..relocation.magnetic import relocated_magnetic_field
 from .directory import DirectoryInspector
@@ -95,35 +95,10 @@ class GridDataLoader:
             )
             self._create_relocated_field_hdf5(fld)
 
-        skip_2d_vector_parse = False
-        m3 = re.match(r"^(.+?)([xyz])([xyz])([xyz])$", name)
-        if m3:
-            dname, axis1, axis2, axis3 = m3.groups()
-            axes = (axis1, axis2, axis3)
-            if len(set(axes)) == 3:
-                skip_2d_vector_parse = True
-                logger.debug(f"Building VectorData3d: base={dname}, axes=({axis1},{axis2},{axis3})")
-                try:
-                    arr1 = self.load(f"{dname}{axis1}")
-                    arr2 = self.load(f"{dname}{axis2}")
-                    arr3 = self.load(f"{dname}{axis3}")
-                    vd = VectorData3d([arr1, arr2, arr3], name=name)
-                    return vd
-                except (KeyError, FileNotFoundError, OSError):
-                    logger.debug(
-                        "VectorData3d resolution failed; falling back to plain GridDataSeries.",
-                        exc_info=True,
-                    )
-
-        if not skip_2d_vector_parse:
-            m2 = re.match(r"(.+)([xyz])([xyz])$", name)
-            if m2:
-                dname, axis1, axis2 = m2.groups()
-                logger.debug(f"Building VectorData2d: base={dname}, axes=({axis1},{axis2})")
-                arr1 = self.load(f"{dname}{axis1}")  # recursively loads GridDataSeries or relocated field
-                arr2 = self.load(f"{dname}{axis2}")
-                vd = VectorData2d([arr1, arr2], name=name)
-                return vd
+        vector = resolve_vector_name(name, self.load, fallback_3d=True)
+        if vector is not None:
+            logger.debug(f"Building VectorData: {name}")
+            return vector
 
         main_fp = self._find_h5file(self.dir_inspector.main_directory, name)
         logger.info(f"Loading grid data from: {main_fp.resolve()}")
@@ -198,15 +173,7 @@ class GridDataLoader:
             local_data_policy=self.local_data_policy,
         )
         series._emout_dir = str(self.dir_inspector.main_directory)
-        series._emout_open_kwargs = {
-            "directory": str(self.dir_inspector._input_directory),
-            "append_directories": [str(path) for path in self.dir_inspector.append_directories],
-            "inpfilename": self.dir_inspector.inpfilename,
-            "output_directory": str(self.dir_inspector.main_directory),
-            "local_data_policy": "allow",
-        }
-        if self.dir_inspector.input_path is not None:
-            series._emout_open_kwargs["input_path"] = str(self.dir_inspector.input_path)
+        series._emout_open_kwargs = self.dir_inspector.to_emout_open_kwargs()
         return series
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:

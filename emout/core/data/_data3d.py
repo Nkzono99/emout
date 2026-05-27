@@ -85,9 +85,10 @@ class Data3d(Data):
             ``(fig, ax)`` for ``mode='cont'``; ``None`` for unsupported
             modes.
         """
-        remote = None
-        if not args:
-            remote = self._try_remote_plot(mode=mode, use_si=use_si, offsets=offsets, **kwargs)
+        remote_kwargs = dict(kwargs)
+        if args:
+            remote_kwargs["_emout_plot_args"] = tuple(args)
+        remote = self._try_remote_plot(mode=mode, use_si=use_si, offsets=offsets, **remote_kwargs)
         if remote is not None:
             return None if remote is _REMOTE_PLOT_HANDLED else remote
         if self._local_data_access_disabled():
@@ -270,61 +271,41 @@ class Data3d(Data):
         tuple
             ``(cmap, norm)`` returned by ``plot_surfaces``.
         """
-        if self._local_data_access_disabled():
-            self._require_local_data_access("plot field surfaces locally", self._target_name())
-
         remote_kwargs = self._get_remote_open_kwargs()
-        if remote_kwargs is not None:
-            from emout.distributed.remote_figure import (
-                is_recording,
-                record_plot_surfaces,
-                request_session,
+        from emout.distributed.remote_figure import is_recording
+
+        if is_recording():
+            return self._record_remote_plot_surfaces(
+                surfaces,
+                remote_kwargs=remote_kwargs,
+                ax=ax,
+                use_si=use_si,
+                vmin=vmin,
+                vmax=vmax,
+                **kwargs,
             )
 
-            if is_recording():
-                from emout.plot.surface_cut.viz import _make_norm
-                import matplotlib.pyplot as plt
+        if self._local_data_access_disabled():
+            return self._render_remote_plot_surfaces(
+                surfaces,
+                remote_kwargs=remote_kwargs,
+                ax=ax,
+                use_si=use_si,
+                vmin=vmin,
+                vmax=vmax,
+                **kwargs,
+            )
 
-                request_session(remote_kwargs)
-                recipe_index = self._to_recipe_index()
-                record_plot_surfaces(
-                    self.name,
-                    recipe_index,
-                    surfaces,
-                    {
-                        "ax": ax,
-                        "use_si": use_si,
-                        "vmin": vmin,
-                        "vmax": vmax,
-                        **kwargs,
-                    },
-                    emout_kwargs=remote_kwargs,
-                )
-                effective_si = bool(use_si) and getattr(self, "valunit", None) is not None
-                data = np.asarray(self.val_si if effective_si else self, dtype=np.float64)
-                cmap = plt.get_cmap(kwargs.get("cmap_name", "jet"))
-                norm = _make_norm(vmin, vmax, robust_data=data)
-                return cmap, norm
-
-        # If a Dask session is running, fetch the 3-D array from the worker
-        # and render locally (so ax.set_xlabel() etc. can be applied afterwards)
         if remote_kwargs is not None:
-            from emout.distributed.remote_render import get_or_create_session
+            from emout.distributed.remote_render import _await_remote, get_or_create_session
 
             session = get_or_create_session(emout_kwargs=remote_kwargs)
             if session is not None:
                 recipe_index = self._to_recipe_index()
-                payload = session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs).result()
-                local_data = Data3d(
-                    payload["array"],
-                    name=payload["name"],
-                    axisunits=payload["axisunits"],
-                    valunit=payload["valunit"],
-                )
-                local_data.slices = payload["slices"]
-                local_data.slice_axes = payload["slice_axes"]
-                local_data._emout_dir = None  # prevent recursion
-                local_data._emout_open_kwargs = None
+                payload = _await_remote(session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs))
+                from .factory import data_from_payload
+
+                local_data = data_from_payload(payload)
                 return local_data._plot_surfaces_local(
                     surfaces,
                     ax=ax,
@@ -342,6 +323,136 @@ class Data3d(Data):
             vmax=vmax,
             **kwargs,
         )
+
+    def _record_remote_plot_surfaces(
+        self,
+        surfaces,
+        *,
+        remote_kwargs,
+        ax=None,
+        use_si: bool = True,
+        vmin: Union[float, None] = None,
+        vmax: Union[float, None] = None,
+        **kwargs,
+    ):
+        """Record ``plot_surfaces`` inside ``remote_figure`` without local field reads."""
+        from emout.distributed.remote_figure import record_plot_surfaces, request_session
+
+        session = request_session(remote_kwargs)
+        if session is None and self._local_data_access_disabled():
+            self._require_local_data_access(
+                "record a remote field surfaces plot without a remote session",
+                self._target_name(),
+            )
+
+        recipe_index = self._to_recipe_index()
+        record_plot_surfaces(
+            self.name,
+            recipe_index,
+            surfaces,
+            {
+                "ax": ax,
+                "use_si": use_si,
+                "vmin": vmin,
+                "vmax": vmax,
+                **kwargs,
+            },
+            emout_kwargs=remote_kwargs,
+        )
+        return self._plot_surfaces_cmap_norm(
+            session,
+            remote_kwargs=remote_kwargs,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            cmap_name=kwargs.get("cmap_name", "jet"),
+        )
+
+    def _render_remote_plot_surfaces(
+        self,
+        surfaces,
+        *,
+        remote_kwargs,
+        ax=None,
+        use_si: bool = True,
+        vmin: Union[float, None] = None,
+        vmax: Union[float, None] = None,
+        **kwargs,
+    ):
+        """Render ``plot_surfaces`` remotely when local field access is disabled."""
+        if remote_kwargs is None:
+            self._require_local_data_access("plot field surfaces locally", self._target_name())
+
+        from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session
+
+        session = get_or_create_session(emout_kwargs=remote_kwargs)
+        if session is None:
+            self._require_local_data_access("plot field surfaces without a remote session", self._target_name())
+
+        recipe_index = self._to_recipe_index()
+        cmap, norm = self._plot_surfaces_cmap_norm(
+            session,
+            remote_kwargs=remote_kwargs,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            cmap_name=kwargs.get("cmap_name", "jet"),
+        )
+        img = _await_remote(
+            session.render_plot_surfaces(
+                self.name,
+                recipe_index,
+                surfaces=surfaces,
+                emout_kwargs=remote_kwargs,
+                use_si=use_si,
+                vmin=vmin,
+                vmax=vmax,
+                **kwargs,
+            )
+        )
+        display_image(img, ax=ax)
+        return cmap, norm
+
+    def _plot_surfaces_cmap_norm(
+        self,
+        session,
+        *,
+        remote_kwargs,
+        use_si: bool,
+        vmin,
+        vmax,
+        cmap_name: str,
+    ):
+        """Build color metadata locally or from a remote session."""
+        import matplotlib.pyplot as plt
+
+        from emout.plot.surface_cut.viz import _make_norm
+
+        if (vmin is None or vmax is None) and session is not None:
+            from emout.distributed.remote_render import _await_remote
+
+            metadata = _await_remote(
+                session.get_plot_surfaces_metadata(
+                    self.name,
+                    self._to_recipe_index(),
+                    emout_kwargs=remote_kwargs,
+                    use_si=use_si,
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap_name=cmap_name,
+                )
+            )
+            cmap_name = metadata["cmap_name"]
+            vmin = metadata["vmin"]
+            vmax = metadata["vmax"]
+            return plt.get_cmap(cmap_name), _make_norm(vmin=vmin, vmax=vmax)
+
+        if vmin is None or vmax is None:
+            effective_si = bool(use_si) and getattr(self, "valunit", None) is not None
+            data = np.asarray(self.val_si if effective_si else self, dtype=np.float64)
+            return plt.get_cmap(cmap_name), _make_norm(vmin=vmin, vmax=vmax, robust_data=data)
+
+        return plt.get_cmap(cmap_name), _make_norm(vmin=vmin, vmax=vmax)
 
     def _plot_surfaces_local(
         self,

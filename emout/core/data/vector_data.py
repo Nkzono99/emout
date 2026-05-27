@@ -21,6 +21,27 @@ from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import UnitTranslator
 from emout.utils.util import apply_offset
 
+from ._base import _REMOTE_PLOT_HANDLED
+
+
+def _infer_component_axes(objs: List[Any], name=None) -> tuple[str, ...]:
+    axes = []
+    for component in objs:
+        comp_name = getattr(component, "name", None)
+        if not comp_name or str(comp_name)[-1] not in "xyz":
+            axes = []
+            break
+        axes.append(str(comp_name)[-1])
+    if len(axes) == len(objs) and len(set(axes)) == len(axes):
+        return tuple(axes)
+
+    if name:
+        suffix = str(name)[-len(objs) :]
+        if len(suffix) == len(objs) and set(suffix) <= set("xyz") and len(set(suffix)) == len(suffix):
+            return tuple(suffix)
+
+    return tuple("xyz"[: len(objs)])
+
 
 class VectorData(utils.Group):
     """Multi-component vector field container.
@@ -39,7 +60,7 @@ class VectorData(utils.Group):
         Additional attributes inherited by the wrapper.
     """
 
-    def __init__(self, objs: List[Any], name=None, attrs=None):
+    def __init__(self, objs: List[Any], name=None, attrs=None, component_axes=None):
         """Initialise a VectorData instance.
 
         Parameters
@@ -50,6 +71,9 @@ class VectorData(utils.Group):
             Display name for the vector field.
         attrs : dict, optional
             Additional attributes inherited by the wrapper.
+        component_axes : tuple of {'x', 'y', 'z'}, optional
+            Vector component axis for each object. Inferred from component
+            names or the vector name when omitted.
         """
         if len(objs) not in (2, 3):
             raise ValueError("VectorData requires 2 or 3 components.")
@@ -68,6 +92,9 @@ class VectorData(utils.Group):
             attrs["name"] = x_data.name
         else:
             attrs["name"] = ""
+        if component_axes is None:
+            component_axes = attrs.get("component_axes") or _infer_component_axes(objs, attrs.get("name"))
+        attrs["component_axes"] = tuple(component_axes)
 
         super().__init__(list(objs), attrs=attrs)
         self.x_data = x_data
@@ -78,6 +105,16 @@ class VectorData(utils.Group):
     def __repr__(self) -> str:
         n = len(self.objs)
         return f"<VectorData: name={self.name!r}, components={n}, shape={self.shape}>"
+
+    @property
+    def component_axes(self) -> tuple[str, ...]:
+        """Return the vector component axis attached to each component."""
+        return tuple(self.attrs["component_axes"])
+
+    def _component_for_axis(self, axis: str):
+        if axis not in self.component_axes:
+            raise ValueError(f'axes "{axis}" cannot be used because this vector has no {axis!r} component')
+        return self.objs[self.component_axes.index(axis)]
 
     def _require_local_data_access(self, operation: str) -> None:
         for component in self.objs:
@@ -94,6 +131,65 @@ class VectorData(utils.Group):
         for component in self.objs:
             record_data_access(component, kind=kind, kwargs=kwargs)
 
+    def _to_recipe_index(self):
+        recipe = getattr(self.x_data, "_to_recipe_index", None)
+        if callable(recipe):
+            return tuple(recipe())
+        return tuple(getattr(self.x_data, "slices", ()))
+
+    def _get_remote_open_kwargs(self):
+        remote_kwargs = getattr(self.x_data, "_emout_open_kwargs", None)
+        if remote_kwargs is not None:
+            return dict(remote_kwargs)
+        emout_dir = getattr(self.x_data, "_emout_dir", None)
+        if emout_dir is None:
+            return None
+        return {"directory": str(emout_dir)}
+
+    def _local_data_access_disabled(self) -> bool:
+        return any(getattr(component, "_local_data_access_disabled", lambda: False)() for component in self.objs)
+
+    def _try_remote_plot(self, **plot_kwargs):
+        """Record or dispatch vector plots when remote rendering is available."""
+        remote_kwargs = self._get_remote_open_kwargs()
+
+        from emout.distributed.remote_figure import (
+            is_recording,
+            record_field_plot,
+            request_session,
+        )
+
+        if is_recording():
+            session = request_session(remote_kwargs)
+            if session is None and self._local_data_access_disabled():
+                self._require_local_data_access("record a remote vector plot without a remote session")
+            record_field_plot(self.name, self._to_recipe_index(), plot_kwargs, emout_kwargs=remote_kwargs)
+            return _REMOTE_PLOT_HANDLED
+
+        if not self._local_data_access_disabled():
+            return None
+
+        if remote_kwargs is None:
+            self._require_local_data_access("plot vector field locally")
+
+        from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session
+
+        session = get_or_create_session(emout_kwargs=remote_kwargs)
+        if session is None:
+            self._require_local_data_access("plot vector field without a remote session")
+
+        ax = plot_kwargs.pop("ax", None)
+        img = _await_remote(
+            session.render_field(
+                self.name,
+                self._to_recipe_index(),
+                emout_kwargs=remote_kwargs,
+                **plot_kwargs,
+            )
+        )
+        display_image(img, ax=ax)
+        return _REMOTE_PLOT_HANDLED
+
     def negate(self) -> "VectorData":
         """Return a new VectorData with all components sign-flipped.
 
@@ -107,7 +203,7 @@ class VectorData(utils.Group):
         >>> data.bxyz[-1].negate().plot()
         """
         negated = [comp.negate() for comp in self.objs]
-        return VectorData(negated, name=self.name, attrs=dict(self.attrs))
+        return VectorData(negated, name=self.name, attrs=dict(self.attrs), component_axes=self.component_axes)
 
     def scale(self, factor: float) -> "VectorData":
         """Return a new VectorData with all components scaled.
@@ -123,7 +219,7 @@ class VectorData(utils.Group):
             Scaled copy.
         """
         scaled = [comp.scale(factor) for comp in self.objs]
-        return VectorData(scaled, name=self.name, attrs=dict(self.attrs))
+        return VectorData(scaled, name=self.name, attrs=dict(self.attrs), component_axes=self.component_axes)
 
     def __setattr__(self, key, value):
         """Set an attribute, routing component data to the internal dict.
@@ -210,6 +306,39 @@ class VectorData(utils.Group):
     def ndim(self) -> int:
         """Return the number of spatial dimensions (excluding vector components)."""
         return self.objs[0].ndim
+
+    def materialize(self) -> "VectorData":
+        """Materialize lazy vector components and return a vector wrapper."""
+        components = []
+        changed = False
+        for component in self.objs:
+            materialize = getattr(component, "materialize", None)
+            if callable(materialize):
+                component = materialize()
+                changed = True
+            components.append(component)
+        if not changed:
+            return self
+        return VectorData(components, name=self.name, attrs=dict(self.attrs), component_axes=self.component_axes)
+
+    def to_numpy(self, stack_axis: int = 0) -> np.ndarray:
+        """Return vector components stacked into a NumPy array.
+
+        Parameters
+        ----------
+        stack_axis : int, default 0
+            Axis used for the vector-component dimension. The default
+            returns arrays shaped ``(component, ...)``.
+        """
+        arrays = []
+        for component in self.objs:
+            to_numpy = getattr(component, "to_numpy", None)
+            if callable(to_numpy):
+                arrays.append(to_numpy())
+            else:
+                self._require_local_data_access("convert vector field to a NumPy array")
+                arrays.append(np.asarray(component))
+        return np.stack(arrays, axis=stack_axis)
 
     def build_frame_updater(
         self,
@@ -427,6 +556,16 @@ class VectorData(utils.Group):
         ValueError
             If the data is not two-dimensional.
         """
+        remote = self._try_remote_plot(
+            mode=mode,
+            axes=axes,
+            show=show,
+            use_si=use_si,
+            offsets=offsets,
+            **kwargs,
+        )
+        if remote is _REMOTE_PLOT_HANDLED:
+            return None
         self._require_local_data_access("plot vector field locally")
         self._record_article_access(
             "plot",
@@ -452,6 +591,8 @@ class VectorData(utils.Group):
             raise ValueError(f'axes "{axes}" cannot be used because the axis does not exist in this data')
         if len(self.objs[0].shape) != 2:
             raise ValueError(f'axes "{axes}" cannot be used because data is not 2-dimensional')
+        component1 = self._component_for_axis(axes[0])
+        component2 = self._component_for_axis(axes[1])
 
         # x: 3, y: 2, z:1 t:0
         axis1 = self.objs[0].slice_axes[self.objs[0].use_axes.index(axes[0])]
@@ -472,15 +613,15 @@ class VectorData(utils.Group):
             _ylabel = "{} [{}]".format(axes[1], yunit.unit)
             _title = "{} [{}]".format(self.name, valunit.unit)
 
-            x_data = self.x_data.val_si
-            y_data = self.y_data.val_si
+            x_data = component1.val_si
+            y_data = component2.val_si
         else:
             _xlabel = axes[0]
             _ylabel = axes[1]
             _title = self.name
 
-            x_data = self.x_data
-            y_data = self.y_data
+            x_data = component1
+            y_data = component2
 
         if offsets is not None:
             x = apply_offset(x.astype(float), offsets[0])
@@ -521,6 +662,9 @@ class VectorData(utils.Group):
             raise ValueError("plot_pyvista on VectorData requires 3D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
             raise ValueError("plot_pyvista on VectorData requires 3 components (x, y, z).")
+        x_component = self._component_for_axis("x")
+        y_component = self._component_for_axis("y")
+        z_component = self._component_for_axis("z")
 
         if self.objs[0].valunit is None:
             use_si = False
@@ -529,9 +673,9 @@ class VectorData(utils.Group):
             from emout.plot.pyvista_plot import plot_vector_quiver3d
 
             return plot_vector_quiver3d(
-                self.x_data,
-                self.y_data,
-                self.z_data,
+                x_component,
+                y_component,
+                z_component,
                 plotter=plotter,
                 use_si=use_si,
                 offsets=offsets,
@@ -543,9 +687,9 @@ class VectorData(utils.Group):
             from emout.plot.pyvista_plot import plot_vector_streamlines3d
 
             return plot_vector_streamlines3d(
-                self.x_data,
-                self.y_data,
-                self.z_data,
+                x_component,
+                y_component,
+                z_component,
                 plotter=plotter,
                 use_si=use_si,
                 offsets=offsets,
@@ -588,6 +732,15 @@ class VectorData(utils.Group):
         -------
         Axes3D
         """
+        remote = self._try_remote_plot(
+            mode=mode,
+            use_si=use_si,
+            offsets=offsets,
+            ax=ax,
+            **kwargs,
+        )
+        if remote is _REMOTE_PLOT_HANDLED:
+            return None
         self._require_local_data_access("plot vector field locally")
         self._record_article_access(
             "plot3d",
@@ -597,6 +750,9 @@ class VectorData(utils.Group):
             raise ValueError("plot3d_mpl requires 3-D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
             raise ValueError("plot3d_mpl requires 3 components (x, y, z).")
+        x_component = self._component_for_axis("x")
+        y_component = self._component_for_axis("y")
+        z_component = self._component_for_axis("z")
 
         if self.objs[0].valunit is None:
             use_si = False
@@ -616,9 +772,9 @@ class VectorData(utils.Group):
             _zlabel = f"z [{zunit.unit}]"
             _title = f"{self.name} [{valunit.unit}]"
 
-            x_data = self.x_data.val_si
-            y_data = self.y_data.val_si
-            z_data = self.z_data.val_si
+            x_data = x_component.val_si
+            y_data = y_component.val_si
+            z_data = z_component.val_si
         else:
             x = np.arange(self.x_data.shape[2], dtype=float)
             y = np.arange(self.x_data.shape[1], dtype=float)
@@ -629,9 +785,9 @@ class VectorData(utils.Group):
             _zlabel = "z"
             _title = self.name
 
-            x_data = self.x_data
-            y_data = self.y_data
-            z_data = self.z_data
+            x_data = x_component
+            y_data = y_component
+            z_data = z_component
 
         if offsets is not None:
             x = apply_offset(x.astype(float), offsets[0])

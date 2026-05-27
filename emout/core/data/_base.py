@@ -162,30 +162,12 @@ class Data(np.ndarray):
             "local_data_policy": getattr(new_obj, "_local_data_policy", None),
         }
 
-        # Lazy imports to avoid circular dependency
-        from ._data1d import Data1d
-        from ._data2d import Data2d
-        from ._data3d import Data3d
-        from ._data4d import Data4d
-
-        if len(new_obj.shape) == 1:
-            if isinstance(new_obj, Data1d):
-                return new_obj
-            result = Data1d(new_obj, **params)
-        elif len(new_obj.shape) == 2:
-            if isinstance(new_obj, Data2d):
-                return new_obj
-            result = Data2d(new_obj, **params)
-        elif len(new_obj.shape) == 3:
-            if isinstance(new_obj, Data3d):
-                return new_obj
-            result = Data3d(new_obj, **params)
-        elif len(new_obj.shape) == 4:
-            if isinstance(new_obj, Data4d):
-                return new_obj
-            result = Data4d(new_obj, **params)
-        else:
+        if not 1 <= len(new_obj.shape) <= 4:
             return new_obj
+
+        from .factory import data_from_array
+
+        result = data_from_array(new_obj, **params)
 
         # Propagate remote-rendering metadata from the source object
         result._emout_dir = getattr(self, "_emout_dir", None)
@@ -741,6 +723,9 @@ class Data(np.ndarray):
                 self._require_local_data_access("plot field data without a remote session", self._target_name())
 
             ax = plot_kwargs.pop("ax", None)
+            plot_args = tuple(plot_kwargs.pop("_emout_plot_args", ()))
+            if plot_args:
+                plot_kwargs["_emout_plot_args"] = plot_args
             img = _await_remote(
                 session.render_field(
                     self.name,
@@ -763,19 +748,12 @@ class Data(np.ndarray):
 
         recipe_index = self._to_recipe_index()
         payload = _await_remote(session.fetch_field(self.name, recipe_index, emout_kwargs=remote_kwargs))
+        plot_args = tuple(plot_kwargs.pop("_emout_plot_args", ()))
 
-        local_data = type(self)(
-            payload["array"],
-            name=payload["name"],
-            axisunits=payload["axisunits"],
-            valunit=payload["valunit"],
-        )
-        local_data.slices = payload["slices"]
-        local_data.slice_axes = payload["slice_axes"]
-        local_data._emout_dir = None  # prevent recursion
-        local_data._emout_open_kwargs = None
-        local_data._local_data_policy = "allow"
-        return local_data.plot(**plot_kwargs)
+        from .factory import data_from_payload
+
+        local_data = data_from_payload(payload)
+        return local_data.plot(*plot_args, **plot_kwargs)
 
     def _local_data_access_disabled(self) -> bool:
         return is_local_data_access_disabled(getattr(self, "_local_data_policy", None))

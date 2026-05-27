@@ -15,6 +15,7 @@ from typing import List, Optional, Union
 
 import pandas as pd
 
+from emout.local_data_policy import LOCAL_DATA_POLICY_ALLOW
 from emout.utils import InpFile
 from emout.utils import UnitConversionKey, Units
 
@@ -324,18 +325,9 @@ class DirectoryInspector:
         if self._inp is None:
             raise RuntimeError("read_icur: .inp has not been loaded")
 
-        names = []
-        for ispec in range(self._inp.nspec):
-            names.append(f"{ispec + 1}_step")
-            for ipc in range(self._inp.npc):
-                names.append(f"{ispec + 1}_body{ipc + 1}")
-                names.append(f"{ispec + 1}_body{ipc + 1}_ema")
+        from emout.core.io.diagnostics import read_icur
 
-        icur_path = self.main_directory / "icur"
-        if not icur_path.exists():
-            raise FileNotFoundError(f"'icur' file not found: {icur_path}")
-
-        return pd.read_csv(icur_path, sep=r"\s+", header=None, names=names)
+        return read_icur(self.main_directory / "icur", self._inp)
 
     def read_pbody_as_dataframe(self) -> pd.DataFrame:
         """Read the ``pbody`` diagnostic file as a DataFrame.
@@ -348,9 +340,19 @@ class DirectoryInspector:
         if self._inp is None:
             raise RuntimeError("read_pbody: .inp has not been loaded")
 
-        names = ["step"] + [f"body{i + 1}" for i in range(self._inp.npc + 1)]
-        pbody_path = self.main_directory / "pbody"
-        if not pbody_path.exists():
-            raise FileNotFoundError(f"'pbody' file not found: {pbody_path}")
+        from emout.core.io.diagnostics import read_pbody
 
-        return pd.read_csv(pbody_path, sep=r"\s+", names=names)
+        return read_pbody(self.main_directory / "pbody", self._inp)
+
+    def to_emout_open_kwargs(self) -> dict:
+        """Return kwargs that reopen this dataset in a remote worker."""
+        kwargs = {
+            "directory": str(self._input_directory),
+            "append_directories": [str(path) for path in self.append_directories],
+            "inpfilename": self.inpfilename,
+            "output_directory": str(self.main_directory),
+            "local_data_policy": LOCAL_DATA_POLICY_ALLOW,
+        }
+        if self.input_path is not None:
+            kwargs["input_path"] = str(self.input_path)
+        return kwargs

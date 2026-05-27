@@ -816,6 +816,155 @@ def test_remote_figure_records_data3d_plot_surfaces_without_fetch_field(monkeypa
     assert displayed[0][0]
 
 
+def test_data3d_plot_surfaces_remote_required_renders_without_local_access(monkeypatch):
+    import emout
+    from emout.core.data.data import Data3d
+    from emout.distributed import remote_render
+
+    open_kwargs = {"directory": "/tmp/input"}
+    data3d = Data3d(np.arange(2 * 3 * 4, dtype=float).reshape(2, 3, 4), filename="dummy.h5", name="phisp")
+    data3d._emout_open_kwargs = open_kwargs
+    displayed = []
+    seen = []
+
+    class FakeSession:
+        def render_plot_surfaces(self, attr_name, index, surfaces=None, emout_kwargs=None, use_si=True, **kwargs):
+            seen.append((attr_name, index, surfaces, emout_kwargs, use_si, kwargs))
+            return FakeFuture(b"surface-png")
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: FakeSession())
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    with emout.local_data_policy("remote_required"):
+        cmap, norm = data3d.plot_surfaces([], use_si=False, vmin=0.0, vmax=1.0)
+
+    assert cmap.name == "jet"
+    assert norm.vmin == 0.0
+    assert norm.vmax == 1.0
+    assert displayed == [(b"surface-png", None)]
+    assert seen == [
+        (
+            "phisp",
+            (0, slice(0, 2, 1), slice(0, 3, 1), slice(0, 4, 1)),
+            [],
+            open_kwargs,
+            False,
+            {"vmin": 0.0, "vmax": 1.0},
+        )
+    ]
+
+
+def test_data3d_plot_positional_args_are_sent_to_remote(monkeypatch):
+    import emout
+    from emout.core.data.data import Data3d
+    from emout.distributed import remote_render
+
+    open_kwargs = {"directory": "/tmp/input"}
+    data3d = Data3d(np.arange(2 * 3 * 4, dtype=float).reshape(2, 3, 4), filename="phisp.h5", name="phisp")
+    data3d._emout_open_kwargs = open_kwargs
+    displayed = []
+    seen = []
+
+    class FakeSession:
+        def render_field(self, attr_name, index, emout_kwargs=None, **plot_kwargs):
+            seen.append((attr_name, index, emout_kwargs, plot_kwargs))
+            return FakeFuture(b"field-png")
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: FakeSession())
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    with emout.local_data_policy("remote_required"):
+        assert data3d.plot("auto", False, None, [1.0]) is None
+
+    assert displayed == [(b"field-png", None)]
+    assert seen == [
+        (
+            "phisp",
+            (0, slice(0, 2, 1), slice(0, 3, 1), slice(0, 4, 1)),
+            open_kwargs,
+            {"mode": "auto", "use_si": False, "offsets": None, "_emout_plot_args": ([1.0],)},
+        )
+    ]
+
+
+def test_vector_plot_remote_required_renders_on_worker(monkeypatch):
+    import emout
+    from emout.core.data.data import Data2d
+    from emout.core.data.vector_data import VectorData
+    from emout.distributed import remote_render
+
+    open_kwargs = {"directory": "/tmp/input"}
+    vx = Data2d(np.ones((2, 2)), name="ex")
+    vy = Data2d(np.ones((2, 2)), name="ez")
+    vx._emout_open_kwargs = open_kwargs
+    vy._emout_open_kwargs = open_kwargs
+    vector = VectorData([vx, vy], name="exz")
+    displayed = []
+    seen = []
+
+    class FakeSession:
+        def render_field(self, attr_name, index, emout_kwargs=None, **plot_kwargs):
+            seen.append((attr_name, index, emout_kwargs, plot_kwargs))
+            return FakeFuture(b"vector-png")
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: FakeSession())
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    with emout.local_data_policy("remote_required"):
+        assert vector.plot(mode="vec", axes="xz", show=False, use_si=False) is None
+
+    assert displayed == [(b"vector-png", None)]
+    assert seen == [
+        (
+            "exz",
+            (0, 0, slice(0, 2, 1), slice(0, 2, 1)),
+            open_kwargs,
+            {
+                "mode": "vec",
+                "axes": "xz",
+                "show": False,
+                "use_si": False,
+                "offsets": None,
+            },
+        )
+    ]
+
+
+def test_remote_figure_records_vector_plot(monkeypatch):
+    from emout.core.data.data import Data2d
+    from emout.core.data.vector_data import VectorData
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed import remote_render
+
+    open_kwargs = {"directory": "/tmp/input"}
+    vx = Data2d(np.ones((2, 2)), name="ex")
+    vy = Data2d(np.ones((2, 2)), name="ez")
+    vx._emout_open_kwargs = open_kwargs
+    vy._emout_open_kwargs = open_kwargs
+    vector = VectorData([vx, vy], name="exz")
+    commands_seen = []
+
+    class FakeSession:
+        def replay_figure(self, commands, fmt="png", dpi=150):
+            commands_seen.append(commands)
+            return FakeFuture(b"png")
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: FakeSession())
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: None)
+
+    with remote_figure():
+        assert vector.plot(mode="vec", axes="xz", show=False, use_si=False) is None
+
+    assert len(commands_seen) == 1
+    kind, name, recipe_index, plot_kwargs, emout_kwargs = commands_seen[0][1]
+    assert kind == "field_plot"
+    assert name == "exz"
+    assert recipe_index == (0, 0, slice(0, 2, 1), slice(0, 2, 1))
+    assert plot_kwargs["mode"] == "vec"
+    assert plot_kwargs["axes"] == "xz"
+    assert emout_kwargs == open_kwargs
+
+
 def test_remote_figure_replays_pyplot_colorbar_proxy(monkeypatch):
     from emout.distributed.remote_figure import remote_figure
     from emout.distributed import remote_render
@@ -1003,6 +1152,60 @@ def test_try_remote_plot_keeps_implicit_data_transfer_mode(monkeypatch):
     )
 
     result = data._try_remote_plot(cmap="magma")
+
+    assert result == {"kwargs": {"cmap": "magma"}, "remote_kwargs": None}
+    assert seen == [("phisp", (0, 0, slice(0, 2, 1), slice(0, 2, 1)), open_kwargs)]
+
+
+def test_grid_selection_remote_plot_keeps_implicit_data_transfer_mode(monkeypatch):
+    from emout.core.data.data import Data2d
+    from emout.core.data.griddata_series import GridDataSelection
+    from emout.distributed import remote_render
+
+    open_kwargs = {"directory": "/tmp/input"}
+
+    class Series:
+        datafile = None
+        filename = "dummy.h5"
+        directory = "/tmp/input"
+        name = "phisp"
+        tunit = None
+        axisunit = None
+        valunit = None
+        grid_shape = (2, 2, 2)
+        _emout_open_kwargs = open_kwargs
+        _emout_dir = None
+        _local_data_policy = None
+        _article_recorder = None
+        _article_source_shape = None
+
+        def __len__(self):
+            return 3
+
+    selection = GridDataSelection(Series(), (0, 0, slice(None), slice(None)))
+    payload = {
+        "array": np.arange(4, dtype=float).reshape(2, 2),
+        "name": "phisp",
+        "slices": selection.slices,
+        "slice_axes": selection.slice_axes,
+        "axisunits": selection.axisunits,
+        "valunit": selection.valunit,
+    }
+    seen = []
+
+    class FakeSession:
+        def fetch_field(self, attr_name, recipe_index, emout_kwargs=None):
+            seen.append((attr_name, recipe_index, emout_kwargs))
+            return FakeFuture(payload)
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: FakeSession())
+    monkeypatch.setattr(
+        Data2d,
+        "plot",
+        lambda self, **kwargs: {"kwargs": kwargs, "remote_kwargs": getattr(self, "_emout_open_kwargs", None)},
+    )
+
+    result = selection._try_remote_plot(cmap="magma")
 
     assert result == {"kwargs": {"cmap": "magma"}, "remote_kwargs": None}
     assert seen == [("phisp", (0, 0, slice(0, 2, 1), slice(0, 2, 1)), open_kwargs)]

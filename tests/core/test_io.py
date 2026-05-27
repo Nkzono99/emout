@@ -116,6 +116,32 @@ class TestDirectoryInspectorInit:
         assert di.main_directory == out_dir.resolve()
         assert di.inp is not None
 
+    def test_to_emout_open_kwargs(self, tmp_path: Path):
+        inp_dir = tmp_path / "inputs"
+        inp_dir.mkdir()
+        inp_path = _write_inp(inp_dir)
+        out_dir = tmp_path / "outputs"
+        out_dir.mkdir()
+        append_dir = tmp_path / "append"
+        append_dir.mkdir()
+
+        di = DirectoryInspector(
+            tmp_path,
+            append_directories=[append_dir],
+            inpfilename="plasma.inp",
+            input_path=inp_path,
+            output_directory=out_dir,
+        )
+
+        assert di.to_emout_open_kwargs() == {
+            "directory": str(inp_dir.resolve()),
+            "append_directories": [str(append_dir.resolve())],
+            "inpfilename": "plasma.inp",
+            "output_directory": str(out_dir.resolve()),
+            "local_data_policy": "allow",
+            "input_path": str(inp_path.resolve()),
+        }
+
     def test_init_with_output_directory(self, tmp_path: Path):
         out_dir = tmp_path / "out"
         out_dir.mkdir()
@@ -374,6 +400,19 @@ class TestGridDataLoaderLoad:
         loader = GridDataLoader(di, unit_map)
         series = loader.load("ex")
         assert series is not None
+
+    def test_load_vector_components_sets_component_axes(self, tmp_path: Path):
+        create_h5file(tmp_path / "ex00_0000.h5", "ex", 2, (4, 4, 4))
+        create_h5file(tmp_path / "ez00_0000.h5", "ez", 2, (4, 4, 4))
+        _write_inp(tmp_path)
+        di = DirectoryInspector(tmp_path)
+        loader = GridDataLoader(di, {})
+
+        vector = loader.load("exz")
+
+        assert vector.component_axes == ("x", "z")
+        assert vector.x_data.name == "ex"
+        assert vector.y_data.name == "ez"
 
     def test_load_without_units(self, tmp_path: Path):
         # Write inp without conversion key

@@ -82,6 +82,7 @@ class TestVectorDataConstruction:
         assert vec.ndim == 2
         assert vec.name == "v"
         assert len(vec.objs) == 2
+        assert vec.component_axes == ("x", "y")
 
     def test_3d_vector_properties(self):
         vec = _make_3d_vec()
@@ -106,6 +107,31 @@ class TestVectorDataConstruction:
         vec = _make_2d_vec()
         scaled = vec.scale(3.0)
         np.testing.assert_array_almost_equal(np.array(scaled.x_data), np.array(vec.x_data) * 3.0)
+        assert scaled.component_axes == vec.component_axes
+
+    def test_to_numpy_stacks_components(self):
+        vec = _make_2d_vec()
+        stacked = vec.to_numpy()
+        assert stacked.shape == (2, *vec.shape)
+        np.testing.assert_array_equal(stacked[0], np.asarray(vec.x_data))
+        np.testing.assert_array_equal(stacked[1], np.asarray(vec.y_data))
+
+    def test_to_numpy_accepts_component_axis(self):
+        vec = _make_2d_vec()
+        stacked = vec.to_numpy(stack_axis=-1)
+        assert stacked.shape == (*vec.shape, 2)
+        np.testing.assert_array_equal(stacked[..., 0], np.asarray(vec.x_data))
+        np.testing.assert_array_equal(stacked[..., 1], np.asarray(vec.y_data))
+
+    def test_materialize_returns_self_for_eager_components(self):
+        vec = _make_2d_vec()
+        assert vec.materialize() is vec
+
+    def test_component_axes_can_be_inferred_from_vector_name(self):
+        arr = np.zeros((3, 4), dtype=np.float32)
+        comps = [Data2d(arr, name="comp0"), Data2d(arr, name="comp1")]
+        vec = VectorData(comps, name="exz")
+        assert vec.component_axes == ("x", "z")
 
     def test_4_components_raises(self):
         arr = np.zeros((3, 4), dtype=np.float32)
@@ -280,6 +306,34 @@ class TestPlot2d:
         vec.plot2d(mode="vec", use_si=False, xlabel="custom X")
         call_kwargs = mock_vec.call_args[1]
         assert call_kwargs["xlabel"] == "custom X"
+
+    @patch("emout.plot.basic_plot.plot_2d_vector", return_value="img")
+    def test_component_axes_follow_requested_axes_order(self, mock_vec):
+        arr_x = np.ones((4, 5), dtype=np.float32)
+        arr_z = np.ones((4, 5), dtype=np.float32) * 2
+        kwargs = dict(
+            zslice=slice(0, 4, 1),
+            xslice=slice(0, 5, 1),
+            slice_axes=[1, 3],
+        )
+        ex = Data2d(arr_x, name="ex", **kwargs)
+        ez = Data2d(arr_z, name="ez", **kwargs)
+        vec = VectorData([ex, ez], name="exz")
+
+        vec.plot2d(mode="vec", axes="zx", use_si=False)
+
+        args = mock_vec.call_args[0]
+        np.testing.assert_array_equal(np.asarray(args[0]), np.asarray(ez))
+        np.testing.assert_array_equal(np.asarray(args[1]), np.asarray(ex))
+        assert mock_vec.call_args[1]["xlabel"] == "z"
+        assert mock_vec.call_args[1]["ylabel"] == "x"
+
+    def test_missing_component_axis_raises(self):
+        arr = np.zeros((4, 5), dtype=np.float32)
+        vec = VectorData([Data2d(arr, name="ex"), Data2d(arr, name="ez")], name="exz")
+
+        with pytest.raises(ValueError, match="no 'y' component"):
+            vec.plot2d(mode="vec", axes="xy", use_si=False)
 
 
 # ---------------------------------------------------------------------------

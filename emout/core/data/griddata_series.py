@@ -24,89 +24,17 @@ from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import DataFileInfo, UnitTranslator
 
 from ._base import _REMOTE_PLOT_HANDLED
-from .data import Data1d, Data2d, Data3d, Data4d
+from .data import Data3d, Data4d
+from .factory import data_from_array, data_from_payload
+from .selectors import (
+    compose_selector as _compose_selector,
+    normalize_selector as _normalize_selector,
+    selector_length as _selector_length,
+    selector_positions as _selector_positions,
+    selector_to_metadata_slice as _selector_to_metadata_slice,
+)
 
 _MATERIALIZED_UNSET = object()
-
-
-def _normalize_index(index: int, size: int) -> int:
-    index = int(index)
-    if index < 0:
-        index += size
-    if not 0 <= index < size:
-        raise IndexError(f"index {index} is out of bounds for axis with size {size}")
-    return index
-
-
-def _normalize_selector(selector, size: int):
-    if isinstance(selector, slice):
-        rng = range(*selector.indices(size))
-        return slice(rng.start, rng.stop, rng.step)
-    if isinstance(selector, list):
-        return tuple(_normalize_index(index, size) for index in selector)
-    if isinstance(selector, tuple):
-        return tuple(_normalize_index(index, size) for index in selector)
-    if isinstance(selector, (int, np.integer)):
-        return _normalize_index(selector, size)
-    raise TypeError(f"Unsupported selector type {type(selector).__name__}; expected int, slice, list, or tuple")
-
-
-def _selector_positions(selector, size: int):
-    if isinstance(selector, slice):
-        return range(*selector.indices(size))
-    if isinstance(selector, tuple):
-        return selector
-    if isinstance(selector, list):
-        return tuple(selector)
-    raise TypeError(f"Cannot enumerate positions for selector type {type(selector).__name__}")
-
-
-def _selector_length(selector, size: int) -> int:
-    return len(_selector_positions(selector, size))
-
-
-def _selector_to_metadata_slice(selector, size: int) -> slice:
-    if isinstance(selector, int):
-        return slice(selector, selector + 1, 1)
-    if isinstance(selector, slice):
-        rng = range(*selector.indices(size))
-        return slice(rng.start, rng.stop, rng.step)
-
-    positions = tuple(_selector_positions(selector, size))
-    if len(positions) == 0:
-        return slice(0, 0, 1)
-    if len(positions) == 1:
-        return slice(positions[0], positions[0] + 1, 1)
-
-    step = positions[1] - positions[0]
-    if all((right - left) == step for left, right in zip(positions, positions[1:])):
-        return slice(positions[0], positions[-1] + step, step)
-
-    # Data metadata is slice-based; fall back to relative coordinates for
-    # irregular explicit selections.
-    return slice(0, len(positions), 1)
-
-
-def _compose_selector(base_selector, sub_selector, size: int):
-    if isinstance(base_selector, int):
-        raise TypeError("Cannot sub-index an axis that has already been reduced to a scalar")
-
-    positions = _selector_positions(base_selector, size)
-
-    if isinstance(sub_selector, list):
-        plen = len(positions)
-        return tuple(positions[_normalize_index(index, plen)] for index in sub_selector)
-
-    result = positions[sub_selector]
-    if isinstance(result, range):
-        return slice(result.start, result.stop, result.step)
-    if isinstance(result, tuple):
-        return result
-    if isinstance(result, list):
-        return tuple(result)
-    if isinstance(result, np.integer):
-        return int(result)
-    return result
 
 
 def _materialize_nested(value):
@@ -903,35 +831,26 @@ class GridDataSelection(NDArrayOperatorsMixin):
         if np.isscalar(array) or np.ndim(array) == 0:
             return np.asarray(array).item()
 
-        params = {
-            "filename": self.filename,
-            "name": self.name,
-            "tslice": self.slices[0],
-            "zslice": self.slices[1],
-            "yslice": self.slices[2],
-            "xslice": self.slices[3],
-            "slice_axes": self.slice_axes,
-            "axisunits": self.axisunits,
-            "valunit": self.valunit,
-        }
-
-        if array.ndim == 1:
-            data = Data1d(array, **params)
-        elif array.ndim == 2:
-            data = Data2d(array, **params)
-        elif array.ndim == 3:
-            data = Data3d(array, **params)
-        elif array.ndim == 4:
-            data = Data4d(array, **params)
-        else:
-            self._materialized = array
-            return array
-
-        data._emout_dir = self._emout_dir
-        data._emout_open_kwargs = self._emout_open_kwargs
-        data._local_data_policy = self._local_data_policy
-        data._article_recorder = self._article_recorder
-        data._article_source_shape = self._article_source_shape or self._axis_lengths
+        data = data_from_array(
+            array,
+            filename=self.filename,
+            name=self.name,
+            tslice=self.slices[0],
+            zslice=self.slices[1],
+            yslice=self.slices[2],
+            xslice=self.slices[3],
+            slice_axes=self.slice_axes,
+            axisunits=self.axisunits,
+            valunit=self.valunit,
+            local_data_policy=self._local_data_policy,
+            emout_dir=self._emout_dir,
+            emout_open_kwargs=self._emout_open_kwargs,
+            article_recorder=self._article_recorder,
+            article_source_shape=self._article_source_shape or self._axis_lengths,
+        )
+        if not hasattr(data, "slices"):
+            self._materialized = data
+            return data
         from emout.article import record_data_access
 
         record_data_access(data, kind="materialize")
@@ -1113,7 +1032,16 @@ class GridDataSelection(NDArrayOperatorsMixin):
             return _REMOTE_PLOT_HANDLED
 
         if not self._local_data_access_disabled():
-            return None
+            if remote_kwargs is None:
+                return None
+            from emout.distributed.remote_render import _await_remote, get_or_create_session
+
+            session = get_or_create_session(emout_kwargs=remote_kwargs)
+            if session is None:
+                return None
+            payload = _await_remote(session.fetch_field(self.name, self._to_recipe_index(), emout_kwargs=remote_kwargs))
+            local_data = data_from_payload(payload)
+            return local_data.plot(**plot_kwargs)
 
         if remote_kwargs is None:
             self._require_local_data_access("plot field data locally", self._target_name())

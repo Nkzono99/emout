@@ -11,10 +11,7 @@ from typing import List, Union
 
 import pandas as pd
 
-from emout.local_data_policy import (
-    LOCAL_DATA_POLICY_ALLOW,
-    normalize_local_data_policy,
-)
+from emout.local_data_policy import LOCAL_DATA_POLICY_ALLOW, normalize_local_data_policy
 from emout.utils import InpFile, Units
 
 from .backtrace.solver_wrapper import BacktraceWrapper
@@ -394,6 +391,8 @@ class Emout:
 
     @property
     def _remote_open_kwargs(self) -> dict:
+        if hasattr(self._dir_inspector, "to_emout_open_kwargs"):
+            return self._dir_inspector.to_emout_open_kwargs()
         kwargs = {
             "directory": str(self._dir_inspector._input_directory),
             "append_directories": [str(path) for path in self._dir_inspector.append_directories],
