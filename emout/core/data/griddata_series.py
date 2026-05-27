@@ -33,6 +33,7 @@ from .selectors import (
     selector_positions as _selector_positions,
     selector_to_metadata_slice as _selector_to_metadata_slice,
 )
+from .surface_roi import is_spatial_3d_selection, plot_surfaces_roi_selectors
 
 _MATERIALIZED_UNSET = object()
 
@@ -785,6 +786,8 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
         result = type(self)(self.series, tuple(selectors))
         if result.ndim <= 3 and not result._local_data_access_disabled():
+            if result.ndim == 3 and result._article_recorder is not None and is_spatial_3d_selection(result._selectors):
+                return result
             return result.materialize()
         return result
 
@@ -987,6 +990,39 @@ class GridDataSelection(NDArrayOperatorsMixin):
         if remote is _REMOTE_PLOT_HANDLED:
             return None
         return self.materialize().plot(**kwargs)
+
+    def plot_surfaces(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        **kwargs,
+    ):
+        """Plot a bounded 3-D surface field without recording a full volume."""
+        if self.ndim != 3 or not is_spatial_3d_selection(self._selectors):
+            raise ValueError("plot_surfaces requires one time index and all three spatial axes")
+
+        bounds = kwargs.get("bounds")
+        roi_selectors = plot_surfaces_roi_selectors(
+            self._selectors,
+            self._axis_lengths,
+            self.axisunits,
+            self.valunit,
+            use_si,
+            bounds,
+        )
+        data = type(self)(self.series, roi_selectors).materialize()
+        return data._plot_surfaces_local(
+            surfaces,
+            ax=ax,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs,
+        )
 
     def _local_data_access_disabled(self) -> bool:
         return is_local_data_access_disabled(self._local_data_policy)

@@ -68,6 +68,14 @@ def _register_remote_key(session, key: str) -> None:
         _scope_stack[-1]._register(session, key)
 
 
+def _plot_surfaces_target(target, surfaces, **kwargs):
+    """Plot surfaces without forcing lazy selections through ``hasattr``."""
+    local_method = getattr(type(target), "_plot_surfaces_local", None)
+    if local_method is not None:
+        return local_method(target, surfaces, **kwargs)
+    return target.plot_surfaces(surfaces, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Worker-side Actor
 # ---------------------------------------------------------------------------
@@ -610,20 +618,13 @@ class RemoteSession:
 
         def _draw(fig, ax):
             ax = fig.add_subplot(111, projection="3d")
-            if hasattr(obj, "_plot_surfaces_local"):
-                obj._plot_surfaces_local(
-                    surfaces=surfaces,
-                    ax=ax,
-                    use_si=use_si,
-                    **plot_kwargs,
-                )
-            else:
-                obj.plot_surfaces(
-                    surfaces,
-                    ax=ax,
-                    use_si=use_si,
-                    **plot_kwargs,
-                )
+            _plot_surfaces_target(
+                obj,
+                surfaces,
+                ax=ax,
+                use_si=use_si,
+                **plot_kwargs,
+            )
 
         return self._render_to_bytes(_draw, fmt, dpi)
 
@@ -666,8 +667,9 @@ class RemoteSession:
 
         def _draw(fig, ax):
             ax = fig.add_subplot(111, projection="3d")
-            data3d._plot_surfaces_local(
-                surfaces=surfaces,
+            _plot_surfaces_target(
+                data3d,
+                surfaces,
                 ax=ax,
                 use_si=use_si,
                 **plot_kwargs,
@@ -809,7 +811,7 @@ class RemoteSession:
                 emout_kwargs = _decode(emout_kwargs)
                 data = self._resolve(emout_kwargs)
                 arr = getattr(data, attr_name)[recipe_index]
-                arr._plot_surfaces_local(surfaces, **plot_kwargs)
+                _plot_surfaces_target(arr, surfaces, **plot_kwargs)
 
             elif kind == "cached_plot":
                 _, key, plot_kwargs = cmd
@@ -823,18 +825,7 @@ class RemoteSession:
                 plot_kwargs = _decode(plot_kwargs)
                 use_si = plot_kwargs.pop("use_si", True)
                 obj = self._cache[key]
-                if hasattr(obj, "_plot_surfaces_local"):
-                    obj._plot_surfaces_local(
-                        surfaces=surfaces,
-                        use_si=use_si,
-                        **plot_kwargs,
-                    )
-                else:
-                    obj.plot_surfaces(
-                        surfaces,
-                        use_si=use_si,
-                        **plot_kwargs,
-                    )
+                _plot_surfaces_target(obj, surfaces, use_si=use_si, **plot_kwargs)
 
             elif kind == "figure_call":
                 _, figure_id, method_name, args, kwargs, target = cmd

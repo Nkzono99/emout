@@ -67,6 +67,14 @@ In record mode, emout saves only the data materialized by `plot()` and
 that 2D slice in `data.h5`. Reusing the same field and selector does not
 write duplicate data.
 
+`Data3d.plot_surfaces()` consumes a 3D field, so storing it naively can make
+publication data large. In article record mode, when `bounds` is passed,
+calls such as `data.phisp[-1].plot_surfaces(..., bounds=bounds)` are recorded
+as only the 3D ROI covered by the plotting bounds plus one grid cell of
+padding. The saved ROI is replayed in the original global coordinates, so
+boundary meshes and mask surfaces keep their positions. Without `bounds`,
+emout cannot infer the needed range and the whole 3D selection may be saved.
+
 | File | Contents | Purpose |
 | --- | --- | --- |
 | `manifest.json` | Recorded field, selector, shape, slice axes, unit metadata | Matches requested replay slices to saved slices |
@@ -194,7 +202,7 @@ Input metadata and boundaries are replayable too.
 
 ```python
 data.boundaries.plot()
-data.phisp[-1].plot_surfaces(data.boundaries)
+data.phisp[-1].plot_surfaces(data.boundaries, bounds=bounds)
 icur = data.icur
 pbody = data.pbody
 ```
@@ -218,7 +226,8 @@ figure.
 - `record` / `replay` requires `article_records_path`. Set it with an environment variable or argument.
 - If multiple sources share a basename, such as `case_a/output` and `case_b/output`, pass `article_source_name`.
 - Prefer `data.phisp[...].to_numpy()` over `np.asarray(data.phisp[...])` so the recording intent is explicit.
-- Replay does not provide particles, backtrace, or remote execution. Run those from the original data, then record the grid slices used for visualization.
+- Pass `bounds` to `plot_surfaces()` when you want small publication data. A 2D slice such as `data.phisp[-1, :, ymid, :]` is stored as 2D, but a 3D selection such as `data.phisp[-1]` can become the full 3D field without `bounds`.
+- In record mode, remote rendering records the slices used on the worker. Replay does not provide particles, backtrace, or remote execution. Run those from the original data, then record the grid slices used for visualization.
 - If the original script depends on random styling or external files, the article bundle alone cannot fully reproduce the figure. Publish the figure script as well.
 
 ## Related classes

@@ -126,6 +126,7 @@ class Emout:
             article_source_name=article_source_name,
             article_archive=article_archive,
         )
+        self._article_config = article_config
         if article_config.mode == "replay":
             # __new__ returns an ArticleReplayEmout for the base Emout class.
             return
@@ -336,6 +337,7 @@ class Emout:
             data = self._grid_loader.load(name)
         except (KeyError, FileNotFoundError, OSError) as e:
             raise AttributeError(f"Failed to load attribute '{name}': {e}") from e
+        data._emout_open_kwargs = self._remote_open_kwargs
         if self._article_recorder is not None:
             from emout.article import attach_recorder
 
@@ -408,16 +410,26 @@ class Emout:
     @property
     def _remote_open_kwargs(self) -> dict:
         if hasattr(self._dir_inspector, "to_emout_open_kwargs"):
-            return self._dir_inspector.to_emout_open_kwargs()
-        kwargs = {
-            "directory": str(self._dir_inspector._input_directory),
-            "append_directories": [str(path) for path in self._dir_inspector.append_directories],
-            "inpfilename": self._dir_inspector.inpfilename,
-            "output_directory": str(self._dir_inspector.main_directory),
-            "local_data_policy": LOCAL_DATA_POLICY_ALLOW,
-        }
-        if self._dir_inspector.input_path is not None:
-            kwargs["input_path"] = str(self._dir_inspector.input_path)
+            kwargs = self._dir_inspector.to_emout_open_kwargs()
+        else:
+            kwargs = {
+                "directory": str(self._dir_inspector._input_directory),
+                "append_directories": [str(path) for path in self._dir_inspector.append_directories],
+                "inpfilename": self._dir_inspector.inpfilename,
+                "output_directory": str(self._dir_inspector.main_directory),
+                "local_data_policy": LOCAL_DATA_POLICY_ALLOW,
+            }
+            if self._dir_inspector.input_path is not None:
+                kwargs["input_path"] = str(self._dir_inspector.input_path)
+        article_config = self.__dict__.get("_article_config")
+        if article_config is not None and article_config.mode == "record":
+            kwargs["article_mode"] = "record"
+            kwargs["article_records_path"] = str(article_config.records_path)
+            kwargs["article_name"] = article_config.article_name
+            if article_config.source_name is not None:
+                kwargs["article_source_name"] = article_config.source_name
+            if article_config.archive_format is not None:
+                kwargs["article_archive"] = article_config.archive_format
         return kwargs
 
     def remote(self):

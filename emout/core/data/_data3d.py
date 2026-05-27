@@ -9,6 +9,7 @@ import numpy as np
 from emout.utils.util import apply_offset
 
 from ._base import Data, _REMOTE_PLOT_HANDLED
+from .surface_roi import surface_grid_params
 
 
 class Data3d(Data):
@@ -477,19 +478,22 @@ class Data3d(Data):
             plot_surfaces as _plot_surfaces,
         )
 
-        effective_si = bool(use_si) and getattr(self, "valunit", None) is not None
+        x0, y0, z0, dx, dy, dz, effective_si = surface_grid_params(
+            self.xslice,
+            self.yslice,
+            self.zslice,
+            self.axisunits,
+            getattr(self, "valunit", None),
+            use_si,
+        )
 
         if effective_si:
             data = np.asarray(self.val_si, dtype=np.float64)
-            dx = float(self.axisunits[-1].reverse(1.0))
-            dy = float(self.axisunits[-2].reverse(1.0))
-            dz = float(self.axisunits[-3].reverse(1.0))
         else:
             data = np.asarray(self, dtype=np.float64)
-            dx = dy = dz = 1.0
 
         nz, ny, nx = data.shape
-        grid = UniformCellCenteredGrid(nx=nx, ny=ny, nz=nz, dx=dx, dy=dy, dz=dz)
+        grid = UniformCellCenteredGrid(nx=nx, ny=ny, nz=nz, dx=dx, dy=dy, dz=dz, x0=x0, y0=y0, z0=z0)
         field = Field3D(grid, data)
 
         def _wrap(item):

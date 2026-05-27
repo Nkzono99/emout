@@ -4,11 +4,13 @@ import json
 import shutil
 
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
 import emout
 from emout.article import ArticleReplayEmout
+from emout.plot.surface_cut import Bounds3D, BoxMeshSurface
 from tests.conftest import create_inpfile
 
 _BOUNDARY_INP = """!!key dx=[0.1],to_c=[10000.0]
@@ -28,11 +30,11 @@ _BOUNDARY_INP = """!!key dx=[0.1],to_c=[10000.0]
 """
 
 
-def _write_field(directory, name, offset=0.0):
+def _write_field(directory, name, offset=0.0, shape=(2, 3, 4)):
     with h5py.File(directory / f"{name}00_0000.h5", "w") as h5:
         group = h5.create_group(name)
         for index in range(3):
-            values = np.arange(2 * 3 * 4, dtype=float).reshape(2, 3, 4)
+            values = np.arange(np.prod(shape), dtype=float).reshape(shape)
             group.create_dataset(f"{index:04}", data=values + offset + index * 100)
 
 
@@ -171,6 +173,164 @@ def test_record_mode_appends_to_existing_article_bundle(article_sim, tmp_path):
     assert [record["field"] for record in manifest["records"]] == ["phisp", "ex"]
     with h5py.File(record_dir / "data.h5", "r") as h5:
         assert list(h5["records"]) == ["record_000000", "record_000001"]
+
+
+def test_plot_surfaces_records_bounds_roi_not_full_volume(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    _write_field(sim, "phisp", shape=(5, 6, 7))
+    create_inpfile(sim / "plasma.inp")
+    records = tmp_path / "records"
+    bounds = Bounds3D(x=(2.0, 4.0), y=(2.0, 4.0), z=(1.0, 3.0))
+    surface = BoxMeshSurface(2.0, 4.0, 2.0, 4.0, 1.0, 3.0, faces=["xmin"], resolution_scale=1)
+
+    data = emout.Emout(
+        sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="fig_surface",
+    )
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    data.phisp[-1].plot_surfaces(surface, ax=ax, bounds=bounds, mode="cmap", use_si=False, vmin=0.0, vmax=500.0)
+    plt.close(fig)
+
+    record_dir = next(records.glob("datasets/*/fig_surface"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert len(manifest["records"]) == 1
+    record = manifest["records"][0]
+    assert record["field"] == "phisp"
+    assert record["shape"] == [4, 4, 4]
+    assert record["slice_axes"] == [1, 2, 3]
+    assert record["slices"][0] == {"type": "slice", "start": 2, "stop": 3, "step": 1}
+    assert record["slices"][1] == {"type": "slice", "start": 0, "stop": 4, "step": 1}
+    assert record["slices"][2] == {"type": "slice", "start": 1, "stop": 5, "step": 1}
+    assert record["slices"][3] == {"type": "slice", "start": 1, "stop": 5, "step": 1}
+
+    with h5py.File(record_dir / "data.h5", "r") as h5:
+        assert h5[record["dataset"]].shape == (4, 4, 4)
+
+    replay = emout.Emout(
+        sim,
+        article_mode="replay",
+        article_records_path=records,
+        article_name="fig_surface",
+    )
+    replay_fig = plt.figure()
+    replay_ax = replay_fig.add_subplot(111, projection="3d")
+    replay.phisp[-1].plot_surfaces(
+        surface,
+        ax=replay_ax,
+        bounds=bounds,
+        mode="cmap",
+        use_si=False,
+        vmin=0.0,
+        vmax=500.0,
+    )
+    plt.close(replay_fig)
+
+
+def test_chained_time_then_2d_slice_records_2d_not_3d(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    _write_field(sim, "phisp", shape=(5, 6, 7))
+    create_inpfile(sim / "plasma.inp")
+    records = tmp_path / "records"
+
+    data = emout.Emout(
+        sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="fig_chained",
+    )
+    recorded = data.phisp[-1][:, 2, :].to_numpy()
+
+    record_dir = next(records.glob("datasets/*/fig_chained"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert len(manifest["records"]) == 1
+    record = manifest["records"][0]
+    assert record["shape"] == [5, 7]
+    assert record["slice_axes"] == [1, 3]
+    assert record["slices"][0] == {"type": "slice", "start": 2, "stop": 3, "step": 1}
+    assert record["slices"][1] == {"type": "slice", "start": 0, "stop": 5, "step": 1}
+    assert record["slices"][2] == {"type": "slice", "start": 2, "stop": 3, "step": 1}
+    assert record["slices"][3] == {"type": "slice", "start": 0, "stop": 7, "step": 1}
+
+    replay = emout.Emout(
+        sim,
+        article_mode="replay",
+        article_records_path=records,
+        article_name="fig_chained",
+    )
+    np.testing.assert_array_equal(replay.phisp[-1][:, 2, :].to_numpy(), recorded)
+
+
+def test_article_record_kwargs_propagate_to_remote_open(article_sim, tmp_path):
+    records = tmp_path / "records"
+    data = emout.Emout(
+        article_sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="fig_remote",
+        article_source_name="case_remote",
+        article_archive="zip",
+    )
+
+    kwargs = data._remote_open_kwargs
+
+    assert kwargs["article_mode"] == "record"
+    assert kwargs["article_records_path"] == str(records)
+    assert kwargs["article_name"] == "fig_remote"
+    assert kwargs["article_source_name"] == "case_remote"
+    assert kwargs["article_archive"] == "zip"
+    assert data.phisp._emout_open_kwargs["article_mode"] == "record"
+    assert data.phisp._emout_open_kwargs["article_records_path"] == str(records)
+    assert data.phisp[-1]._emout_open_kwargs["article_name"] == "fig_remote"
+
+
+def test_remote_replay_figure_records_plot_surfaces_bounds_roi(tmp_path):
+    from emout.distributed.remote_render import RemoteSession
+
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    _write_field(sim, "phisp", shape=(5, 6, 7))
+    create_inpfile(sim / "plasma.inp")
+    records = tmp_path / "records"
+    data = emout.Emout(
+        sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="fig_remote_surface",
+    )
+    bounds = Bounds3D(x=(2.0, 4.0), y=(2.0, 4.0), z=(1.0, 3.0))
+    surface = BoxMeshSurface(2.0, 4.0, 2.0, 4.0, 1.0, 3.0, faces=["xmin"], resolution_scale=1)
+    session = RemoteSession()
+
+    session.replay_figure(
+        [
+            (
+                "plot_surfaces",
+                "phisp",
+                (-1, slice(None), slice(None), slice(None)),
+                surface,
+                {
+                    "bounds": bounds,
+                    "mode": "cmap",
+                    "use_si": False,
+                    "vmin": 0.0,
+                    "vmax": 500.0,
+                },
+                data._remote_open_kwargs,
+            )
+        ]
+    )
+
+    record_dir = next(records.glob("datasets/*/fig_remote_surface"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert len(manifest["records"]) == 1
+    assert manifest["records"][0]["shape"] == [4, 4, 4]
+    with h5py.File(record_dir / "data.h5", "r") as h5:
+        assert h5[manifest["records"][0]["dataset"]].shape == (4, 4, 4)
 
 
 def test_replay_multiple_sources_by_basename_after_path_change(tmp_path):

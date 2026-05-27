@@ -747,6 +747,17 @@ class ArticleReplayEmout:
                 return record
         raise KeyError(f"Article replay data is not recorded: {field}{selectors!r}")
 
+    def _has_record(self, field: str, selectors: tuple[Any, ...]) -> bool:
+        encoded_selector = _encode_selector_tuple(selectors)
+        return any(record.get("selector") == encoded_selector for record in self._records_by_field.get(field, []))
+
+    def _field_unit_metadata(self, field: str):
+        record = self._records_by_field[field][0]
+        return (
+            [_decode_unit(unit) for unit in record.get("axisunits", [])],
+            _decode_unit(record.get("valunit")),
+        )
+
 
 class ArticleSeries:
     """Lazy selector for one recorded field."""
@@ -764,6 +775,10 @@ class ArticleSeries:
         ndim = sum(not isinstance(selector, int) for selector in selectors)
         selection = ArticleSelection(self._replay, self.name, selectors, self.shape)
         if ndim <= 3:
+            from emout.core.data.surface_roi import is_spatial_3d_selection
+
+            if ndim == 3 and is_spatial_3d_selection(selectors) and not self._replay._has_record(self.name, selectors):
+                return selection
             return selection.materialize()
         return selection
 
@@ -812,6 +827,40 @@ class ArticleSelection:
     def plot(self, **kwargs):
         """Plot the recorded data using the normal Data plotting path."""
         return self.materialize().plot(**kwargs)
+
+    def plot_surfaces(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        **kwargs,
+    ):
+        """Plot recorded bounded surface data using the normal local path."""
+        from emout.core.data.surface_roi import is_spatial_3d_selection, plot_surfaces_roi_selectors
+
+        if self.ndim != 3 or not is_spatial_3d_selection(self._selectors):
+            raise ValueError("plot_surfaces requires one time index and all three spatial axes")
+        axisunits, valunit = self._replay._field_unit_metadata(self.name)
+        roi_selectors = plot_surfaces_roi_selectors(
+            self._selectors,
+            self._source_shape,
+            axisunits,
+            valunit,
+            use_si,
+            kwargs.get("bounds"),
+        )
+        data = type(self)(self._replay, self.name, roi_selectors, self._source_shape).materialize()
+        return data._plot_surfaces_local(
+            surfaces,
+            ax=ax,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs,
+        )
 
 
 def _to_recipe_index(data: Any) -> tuple[Any, ...]:
