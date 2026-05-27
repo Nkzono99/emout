@@ -30,6 +30,8 @@ emout
    guide/backtrace.ja
    guide/distributed
    guide/distributed.ja
+   guide/article
+   guide/article.ja
 
 .. toctree::
    :maxdepth: 2

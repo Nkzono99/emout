@@ -93,7 +93,7 @@ data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
 | **バックトレース** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ クイックスタート](https://nkzono99.github.io/emout/guide/quickstart.ja.html) |
 | **リモート実行** | Dask Actor で計算ノードに処理を委譲、ローカルは画像だけ | [→ リモート実行](https://nkzono99.github.io/emout/guide/distributed.ja.html) |
-| **論文用公開データ** | `plot()` / `to_numpy()` に使った最小スライスを記録・再生 | 下記参照 |
+| **論文用公開データ** | `plot()` / `to_numpy()` に使った最小スライスを記録・再生 | [→ 論文用データ](https://nkzono99.github.io/emout/guide/article.ja.html) |
 
 ---
 

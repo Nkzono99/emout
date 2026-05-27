@@ -93,7 +93,7 @@ See the user guide for detailed usage of each feature.
 | **Backtrace** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ Quick Start](https://nkzono99.github.io/emout/guide/quickstart.html) |
 | **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
-| **Article data** | Record and replay the minimum slices consumed by `plot()` / `to_numpy()` | See below |
+| **Article data** | Record and replay the minimum slices consumed by `plot()` / `to_numpy()` | [→ Article Data](https://nkzono99.github.io/emout/guide/article.html) |
 
 ---
 
