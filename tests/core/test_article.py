@@ -10,6 +10,22 @@ import emout
 from emout.article import ArticleReplayEmout
 from tests.conftest import create_inpfile
 
+_BOUNDARY_INP = """!!key dx=[0.1],to_c=[10000.0]
+&tmgrid
+    nstep = 2
+/
+&mpi
+    nspec = 1
+    npc = 1
+/
+&ptcond
+    boundary_type = 'complex'
+    boundary_types(1) = 'sphere'
+    sphere_origin(:, 1) = 1.0, 2.0, 3.0
+    sphere_radius(1) = 0.5
+/
+"""
+
 
 def _write_field(directory, name, offset=0.0):
     with h5py.File(directory / f"{name}00_0000.h5", "w") as h5:
@@ -28,6 +44,21 @@ def article_sim(tmp_path):
     _write_field(sim, "ez", offset=20)
     create_inpfile(sim / "plasma.inp")
     return sim
+
+
+def _record_empty_article(sim, records, article_name="fig_meta"):
+    emout.Emout(
+        sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name=article_name,
+    )
+    return emout.Emout(
+        sim,
+        article_mode="replay",
+        article_records_path=records,
+        article_name=article_name,
+    )
 
 
 def test_record_and_replay_to_numpy(article_sim, tmp_path):
@@ -184,3 +215,45 @@ def test_replay_missing_slice_raises_clear_error(article_sim, tmp_path):
     )
     with pytest.raises(KeyError, match="not recorded"):
         replay.phisp[0, :, 1, :].to_numpy()
+
+
+def test_record_copies_plasma_inp_and_toml_for_replay(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
+    (sim / "plasma.toml").write_text("[tmgrid]\nnx = 4\nny = 5\n", encoding="utf-8")
+
+    replay = _record_empty_article(sim, tmp_path / "records")
+
+    assert replay.inp is not None
+    assert replay.toml.tmgrid.nx == 4
+    record_dir = next((tmp_path / "records").glob("datasets/*/fig_meta"))
+    assert (record_dir / "plasma.inp").exists()
+    assert (record_dir / "plasma.toml").exists()
+
+
+def test_replay_boundaries_from_recorded_input(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
+
+    replay = _record_empty_article(sim, tmp_path / "records", article_name="fig_boundary")
+
+    assert len(replay.boundaries) == 1
+    ax = replay.boundaries.plot(use_si=False)
+    assert ax.name == "3d"
+
+
+def test_record_copies_diagnostic_files_for_replay(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
+    (sim / "icur").write_text("0 0.0 0.0\n2 1.0 2.0\n", encoding="utf-8")
+    (sim / "pbody").write_text("2 10 20\n", encoding="utf-8")
+
+    replay = _record_empty_article(sim, tmp_path / "records", article_name="fig_diag")
+
+    assert list(replay.icur.columns) == ["1_step", "1_body1", "1_body1_ema"]
+    assert replay.icur.iloc[-1]["1_step"] == 2
+    assert list(replay.pbody.columns) == ["step", "body1", "body2"]
+    assert replay.pbody.iloc[0]["body2"] == 20

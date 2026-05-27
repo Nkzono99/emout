@@ -198,6 +198,10 @@ data = emout.Emout(
 
 replay mode では未記録のスライスにアクセスすると例外になります。これは公開データに
 図の再現に必要なデータが含まれているかを確認するためです。
+`plasma.inp` と `plasma.toml`、小さな診断ファイル（`icur`, `pbody`）も保存されるため、
+`data.inp` / `data.toml` / `data.boundaries.plot()` /
+`data.phisp[-1].plot_surfaces(data.boundaries)` のような入力パラメータや境界メッシュに
+依存する可視化も replay できます。
 
 ### リモート実行 (Dask) — 実験的
 

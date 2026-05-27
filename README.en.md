@@ -200,6 +200,10 @@ data = emout.Emout(
 Replay mode raises an exception when a script asks for an unrecorded slice.
 This makes it clear whether the public data bundle contains everything
 needed to reproduce a figure.
+`plasma.inp`, `plasma.toml`, and small diagnostic files (`icur`, `pbody`)
+are saved as well, so visualizations that depend on input parameters and
+boundary meshes also replay, including `data.inp`, `data.toml`,
+`data.boundaries.plot()`, and `data.phisp[-1].plot_surfaces(data.boundaries)`.
 
 ### Remote Execution (Dask) — Experimental
 

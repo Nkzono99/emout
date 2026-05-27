@@ -137,6 +137,10 @@ class Emout:
             self._article_recorder = ArticleRecorder(self._dir_inspector.main_directory, article_config)
             self._article_recorder.write_input(self._dir_inspector.inp)
             self._article_recorder.copy_input_path(self._dir_inspector.input_path)
+            self._article_recorder.copy_source_files(
+                self._dir_inspector._input_directory,
+                self._dir_inspector.main_directory,
+            )
 
     @property
     def directory(self) -> Path:

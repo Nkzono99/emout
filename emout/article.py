@@ -18,6 +18,7 @@ from typing import Any
 
 import h5py
 import numpy as np
+import pandas as pd
 
 from emout.utils import InpFile, UnitTranslator, Units
 
@@ -164,6 +165,20 @@ class ArticleRecorder:
         if src.exists():
             shutil.copyfile(src, self.record_dir / src.name)
 
+    def copy_source_files(self, input_directory: str | Path, output_directory: str | Path) -> None:
+        """Copy small source-side files useful for article replay."""
+        input_directory = Path(input_directory)
+        output_directory = Path(output_directory)
+        for filename in ("plasma.inp", "plasma.toml"):
+            src = input_directory / filename
+            if src.exists():
+                shutil.copyfile(src, self.record_dir / filename)
+
+        for filename in ("icur", "pbody"):
+            src = output_directory / filename
+            if src.exists():
+                shutil.copyfile(src, self.record_dir / filename)
+
     def record_data(self, data: Any, *, kind: str, kwargs: dict[str, Any] | None = None) -> None:
         """Append a consumed data slice to the article bundle."""
         if not hasattr(data, "slices"):
@@ -233,6 +248,14 @@ class ArticleReplayEmout:
 
         inp_path = self._record_dir / "plasma.inp"
         self._inp = InpFile(inp_path) if inp_path.exists() else None
+        toml_path = self._record_dir / "plasma.toml"
+        if toml_path.exists():
+            from emout.utils.toml_converter import load_toml
+
+            self._toml = load_toml(toml_path, resolve_groups=True, purge_groups=True)
+        else:
+            self._toml = None
+
         if self._inp is not None and self._inp.convkey is not None:
             self._unit = Units(self._inp.convkey.dx, self._inp.convkey.to_c)
         else:
@@ -249,6 +272,11 @@ class ArticleReplayEmout:
         return self._inp
 
     @property
+    def toml(self):
+        """Return the recorded TOML configuration when available."""
+        return self._toml
+
+    @property
     def unit(self) -> Units | None:
         """Return units reconstructed from the recorded input file."""
         return self._unit
@@ -260,6 +288,42 @@ class ArticleReplayEmout:
     def available_fields(self) -> list[str]:
         """Return recorded scalar field names."""
         return sorted(self._records_by_field)
+
+    @property
+    def icur(self) -> pd.DataFrame:
+        """Return the recorded ``icur`` diagnostic file as a DataFrame."""
+        if self._inp is None:
+            raise RuntimeError("icur replay requires a recorded plasma.inp")
+        path = self._record_dir / "icur"
+        if not path.exists():
+            raise FileNotFoundError(f"'icur' file not found in article record: {path}")
+
+        names = []
+        for ispec in range(self._inp.nspec):
+            names.append(f"{ispec + 1}_step")
+            for ipc in range(self._inp.npc):
+                names.append(f"{ispec + 1}_body{ipc + 1}")
+                names.append(f"{ispec + 1}_body{ipc + 1}_ema")
+        return pd.read_csv(path, sep=r"\s+", header=None, names=names)
+
+    @property
+    def pbody(self) -> pd.DataFrame:
+        """Return the recorded ``pbody`` diagnostic file as a DataFrame."""
+        if self._inp is None:
+            raise RuntimeError("pbody replay requires a recorded plasma.inp")
+        path = self._record_dir / "pbody"
+        if not path.exists():
+            raise FileNotFoundError(f"'pbody' file not found in article record: {path}")
+
+        names = ["step"] + [f"body{i + 1}" for i in range(self._inp.npc + 1)]
+        return pd.read_csv(path, sep=r"\s+", names=names)
+
+    @property
+    def boundaries(self):
+        """Return boundary meshes reconstructed from the recorded input file."""
+        from emout.core.boundaries import BoundaryCollection
+
+        return BoundaryCollection(self._inp, self._unit)
 
     def __getattr__(self, name: str):
         """Resolve recorded scalar and vector field names."""
