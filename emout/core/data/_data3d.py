@@ -93,6 +93,14 @@ class Data3d(Data):
         if self._local_data_access_disabled():
             self._require_local_data_access("plot field data locally", self._target_name())
 
+        from emout.article import record_data_access
+
+        record_data_access(
+            self,
+            kind="plot",
+            kwargs={"mode": mode, "use_si": use_si, "offsets": offsets, **kwargs},
+        )
+
         if mode == "auto":
             mode = "cont"
 

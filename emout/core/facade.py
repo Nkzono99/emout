@@ -35,6 +35,30 @@ class Emout:
     # name-to-unit mapping (built once)
     name2unit = build_name2unit_mapping(max_ndp=9)
 
+    def __new__(
+        cls,
+        directory: Union[Path, str] = "./",
+        *args,
+        article_mode: Union[str, None] = None,
+        article_records_path: Union[Path, str, None] = None,
+        records_path: Union[Path, str, None] = None,
+        article_name: Union[str, None] = None,
+        **kwargs,
+    ):
+        """Return a replay proxy when article replay mode is requested."""
+        if cls is Emout:
+            from emout.article import ArticleReplayEmout, resolve_config
+
+            config = resolve_config(
+                article_mode=article_mode,
+                article_records_path=article_records_path,
+                records_path=records_path,
+                article_name=article_name,
+            )
+            if config.mode == "replay":
+                return ArticleReplayEmout(kwargs.get("output_directory") or directory, config)
+        return super().__new__(cls)
+
     def __init__(
         self,
         directory: Union[Path, str] = "./",
@@ -44,6 +68,10 @@ class Emout:
         input_path: Union[Path, str, None] = None,
         output_directory: Union[Path, str, None] = None,
         local_data_policy: Union[str, None] = None,
+        article_mode: Union[str, None] = None,
+        article_records_path: Union[Path, str, None] = None,
+        records_path: Union[Path, str, None] = None,
+        article_name: Union[str, None] = None,
     ):
         """Initialize the Emout facade.
 
@@ -68,7 +96,27 @@ class Emout:
         local_data_policy : {'allow', 'remote_required'} or None, optional
             Per-instance override for local field-data access. ``None``
             inherits the process/context/env policy.
+        article_mode : {'normal', 'record', 'replay'} or None, optional
+            Article data mode. ``None`` reads ``EMOUT_ARTICLE_MODE``.
+        article_records_path, records_path : Path or str or None, optional
+            Root directory for article records. Explicit arguments override
+            ``EMOUT_ARTICLE_RECORDS_PATH``.
+        article_name : str or None, optional
+            Per-figure/article record name. ``None`` reads
+            ``EMOUT_ARTICLE_NAME`` or falls back to ``"default"``.
         """
+        from emout.article import ArticleRecorder, resolve_config
+
+        article_config = resolve_config(
+            article_mode=article_mode,
+            article_records_path=article_records_path,
+            records_path=records_path,
+            article_name=article_name,
+        )
+        if article_config.mode == "replay":
+            # __new__ returns an ArticleReplayEmout for the base Emout class.
+            return
+
         self._local_data_policy = normalize_local_data_policy(local_data_policy)
 
         self._dir_inspector = DirectoryInspector(
@@ -84,6 +132,11 @@ class Emout:
             name2unit_map=Emout.name2unit,
             local_data_policy=self._local_data_policy,
         )
+        self._article_recorder = None
+        if article_config.mode == "record":
+            self._article_recorder = ArticleRecorder(self._dir_inspector.main_directory, article_config)
+            self._article_recorder.write_input(self._dir_inspector.inp)
+            self._article_recorder.copy_input_path(self._dir_inspector.input_path)
 
     @property
     def directory(self) -> Path:
@@ -263,9 +316,14 @@ class Emout:
             return self.particle(species=int(m.group(1)))
 
         try:
-            return self._grid_loader.load(name)
+            data = self._grid_loader.load(name)
         except (KeyError, FileNotFoundError, OSError) as e:
             raise AttributeError(f"Failed to load attribute '{name}': {e}") from e
+        if self._article_recorder is not None:
+            from emout.article import attach_recorder
+
+            attach_recorder(data, self._article_recorder, getattr(data, "shape", None))
+        return data
 
     @property
     def boundaries(self):

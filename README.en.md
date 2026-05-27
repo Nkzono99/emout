@@ -93,6 +93,7 @@ See the user guide for detailed usage of each feature.
 | **Backtrace** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ Quick Start](https://nkzono99.github.io/emout/guide/quickstart.html) |
 | **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
+| **Article data** | Record and replay the minimum slices consumed by `plot()` / `to_numpy()` | See below |
 
 ---
 
@@ -150,6 +151,55 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 ```
 
 </details>
+
+### Recording And Replaying Article Data
+
+Figure scripts can still start with the usual `emout.Emout()` call.
+Switch article mode with environment variables to save only the minimum
+slices consumed by `plot()` and `to_numpy()` under a records path, then
+replay the same script from those recorded slices.
+
+```python
+import emout
+
+data = emout.Emout("output_dir")
+ymid = data.inp.ny // 2
+
+data.phisp[-1, :, ymid, :].plot(cmap="viridis")
+arr = data.ex[-1, :, ymid, :].to_numpy()
+```
+
+```bash
+# Normal run
+python fig1.py
+
+# Record: saves to article-records/datasets/<output_dir>-<hash>/fig1/
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+
+# Replay: restore from recorded slices instead of the original large HDF5 files
+EMOUT_ARTICLE_MODE=replay \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+```
+
+The same settings can be passed as arguments.
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_name="fig1",
+)
+```
+
+Replay mode raises an exception when a script asks for an unrecorded slice.
+This makes it clear whether the public data bundle contains everything
+needed to reproduce a figure.
 
 ### Remote Execution (Dask) — Experimental
 

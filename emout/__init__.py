@@ -13,6 +13,7 @@ Quick start::
 
 import logging as _logging
 
+from . import article
 from .core import data
 from .core.data import VectorData, VectorData2d, VectorData3d
 from .core.facade import Emout

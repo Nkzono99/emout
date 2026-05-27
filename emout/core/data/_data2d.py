@@ -125,7 +125,21 @@ class Data2d(Data):
         if remote is not None:
             return remote
 
+        from emout.article import record_data_access
         import emout.plot.basic_plot as emplt
+
+        record_data_access(
+            self,
+            kind="plot",
+            kwargs={
+                "axes": axes,
+                "show": show,
+                "use_si": use_si,
+                "offsets": offsets,
+                "mode": mode,
+                **kwargs,
+            },
+        )
 
         if self.valunit is None:
             use_si = False

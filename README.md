@@ -93,6 +93,7 @@ data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
 | **バックトレース** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ クイックスタート](https://nkzono99.github.io/emout/guide/quickstart.ja.html) |
 | **リモート実行** | Dask Actor で計算ノードに処理を委譲、ローカルは画像だけ | [→ リモート実行](https://nkzono99.github.io/emout/guide/distributed.ja.html) |
+| **論文用公開データ** | `plot()` / `to_numpy()` に使った最小スライスを記録・再生 | 下記参照 |
 
 ---
 
@@ -150,6 +151,53 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 ```
 
 </details>
+
+### 論文用公開データの記録・再生
+
+図作成スクリプトは通常どおり `emout.Emout()` から始めます。
+環境変数で article mode を切り替えると、`plot()` と `to_numpy()` が消費した
+最小スライスだけを `records-path` 以下に保存し、同じスクリプトで再生できます。
+
+```python
+import emout
+
+data = emout.Emout("output_dir")
+ymid = data.inp.ny // 2
+
+data.phisp[-1, :, ymid, :].plot(cmap="viridis")
+arr = data.ex[-1, :, ymid, :].to_numpy()
+```
+
+```bash
+# 通常実行
+python fig1.py
+
+# 記録: article-records/datasets/<output_dir>-<hash>/fig1/ に保存
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+
+# 再生: 元の巨大 HDF5 ではなく記録済みスライスから復元
+EMOUT_ARTICLE_MODE=replay \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+```
+
+引数でも指定できます。
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_name="fig1",
+)
+```
+
+replay mode では未記録のスライスにアクセスすると例外になります。これは公開データに
+図の再現に必要なデータが含まれているかを確認するためです。
 
 ### リモート実行 (Dask) — 実験的
 

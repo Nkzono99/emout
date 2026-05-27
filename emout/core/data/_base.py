@@ -102,6 +102,8 @@ class Data(np.ndarray):
         obj.axisunits = axisunits
         obj.valunit = valunit
         obj._local_data_policy = normalize_local_data_policy(local_data_policy)
+        obj._article_recorder = None
+        obj._article_source_shape = None
 
         if xslice is None:
             xslice = slice(0, obj.shape[3], 1)
@@ -188,6 +190,8 @@ class Data(np.ndarray):
         # Propagate remote-rendering metadata from the source object
         result._emout_dir = getattr(self, "_emout_dir", None)
         result._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
+        result._article_recorder = getattr(self, "_article_recorder", None)
+        result._article_source_shape = getattr(self, "_article_source_shape", None)
         return result
 
     def __add_slices(self, new_obj, item):
@@ -258,6 +262,8 @@ class Data(np.ndarray):
         self._emout_dir = getattr(obj, "_emout_dir", None)
         self._emout_open_kwargs = getattr(obj, "_emout_open_kwargs", None)
         self._local_data_policy = getattr(obj, "_local_data_policy", None)
+        self._article_recorder = getattr(obj, "_article_recorder", None)
+        self._article_source_shape = getattr(obj, "_article_source_shape", None)
 
     @property
     def filename(self) -> Path:
@@ -480,6 +486,9 @@ class Data(np.ndarray):
     def to_numpy(self) -> np.ndarray:
         """Convert to a plain NumPy ndarray."""
         self._require_local_data_access("convert field data to a NumPy array", self._target_name())
+        from emout.article import record_data_access
+
+        record_data_access(self, kind="to_numpy")
         return np.array(self)
 
     def negate(self) -> "Data":

@@ -97,7 +97,10 @@ class Data1d(Data):
         if remote is not None:
             return remote
 
+        from emout.article import record_data_access
         import emout.plot.basic_plot as emplt
+
+        record_data_access(self, kind="plot", kwargs=kwargs)
 
         if self.valunit is None:
             use_si = False

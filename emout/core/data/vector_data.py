@@ -5,6 +5,8 @@ components and provides unified plotting for 2-D quiver / streamline and
 3-D PyVista visualisation.
 """
 
+from __future__ import annotations
+
 import re
 import warnings
 from os import PathLike
@@ -85,6 +87,12 @@ class VectorData(utils.Group):
             target_name = getattr(component, "_target_name", None)
             target = target_name() if callable(target_name) else getattr(component, "name", self.name)
             require(operation, target)
+
+    def _record_article_access(self, kind: str, kwargs: dict[str, Any] | None = None) -> None:
+        from emout.article import record_data_access
+
+        for component in self.objs:
+            record_data_access(component, kind=kind, kwargs=kwargs)
 
     def negate(self) -> "VectorData":
         """Return a new VectorData with all components sign-flipped.
@@ -420,6 +428,18 @@ class VectorData(utils.Group):
             If the data is not two-dimensional.
         """
         self._require_local_data_access("plot vector field locally")
+        self._record_article_access(
+            "plot",
+            {
+                "vector": self.name,
+                "mode": mode,
+                "axes": axes,
+                "show": show,
+                "use_si": use_si,
+                "offsets": offsets,
+                **kwargs,
+            },
+        )
         if self.objs[0].valunit is None:
             use_si = False
 
@@ -493,6 +513,10 @@ class VectorData(utils.Group):
     ):
         """Render three-dimensional vector field with PyVista."""
         self._require_local_data_access("render vector field with PyVista locally")
+        self._record_article_access(
+            "plot_pyvista",
+            {"vector": self.name, "mode": mode, "show": show, "use_si": use_si, "offsets": offsets, **kwargs},
+        )
         if self.x_data.ndim != 3:
             raise ValueError("plot_pyvista on VectorData requires 3D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
@@ -565,6 +589,10 @@ class VectorData(utils.Group):
         Axes3D
         """
         self._require_local_data_access("plot vector field locally")
+        self._record_article_access(
+            "plot3d",
+            {"vector": self.name, "mode": mode, "use_si": use_si, "offsets": offsets, **kwargs},
+        )
         if self.x_data.ndim != 3:
             raise ValueError("plot3d_mpl requires 3-D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):

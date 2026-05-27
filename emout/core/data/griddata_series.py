@@ -168,6 +168,8 @@ class GridDataSeries:
         self.name = name
         self._emout_dir = None  # set by GridLoader to enable remote rendering
         self._emout_open_kwargs = None
+        self._article_recorder = None
+        self._article_source_shape = self.shape
 
     def __repr__(self) -> str:
         return f"<GridDataSeries: name={self.name!r}, timesteps={len(self)}, file={self.filename.name}>"
@@ -314,6 +316,11 @@ class GridDataSeries:
         )
         data._emout_dir = self._emout_dir
         data._emout_open_kwargs = self._emout_open_kwargs
+        data._article_recorder = getattr(self, "_article_recorder", None)
+        data._article_source_shape = getattr(self, "_article_source_shape", self.shape)
+        from emout.article import record_data_access
+
+        record_data_access(data, kind="materialize")
         return data
 
     def __create_data_with_indexes(self, indexes: List[int], tslice: slice = None) -> Data4d:
@@ -468,6 +475,8 @@ class MultiGridDataSeries(GridDataSeries):
         self._emout_dir = getattr(self.series[0], "_emout_dir", None)
         self._emout_open_kwargs = getattr(self.series[0], "_emout_open_kwargs", None)
         self._local_data_policy = getattr(self.series[0], "_local_data_policy", None)
+        self._article_recorder = getattr(self.series[0], "_article_recorder", None)
+        self._article_source_shape = self.shape
 
     def __repr__(self) -> str:
         return f"<MultiGridDataSeries: name={self.name!r}, timesteps={len(self)}, segments={len(self.series)}>"
@@ -677,6 +686,8 @@ class GridDataSelection(NDArrayOperatorsMixin):
         self._emout_dir = getattr(series, "_emout_dir", None)
         self._emout_open_kwargs = getattr(series, "_emout_open_kwargs", None)
         self._local_data_policy = getattr(series, "_local_data_policy", None)
+        self._article_recorder = getattr(series, "_article_recorder", None)
+        self._article_source_shape = getattr(series, "_article_source_shape", None)
         self._axis_lengths = (len(series), *series.grid_shape)
         self._materialized = _MATERIALIZED_UNSET
 
@@ -869,6 +880,9 @@ class GridDataSelection(NDArrayOperatorsMixin):
         array = self.materialize()
         if hasattr(array, "to_numpy"):
             return array.to_numpy()
+        from emout.article import record_data_access
+
+        record_data_access(array, kind="to_numpy")
         return np.asarray(array)
 
     def materialize(self):
@@ -916,6 +930,11 @@ class GridDataSelection(NDArrayOperatorsMixin):
         data._emout_dir = self._emout_dir
         data._emout_open_kwargs = self._emout_open_kwargs
         data._local_data_policy = self._local_data_policy
+        data._article_recorder = self._article_recorder
+        data._article_source_shape = self._article_source_shape or self._axis_lengths
+        from emout.article import record_data_access
+
+        record_data_access(data, kind="materialize")
         self._materialized = data
         return data
 
