@@ -75,6 +75,21 @@ padding. The saved ROI is replayed in the original global coordinates, so
 boundary meshes and mask surfaces keep their positions. Without `bounds`,
 emout cannot infer the needed range and the whole 3D selection may be saved.
 
+Time averages can be recorded for publication data too.
+`data.phisp[-20:].mean()` is treated as a lazy reduction over the time axis,
+so emout saves the averaged data instead of saving all 20 source timesteps.
+When it is followed by `plot_surfaces(..., bounds=bounds)`, emout reads only
+the bounded ROI from each timestep and saves the averaged ROI.
+
+```python
+field = data.phisp[-20:].mean()
+field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
+```
+
+The field returned by `mean()` also exposes `field.inp`, `field.unit`, and
+`field.boundaries`. This lets helper functions that read `data.inp` or
+`data.boundaries` accept the averaged field with the same structure.
+
 | File | Contents | Purpose |
 | --- | --- | --- |
 | `manifest.json` | Recorded field, selector, shape, slice axes, unit metadata | Matches requested replay slices to saved slices |
@@ -227,6 +242,7 @@ figure.
 - If multiple sources share a basename, such as `case_a/output` and `case_b/output`, pass `article_source_name`.
 - Prefer `data.phisp[...].to_numpy()` over `np.asarray(data.phisp[...])` so the recording intent is explicit.
 - Pass `bounds` to `plot_surfaces()` when you want small publication data. A 2D slice such as `data.phisp[-1, :, ymid, :]` is stored as 2D, but a 3D selection such as `data.phisp[-1]` can become the full 3D field without `bounds`.
+- `data.phisp[-20:].mean()` defaults to a time-axis mean. If you intend to average in space, pass an explicit axis such as `mean(axis="x")`.
 - In record mode, remote rendering records the slices used on the worker. Replay does not provide particles, backtrace, or remote execution. Run those from the original data, then record the grid slices used for visualization.
 - If the original script depends on random styling or external files, the article bundle alone cannot fully reproduce the figure. Publish the figure script as well.
 

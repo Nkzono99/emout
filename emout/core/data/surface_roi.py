@@ -66,10 +66,32 @@ def plot_surfaces_roi_selectors(
     padding: int = 1,
 ) -> tuple[Any, ...]:
     """Return selectors cropped to the ``plot_surfaces(bounds=...)`` ROI."""
-    if bounds is None:
-        return selectors
     if not is_spatial_3d_selection(selectors):
         raise ValueError("plot_surfaces article ROI requires one time index and all spatial axes")
+    return surface_roi_selectors(
+        selectors,
+        axis_lengths,
+        axisunits,
+        valunit,
+        use_si,
+        bounds,
+        padding=padding,
+    )
+
+
+def surface_roi_selectors(
+    selectors: tuple[Any, ...],
+    axis_lengths: tuple[int, int, int, int],
+    axisunits,
+    valunit,
+    use_si: bool,
+    bounds,
+    *,
+    padding: int = 1,
+) -> tuple[Any, ...]:
+    """Return selectors cropped to the spatial ``plot_surfaces`` ROI."""
+    if bounds is None:
+        return selectors
 
     dx, dy, dz, _effective_si = surface_base_spacing(axisunits, valunit, use_si)
     tsel, zsel, ysel, xsel = selectors

@@ -33,13 +33,13 @@ from .selectors import (
     selector_positions as _selector_positions,
     selector_to_metadata_slice as _selector_to_metadata_slice,
 )
-from .surface_roi import is_spatial_3d_selection, plot_surfaces_roi_selectors
+from .surface_roi import is_spatial_3d_selection, plot_surfaces_roi_selectors, surface_roi_selectors
 
 _MATERIALIZED_UNSET = object()
 
 
 def _materialize_nested(value):
-    if isinstance(value, GridDataSelection):
+    if isinstance(value, (GridDataSelection, GridDataMean)):
         return value.materialize()
     if isinstance(value, dict):
         return {key: _materialize_nested(val) for key, val in value.items()}
@@ -245,6 +245,8 @@ class GridDataSeries:
         )
         data._emout_dir = self._emout_dir
         data._emout_open_kwargs = self._emout_open_kwargs
+        data._emout_inp = getattr(self, "_emout_inp", None)
+        data._emout_unit = getattr(self, "_emout_unit", None)
         data._article_recorder = getattr(self, "_article_recorder", None)
         data._article_source_shape = getattr(self, "_article_source_shape", self.shape)
         from emout.article import record_data_access
@@ -403,6 +405,8 @@ class MultiGridDataSeries(GridDataSeries):
         self._grid_shape = self.series[0].grid_shape
         self._emout_dir = getattr(self.series[0], "_emout_dir", None)
         self._emout_open_kwargs = getattr(self.series[0], "_emout_open_kwargs", None)
+        self._emout_inp = getattr(self.series[0], "_emout_inp", None)
+        self._emout_unit = getattr(self.series[0], "_emout_unit", None)
         self._local_data_policy = getattr(self.series[0], "_local_data_policy", None)
         self._article_recorder = getattr(self.series[0], "_article_recorder", None)
         self._article_source_shape = self.shape
@@ -614,6 +618,8 @@ class GridDataSelection(NDArrayOperatorsMixin):
         self.valunit = series.valunit
         self._emout_dir = getattr(series, "_emout_dir", None)
         self._emout_open_kwargs = getattr(series, "_emout_open_kwargs", None)
+        self._emout_inp = getattr(series, "_emout_inp", None)
+        self._emout_unit = getattr(series, "_emout_unit", None)
         self._local_data_policy = getattr(series, "_local_data_policy", None)
         self._article_recorder = getattr(series, "_article_recorder", None)
         self._article_source_shape = getattr(series, "_article_source_shape", None)
@@ -640,6 +646,34 @@ class GridDataSelection(NDArrayOperatorsMixin):
     @property
     def directory(self) -> Path:
         return self.series.directory
+
+    @property
+    def inp(self):
+        inp = getattr(self, "_emout_inp", None)
+        if inp is None:
+            raise AttributeError("This selection is not associated with an Emout input")
+        return inp
+
+    @property
+    def unit(self):
+        unit = getattr(self, "_emout_unit", None)
+        if unit is None:
+            raise AttributeError("This selection is not associated with Emout units")
+        return unit
+
+    @property
+    def boundaries(self):
+        from emout.core.boundaries import BoundaryCollection
+
+        return BoundaryCollection(
+            getattr(self, "_emout_inp", None),
+            getattr(self, "_emout_unit", None),
+            remote_open_kwargs=getattr(self, "_emout_open_kwargs", None),
+        )
+
+    @property
+    def boundary(self):
+        return self.boundaries
 
     def _axis_values(self, axis: int) -> np.ndarray:
         selector = self._selectors[axis]
@@ -848,6 +882,8 @@ class GridDataSelection(NDArrayOperatorsMixin):
             local_data_policy=self._local_data_policy,
             emout_dir=self._emout_dir,
             emout_open_kwargs=self._emout_open_kwargs,
+            emout_inp=self._emout_inp,
+            emout_unit=self._emout_unit,
             article_recorder=self._article_recorder,
             article_source_shape=self._article_source_shape or self._axis_lengths,
         )
@@ -895,6 +931,58 @@ class GridDataSelection(NDArrayOperatorsMixin):
             value = np.max(self.series._read_selection(index, spatial_item))
             maximum = value if maximum is None else max(maximum, value)
         return maximum
+
+    def mean(self, axis=None, dtype=None, out=None, keepdims=False):
+        """Return a lazy time average when reducing the time axis."""
+        if out is not None:
+            raise NotImplementedError("GridDataSelection.mean does not support out")
+        if keepdims:
+            raise NotImplementedError("GridDataSelection.mean does not support keepdims=True")
+
+        reduction_axes = self._normalize_reduction_axes(axis)
+        if reduction_axes == (0,) and 0 in self.slice_axes:
+            return GridDataMean(self, dtype=dtype)
+
+        self._require_local_data_access("compute a local field mean", self._target_name())
+        materialized_axis = self._reduction_axes_to_materialized_axis(reduction_axes)
+        return self.materialize().mean(axis=materialized_axis, dtype=dtype, out=out, keepdims=keepdims)
+
+    def _normalize_reduction_axes(self, axis) -> Tuple[int, ...]:
+        if axis is None:
+            if 0 in self.slice_axes:
+                return (0,)
+            return tuple(self.slice_axes)
+
+        if isinstance(axis, str):
+            axis = (axis,)
+        elif isinstance(axis, tuple):
+            axis = axis
+        else:
+            axis = (axis,)
+
+        axes = []
+        name_to_axis = {"t": 0, "z": 1, "y": 2, "x": 3}
+        for item in axis:
+            if isinstance(item, str):
+                if item not in name_to_axis:
+                    raise ValueError(f"Unknown axis name: {item!r}")
+                source_axis = name_to_axis[item]
+            else:
+                dim = int(item)
+                if dim < 0:
+                    dim += self.ndim
+                if not 0 <= dim < self.ndim:
+                    raise ValueError(f"axis {item!r} is out of bounds for mean field with ndim {self.ndim}")
+                source_axis = self.slice_axes[dim]
+            if source_axis not in axes:
+                axes.append(source_axis)
+        return tuple(sorted(axes))
+
+    def _reduction_axes_to_materialized_axis(self, reduction_axes: Tuple[int, ...]):
+        dims = tuple(self.slice_axes.index(axis) for axis in reduction_axes)
+        if len(dims) == 1:
+            return dims[0]
+        return dims
 
     def build_frame_updater(
         self,
@@ -1099,3 +1187,240 @@ class GridDataSelection(NDArrayOperatorsMixin):
         )
         display_image(img, ax=ax)
         return _REMOTE_PLOT_HANDLED
+
+
+class GridDataMean(NDArrayOperatorsMixin):
+    """Lazy time-mean reduction for a :class:`GridDataSelection`."""
+
+    __array_priority__ = 1000
+
+    def __init__(self, selection: GridDataSelection, *, selectors=None, dtype=None):
+        self.selection = selection
+        self.series = selection.series
+        self.datafile = selection.datafile
+        self.name = selection.name
+        self.axisunits = selection.axisunits
+        self.valunit = selection.valunit
+        self._emout_dir = selection._emout_dir
+        self._emout_open_kwargs = selection._emout_open_kwargs
+        self._emout_inp = getattr(selection, "_emout_inp", None)
+        self._emout_unit = getattr(selection, "_emout_unit", None)
+        self._local_data_policy = selection._local_data_policy
+        self._article_recorder = selection._article_recorder
+        self._article_source_shape = selection._article_source_shape
+        self._axis_lengths = selection._axis_lengths
+        self._selectors = tuple(selection._selectors if selectors is None else selectors)
+        self._dtype = dtype
+        self._materialized = _MATERIALIZED_UNSET
+
+    def __repr__(self) -> str:
+        axes = "".join(self.use_axes)
+        return f"<GridDataMean: name={self.name!r}, shape={self.shape}, axes={axes}>"
+
+    @property
+    def filename(self) -> Path:
+        return self.selection.filename
+
+    @property
+    def directory(self) -> Path:
+        return self.selection.directory
+
+    @property
+    def inp(self):
+        inp = getattr(self, "_emout_inp", None)
+        if inp is None:
+            raise AttributeError("This mean field is not associated with an Emout input")
+        return inp
+
+    @property
+    def unit(self):
+        unit = getattr(self, "_emout_unit", None)
+        if unit is None:
+            raise AttributeError("This mean field is not associated with Emout units")
+        return unit
+
+    @property
+    def boundaries(self):
+        from emout.core.boundaries import BoundaryCollection
+
+        return BoundaryCollection(
+            getattr(self, "_emout_inp", None),
+            getattr(self, "_emout_unit", None),
+            remote_open_kwargs=getattr(self, "_emout_open_kwargs", None),
+        )
+
+    @property
+    def boundary(self):
+        return self.boundaries
+
+    @property
+    def slices(self):
+        return [
+            _selector_to_metadata_slice(selector, size) for selector, size in zip(self._selectors, self._axis_lengths)
+        ]
+
+    @property
+    def slice_axes(self):
+        return [axis for axis, selector in enumerate(self._selectors) if axis != 0 and not isinstance(selector, int)]
+
+    @property
+    def use_axes(self):
+        to_axis = {3: "x", 2: "y", 1: "z", 0: "t"}
+        return [to_axis[axis] for axis in self.slice_axes]
+
+    @property
+    def shape(self):
+        return tuple(
+            _selector_length(selector, size)
+            for axis, (selector, size) in enumerate(zip(self._selectors, self._axis_lengths))
+            if axis != 0 and not isinstance(selector, int)
+        )
+
+    @property
+    def ndim(self) -> int:
+        return len(self.shape)
+
+    def __array__(self, dtype=None):
+        array = self.to_numpy()
+        return np.asarray(array, dtype=dtype)
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        resolved_inputs = tuple(_materialize_nested(value) for value in inputs)
+        resolved_kwargs = {key: _materialize_nested(value) for key, value in kwargs.items()}
+        return getattr(ufunc, method)(*resolved_inputs, **resolved_kwargs)
+
+    def __array_function__(self, func, types, args, kwargs):
+        resolved_args = tuple(_materialize_nested(value) for value in args)
+        resolved_kwargs = {key: _materialize_nested(value) for key, value in kwargs.items()}
+        return func(*resolved_args, **resolved_kwargs)
+
+    def _expand_item(self, item):
+        if not isinstance(item, tuple):
+            item = (item,)
+        if item.count(Ellipsis) > 1:
+            raise IndexError("an index can only have a single ellipsis ('...')")
+        if Ellipsis in item:
+            idx = item.index(Ellipsis)
+            fill = (slice(None),) * (self.ndim - (len(item) - 1))
+            item = item[:idx] + fill + item[idx + 1 :]
+        if len(item) > self.ndim:
+            raise IndexError(f"too many indices for {self.ndim}-dimensional mean field")
+        return item
+
+    def __getitem__(self, item):
+        item = self._expand_item(item)
+        selectors = list(self._selectors)
+        for dim, sub_selector in enumerate(item):
+            if sub_selector is None:
+                raise IndexError("newaxis is not supported on GridDataMean")
+            axis = self.slice_axes[dim]
+            selectors[axis] = _compose_selector(selectors[axis], sub_selector, self._axis_lengths[axis])
+        return type(self)(self.selection, selectors=tuple(selectors), dtype=self._dtype)
+
+    def materialize(self, selectors=None):
+        """Materialise the time mean as a Data object or scalar."""
+        self.selection._require_local_data_access("compute a local time mean", self._target_name())
+        if selectors is None and self._materialized is not _MATERIALIZED_UNSET:
+            return self._materialized
+
+        selectors = self._selectors if selectors is None else tuple(selectors)
+        tsel, zsel, ysel, xsel = selectors
+        t_indices = _selector_positions(tsel, self._axis_lengths[0])
+        if not t_indices:
+            raise ValueError("Cannot compute mean over an empty time selection")
+
+        spatial_item = (zsel, ysel, xsel)
+        dtype = self._dtype or np.float64
+        total = None
+        for index in t_indices:
+            array = np.asarray(self.series._read_selection(index, spatial_item), dtype=dtype)
+            total = array if total is None else total + array
+        mean = total / len(t_indices)
+
+        if np.isscalar(mean) or np.ndim(mean) == 0:
+            return np.asarray(mean).item()
+
+        data = data_from_array(
+            mean,
+            filename=self.filename,
+            name=self.name,
+            tslice=_selector_to_metadata_slice(tsel, self._axis_lengths[0]),
+            zslice=_selector_to_metadata_slice(zsel, self._axis_lengths[1]),
+            yslice=_selector_to_metadata_slice(ysel, self._axis_lengths[2]),
+            xslice=_selector_to_metadata_slice(xsel, self._axis_lengths[3]),
+            slice_axes=[axis for axis, selector in enumerate(selectors) if axis != 0 and not isinstance(selector, int)],
+            axisunits=self.axisunits,
+            valunit=self.valunit,
+            local_data_policy=self._local_data_policy,
+            emout_dir=self._emout_dir,
+            emout_open_kwargs=self._emout_open_kwargs,
+            emout_inp=self._emout_inp,
+            emout_unit=self._emout_unit,
+            article_recorder=self._article_recorder,
+            article_source_shape=self._article_source_shape or self._axis_lengths,
+        )
+        from emout.article import record_data_access
+
+        record_data_access(
+            data,
+            kind="mean",
+            kwargs={
+                "operation": "mean",
+                "reduction_axes": ["t"],
+                "source_selector": self._to_recipe_index(selectors),
+            },
+        )
+        if selectors == self._selectors:
+            self._materialized = data
+        return data
+
+    def to_numpy(self) -> np.ndarray:
+        data = self.materialize()
+        return np.asarray(data)
+
+    def plot(self, **kwargs):
+        data = self.materialize()
+        recorder = getattr(data, "_article_recorder", None)
+        data._article_recorder = None
+        try:
+            return data.plot(**kwargs)
+        finally:
+            data._article_recorder = recorder
+
+    def plot_surfaces(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        **kwargs,
+    ):
+        """Plot a bounded time-mean 3-D surface field."""
+        if self.ndim != 3 or self.slice_axes != [1, 2, 3]:
+            raise ValueError("plot_surfaces requires a time mean over all three spatial axes")
+
+        roi_selectors = surface_roi_selectors(
+            self._selectors,
+            self._axis_lengths,
+            self.axisunits,
+            self.valunit,
+            use_si,
+            kwargs.get("bounds"),
+        )
+        data = self.materialize(roi_selectors)
+        return data._plot_surfaces_local(
+            surfaces,
+            ax=ax,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs,
+        )
+
+    def _target_name(self) -> str:
+        return f"{self.name}.mean({self._to_recipe_index()})"
+
+    def _to_recipe_index(self, selectors=None):
+        return tuple(self._selectors if selectors is None else selectors)

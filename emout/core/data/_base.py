@@ -172,6 +172,8 @@ class Data(np.ndarray):
         # Propagate remote-rendering metadata from the source object
         result._emout_dir = getattr(self, "_emout_dir", None)
         result._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
+        result._emout_inp = getattr(self, "_emout_inp", None)
+        result._emout_unit = getattr(self, "_emout_unit", None)
         result._article_recorder = getattr(self, "_article_recorder", None)
         result._article_source_shape = getattr(self, "_article_source_shape", None)
         return result
@@ -243,6 +245,8 @@ class Data(np.ndarray):
         self.valunit = getattr(obj, "valunit", None)
         self._emout_dir = getattr(obj, "_emout_dir", None)
         self._emout_open_kwargs = getattr(obj, "_emout_open_kwargs", None)
+        self._emout_inp = getattr(obj, "_emout_inp", None)
+        self._emout_unit = getattr(obj, "_emout_unit", None)
         self._local_data_policy = getattr(obj, "_local_data_policy", None)
         self._article_recorder = getattr(obj, "_article_recorder", None)
         self._article_source_shape = getattr(obj, "_article_source_shape", None)
@@ -268,6 +272,38 @@ class Data(np.ndarray):
             Parent directory path.
         """
         return self.datafile.directory
+
+    @property
+    def inp(self):
+        """Return the input metadata associated with this data object."""
+        inp = getattr(self, "_emout_inp", None)
+        if inp is None:
+            raise AttributeError("This data object is not associated with an Emout input")
+        return inp
+
+    @property
+    def unit(self):
+        """Return the unit metadata associated with this data object."""
+        unit = getattr(self, "_emout_unit", None)
+        if unit is None:
+            raise AttributeError("This data object is not associated with Emout units")
+        return unit
+
+    @property
+    def boundaries(self):
+        """Return boundaries associated with this data object's source."""
+        from emout.core.boundaries import BoundaryCollection
+
+        return BoundaryCollection(
+            getattr(self, "_emout_inp", None),
+            getattr(self, "_emout_unit", None),
+            remote_open_kwargs=getattr(self, "_emout_open_kwargs", None),
+        )
+
+    @property
+    def boundary(self):
+        """Alias for :attr:`boundaries`."""
+        return self.boundaries
 
     @property
     def xslice(self) -> slice:
@@ -667,6 +703,8 @@ class Data(np.ndarray):
         )
         obj._emout_dir = getattr(self, "_emout_dir", None)
         obj._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
+        obj._emout_inp = getattr(self, "_emout_inp", None)
+        obj._emout_unit = getattr(self, "_emout_unit", None)
         return obj
 
     def _to_recipe_index(self):

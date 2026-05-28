@@ -437,8 +437,8 @@ def record_data_access(data: Any, kind: str, kwargs: dict[str, Any] | None = Non
     recorder.record_data(data, kind=kind, kwargs=kwargs)
 
 
-def _record_key(field: str | None, selector: list[Any]) -> str:
-    payload = {"field": field, "selector": selector}
+def _record_key(field: str | None, selector: list[Any], operation: str | None = None) -> str:
+    payload = {"field": field, "operation": operation, "selector": selector}
     return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
@@ -491,7 +491,10 @@ class ArticleRecorder:
         """Load an existing record bundle so notebooks can append figures."""
         manifest = _load_manifest(self.record_dir)
         self.records = list(manifest["records"])
-        self._dataset_by_key = {_record_key(record.get("field"), record["selector"]): record for record in self.records}
+        self._dataset_by_key = {
+            _record_key(record.get("field"), record["selector"], record.get("operation")): record
+            for record in self.records
+        }
 
     def write_input(self, inp: InpFile | None) -> None:
         """Save the input file required for unit reconstruction."""
@@ -529,7 +532,8 @@ class ArticleRecorder:
             return
 
         selector = _encode_selector_tuple(_to_recipe_index(data))
-        key = _record_key(getattr(data, "name", None), selector)
+        operation = (kwargs or {}).get("operation")
+        key = _record_key(getattr(data, "name", None), selector, operation)
         if key in self._dataset_by_key:
             return
 
@@ -551,6 +555,12 @@ class ArticleRecorder:
             "valunit": _encode_unit(getattr(data, "valunit", None)),
             "kwargs": _jsonable(kwargs or {}),
         }
+        if operation is not None:
+            record["operation"] = operation
+        if kwargs:
+            for key_name in ("reduction_axes", "source_selector"):
+                if key_name in kwargs:
+                    record[key_name] = _jsonable(kwargs[key_name])
         self._write_dataset(dataset_path, array)
         self.records.append(record)
         self._dataset_by_key[key] = record
@@ -727,7 +737,7 @@ class ArticleReplayEmout:
 
         from emout.core.data.factory import data_from_array
 
-        return data_from_array(
+        data = data_from_array(
             array,
             filename=self._data_path,
             name=record.get("field"),
@@ -738,18 +748,26 @@ class ArticleReplayEmout:
             slice_axes=list(record["slice_axes"]),
             axisunits=[_decode_unit(unit) for unit in record.get("axisunits", [])],
             valunit=_decode_unit(record.get("valunit")),
+            emout_inp=self._inp,
+            emout_unit=self._unit,
         )
+        if hasattr(data, "__dict__"):
+            data._emout_open_kwargs = None
+        return data
 
-    def _find_record(self, field: str, selectors: tuple[Any, ...]) -> dict[str, Any]:
+    def _find_record(self, field: str, selectors: tuple[Any, ...], *, operation: str | None = None) -> dict[str, Any]:
         encoded_selector = _encode_selector_tuple(selectors)
         for record in self._records_by_field.get(field, []):
-            if record.get("selector") == encoded_selector:
+            if record.get("selector") == encoded_selector and record.get("operation") == operation:
                 return record
         raise KeyError(f"Article replay data is not recorded: {field}{selectors!r}")
 
-    def _has_record(self, field: str, selectors: tuple[Any, ...]) -> bool:
+    def _has_record(self, field: str, selectors: tuple[Any, ...], *, operation: str | None = None) -> bool:
         encoded_selector = _encode_selector_tuple(selectors)
-        return any(record.get("selector") == encoded_selector for record in self._records_by_field.get(field, []))
+        return any(
+            record.get("selector") == encoded_selector and record.get("operation") == operation
+            for record in self._records_by_field.get(field, [])
+        )
 
     def _field_unit_metadata(self, field: str):
         record = self._records_by_field[field][0]
@@ -828,6 +846,57 @@ class ArticleSelection:
         """Plot the recorded data using the normal Data plotting path."""
         return self.materialize().plot(**kwargs)
 
+    def mean(self, axis=None, dtype=None, out=None, keepdims=False):
+        """Return a recorded time-mean selection."""
+        if out is not None:
+            raise NotImplementedError("ArticleSelection.mean does not support out")
+        if keepdims:
+            raise NotImplementedError("ArticleSelection.mean does not support keepdims=True")
+        if dtype is not None:
+            raise NotImplementedError("ArticleSelection.mean does not support dtype during replay")
+
+        axes = self._normalize_reduction_axes(axis)
+        if axes == (0,) and 0 in self.slice_axes:
+            return ArticleMeanSelection(self._replay, self.name, self._selectors, self._source_shape)
+
+        materialized_axis = self._reduction_axes_to_materialized_axis(axes)
+        return self.materialize().mean(axis=materialized_axis, dtype=dtype, out=out, keepdims=keepdims)
+
+    def _normalize_reduction_axes(self, axis) -> tuple[int, ...]:
+        if axis is None:
+            if 0 in self.slice_axes:
+                return (0,)
+            return tuple(self.slice_axes)
+
+        if isinstance(axis, str):
+            axis = (axis,)
+        elif not isinstance(axis, tuple):
+            axis = (axis,)
+
+        axes = []
+        name_to_axis = {"t": 0, "z": 1, "y": 2, "x": 3}
+        for item in axis:
+            if isinstance(item, str):
+                if item not in name_to_axis:
+                    raise ValueError(f"Unknown axis name: {item!r}")
+                source_axis = name_to_axis[item]
+            else:
+                dim = int(item)
+                if dim < 0:
+                    dim += self.ndim
+                if not 0 <= dim < self.ndim:
+                    raise ValueError(f"axis {item!r} is out of bounds for mean field with ndim {self.ndim}")
+                source_axis = self.slice_axes[dim]
+            if source_axis not in axes:
+                axes.append(source_axis)
+        return tuple(sorted(axes))
+
+    def _reduction_axes_to_materialized_axis(self, reduction_axes: tuple[int, ...]):
+        dims = tuple(self.slice_axes.index(axis) for axis in reduction_axes)
+        if len(dims) == 1:
+            return dims[0]
+        return dims
+
     def plot_surfaces(
         self,
         surfaces,
@@ -845,6 +914,105 @@ class ArticleSelection:
             raise ValueError("plot_surfaces requires one time index and all three spatial axes")
         axisunits, valunit = self._replay._field_unit_metadata(self.name)
         roi_selectors = plot_surfaces_roi_selectors(
+            self._selectors,
+            self._source_shape,
+            axisunits,
+            valunit,
+            use_si,
+            kwargs.get("bounds"),
+        )
+        data = type(self)(self._replay, self.name, roi_selectors, self._source_shape).materialize()
+        return data._plot_surfaces_local(
+            surfaces,
+            ax=ax,
+            use_si=use_si,
+            vmin=vmin,
+            vmax=vmax,
+            **kwargs,
+        )
+
+
+class ArticleMeanSelection:
+    """Replay selection for a recorded time-mean field."""
+
+    def __init__(
+        self,
+        replay: ArticleReplayEmout,
+        field: str,
+        selectors: tuple[Any, ...],
+        source_shape: tuple[int, ...],
+    ):
+        self._replay = replay
+        self.name = field
+        self._selectors = selectors
+        self._source_shape = source_shape
+        self.slice_axes = [
+            axis for axis, selector in enumerate(selectors) if axis != 0 and not isinstance(selector, int)
+        ]
+        self.shape = tuple(
+            _selector_length(selector, size)
+            for axis, (selector, size) in enumerate(zip(selectors, source_shape))
+            if axis != 0 and not isinstance(selector, int)
+        )
+        self.ndim = len(self.shape)
+
+    @property
+    def inp(self):
+        inp = self._replay.inp
+        if inp is None:
+            raise AttributeError("This mean field is not associated with an Emout input")
+        return inp
+
+    @property
+    def unit(self):
+        unit = self._replay.unit
+        if unit is None:
+            raise AttributeError("This mean field is not associated with Emout units")
+        return unit
+
+    @property
+    def boundaries(self):
+        return self._replay.boundaries
+
+    @property
+    def boundary(self):
+        return self.boundaries
+
+    def __getitem__(self, item):
+        selectors = _compose_item(self._selectors, self.slice_axes, item, self._source_shape)
+        return type(self)(self._replay, self.name, selectors, self._source_shape)
+
+    def materialize(self):
+        """Load the recorded mean data object for this selection."""
+        record = self._replay._find_record(self.name, self._selectors, operation="mean")
+        return self._replay._load_record_data(record)
+
+    def to_numpy(self) -> np.ndarray:
+        data = self.materialize()
+        if hasattr(data, "to_numpy"):
+            return data.to_numpy()
+        return np.asarray(data)
+
+    def plot(self, **kwargs):
+        return self.materialize().plot(**kwargs)
+
+    def plot_surfaces(
+        self,
+        surfaces,
+        *,
+        ax=None,
+        use_si: bool = True,
+        vmin=None,
+        vmax=None,
+        **kwargs,
+    ):
+        """Plot recorded bounded mean surface data using the local path."""
+        from emout.core.data.surface_roi import surface_roi_selectors
+
+        if self.ndim != 3 or self.slice_axes != [1, 2, 3]:
+            raise ValueError("plot_surfaces requires a time mean over all three spatial axes")
+        axisunits, valunit = self._replay._field_unit_metadata(self.name)
+        roi_selectors = surface_roi_selectors(
             self._selectors,
             self._source_shape,
             axisunits,

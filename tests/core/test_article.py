@@ -16,6 +16,8 @@ from tests.conftest import create_inpfile
 _BOUNDARY_INP = """!!key dx=[0.1],to_c=[10000.0]
 &tmgrid
     nstep = 2
+    dt = 0.002
+    ifdiag = 1
 /
 &mpi
     nspec = 1
@@ -179,7 +181,7 @@ def test_plot_surfaces_records_bounds_roi_not_full_volume(tmp_path):
     sim = tmp_path / "sim"
     sim.mkdir()
     _write_field(sim, "phisp", shape=(5, 6, 7))
-    create_inpfile(sim / "plasma.inp")
+    (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
     records = tmp_path / "records"
     bounds = Bounds3D(x=(2.0, 4.0), y=(2.0, 4.0), z=(1.0, 3.0))
     surface = BoxMeshSurface(2.0, 4.0, 2.0, 4.0, 1.0, 3.0, faces=["xmin"], resolution_scale=1)
@@ -234,7 +236,7 @@ def test_chained_time_then_2d_slice_records_2d_not_3d(tmp_path):
     sim = tmp_path / "sim"
     sim.mkdir()
     _write_field(sim, "phisp", shape=(5, 6, 7))
-    create_inpfile(sim / "plasma.inp")
+    (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
     records = tmp_path / "records"
 
     data = emout.Emout(
@@ -263,6 +265,126 @@ def test_chained_time_then_2d_slice_records_2d_not_3d(tmp_path):
         article_name="fig_chained",
     )
     np.testing.assert_array_equal(replay.phisp[-1][:, 2, :].to_numpy(), recorded)
+
+
+def test_time_mean_records_mean_result_not_source_timesteps(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    _write_field(sim, "phisp", shape=(5, 6, 7))
+    (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
+    records = tmp_path / "records"
+
+    data = emout.Emout(
+        sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="fig_mean",
+    )
+    mean_field = data.phisp[-2:].mean()
+    assert mean_field.inp.nstep == 2
+    assert mean_field.unit is not None
+    assert len(mean_field.boundary) == 1
+    recorded = mean_field.to_numpy()
+
+    expected = np.stack(
+        [
+            np.arange(5 * 6 * 7, dtype=float).reshape(5, 6, 7) + 100,
+            np.arange(5 * 6 * 7, dtype=float).reshape(5, 6, 7) + 200,
+        ]
+    ).mean(axis=0)
+    np.testing.assert_array_equal(recorded, expected)
+
+    record_dir = next(records.glob("datasets/*/fig_mean"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert len(manifest["records"]) == 1
+    record = manifest["records"][0]
+    assert record["kind"] == "mean"
+    assert record["operation"] == "mean"
+    assert record["reduction_axes"] == ["t"]
+    assert record["shape"] == [5, 6, 7]
+    assert record["slice_axes"] == [1, 2, 3]
+    assert record["slices"][0] == {"type": "slice", "start": 1, "stop": 3, "step": 1}
+
+    with h5py.File(record_dir / "data.h5", "r") as h5:
+        assert h5[record["dataset"]].shape == (5, 6, 7)
+        np.testing.assert_array_equal(h5[record["dataset"]][...], expected)
+
+    replay = emout.Emout(
+        sim,
+        article_mode="replay",
+        article_records_path=records,
+        article_name="fig_mean",
+    )
+    replay_mean = replay.phisp[-2:].mean()
+    assert replay_mean.inp.nstep == 2
+    assert replay_mean.unit is not None
+    np.testing.assert_array_equal(replay_mean.to_numpy(), expected)
+
+
+def test_time_mean_plot_surfaces_records_bounds_roi(tmp_path):
+    sim = tmp_path / "sim"
+    sim.mkdir()
+    _write_field(sim, "phisp", shape=(5, 6, 7))
+    create_inpfile(sim / "plasma.inp")
+    records = tmp_path / "records"
+    bounds = Bounds3D(x=(2.0, 4.0), y=(2.0, 4.0), z=(1.0, 3.0))
+    surface = BoxMeshSurface(2.0, 4.0, 2.0, 4.0, 1.0, 3.0, faces=["xmin"], resolution_scale=1)
+
+    data = emout.Emout(
+        sim,
+        article_mode="record",
+        article_records_path=records,
+        article_name="fig_mean_surface",
+    )
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    data.phisp[:].mean().plot_surfaces(
+        surface,
+        ax=ax,
+        bounds=bounds,
+        mode="cmap",
+        use_si=False,
+        vmin=0.0,
+        vmax=500.0,
+    )
+    plt.close(fig)
+
+    record_dir = next(records.glob("datasets/*/fig_mean_surface"))
+    manifest = json.loads((record_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert len(manifest["records"]) == 1
+    record = manifest["records"][0]
+    assert record["kind"] == "mean"
+    assert record["operation"] == "mean"
+    assert record["shape"] == [4, 4, 4]
+    assert record["slice_axes"] == [1, 2, 3]
+    assert record["slices"][0] == {"type": "slice", "start": 0, "stop": 3, "step": 1}
+    assert record["slices"][1] == {"type": "slice", "start": 0, "stop": 4, "step": 1}
+    assert record["slices"][2] == {"type": "slice", "start": 1, "stop": 5, "step": 1}
+    assert record["slices"][3] == {"type": "slice", "start": 1, "stop": 5, "step": 1}
+
+    values = np.arange(5 * 6 * 7, dtype=float).reshape(5, 6, 7)
+    expected_roi = np.stack([values, values + 100, values + 200]).mean(axis=0)[0:4, 1:5, 1:5]
+    with h5py.File(record_dir / "data.h5", "r") as h5:
+        np.testing.assert_array_equal(h5[record["dataset"]][...], expected_roi)
+
+    replay = emout.Emout(
+        sim,
+        article_mode="replay",
+        article_records_path=records,
+        article_name="fig_mean_surface",
+    )
+    replay_fig = plt.figure()
+    replay_ax = replay_fig.add_subplot(111, projection="3d")
+    replay.phisp[:].mean().plot_surfaces(
+        surface,
+        ax=replay_ax,
+        bounds=bounds,
+        mode="cmap",
+        use_si=False,
+        vmin=0.0,
+        vmax=500.0,
+    )
+    plt.close(replay_fig)
 
 
 def test_article_record_kwargs_propagate_to_remote_open(article_sim, tmp_path):

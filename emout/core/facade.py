@@ -338,6 +338,8 @@ class Emout:
         except (KeyError, FileNotFoundError, OSError) as e:
             raise AttributeError(f"Failed to load attribute '{name}': {e}") from e
         data._emout_open_kwargs = self._remote_open_kwargs
+        data._emout_inp = self.inp
+        data._emout_unit = self.unit
         if self._article_recorder is not None:
             from emout.article import attach_recorder
 

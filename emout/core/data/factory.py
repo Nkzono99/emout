@@ -25,6 +25,8 @@ def data_from_array(
     local_data_policy=None,
     emout_dir: Any = _UNSET,
     emout_open_kwargs: Any = _UNSET,
+    emout_inp: Any = _UNSET,
+    emout_unit: Any = _UNSET,
     article_recorder: Any = _UNSET,
     article_source_shape: Any = _UNSET,
 ):
@@ -63,6 +65,10 @@ def data_from_array(
         data._emout_dir = emout_dir
     if emout_open_kwargs is not _UNSET:
         data._emout_open_kwargs = emout_open_kwargs
+    if emout_inp is not _UNSET:
+        data._emout_inp = emout_inp
+    if emout_unit is not _UNSET:
+        data._emout_unit = emout_unit
     if article_recorder is not _UNSET:
         data._article_recorder = article_recorder
     if article_source_shape is not _UNSET:

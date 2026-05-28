@@ -70,6 +70,19 @@ article record mode では `bounds` が渡された場合、`data.phisp[-1].plot
 保存済み ROI は元の global 座標に合わせて replay されるため、境界メッシュや mask surface との位置関係は保たれます。
 `bounds` を渡さない場合、必要範囲を判断できないため 3D 全体が保存対象になります。
 
+時間平均も公開データ用に記録できます。`data.phisp[-20:].mean()` は time axis の lazy reduction として扱われ、
+平均に使った 20 timestep をそのまま保存するのではなく、平均後のデータだけを保存します。
+`plot_surfaces(..., bounds=bounds)` に接続した場合は、bounds 周辺の ROI だけを各 timestep から読み、
+平均後 ROI を保存します。
+
+```python
+field = data.phisp[-20:].mean()
+field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
+```
+
+`mean()` が返す field からも `field.inp`、`field.unit`、`field.boundaries` を参照できます。
+そのため、図作成関数が `data.inp` や `data.boundaries` を読む場合でも、平均 field を渡して同じ構造で使えます。
+
 | ファイル | 内容 | 用途 |
 | --- | --- | --- |
 | `manifest.json` | 記録した field、selector、shape、slice axes、単位情報 | replay 時に requested slice と保存済み slice を照合する |
@@ -214,6 +227,7 @@ pbody = data.pbody
 - 複数 source が同じ basename（例: `case_a/output`, `case_b/output`）を持つ場合は、`article_source_name` を指定してください。
 - `np.asarray(data.phisp[...])` よりも `data.phisp[...].to_numpy()` を使うと、記録対象であることが明示されます。
 - `plot_surfaces()` で公開データを小さくしたい場合は `bounds` を渡してください。`data.phisp[-1, :, ymid, :]` のような 2D slice はそのまま 2D として保存されますが、`data.phisp[-1]` のような 3D selection は `bounds` なしでは 3D 全体になり得ます。
+- `data.phisp[-20:].mean()` の既定は time axis 平均です。空間方向を平均したい場合は、意図が分かるように `mean(axis="x")` などを明示してください。
 - record mode の remote rendering では worker 側で使った slice が記録されます。replay では particle、backtrace、remote execution は提供されません。必要なら元データで実行してから、可視化に使うグリッドスライスを record してください。
 - 元 script がランダムな描画設定や外部ファイルに依存する場合、article bundle だけでは完全再現できません。図作成 script も一緒に公開してください。
 
