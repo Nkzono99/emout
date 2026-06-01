@@ -48,6 +48,7 @@ This plugin's `skills/` directory contains user-facing plugin skills. After inst
 ## Bundled Skills
 
 - `emout-usage-guide`: guidance for `emout.Emout` loading, variable access, slicing, unit conversion, and parameter inspection
+- `emout-article-publication`: guidance for article record/replay, environment variables, archives, and averaged data for paper/publication bundles
 - `emout-visualization-workflow`: plot design for 1D/2D/3D views, animations, boundary overlays, and remote rendering
 - `emout-visualization-script`: create or improve emout visualization scripts from natural-language plotting requests or existing scripts, including `remote_scope` / `remote_figure`
 - `emout-output-diagnose`: diagnosis for loading failures, HDF5/input mismatches, unit conversion, optional dependencies, and remote execution
@@ -65,11 +66,14 @@ See [docs/skills-guide.en.md](docs/skills-guide.en.md) for detailed skill select
 - `quickstart.ja.md` / `quickstart.md`
 - `plotting.ja.md` / `plotting.md`
 - `animation.ja.md` / `animation.md`
+- `article.ja.md` / `article.md`
 - `inp.ja.md` / `inp.md`
 - `units.ja.md` / `units.md`
 - `boundaries.ja.md` / `boundaries.md`
 - `backtrace.ja.md` / `backtrace.md`
 - `distributed.ja.md` / `distributed.md`
+
+`docs/` also includes `article-publication.md` / `article-publication.en.md` as shared support material for skills. Detailed usage stays in `references/article.*.md` to keep skill bodies small.
 
 ## Distribution Policy
 

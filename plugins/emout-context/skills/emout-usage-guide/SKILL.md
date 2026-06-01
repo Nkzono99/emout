@@ -15,7 +15,7 @@ Use this skill when a user asks how to use emout, how to load an output director
 ## Context Sources
 
 - Bundled references: `../../references/README.md`, `../../references/README.en.md`, `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/inp.ja.md`, `../../references/inp.md`, `../../references/units.ja.md`, `../../references/units.md`.
-- Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/usage-workflows.md`, `../../docs/usage-workflows.en.md`, `../../docs/skills-guide.md`, `../../docs/skills-guide.en.md`.
+- Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/usage-workflows.md`, `../../docs/usage-workflows.en.md`, `../../docs/skills-guide.md`, `../../docs/skills-guide.en.md`, `../../docs/article-publication.md`, `../../docs/article-publication.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided output path, input file, target quantity, and current analysis code.
 
@@ -27,6 +27,7 @@ Use this skill when a user asks how to use emout, how to load an output director
 - Map requested physical quantities to common attributes such as `phisp`, `nd1p`, `j1x`, `j1xy`, `j1xyz`, `icur`, and `pbody`.
 - Check whether SI conversion is supported by input metadata before recommending `val_si`.
 - Prefer small examples that slice before loading large arrays.
+- If the user asks about article record/replay, public data, or reproducible figure bundles, use or defer to `emout-article-publication`.
 - Point to plotting, animation, boundary, backtrace, or distributed guides only when they are relevant to the request.
 
 ## Output

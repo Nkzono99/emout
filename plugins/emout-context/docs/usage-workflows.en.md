@@ -73,6 +73,35 @@ Remote execution is available in Python 3.10+ environments. Check server state w
 
 `RemoteSession` is the internal Actor that shares `Emout` instances and intermediate results on the worker. Scripts normally should not construct it directly; use `Emout.remote()`, `remote_scope()`, `remote_figure()`, or `RemoteFigure` for wrapping existing code.
 
+## Record And Replay Article Publication Data
+
+For paper data publication and reproducible figure bundles, keep the visualization script unchanged and switch record / replay with environment variables.
+
+```bash
+# Normal run
+python figure.py
+
+# Record
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+python figure.py
+
+# Replay
+EMOUT_ARTICLE_MODE=replay \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+python figure.py
+```
+
+Omit `EMOUT_ARTICLE_NAME` to collect multiple figures into one bundle. Set `EMOUT_ARTICLE_NAME=fig1` when figures should be split.
+Use `EMOUT_ARTICLE_SOURCE_NAME=case_a` for multiple simulations or replay on another machine. Use `EMOUT_ARTICLE_ARCHIVE=zip` or `tar.gz` when upload size limits matter.
+
+For 3D surfaces, pass `bounds` so publication data is limited to the plotted ROI. Time averages can be recorded as averaged data with `mean()`.
+
+```python
+field = data.phisp[-20:].mean()
+field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
+```
+
 ## Create a Visualization Script
 
 When creating a script from a natural-language request, first decide the target quantities, plane, timestep, and save path. For large outputs, do not start the server inside the script by default; document `emout server start ...` as a setup step before running it.

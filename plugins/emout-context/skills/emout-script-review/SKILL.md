@@ -13,8 +13,8 @@ Use this skill when a user asks whether an emout analysis script is correct, why
 
 ## Context Sources
 
-- Bundled references: `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/animation.ja.md`, `../../references/animation.md`, `../../references/units.ja.md`, `../../references/units.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`.
-- Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`.
+- Bundled references: `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/animation.ja.md`, `../../references/animation.md`, `../../references/article.ja.md`, `../../references/article.md`, `../../references/units.ja.md`, `../../references/units.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`.
+- Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`, `../../docs/article-publication.md`, `../../docs/article-publication.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided script, expected figure, output directory layout, and data size.
 
@@ -27,6 +27,7 @@ Use this skill when a user asks whether an emout analysis script is correct, why
 - Check vector attributes and slice planes for component mismatch.
 - Check plotting code for unnecessary global matplotlib state when the user wants reusable scripts.
 - Check optional dependencies such as PyVista only when 3D plotting is involved.
+- If the script is intended for publication/article data, check that `plot_surfaces()` has `bounds`, time averages use `data.field[-N:].mean()`, and record/replay can be controlled with `EMOUT_ARTICLE_*` environment variables.
 - For HPC use, suggest explicit `Emout.remote()`, `remote_scope()`, and `remote_figure()` when it reduces data transfer or login-node work.
 - Treat `RemoteSession` as internal architecture. Recommend direct `RemoteSession` construction only for maintainers or tests.
 - Provide minimal corrected snippets rather than rewriting the whole script unless requested.

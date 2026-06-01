@@ -13,8 +13,8 @@ Use this skill when a user asks how to plot or animate EMSES output with emout, 
 
 ## Context Sources
 
-- Bundled references: `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/animation.ja.md`, `../../references/animation.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`, `../../references/quickstart.ja.md`, `../../references/quickstart.md`.
-- Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/usage-workflows.md`, `../../docs/usage-workflows.en.md`, `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`.
+- Bundled references: `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/animation.ja.md`, `../../references/animation.md`, `../../references/article.ja.md`, `../../references/article.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`, `../../references/quickstart.ja.md`, `../../references/quickstart.md`.
+- Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/usage-workflows.md`, `../../docs/usage-workflows.en.md`, `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`, `../../docs/article-publication.md`, `../../docs/article-publication.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided target quantity, slice plane, desired output format, and environment.
 
@@ -28,6 +28,7 @@ Use this skill when a user asks how to plot or animate EMSES output with emout, 
 - For animations, use `gifplot()` and clarify whether output should be inline, GIF, HTML, or a saved file.
 - For 3D views, mention that PyVista is optional and can be installed with `pip install "emout[pyvista]"`.
 - For boundaries, pass `data.boundaries` or individual meshes to the plotting API.
+- If the user mentions paper data publication, article record/replay, reproducible bundles, `EMOUT_ARTICLE_*`, or averaged public data, prefer the `emout-article-publication` skill or consult `article-publication.*.md`.
 - For HPC workflows, use `emout server start`, `Emout.remote()`, `remote_scope()`, and `remote_figure()` when remote rendering is requested.
 - Treat `RemoteSession` as internal architecture. For user-facing code, recommend `Emout.remote()`, `remote_scope()`, `remote_figure()`, or `RemoteFigure`.
 

@@ -17,6 +17,7 @@ The skills in this plugin use the bundled files in `references/` as their primar
 | Skill | When to use it | Main inputs | Main outputs | Main references |
 | --- | --- | --- | --- | --- |
 | `emout-usage-guide` | Explain basic emout usage, variable access, unit conversion, and parameter inspection | Output directory, target quantity, input file format | Minimal code, axis order, unit conversion notes, next guide links | `README.en.md`, `quickstart.md`, `inp.md`, `units.md` |
+| `emout-article-publication` | Guide article record/replay, environment variables, archives, and averaged data for paper/publication bundles | Visualization script, publication-data requirements, records path, multiple simulations, averaging window | Record/replay commands, environment variables, saved-data granularity, gotchas | `article-publication.en.md`, `usage-workflows.en.md` |
 | `emout-visualization-workflow` | Design 1D/2D/3D plots, animations, and boundary overlays | Quantity, slice condition, view type, output path | Plotting steps, Python examples, dependencies, saving method | `plotting.md`, `animation.md`, `boundaries.md`, `distributed.md` |
 | `emout-visualization-script` | Create or improve visualization scripts from natural-language requests or existing scripts | Goal, output directory, quantities, existing script, HPC constraints | Runnable script, remote execution variant, run steps, assumptions | `quickstart.md`, `plotting.md`, `animation.md`, `distributed.md` |
 | `emout-output-diagnose` | Diagnose loading failures, plot errors, unit conversion, or remote execution issues | Traceback, output listing, input file, environment | Likely causes, check commands, minimal fixes, missing information | `quickstart.md`, `inp.md`, `units.md`, `analysis-pitfalls.en.md` |
@@ -28,6 +29,7 @@ The skills in this plugin use the bundled files in `references/` as their primar
 
 ```text
 I want to plot phisp from output_dir on an xz-plane with emout.
+Show how to record and replay `data.phisp[-20:].mean().plot_surfaces(..., bounds=...)` for paper data publication.
 Create a script that saves phisp and nd1p from output_dir in two panels. Use remote_figure because the data is large.
 Diagnose this emout loading failure from the traceback.
 Review whether this analysis.py uses axis order and SI conversion correctly.

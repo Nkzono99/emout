@@ -73,6 +73,35 @@ with remote_scope():
 
 `RemoteSession` は worker 側で `Emout` インスタンスや中間結果を共有する内部 Actor です。script では直接作らず、`Emout.remote()`、`remote_scope()`、`remote_figure()`、既存コードを包む `RemoteFigure` を使います。
 
+## article 公開データを記録・再現する
+
+論文投稿や公開データ作成では、可視化 script を変えずに環境変数で record / replay を切り替えます。
+
+```bash
+# 通常実行
+python figure.py
+
+# 記録
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+python figure.py
+
+# 再現
+EMOUT_ARTICLE_MODE=replay \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+python figure.py
+```
+
+複数 figure を 1 つの bundle にまとめる場合は `EMOUT_ARTICLE_NAME` を省略します。figure ごとに分ける場合は `EMOUT_ARTICLE_NAME=fig1` のように指定します。
+複数 simulation や別環境 replay では `EMOUT_ARTICLE_SOURCE_NAME=case_a` を使います。公開先のサイズ制限がある場合は `EMOUT_ARTICLE_ARCHIVE=zip` または `tar.gz` を指定します。
+
+3D surface では `bounds` を渡すと、公開データは描画範囲周辺の ROI になります。時間平均は `mean()` で平均後データだけを記録できます。
+
+```python
+field = data.phisp[-20:].mean()
+field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
+```
+
 ## 可視化 script を作る
 
 自然言語の依頼から script を作る場合は、目的の物理量、断面、時刻、保存先を先に決めます。大規模出力では、script の中でサーバー起動までは行わず、実行前の手順として `emout server start ...` を案内します。
