@@ -45,6 +45,17 @@ The emout repository's `.claude/skills/` directory contains project-local skills
 
 This plugin's `skills/` directory contains user-facing plugin skills. After installing the plugin from `/plugins` and restarting Codex, these skills are available from other working directories such as `~` or simulation output directories.
 
+## Layout Policy
+
+This plugin uses the repo marketplace + plugin subdirectory layout. The marketplace lives at `.agents/plugins/marketplace.json`, and the plugin source lives under `plugins/emout-context/`.
+
+- `.codex-plugin/plugin.json`: plugin manifest. It points at bundled entry points such as `skills` with plugin-root-relative paths
+- `skills/`: compact workflow definitions used for implicit selection. Do not put long explanations here
+- `references/`: user-guide snapshots that remain available outside the source checkout. Put long explanations and API examples here
+- `docs/`: shared support material, decision criteria, and short workflow notes used by multiple skills
+
+Add `hooks/`, `.mcp.json`, `.app.json`, or `assets/` at the plugin root only when they are actually needed. Do not reference missing companion files from `plugin.json`.
+
 ## Bundled Skills
 
 - `emout-usage-guide`: guidance for `emout.Emout` loading, variable access, slicing, unit conversion, and parameter inspection
