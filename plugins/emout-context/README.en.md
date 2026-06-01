@@ -8,26 +8,38 @@ The plugin assumes users may have installed emout with `pip install emout` and m
 
 ## Installation
 
-If emout is already installed, register the marketplace with:
+Use the standard Codex plugin CLI to sparse-install only the marketplace metadata and plugin from GitHub.
 
 ```bash
-emout codex install-plugin
+codex plugin marketplace add Nkzono99/emout \
+  --ref main \
+  --sparse .agents/plugins \
+  --sparse plugins/emout-context
+codex plugin add emout-context@emout
 ```
 
-This command uses the Codex CLI to register the marketplace. If the Codex CLI is not found, it prints setup instructions including `npm install -g @openai/codex` and `codex --login`.
+`codex plugin marketplace add` registers the marketplace with Codex, and `codex plugin add` installs the `emout Context` plugin. After installing the plugin, restart Codex. The plugin skills will then be available even when Codex is started outside the repository.
 
-At this point only the marketplace is registered; the `emout Context` plugin is not enabled yet. Start Codex, open `/plugins`, and install `emout Context`.
+To install from the Codex app instead, start Codex, open `/plugins`, and install `emout Context`.
 
 ```bash
 codex
 # Open /plugins inside Codex
 ```
 
-After installing the plugin, restart Codex. The plugin skills will then be available even when Codex is started outside the repository.
-
 To update an already registered marketplace:
 
 ```bash
+codex plugin marketplace upgrade emout
+codex plugin add emout-context@emout
+```
+
+After upgrading, restart Codex or verify in a new thread.
+
+If emout is already installed, these shortcut commands are also available. They call the Codex CLI internally.
+
+```bash
+emout codex install-plugin
 emout codex upgrade-plugin
 ```
 
@@ -35,9 +47,10 @@ To use a local checkout as the marketplace:
 
 ```bash
 codex plugin marketplace add /path/to/emout
+codex plugin add emout-context@emout
 ```
 
-In this case too, install `emout Context` from `/plugins` after registering the marketplace.
+In this case too, you can install from `/plugins` in the Codex app.
 
 ## Difference From Repo-local Skills
 

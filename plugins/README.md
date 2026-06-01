@@ -12,37 +12,38 @@ Lang: [日本語](README.md) | [English](README.en.md)
 
 ## 導入
 
-emout をインストール済みなら、次のコマンドで Codex marketplace を登録できます:
-
-```bash
-emout codex install-plugin
-```
-
-このコマンドは内部で `codex plugin marketplace add` を実行します。Codex CLI が見つからない場合は、Codex CLI の導入手順を表示します。
-
-登録後は Codex を起動して `/plugins` を開き、`emout Context` を install してください。
-
-```bash
-codex
-# Codex 内で /plugins を開く
-```
-
-install 後に Codex を再起動すると、repo 外の作業ディレクトリでも `emout-context` の skill が利用できるようになります。
-
-GitHub から marketplace と plugin だけを手動で sparse install する場合:
+Codex 標準の plugin CLI で、GitHub から marketplace と plugin 本体だけを sparse install します。
 
 ```bash
 codex plugin marketplace add Nkzono99/emout \
   --ref main \
   --sparse .agents/plugins \
   --sparse plugins/emout-context
+codex plugin add emout-context@emout
 ```
 
-このコマンドは marketplace を Codex に登録します。plugin 本体はまだ有効化されていないため、続けて Codex を起動して `/plugins` を開き、`emout Context` を install してください。
+`codex plugin marketplace add` は marketplace を Codex に登録し、`codex plugin add` が `emout Context` plugin を install します。install 後に Codex を再起動すると、repo 外の作業ディレクトリでも `emout-context` の skill が利用できるようになります。
+
+Codex app で install する場合は、Codex を起動して `/plugins` から `emout Context` を install しても同じです。
+
+```bash
+codex
+# Codex 内で /plugins を開く
+```
 
 既に登録済みの marketplace を更新する場合:
 
 ```bash
+codex plugin marketplace upgrade emout
+codex plugin add emout-context@emout
+```
+
+更新後は Codex を再起動するか、新しい thread で確認してください。
+
+emout CLI をインストール済みなら、次のショートカットも使えます。内部では Codex CLI を呼び出します。
+
+```bash
+emout codex install-plugin
 emout codex upgrade-plugin
 ```
 
@@ -50,9 +51,10 @@ emout codex upgrade-plugin
 
 ```bash
 codex plugin marketplace add /path/to/emout
+codex plugin add emout-context@emout
 ```
 
-この場合も、登録後に `/plugins` から `emout Context` を install します。
+この場合も、Codex app の `/plugins` から install できます。
 
 ## Skill の見え方
 

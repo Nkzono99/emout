@@ -12,37 +12,38 @@ This directory contains Codex plugins that package the context needed to analyze
 
 ## Installation
 
-If emout is already installed, register the Codex marketplace with:
-
-```bash
-emout codex install-plugin
-```
-
-This command runs `codex plugin marketplace add` internally. If the Codex CLI is not found, it prints Codex CLI installation instructions.
-
-After registration, start Codex, open `/plugins`, and install `emout Context`.
-
-```bash
-codex
-# Open /plugins inside Codex
-```
-
-After installing the plugin, restart Codex. The `emout-context` skills will then be available even when Codex is started outside the repository.
-
-To sparse-install only the marketplace metadata and plugin from GitHub manually:
+Use the standard Codex plugin CLI to sparse-install only the marketplace metadata and plugin from GitHub.
 
 ```bash
 codex plugin marketplace add Nkzono99/emout \
   --ref main \
   --sparse .agents/plugins \
   --sparse plugins/emout-context
+codex plugin add emout-context@emout
 ```
 
-This command registers the marketplace with Codex. It does not enable the plugin yet. Next, start Codex, open `/plugins`, and install `emout Context`.
+`codex plugin marketplace add` registers the marketplace with Codex, and `codex plugin add` installs the `emout Context` plugin. After installing the plugin, restart Codex. The `emout-context` skills will then be available even when Codex is started outside the repository.
+
+To install from the Codex app instead, start Codex, open `/plugins`, and install `emout Context`.
+
+```bash
+codex
+# Open /plugins inside Codex
+```
 
 To update an already registered marketplace:
 
 ```bash
+codex plugin marketplace upgrade emout
+codex plugin add emout-context@emout
+```
+
+After upgrading, restart Codex or verify in a new thread.
+
+If emout is already installed, these shortcut commands are also available. They call the Codex CLI internally.
+
+```bash
+emout codex install-plugin
 emout codex upgrade-plugin
 ```
 
@@ -50,9 +51,10 @@ To use a local checkout as the marketplace:
 
 ```bash
 codex plugin marketplace add /path/to/emout
+codex plugin add emout-context@emout
 ```
 
-In this case too, install `emout Context` from `/plugins` after registering the marketplace.
+In this case too, you can install from `/plugins` in the Codex app.
 
 ## Skill Visibility
 

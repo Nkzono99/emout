@@ -21,7 +21,7 @@ emout is:
 
 - **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.en.md) — install with `emout codex install-plugin`, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md))
+- **Codex plugin:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.en.md) — install with the standard Codex `codex plugin marketplace add` / `codex plugin add` flow, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md))
 
 ---
 
@@ -46,10 +46,14 @@ emout version --check-update
 The emout Codex plugin, `emout Context`, makes emout's axis order, unit conversion, plotting, `remote_figure`, and troubleshooting context available when Codex is started in simulation output directories or other repositories.
 
 ```bash
-emout codex install-plugin
+codex plugin marketplace add Nkzono99/emout \
+  --ref main \
+  --sparse .agents/plugins \
+  --sparse plugins/emout-context
+codex plugin add emout-context@emout
 ```
 
-After this command registers the Codex marketplace, start Codex and install `emout Context` from `/plugins`. For manual setup or marketplace updates, see [Codex plugin installation](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md).
+To update, run `codex plugin marketplace upgrade emout` and then reinstall with `codex plugin add emout-context@emout`. See [Codex plugin installation](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md) for the full install and update flow.
 
 ---
 

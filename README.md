@@ -21,7 +21,7 @@ emout でできること:
 
 - **ドキュメント:** [ユーザーガイド (日本語/English)](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.md) — `emout codex install-plugin` で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを Codex に相談できます（[導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md)）
+- **Codex plugin:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.md) — Codex 標準の `codex plugin marketplace add` / `codex plugin add` で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを Codex に相談できます（[導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md)）
 
 ---
 
@@ -46,10 +46,14 @@ emout version --check-update
 emout の Codex plugin `emout Context` は、シミュレーション出力ディレクトリや別 repo で Codex を起動したときにも、emout の軸順序・単位変換・可視化・`remote_figure`・トラブルシュートの文脈を使えるようにします。
 
 ```bash
-emout codex install-plugin
+codex plugin marketplace add Nkzono99/emout \
+  --ref main \
+  --sparse .agents/plugins \
+  --sparse plugins/emout-context
+codex plugin add emout-context@emout
 ```
 
-このコマンドで Codex marketplace を登録したあと、Codex を起動して `/plugins` から `emout Context` を install してください。手動導入や marketplace 更新は [Codex plugin 導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md) を参照してください。
+更新する場合は `codex plugin marketplace upgrade emout` の後に `codex plugin add emout-context@emout` を再実行します。詳しい導入・更新手順は [Codex plugin 導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md) を参照してください。
 
 ---
 
