@@ -1,0 +1,4 @@
+interface:
+  display_name: "Address Issue"
+  short_description: "Handle emout issues with durable fixes"
+  default_prompt: "Use $address-issue to handle this emout GitHub issue end to end."

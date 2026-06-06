@@ -13,7 +13,7 @@ Use this skill when a user asks Codex to create a Python visualization script wi
 
 ## Context Sources
 
-- Bundled references: `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/animation.ja.md`, `../../references/animation.md`, `../../references/article.ja.md`, `../../references/article.md`, `../../references/units.ja.md`, `../../references/units.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`.
+- Bundled references: `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/animation.ja.md`, `../../references/animation.md`, `../../references/article.ja.md`, `../../references/article.md`, `../../references/units.ja.md`, `../../references/units.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`, `../../references/backtrace.ja.md`, `../../references/backtrace.md`.
 - Bundled docs: `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/usage-workflows.md`, `../../docs/usage-workflows.en.md`, `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`, `../../docs/article-publication.md`, `../../docs/article-publication.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided natural-language plotting request, existing script, output directory, target variables, slice plane, time range, save path, and HPC constraints.
@@ -27,6 +27,7 @@ Use this skill when a user asks Codex to create a Python visualization script wi
 - Prefer slicing before `.val` / `.val_si` to avoid loading full 4D HDF5 data.
 - When the script is for paper/publication data, support article record/replay via environment variables instead of hard-coding mode changes unless the user asks. For averaged 3D surfaces, prefer `data.phisp[-N:].mean().plot_surfaces(..., bounds=bounds)` so article mode can record the averaged ROI.
 - Use `val_si` or SI-labeled plots only when unit conversion metadata is available or when the user's data is known to include it.
+- For backtrace scripts, convert SI positions/velocities/ranges to EMSES units before calling `get_backtrace()` or `get_probabilities()`; plots can still display SI axes with the default `use_si=True`.
 - For large visualization, prefer this structure:
   - `emout server start ...` in the setup note, not inside the script unless explicitly requested.
   - `rdata = emout.Emout(args.output_dir).remote()`.

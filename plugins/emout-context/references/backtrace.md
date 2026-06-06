@@ -12,6 +12,48 @@ with shorthand like `.vxvz.plot()`.
 > package (`vdsolverf`). Install it with `pip install vdist-solver-fortran`.
 > Without it, calls to `data.backtrace.*` raise `ImportError`.
 
+## Input Unit Contract
+
+The `position`, `velocity`, and `dt` values passed to `data.backtrace`,
+and the `x` / `y` / `z` / `vx` / `vy` / `vz` axes passed to
+`get_probabilities()`, are **all EMSES simulation units**. emout does not
+convert these inputs from SI; it forwards them to `vdsolverf` unchanged.
+
+If you want to specify SI values, convert them to EMSES units with
+`data.unit` before calling the backtrace APIs:
+
+```python
+position = (
+    data.unit.length.trans(0.20),  # m -> EMSES length
+    data.unit.length.trans(0.32),
+    data.unit.length.trans(0.40),
+)
+velocity = (
+    data.unit.v.trans(1.0e5),      # m/s -> EMSES velocity
+    0.0,
+    data.unit.v.trans(-2.0e5),
+)
+vx_scan = (
+    data.unit.v.trans(-3.0e5),
+    data.unit.v.trans(3.0e5),
+    64,
+)
+```
+
+`data.unit` is available only when `plasma.inp` contains a
+`!!key dx=...,to_c=...` header, or `plasma.toml` contains
+`[meta.unit_conversion]`. If unit-conversion metadata is absent, pass
+values that are already in EMSES units.
+
+Arrays such as `bt.positions`, `bt.velocities`, and `result.phases` also
+remain in EMSES units. Plot helpers such as `bt.xz.plot()` and
+`result.vxvz.plot()` convert displayed axes to SI by default when unit
+metadata is available (`use_si=False` keeps EMSES-unit display).
+
+The default `dt` is `data.inp.dt`. To integrate in the opposite direction
+from the usual backtrace, pass the opposite sign, for example
+`dt=-data.inp.dt`.
+
 ## When to use it
 
 - You want the **phase-space distribution** of particles that arrive at a
@@ -34,7 +76,11 @@ data = emout.Emout("output_dir")
 
 # Single particle
 position = (20.0, 32.0, 40.0)
-velocity = (1.0e5, 0.0, -2.0e5)
+velocity = (
+    data.unit.v.trans(1.0e5),
+    0.0,
+    data.unit.v.trans(-2.0e5),
+)
 bt = data.backtrace.get_backtrace(position, velocity, ispec=0)
 
 bt.tx.plot()      # t vs x trajectory
@@ -44,17 +90,19 @@ bt.xvz.plot()     # x vs vz phase space
 import numpy as np
 positions = np.array([[20, 32, 40], [21, 32, 40], [22, 32, 40]], dtype=float)
 velocities = np.zeros_like(positions)
-velocities[:, 0] = 1.0e5
+velocities[:, 0] = data.unit.v.trans(1.0e5)
 many = data.backtrace.get_backtraces(positions, velocities, ispec=0)
 
 many.xz.plot(alpha=0.5)    # overlay all trajectories
 
 # Arrival probability over a 6-D phase-space grid
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
-    vx=(-3e5, 3e5, 64),
+    vx=vx_scan,
     vy=0.0,
-    vz=(-3e5, 3e5, 64),
+    vz=vz_scan,
     ispec=0,
 )
 
@@ -81,6 +129,21 @@ print(bt)                                # <BacktraceResult: n_steps=...>
 | `bt.probability` | `(N,)` | arrival probability per step |
 | `bt.positions` | `(N, 3)` | `[x, y, z]` |
 | `bt.velocities` | `(N, 3)` | `[vx, vy, vz]` |
+
+### Forward tracing instead of backtracing
+
+`dt` is forwarded to `vdsolverf` unchanged. To follow the same particle in
+the opposite direction from the usual backtrace, flip the sign of
+`data.inp.dt`.
+
+```python
+ft = data.backtrace.get_backtrace(
+    position,
+    velocity,
+    ispec=0,
+    dt=-data.inp.dt,
+)
+```
 
 ### Shorthand plotting
 
@@ -153,6 +216,10 @@ bt.xz.plot(alpha=np.clip(result.probabilities, 0, 1))
 phase-space grid, backtraces a particle from every grid point, and
 returns the arrival probabilities as a :class:`ProbabilityResult`.
 
+All input axes are EMSES units. To scan a velocity range given in SI,
+convert the endpoints with `data.unit.v.trans(...)` before building the
+`(start, stop, n)` tuple.
+
 Each axis accepts:
 
 - a tuple `(start, stop, n)` — equally-spaced grid
@@ -160,11 +227,14 @@ Each axis accepts:
 - a scalar — a size-1 axis (automatically squeezed when you call `pair()`)
 
 ```python
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,     # fixed position
-    vx=(-3e5, 3e5, 64),         # scan vx over 64 points
+    vx=vx_scan,                 # scan vx over 64 points
     vy=0.0,
-    vz=(-3e5, 3e5, 64),         # scan vz over 64 points
+    vz=vz_scan,                 # scan vz over 64 points
     ispec=0,
     max_step=10000,
     n_threads=8,
@@ -180,11 +250,14 @@ particle-parallel MPI without changing the result object:
 ```python
 # Use when the script itself is launched with MPI, e.g.
 # srun -n 8 python script.py
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
-    vx=(-3e5, 3e5, 64),
+    vx=vx_scan,
     vy=0.0,
-    vz=(-3e5, 3e5, 64),
+    vz=vz_scan,
     max_step=10000,
     parallel="mpi",
     n_threads=2,
@@ -193,9 +266,9 @@ result = data.backtrace.get_probabilities(
 # Or launch Slurm from the current Python process.
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
-    vx=(-3e5, 3e5, 64),
+    vx=vx_scan,
     vy=0.0,
-    vz=(-3e5, 3e5, 64),
+    vz=vz_scan,
     max_step=10000,
     parallel="srun",
     ntasks=8,

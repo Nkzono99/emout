@@ -26,7 +26,7 @@ pre-commit install        # git commit 時に ruff lint+format を自動実行
 pytest -q                 # 全テスト
 ```
 
-テストベースライン: **1321 passed**（`toml2inp` 未導入時は一部 skipped）
+テストベースライン: **1435 passed, 21 skipped**（optional 依存の有無で skipped 数は変動）
 
 ## MPIEMSES 外部資料
 
@@ -48,6 +48,7 @@ pytest -q                 # 全テスト
 | 種類 | 名前 | いつ使うか |
 |------|------|-----------|
 | skill | `run-tests` | テストベースラインの確認 |
+| skill | `address-issue` | GitHub issue を長期運用の観点で対応するとき |
 | skill | `add-mesh-surface` | `mesh.py` に新メッシュクラスを追加するとき |
 | skill | `add-boundary` | `boundaries/` に新境界型を追加するとき |
 | skill | `docs` | README / guide / CLAUDE.md を ja/en ペアで更新・新設するとき |

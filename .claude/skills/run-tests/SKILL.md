@@ -18,9 +18,11 @@ python -m pytest tests/ -q
 
 ## How to use the result
 
-- The expected baseline (as of 2026-04-10) is `1321 passed`. On machines
-  without `toml2inp`, expect some tests skipped instead; both are
-  clean signals. Any *failure* or lower passed-count means a regression.
+- The expected baseline (as of 2026-06-06) is `1435 passed, 21 skipped`.
+  Optional dependencies and tools such as `toml2inp` can change the skipped
+  count; both clean full-suite runs and additional skips from missing optional
+  tools are acceptable. Any *failure* or unexpectedly lower passed-count means
+  a regression.
 - If you added tests, update the baseline number in `CLAUDE.md` / `AGENTS.md`
   and in the paragraph above.
 - If you only touched surface_cut / boundaries, the narrower form is
