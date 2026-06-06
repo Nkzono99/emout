@@ -13,7 +13,7 @@ Use this skill when a user wants to send feedback to emout maintainers, report a
 
 ## Context Sources
 
-- Bundled references: `../../references/README.md`, `../../references/README.en.md`, `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`.
+- Bundled references: `../../references/README.md`, `../../references/README.en.md`, `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`, `../../references/backtrace.ja.md`, `../../references/backtrace.md`.
 - Bundled docs: `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`, `../../docs/library-context.md`, `../../docs/library-context.en.md`, `../../docs/skills-guide.md`, `../../docs/skills-guide.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided symptom, expectation, script, traceback, output listing, environment, and privacy constraints.
@@ -26,6 +26,7 @@ Use this skill when a user wants to send feedback to emout maintainers, report a
 - For bugs, collect the smallest useful reproduction: emout version, Python version, installation method, platform/HPC context, output file summary, input metadata snippet, script, and traceback.
 - For remote execution feedback, include `emout server status`, Python 3.10+ status, session name, whether `remote_scope()` / `remote_figure()` / `RemoteFigure` is used, and whether the issue happens locally.
 - For visualization/script-generation feedback, include target variable, intended plane, axis order `(t, z, y, x)`, expected figure, actual figure, and whether SI conversion metadata exists.
+- For backtrace feedback, check whether `position`, `velocity`, `dt`, and `get_probabilities()` axes are EMSES-unit inputs; note that result arrays remain in EMSES units while plot helpers convert displayed axes to SI by default when unit metadata exists.
 - Sanitize personal paths, hostnames, job IDs, tokens, unpublished dataset names, and large raw logs.
 - Produce a GitHub Issue draft even when some details are missing; mark unknown fields as "未確認" / "Unknown" rather than blocking.
 - Include a short "追加であると良い情報" / "Useful additional information" section after the draft when reproduction details are incomplete.

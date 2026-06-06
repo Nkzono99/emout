@@ -11,6 +11,47 @@
 > インストールしてください。未インストールの環境では `data.backtrace.*` の
 > 呼び出し時に `ImportError` が出ます。
 
+## 入力単位の約束
+
+`data.backtrace` に渡す `position`、`velocity`、`dt`、および
+`get_probabilities()` の `x` / `y` / `z` / `vx` / `vy` / `vz` は
+**すべて EMSES シミュレーション単位**です。値は SI から自動変換されず、
+`vdsolverf` にそのまま渡されます。
+
+SI 値から指定したい場合は、呼び出し前に `data.unit` で EMSES 単位へ
+変換してください:
+
+```python
+position = (
+    data.unit.length.trans(0.20),  # m -> EMSES length
+    data.unit.length.trans(0.32),
+    data.unit.length.trans(0.40),
+)
+velocity = (
+    data.unit.v.trans(1.0e5),      # m/s -> EMSES velocity
+    0.0,
+    data.unit.v.trans(-2.0e5),
+)
+vx_scan = (
+    data.unit.v.trans(-3.0e5),
+    data.unit.v.trans(3.0e5),
+    64,
+)
+```
+
+`data.unit` は `plasma.inp` の `!!key dx=...,to_c=...` ヘッダー
+（または `plasma.toml` の `[meta.unit_conversion]`）がある場合にだけ
+利用できます。単位変換 metadata がない場合は、EMSES 単位の値を直接
+渡してください。
+
+戻り値の `bt.positions`、`bt.velocities`、`result.phases` などの配列も
+EMSES 単位のまま保持されます。一方で、`bt.xz.plot()` や
+`result.vxvz.plot()` は unit metadata がある場合に既定で SI 単位へ変換して
+表示します（`use_si=False` で EMSES 単位表示）。
+
+`dt` の既定値は `data.inp.dt` です。通常のバックトレースと逆向きに積分したい
+場合は、例えば `dt=-data.inp.dt` のように符号を反転して渡します。
+
 ## いつ使うか
 
 - ある観測点に粒子が到達する **位相空間分布** を見たい
@@ -31,7 +72,11 @@ data = emout.Emout("output_dir")
 
 # 単一粒子のバックトレース
 position = (20.0, 32.0, 40.0)
-velocity = (1.0e5, 0.0, -2.0e5)
+velocity = (
+    data.unit.v.trans(1.0e5),
+    0.0,
+    data.unit.v.trans(-2.0e5),
+)
 bt = data.backtrace.get_backtrace(position, velocity, ispec=0)
 
 bt.tx.plot()      # t vs x の軌跡
@@ -41,17 +86,19 @@ bt.xvz.plot()     # x vs vz 位相空間
 import numpy as np
 positions = np.array([[20, 32, 40], [21, 32, 40], [22, 32, 40]], dtype=float)
 velocities = np.zeros_like(positions)
-velocities[:, 0] = 1.0e5
+velocities[:, 0] = data.unit.v.trans(1.0e5)
 many = data.backtrace.get_backtraces(positions, velocities, ispec=0)
 
 many.xz.plot(alpha=0.5)    # 全軌跡を重ね描き
 
 # 6D 位相空間での到達確率
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
-    vx=(-3e5, 3e5, 64),
+    vx=vx_scan,
     vy=0.0,
-    vz=(-3e5, 3e5, 64),
+    vz=vz_scan,
     ispec=0,
 )
 
@@ -77,6 +124,20 @@ print(bt)                                # <BacktraceResult: n_steps=...>
 | `bt.probability` | `(N,)` | 到達確率の時系列 |
 | `bt.positions` | `(N, 3)` | `[x, y, z]` |
 | `bt.velocities` | `(N, 3)` | `[vx, vy, vz]` |
+
+### 逆向きではなく順方向にたどる
+
+`dt` は `vdsolverf` へそのまま渡されます。通常のバックトレースと逆向きに
+同じ粒子をたどりたい場合は、`data.inp.dt` の符号を反転します。
+
+```python
+ft = data.backtrace.get_backtrace(
+    position,
+    velocity,
+    ispec=0,
+    dt=-data.inp.dt,
+)
+```
 
 ### ショートハンドでの可視化
 
@@ -147,6 +208,10 @@ bt.xz.plot(alpha=np.clip(result.probabilities, 0, 1))
 グリッドを切って、各グリッド点から粒子をバックトレースし、到達確率を
 :class:`ProbabilityResult` として返します。
 
+入力軸はすべて EMSES 単位です。SI の速度範囲から走査したい場合は、
+`data.unit.v.trans(...)` で両端を変換してから `(start, stop, n)` を
+作ります。
+
 各軸は次のいずれかで指定できます:
 
 - `(start, stop, n)` のタプル — 等間隔グリッド
@@ -154,11 +219,14 @@ bt.xz.plot(alpha=np.clip(result.probabilities, 0, 1))
 - スカラー — サイズ 1 の軸（後で `pair()` すると自動的にスクイーズされます）
 
 ```python
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,     # 位置は固定点
-    vx=(-3e5, 3e5, 64),         # vx を 64 点で走査
+    vx=vx_scan,                 # vx を 64 点で走査
     vy=0.0,
-    vz=(-3e5, 3e5, 64),         # vz を 64 点で走査
+    vz=vz_scan,                 # vz を 64 点で走査
     ispec=0,
     max_step=10000,
     n_threads=8,
@@ -174,11 +242,14 @@ result = data.backtrace.get_probabilities(
 ```python
 # Python スクリプト自体を MPI 起動する場合:
 # srun -n 8 python script.py
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
-    vx=(-3e5, 3e5, 64),
+    vx=vx_scan,
     vy=0.0,
-    vz=(-3e5, 3e5, 64),
+    vz=vz_scan,
     max_step=10000,
     parallel="mpi",
     n_threads=2,
@@ -187,9 +258,9 @@ result = data.backtrace.get_probabilities(
 # 通常の Python プロセスから Slurm に投げる場合:
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
-    vx=(-3e5, 3e5, 64),
+    vx=vx_scan,
     vy=0.0,
-    vz=(-3e5, 3e5, 64),
+    vz=vz_scan,
     max_step=10000,
     parallel="srun",
     ntasks=8,

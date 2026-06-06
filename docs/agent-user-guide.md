@@ -770,12 +770,25 @@ phi = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
 
 ## Backtrace (experimental, requires `vdist-solver-fortran`)
 
+Backtrace inputs are EMSES simulation units. Convert SI values before
+calling `get_backtrace()` or `get_probabilities()`:
+
+```python
+vx_scan = (data.unit.v.trans(vx_min_si), data.unit.v.trans(vx_max_si), nvx)
+vz_scan = (data.unit.v.trans(vz_min_si), data.unit.v.trans(vz_max_si), nvz)
+```
+
+Result arrays remain in EMSES units; plot helpers convert displayed axes
+to SI by default when unit metadata is available. Passing
+`dt=-data.inp.dt` runs the solver in the opposite direction from the
+usual backtrace.
+
 ```python
 result = data.backtrace.get_probabilities(
     ix, iy, iz,
-    (vx_min, vx_max, nvx),
+    vx_scan,
     vy_center,
-    (vz_min, vz_max, nvz),
+    vz_scan,
     ispec=0,
 )
 result.vxvz.plot()

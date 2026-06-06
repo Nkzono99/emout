@@ -13,7 +13,7 @@ Use this skill when a user provides an emout traceback, says an output directory
 
 ## Context Sources
 
-- Bundled references: `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/inp.ja.md`, `../../references/inp.md`, `../../references/units.ja.md`, `../../references/units.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`.
+- Bundled references: `../../references/quickstart.ja.md`, `../../references/quickstart.md`, `../../references/inp.ja.md`, `../../references/inp.md`, `../../references/units.ja.md`, `../../references/units.md`, `../../references/boundaries.ja.md`, `../../references/boundaries.md`, `../../references/distributed.ja.md`, `../../references/distributed.md`, `../../references/backtrace.ja.md`, `../../references/backtrace.md`.
 - Bundled docs: `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`, `../../docs/library-context.md`, `../../docs/library-context.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided traceback, output listing, `plasma.inp` / `plasma.toml` excerpts, and analysis script.
@@ -25,6 +25,7 @@ Use this skill when a user provides an emout traceback, says an output directory
 - Check axis order `(t, z, y, x)` for wrong-slice or wrong-plane results.
 - Check whether full arrays are loaded before slicing for memory or performance failures.
 - Check `!!key` or `[meta.unit_conversion]` before diagnosing SI conversion.
+- For backtrace problems, verify whether SI values were accidentally passed to APIs that require EMSES-unit inputs.
 - For 3D plotting failures, check whether PyVista is installed.
 - For remote failures, check Python 3.10+, `emout server status`, session naming, and whether the server is already running.
 - When the user says `remote_session`, map that to the internal shared `RemoteSession` architecture and check whether their script should instead use `Emout.remote()`, `remote_scope()`, `remote_figure()`, or `RemoteFigure`.

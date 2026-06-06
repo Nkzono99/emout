@@ -46,7 +46,9 @@ class BacktraceWrapper:
 
     Configures field interpolation, integrator parameters, and optional
     Dask-based remote execution, then delegates to the underlying ODE
-    solver.
+    solver. Input positions, velocities, phase-space axes, and ``dt`` are
+    forwarded to ``vdsolverf`` in EMSES simulation units; convert SI values
+    before calling these APIs.
     """
 
     def __init__(
@@ -86,15 +88,17 @@ class BacktraceWrapper:
         Parameters
         ----------
         position : np.ndarray
-            Initial particle position
+            Initial particle position in EMSES simulation units.
         velocity : np.ndarray
-            Initial particle velocity
+            Initial particle velocity in EMSES simulation units.
         ispec : int, optional
             Particle species index (0-based)
         istep : int, optional
             Starting time-step index
         dt : float or None, optional
-            Time step size
+            Time step size in EMSES simulation units. The value is forwarded
+            unchanged; passing a negative value such as ``-data.inp.dt`` runs
+            the solver in the opposite integration direction.
         max_step : int, optional
             Maximum number of backtrace steps
         output_interval : int, optional
@@ -147,15 +151,17 @@ class BacktraceWrapper:
         Parameters
         ----------
         positions : np.ndarray
-            Particle position array, shape ``(N, 3)``
+            Particle position array in EMSES simulation units, shape ``(N, 3)``.
         velocities : np.ndarray
-            Particle velocity array, shape ``(N, 3)``
+            Particle velocity array in EMSES simulation units, shape ``(N, 3)``.
         ispec : int, optional
             Particle species index (0-based)
         istep : int, optional
             Starting time-step index
         dt : float or None, optional
-            Time step size
+            Time step size in EMSES simulation units. The value is forwarded
+            unchanged; passing a negative value such as ``-data.inp.dt`` runs
+            the solver in the opposite integration direction.
         max_step : int, optional
             Maximum number of backtrace steps
         output_interval : int, optional
@@ -221,13 +227,16 @@ class BacktraceWrapper:
         Parameters
         ----------
         particles : Sequence[Any]
-            Collection of particles to backtrace
+            Collection of ``vdsolverf.core.Particle`` objects whose positions
+            and velocities are already in EMSES simulation units.
         ispec : int, optional
             Particle species index (0-based)
         istep : int, optional
             Starting time-step index
         dt : float or None, optional
-            Time step size
+            Time step size in EMSES simulation units. The value is forwarded
+            unchanged; passing a negative value such as ``-data.inp.dt`` runs
+            the solver in the opposite integration direction.
         max_step : int, optional
             Maximum number of backtrace steps
         output_interval : int, optional
@@ -291,23 +300,29 @@ class BacktraceWrapper:
         Parameters
         ----------
         x : tuple of (float, float, int) or sequence of float
-            X coordinates or grid specification ``(start, stop, n)``
+            X coordinates or grid specification ``(start, stop, n)`` in
+            EMSES simulation units.
         y : tuple of (float, float, int) or sequence of float
-            Y coordinates or grid specification
+            Y coordinates or grid specification in EMSES simulation units.
         z : tuple of (float, float, int) or sequence of float
-            Z coordinates or grid specification
+            Z coordinates or grid specification in EMSES simulation units.
         vx : tuple of (float, float, int) or sequence of float
-            Velocity x-component values or grid specification
+            Velocity x-component values or grid specification in EMSES
+            simulation units.
         vy : tuple of (float, float, int) or sequence of float
-            Velocity y-component values or grid specification
+            Velocity y-component values or grid specification in EMSES
+            simulation units.
         vz : tuple of (float, float, int) or sequence of float
-            Velocity z-component values or grid specification
+            Velocity z-component values or grid specification in EMSES
+            simulation units.
         ispec : int, optional
             Particle species index (0-based)
         istep : int, optional
             Starting time-step index
         dt : float or None, optional
-            Time step size
+            Time step size in EMSES simulation units. The value is forwarded
+            unchanged; passing a negative value such as ``-data.inp.dt`` runs
+            the solver in the opposite integration direction.
         max_step : int, optional
             Maximum number of backtrace steps
         use_adaptive_dt : bool, optional
@@ -424,15 +439,17 @@ class BacktraceWrapper:
         Parameters
         ----------
         positions : np.ndarray
-            Particle position array, shape ``(N, 3)``
+            Particle position array in EMSES simulation units, shape ``(N, 3)``.
         velocities : np.ndarray
-            Particle velocity array, shape ``(N, 3)``
+            Particle velocity array in EMSES simulation units, shape ``(N, 3)``.
         ispec : int, optional
             Particle species index (0-based)
         istep : int, optional
             Starting time-step index
         dt : float or None, optional
-            Time step size
+            Time step size in EMSES simulation units. The value is forwarded
+            unchanged; passing a negative value such as ``-data.inp.dt`` runs
+            the solver in the opposite integration direction.
         max_step : int, optional
             Maximum number of backtrace steps
         use_adaptive_dt : bool, optional
@@ -485,13 +502,16 @@ class BacktraceWrapper:
         Parameters
         ----------
         particles : Sequence[Any]
-            Collection of particles for probability computation
+            Collection of ``vdsolverf.core.Particle`` objects whose positions
+            and velocities are already in EMSES simulation units.
         ispec : int, optional
             Particle species index (0-based)
         istep : int, optional
             Starting time-step index
         dt : float or None, optional
-            Time step size
+            Time step size in EMSES simulation units. The value is forwarded
+            unchanged; passing a negative value such as ``-data.inp.dt`` runs
+            the solver in the opposite integration direction.
         max_step : int, optional
             Maximum number of backtrace steps
         use_adaptive_dt : bool, optional
