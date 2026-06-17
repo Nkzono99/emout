@@ -301,6 +301,43 @@ def test_remote_emout_backtrace_returns_specialized_probability_proxy():
     assert backtrace.calls[0][1]["remote"] is False
 
 
+def test_remote_probability_particles_can_seed_remote_backtraces():
+    from emout.distributed.remote_render import RemoteBacktraceResult, RemoteEmout, RemoteRef
+
+    particles = ["particle-0", "particle-1"]
+    probability_result = SimpleNamespace(particles=particles)
+    backtrace_result = SimpleNamespace(kind="backtraces")
+
+    class DummyBacktrace:
+        def __init__(self):
+            self.particle_calls = []
+
+        def get_probabilities(self, *args, **kwargs):
+            return probability_result
+
+        def get_backtraces_from_particles(self, particles, **kwargs):
+            self.particle_calls.append((particles, kwargs))
+            return backtrace_result
+
+    backtrace = DummyBacktrace()
+    session = FakeActorSession(emout=SimpleNamespace(backtrace=backtrace))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    result = remote_data.backtrace.get_probabilities(1, 2, 3, 4, 5, 6)
+    particles_ref = result.particles
+    many = remote_data.backtrace.get_backtraces_from_particles(
+        particles_ref,
+        ispec=0,
+        max_step=10,
+    )
+
+    assert isinstance(particles_ref, RemoteRef)
+    assert particles_ref.fetch() is particles
+    assert isinstance(many, RemoteBacktraceResult)
+    assert many.fetch() is backtrace_result
+    assert backtrace.particle_calls == [(particles, {"ispec": 0, "max_step": 10})]
+
+
 def test_remote_emout_backtrace_returns_specialized_backtrace_proxies():
     from emout.core.backtrace.backtrace_result import BacktraceResult
     from emout.core.backtrace.multi_backtrace_result import MultiBacktraceResult

@@ -160,6 +160,82 @@ def test_pair_accepts_backend_axis_order_from_phase_grid():
     np.testing.assert_array_equal(heatmap.Z, expected)
 
 
+def test_pair_disambiguates_backend_phase_grid_when_shape_matches_canonical():
+    axis_values = {
+        "x": np.array([10.0]),
+        "y": np.array([7.0]),
+        "z": np.array([100.0]),
+        "vx": np.array([-2.0, 4.0, 10.0]),
+        "vy": np.array([1.0]),
+        "vz": np.array([0.5, 1.5, 2.5]),
+    }
+    dims = tuple(len(axis_values[axis]) for axis in ProbabilityResult._AXES)
+    backend_axes = ProbabilityResult._BACKEND_AXES
+    backend_grids = np.meshgrid(
+        *(axis_values[axis] for axis in backend_axes),
+        indexing="ij",
+    )
+    backend_phases = np.stack(
+        [backend_grids[backend_axes.index(axis)] for axis in ProbabilityResult._AXES],
+        axis=-1,
+    )
+    probabilities_backend = np.ones(tuple(len(axis_values[axis]) for axis in backend_axes))
+
+    assert backend_phases.shape[:-1] == dims
+
+    result = ProbabilityResult(
+        phases=backend_phases,
+        probabilities=probabilities_backend.reshape(-1),
+        dims=dims,
+        ret_particles=None,
+        particles=None,
+        ispec=0,
+        inp=None,
+        unit=None,
+    )
+
+    heatmap = result.pair("vx", "vz")
+
+    np.testing.assert_array_equal(heatmap.X[0], axis_values["vx"])
+    np.testing.assert_array_equal(heatmap.Y[:, 0], axis_values["vz"])
+
+
+def test_pair_keeps_ambiguous_canonical_phase_grid_order():
+    axis_values = {
+        "x": np.array([10.0]),
+        "y": np.array([7.0]),
+        "z": np.array([100.0]),
+        "vx": np.array([-2.0, 4.0, 10.0]),
+        "vy": np.array([1.0]),
+        "vz": np.array([0.5, 1.5, 2.5]),
+    }
+    dims = tuple(len(axis_values[axis]) for axis in ProbabilityResult._AXES)
+    grids = np.meshgrid(
+        *(axis_values[axis] for axis in ProbabilityResult._AXES),
+        indexing="ij",
+    )
+    phases_nd = np.stack(grids, axis=-1)
+    probabilities_nd = np.ones(dims)
+
+    assert phases_nd.shape[:-1] == tuple(len(axis_values[axis]) for axis in ProbabilityResult._BACKEND_AXES)
+
+    result = ProbabilityResult(
+        phases=phases_nd,
+        probabilities=probabilities_nd,
+        dims=dims,
+        ret_particles=None,
+        particles=None,
+        ispec=0,
+        inp=None,
+        unit=None,
+    )
+
+    heatmap = result.pair("vx", "vz")
+
+    np.testing.assert_array_equal(heatmap.X[0], axis_values["vx"])
+    np.testing.assert_array_equal(heatmap.Y[:, 0], axis_values["vz"])
+
+
 def test_pair_accepts_nd_inputs_and_keeps_requested_axis_order():
     result, axis_values, probabilities_nd = _make_probability_result(
         flatten_phases=False,

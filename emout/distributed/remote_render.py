@@ -68,6 +68,20 @@ def _register_remote_key(session, key: str) -> None:
         _scope_stack[-1]._register(session, key)
 
 
+def _encode_remote_arg(value, session):
+    if isinstance(value, RemoteRef):
+        if value._session is not session:
+            raise ValueError("RemoteRef arguments must belong to the same session")
+        return {_REMOTE_REF_MARKER: value._key}
+    if isinstance(value, list):
+        return [_encode_remote_arg(v, session) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_encode_remote_arg(v, session) for v in value)
+    if isinstance(value, dict):
+        return {k: _encode_remote_arg(v, session) for k, v in value.items()}
+    return value
+
+
 def _plot_surfaces_target(target, surfaces, **kwargs):
     """Plot surfaces without forcing lazy selections through ``hasattr``."""
     local_method = getattr(type(target), "_plot_surfaces_local", None)
@@ -189,6 +203,7 @@ class RemoteSession:
             ``True`` on success.
         """
         data = self._resolve(emout_kwargs)
+        kwargs = self._decode_remote_value(kwargs)
         if "particles" in kwargs:
             result = data.backtrace.get_backtraces_from_particles(**kwargs)
         else:
@@ -1092,8 +1107,8 @@ class RemoteBacktraceWrapper:
             self._session.compute_backtraces(
                 key,
                 emout_kwargs=self._emout_kwargs,
-                particles=particles,
-                **kwargs,
+                particles=_encode_remote_arg(particles, self._session),
+                **_encode_remote_arg(kwargs, self._session),
             )
         )
         return RemoteBacktraceResult(self._session, key)
@@ -1136,17 +1151,7 @@ class RemoteRef:
         _register_remote_key(session, key)
 
     def _encode_remote_arg(self, value):
-        if isinstance(value, RemoteRef):
-            if value._session is not self._session:
-                raise ValueError("RemoteRef arguments must belong to the same session")
-            return {_REMOTE_REF_MARKER: value._key}
-        if isinstance(value, list):
-            return [self._encode_remote_arg(v) for v in value]
-        if isinstance(value, tuple):
-            return tuple(self._encode_remote_arg(v) for v in value)
-        if isinstance(value, dict):
-            return {k: self._encode_remote_arg(v) for k, v in value.items()}
-        return value
+        return _encode_remote_arg(value, self._session)
 
     def _spawn(self, prefix: str) -> str:
         return _next_key(prefix)
@@ -1732,6 +1737,13 @@ class RemoteProbabilityResult:
     def fetch(self):
         """Fetch the remote probability result as a local object."""
         return _await_remote(self._session.fetch_object(self._key))
+
+    @property
+    def particles(self) -> RemoteRef:
+        """Particles used to compute the probability grid, kept on the worker."""
+        key = _next_key("ref")
+        _await_remote(self._session.cache_attr(key, self._key, "particles"))
+        return RemoteRef(self._session, key)
 
     def pair(self, var1: str, var2: str) -> RemoteHeatmap:
         return RemoteHeatmap(self._session, self._key, var1, var2)

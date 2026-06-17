@@ -189,6 +189,33 @@ class ProbabilityResult:
         """
         return f"<ProbabilityResult: grid_dims={self.dims}, axes={ProbabilityResult._AXES}>"
 
+    def _axis_order_score(self, phases: np.ndarray) -> int:
+        """Score how well a phase grid matches canonical axis order."""
+        score = 0
+        for idx, dim in enumerate(self.dims):
+            if dim <= 1:
+                continue
+            coords = np.moveaxis(phases[..., idx], idx, 0).reshape(dim, -1)[:, 0]
+            if np.nanmax(coords) > np.nanmin(coords):
+                score += 1
+        return score
+
+    def _ambiguous_backend_order(self, phases: np.ndarray) -> bool:
+        """Choose the likely order when canonical and backend shapes match."""
+        backend_axes = ProbabilityResult._BACKEND_AXES
+        backend_candidate = np.transpose(
+            phases,
+            axes=[backend_axes.index(axis) for axis in ProbabilityResult._AXES] + [6],
+        )
+        canonical_score = self._axis_order_score(phases)
+        backend_score = self._axis_order_score(backend_candidate)
+
+        if backend_score != canonical_score:
+            return backend_score > canonical_score
+
+        phase_type = type(self.phases)
+        return phase_type.__name__ == "Phases" and "vdsolverf" in phase_type.__module__
+
     def _phases_nd(self) -> np.ndarray:
         """Reshape the phase grid to ``(nx, ny, nz, nvx, nvy, nvz, 6)``."""
         phases = np.asarray(self.phases)
@@ -202,6 +229,16 @@ class ProbabilityResult:
         canonical_shape = tuple(self.dims)
 
         if phases.ndim == 7:
+            if phases.shape == (*canonical_shape, len(ProbabilityResult._AXES)) and phases.shape == (
+                *backend_shape,
+                len(ProbabilityResult._AXES),
+            ):
+                if self._ambiguous_backend_order(phases):
+                    return np.transpose(
+                        phases,
+                        axes=[ProbabilityResult._BACKEND_AXES.index(axis) for axis in ProbabilityResult._AXES] + [6],
+                    )
+                return phases
             if phases.shape == (*canonical_shape, len(ProbabilityResult._AXES)):
                 return phases
             if phases.shape == (*backend_shape, len(ProbabilityResult._AXES)):
@@ -230,6 +267,18 @@ class ProbabilityResult:
         canonical_shape = tuple(self.dims)
 
         if probabilities.ndim == 6:
+            if probabilities.shape == canonical_shape and probabilities.shape == backend_shape:
+                phases = np.asarray(self.phases)
+                if (
+                    phases.ndim == 7
+                    and phases.shape == (*canonical_shape, len(ProbabilityResult._AXES))
+                    and self._ambiguous_backend_order(phases)
+                ):
+                    return np.transpose(
+                        probabilities,
+                        axes=[ProbabilityResult._BACKEND_AXES.index(axis) for axis in ProbabilityResult._AXES],
+                    )
+                return probabilities
             if probabilities.shape == canonical_shape:
                 return probabilities
             if probabilities.shape == backend_shape:
