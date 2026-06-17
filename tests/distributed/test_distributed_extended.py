@@ -1288,8 +1288,10 @@ class TestSessionManagement:
         from emout.distributed import remote_render
 
         remote_render._shared_session = "something"
+        remote_render._shared_session_client_id = 123
         remote_render.clear_sessions()
         assert remote_render._shared_session is None
+        assert remote_render._shared_session_client_id is None
 
     def test_get_or_create_returns_none_without_client(self, monkeypatch):
         from emout.distributed import remote_render
@@ -1314,19 +1316,96 @@ class TestSessionManagement:
 
         remote_render.clear_sessions()
 
+        class FakeSession:
+            def keys(self):
+                return FakeFuture([])
+
         class FakeClient:
             def scheduler_info(self):
                 return {"workers": {"w1": {}}}
 
             def submit(self, cls, *args, **kwargs):
-                return FakeFuture(object())
+                return FakeFuture(FakeSession())
 
-        monkeypatch.setattr(dask.distributed, "default_client", lambda: FakeClient())
+        fake_client = FakeClient()
+        monkeypatch.setattr(dask.distributed, "default_client", lambda: fake_client)
 
         s1 = remote_render.get_or_create_session(emout_dir="/tmp/a")
         s2 = remote_render.get_or_create_session(emout_dir="/tmp/b")
 
         assert s1 is s2
+
+        remote_render.clear_sessions()
+
+    def test_get_or_create_recreates_lost_session(self, monkeypatch):
+        import dask.distributed
+        from emout.distributed import remote_render
+
+        remote_render.clear_sessions()
+
+        class LostSession:
+            def keys(self):
+                raise RuntimeError("Worker holding Actor was lost")
+
+        class FreshSession:
+            def keys(self):
+                return FakeFuture([])
+
+        fresh_session = FreshSession()
+
+        class FakeClient:
+            def scheduler_info(self):
+                return {"workers": {"w1": {}}}
+
+            def submit(self, cls, *args, **kwargs):
+                return FakeFuture(fresh_session)
+
+        fake_client = FakeClient()
+        remote_render._shared_session = LostSession()
+        remote_render._shared_session_client_id = id(fake_client)
+        monkeypatch.setattr(dask.distributed, "default_client", lambda: fake_client)
+
+        with pytest.warns(RuntimeWarning, match="RemoteSession actor is no longer available"):
+            session = remote_render.get_or_create_session(emout_dir="/tmp/a")
+
+        assert session is fresh_session
+
+        remote_render.clear_sessions()
+
+    def test_get_or_create_recreates_session_when_client_changes(self, monkeypatch):
+        import dask.distributed
+        from emout.distributed import remote_render
+
+        remote_render.clear_sessions()
+
+        class FakeSession:
+            def __init__(self, label):
+                self.label = label
+
+            def keys(self):
+                return FakeFuture([])
+
+        class FakeClient:
+            def __init__(self, label):
+                self.label = label
+
+            def scheduler_info(self):
+                return {"workers": {"w1": {}}}
+
+            def submit(self, cls, *args, **kwargs):
+                return FakeFuture(FakeSession(self.label))
+
+        client1 = FakeClient("client1")
+        client2 = FakeClient("client2")
+        clients = [client1, client2]
+        monkeypatch.setattr(dask.distributed, "default_client", lambda: clients.pop(0))
+
+        s1 = remote_render.get_or_create_session(emout_dir="/tmp/a")
+        s2 = remote_render.get_or_create_session(emout_dir="/tmp/a")
+
+        assert s1.label == "client1"
+        assert s2.label == "client2"
+        assert s1 is not s2
 
         remote_render.clear_sessions()
 

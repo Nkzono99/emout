@@ -383,6 +383,39 @@ def test_remote_emout_backtrace_returns_specialized_backtrace_proxies():
     assert sampled.fetch().ts_list.shape[0] == 1
 
 
+def test_remote_backtrace_xy_plot_replays_inside_remote_figure(monkeypatch):
+    from emout.core.backtrace.backtrace_result import BacktraceResult
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteBacktraceResult
+
+    result = BacktraceResult(
+        ts=np.arange(4, dtype=float),
+        probability=np.ones(4, dtype=float),
+        positions=np.arange(12, dtype=float).reshape(4, 3),
+        velocities=np.arange(12, dtype=float).reshape(4, 3) * 0.1,
+        unit=None,
+    )
+    session = FakeActorSession()
+    session._cache["bt_0"] = result
+    displayed = []
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    bt = RemoteBacktraceResult(session, "bt_0")
+    with remote_figure(session=session):
+        bt.xz.plot()
+        plt.title("single particle backtrace: x-z")
+
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
 def test_remote_scope_auto_drops_registered_refs():
     from emout.distributed.remote_render import RemoteRef, remote_scope
 
@@ -1257,18 +1290,23 @@ def test_get_or_create_session_returns_shared_session(monkeypatch):
     remote_render.clear_sessions()
     submissions = []
 
+    class FakeSession:
+        def keys(self):
+            return FakeFuture([])
+
     class FakeClient:
         def scheduler_info(self):
             return {"workers": {"w1": {}}}
 
         def submit(self, cls, *args, **kwargs):
             submissions.append((cls, args, kwargs))
-            return FakeFuture(object())
+            return FakeFuture(FakeSession())
 
+    fake_client = FakeClient()
     monkeypatch.setattr(
         dask.distributed,
         "default_client",
-        lambda: FakeClient(),
+        lambda: fake_client,
     )
 
     kwargs1 = {

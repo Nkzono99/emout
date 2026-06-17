@@ -1869,6 +1869,17 @@ def display_image(img_bytes: bytes, ax=None):
 # ---------------------------------------------------------------------------
 
 _shared_session: Optional[RemoteSession] = None
+_shared_session_client_id: int | None = None
+
+
+def _session_is_alive(session) -> bool:
+    """Return whether a shared Dask Actor still accepts method calls."""
+    try:
+        keys_method = getattr(session, "keys")
+        _await_remote(keys_method())
+    except Exception:
+        return False
+    return True
 
 
 def _normalize_emout_kwargs(
@@ -1913,7 +1924,7 @@ def get_or_create_session(
 
     Returns ``None`` when no Dask client is available.
     """
-    global _shared_session
+    global _shared_session, _shared_session_client_id
 
     if sys.version_info < (3, 10):
         return None
@@ -1945,14 +1956,31 @@ def get_or_create_session(
             warnings.warn(str(exc))
             return None
 
+    client_id = id(client)
+    if _shared_session is not None and _shared_session_client_id != client_id:
+        _shared_session = None
+        _shared_session_client_id = None
+
+    if _shared_session is not None and not _session_is_alive(_shared_session):
+        warnings.warn(
+            "Existing emout RemoteSession actor is no longer available; creating a new session. "
+            "Remote objects from the lost session must be recomputed.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        _shared_session = None
+        _shared_session_client_id = None
+
     if _shared_session is None:
         future = client.submit(RemoteSession, actor=True)
         _shared_session = future.result()
+        _shared_session_client_id = client_id
 
     return _shared_session
 
 
 def clear_sessions() -> None:
     """Clear the shared session."""
-    global _shared_session
+    global _shared_session, _shared_session_client_id
     _shared_session = None
+    _shared_session_client_id = None
