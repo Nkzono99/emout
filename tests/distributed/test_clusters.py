@@ -425,6 +425,20 @@ class TestGenerateWorkerScript:
         content = script_path.read_text()
         assert "#!/bin/bash" in content
 
+    def test_script_uses_user_specific_tmpdir(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("USER", "emout_test_user")
+        cluster = _make_cluster(tmp_path)
+        script_path = cluster._generate_worker_script()
+
+        try:
+            assert script_path.parent == Path("/tmp/simple_dask_workers_emout_test_user")
+        finally:
+            script_path.unlink(missing_ok=True)
+            try:
+                script_path.parent.rmdir()
+            except OSError:
+                pass
+
     def test_script_contains_partition(self, tmp_path):
         cluster = _make_cluster(tmp_path)
         script_path = cluster._generate_worker_script()

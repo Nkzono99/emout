@@ -46,6 +46,7 @@ Usage example:
 
 from __future__ import annotations
 
+import getpass
 import os
 import subprocess
 import time
@@ -54,6 +55,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dask.distributed import Client
+
+
+def _worker_script_dir() -> Path:
+    """Return the per-user temporary directory for generated worker scripts."""
+    user = os.environ.get("USER") or getpass.getuser()
+    return Path("/tmp") / f"simple_dask_workers_{user}"
 
 
 class SimpleDaskCluster:
@@ -296,8 +303,8 @@ class SimpleDaskCluster:
         script_lines.append("date")
 
         # Write to file
-        tmpdir = Path("/tmp/simple_dask_workers")
-        tmpdir.mkdir(parents=True, exist_ok=True)
+        tmpdir = _worker_script_dir()
+        tmpdir.mkdir(parents=True, exist_ok=True, mode=0o700)
 
         # Create a unique file name
         script_path = tmpdir / f"worker_{int(time.time() * 1000)}.sh"
