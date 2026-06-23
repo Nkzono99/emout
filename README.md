@@ -21,7 +21,7 @@ emout でできること:
 
 - **ドキュメント:** [ユーザーガイド (日本語/English)](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.md) — Codex 標準の `codex plugin marketplace add` / `codex plugin add` で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを Codex に相談できます（[導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md)）
+- **Agent plugins:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.md) — Codex / Claude Code 標準の plugin marketplace で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを agent に相談できます（[導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md)）
 
 ---
 
@@ -41,9 +41,9 @@ emout version --check-update
 
 ---
 
-## Codex plugin
+## Agent plugins
 
-emout の Codex plugin `emout Context` は、シミュレーション出力ディレクトリや別 repo で Codex を起動したときにも、emout の軸順序・単位変換・可視化・`remote_figure`・トラブルシュートの文脈を使えるようにします。
+emout の `emout Context` plugin は、シミュレーション出力ディレクトリや別 repo で Codex / Claude Code を起動したときにも、emout の軸順序・単位変換・可視化・`remote_figure`・トラブルシュートの文脈を使えるようにします。
 
 ```bash
 codex plugin marketplace add Nkzono99/emout \
@@ -53,7 +53,15 @@ codex plugin marketplace add Nkzono99/emout \
 codex plugin add emout-context@emout
 ```
 
-更新する場合は `codex plugin marketplace upgrade emout` の後に `codex plugin add emout-context@emout` を再実行します。詳しい導入・更新手順は [Codex plugin 導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md) を参照してください。
+Claude Code では次のように導入します。
+
+```bash
+claude plugin marketplace add Nkzono99/emout \
+  --sparse .claude-plugin plugins/emout-context
+claude plugin install emout-context@emout
+```
+
+emout CLI をインストール済みなら、Claude Code 用は `emout claude install-plugin`、Codex 用は `emout codex install-plugin` でも導入できます。詳しい導入・更新手順は [plugin 導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md) を参照してください。
 
 ---
 

@@ -873,3 +873,74 @@ class TestCodexPluginCli:
 
         assert calls == [(["codex", "plugin", "marketplace", "upgrade", "emout"], True)]
         assert "Marketplace upgraded" in capsys.readouterr().out
+
+
+class TestClaudePluginCli:
+    """Tests for emout Claude Code plugin installation helpers."""
+
+    def test_marketplace_add_command_uses_sparse_github_source(self):
+        args = SimpleNamespace(local=None, source="Nkzono99/emout")
+        command = cli._claude_marketplace_add_command(args)
+
+        assert command == [
+            "claude",
+            "plugin",
+            "marketplace",
+            "add",
+            "Nkzono99/emout",
+            "--sparse",
+            ".claude-plugin",
+            "plugins/emout-context",
+        ]
+
+    def test_marketplace_add_command_uses_local_checkout(self, tmp_path):
+        args = SimpleNamespace(local=str(tmp_path), source="ignored")
+        command = cli._claude_marketplace_add_command(args)
+
+        assert command == ["claude", "plugin", "marketplace", "add", str(tmp_path)]
+
+    def test_install_plugin_missing_claude_prints_install_hint(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli.shutil, "which", lambda name: None)
+        args = SimpleNamespace(local=None, source="Nkzono99/emout", dry_run=False)
+
+        with pytest.raises(SystemExit) as excinfo:
+            cli.cmd_claude_install_plugin(args)
+
+        assert excinfo.value.code == 1
+        out = capsys.readouterr().out
+        assert "Claude Code CLI was not found" in out
+        assert "npm install -g @anthropic-ai/claude-code" in out
+
+    def test_install_plugin_registers_marketplace_and_installs_plugin(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli.shutil, "which", lambda name: "/usr/bin/claude")
+        calls = []
+
+        def fake_run(command, check):
+            calls.append((command, check))
+
+        monkeypatch.setattr(cli.subprocess, "run", fake_run)
+        args = SimpleNamespace(local=None, source="Nkzono99/emout", dry_run=False)
+
+        cli.cmd_claude_install_plugin(args)
+
+        assert calls == [
+            (cli._claude_marketplace_add_command(args), True),
+            (["claude", "plugin", "install", "emout-context@emout"], True),
+        ]
+        out = capsys.readouterr().out
+        assert "Marketplace registered" in out
+        assert "Plugin installed" in out
+        assert "/reload-plugins" in out
+
+    def test_upgrade_plugin_updates_marketplace_and_plugin(self, monkeypatch, capsys):
+        monkeypatch.setattr(cli.shutil, "which", lambda name: "/usr/bin/claude")
+        calls = []
+        monkeypatch.setattr(cli.subprocess, "run", lambda command, check: calls.append((command, check)))
+
+        cli.cmd_claude_upgrade_plugin(SimpleNamespace(marketplace="emout", plugin="emout-context", dry_run=False))
+
+        assert calls == [
+            (["claude", "plugin", "marketplace", "update", "emout"], True),
+            (["claude", "plugin", "update", "emout-context@emout"], True),
+        ]
+        assert "Plugin updated" in capsys.readouterr().out

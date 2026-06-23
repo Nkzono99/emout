@@ -6,7 +6,7 @@ This repo-local plugin helps emout users load, analyze, visualize, and troublesh
 
 The plugin assumes users may have installed emout with `pip install emout` and may not have the full repository available. For that reason, `references/` bundles snapshots of the README and user guides. In a development checkout where the full repository is available, prefer the current root docs with the same names.
 
-## Installation
+## Codex Installation
 
 Use the standard Codex plugin CLI to sparse-install only the marketplace metadata and plugin from GitHub.
 
@@ -52,17 +52,63 @@ codex plugin add emout-context@emout
 
 In this case too, you can install from `/plugins` in the Codex app.
 
+## Claude Code Installation
+
+Add this repository as a Claude Code plugin marketplace, then install `emout-context`.
+
+```bash
+claude plugin marketplace add Nkzono99/emout \
+  --sparse .claude-plugin plugins/emout-context
+claude plugin install emout-context@emout
+```
+
+To install from the interactive Claude Code UI:
+
+```text
+/plugin marketplace add Nkzono99/emout
+/plugin install emout-context@emout
+/reload-plugins
+```
+
+To update an already registered marketplace:
+
+```bash
+claude plugin marketplace update emout
+claude plugin update emout-context@emout
+```
+
+To use a local checkout as the marketplace:
+
+```bash
+claude plugin marketplace add /path/to/emout
+claude plugin install emout-context@emout
+```
+
+If emout is already installed, these shortcut commands are also available. They call the Claude Code CLI internally.
+
+```bash
+emout claude install-plugin
+emout claude upgrade-plugin
+```
+
+For temporary development testing without installing the marketplace:
+
+```bash
+claude --plugin-dir ./plugins/emout-context
+```
+
 ## Difference From Repo-local Skills
 
-The emout repository's `.claude/skills/` directory contains project-local skills for developers. They are loaded only when Codex is started inside the emout repository.
+The emout repository's `.claude/skills/` directory contains project-local skills for developers. They are loaded only when an agent is started inside the emout repository.
 
-This plugin's `skills/` directory contains user-facing plugin skills. After installing the plugin from `/plugins` and restarting Codex, these skills are available from other working directories such as `~` or simulation output directories.
+This plugin's `skills/` directory contains user-facing plugin skills. After installing the plugin from Codex `/plugins` or Claude Code `/plugin`, these skills are available from other working directories such as `~` or simulation output directories. In Claude Code, skills are namespaced as `/emout-context:<skill-name>`.
 
 ## Layout Policy
 
-This plugin uses the repo marketplace + plugin subdirectory layout. The marketplace lives at `.agents/plugins/marketplace.json`, and the plugin source lives under `plugins/emout-context/`.
+This plugin uses the repo marketplace + plugin subdirectory layout. The Codex marketplace lives at `.agents/plugins/marketplace.json`, the Claude Code marketplace lives at `.claude-plugin/marketplace.json`, and the plugin source lives under `plugins/emout-context/`.
 
 - `.codex-plugin/plugin.json`: plugin manifest. It points at bundled entry points such as `skills` with plugin-root-relative paths
+- `.claude-plugin/plugin.json`: Claude Code plugin manifest. It points at bundled entry points such as `skills` with plugin-root-relative paths
 - `skills/`: compact workflow definitions used for implicit selection. Do not put long explanations here
 - `references/`: user-guide snapshots that remain available outside the source checkout. Put long explanations and API examples here
 - `docs/`: shared support material, decision criteria, and short workflow notes used by multiple skills

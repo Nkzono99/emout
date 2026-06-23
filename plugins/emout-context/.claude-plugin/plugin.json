@@ -1,0 +1,21 @@
+{
+  "name": "emout-context",
+  "version": "0.1.2",
+  "description": "Context, workflows, and skills for emout users analyzing EMSES simulation outputs.",
+  "author": {
+    "name": "Nkzono99",
+    "email": "j-nakazono@stu.kobe-u.ac.jp",
+    "url": "https://github.com/Nkzono99"
+  },
+  "homepage": "https://github.com/Nkzono99/emout/tree/main/plugins/emout-context",
+  "repository": "https://github.com/Nkzono99/emout",
+  "license": "MIT",
+  "keywords": [
+    "emout",
+    "emses",
+    "hdf5",
+    "visualization",
+    "simulation"
+  ],
+  "skills": "./skills/"
+}

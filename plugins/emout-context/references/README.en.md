@@ -21,7 +21,7 @@ emout is:
 
 - **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](../README.en.md) — install with the standard Codex `codex plugin marketplace add` / `codex plugin add` flow, then ask Codex to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](../../README.en.md))
+- **Agent plugins:** [emout Context](../README.en.md) — install through the standard Codex or Claude Code plugin marketplace flow, then ask an agent to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](../../README.en.md))
 
 ---
 

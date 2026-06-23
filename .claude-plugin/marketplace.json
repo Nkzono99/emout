@@ -1,0 +1,34 @@
+{
+  "name": "emout",
+  "owner": {
+    "name": "Nkzono99",
+    "email": "j-nakazono@stu.kobe-u.ac.jp"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for emout users analyzing EMSES simulation outputs."
+  },
+  "plugins": [
+    {
+      "name": "emout-context",
+      "source": "./plugins/emout-context",
+      "version": "0.1.2",
+      "description": "User-facing guidance for loading, plotting, scripting, diagnosing, and reporting emout analyses.",
+      "author": {
+        "name": "Nkzono99",
+        "email": "j-nakazono@stu.kobe-u.ac.jp",
+        "url": "https://github.com/Nkzono99"
+      },
+      "homepage": "https://github.com/Nkzono99/emout/tree/main/plugins/emout-context",
+      "repository": "https://github.com/Nkzono99/emout",
+      "license": "MIT",
+      "keywords": [
+        "emout",
+        "emses",
+        "hdf5",
+        "visualization",
+        "simulation"
+      ],
+      "category": "Productivity"
+    }
+  ]
+}

@@ -21,7 +21,7 @@ emout でできること:
 
 - **ドキュメント:** [ユーザーガイド (日本語/English)](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Codex plugin:** [emout Context](../README.md) — Codex 標準の `codex plugin marketplace add` / `codex plugin add` で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを Codex に相談できます（[導入手順](../../README.md)）
+- **Agent plugins:** [emout Context](../README.md) — Codex / Claude Code 標準の plugin marketplace で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを agent に相談できます（[導入手順](../../README.md)）
 
 ---
 

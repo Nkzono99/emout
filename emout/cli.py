@@ -49,6 +49,10 @@ CODEX_PLUGIN_DISPLAY_NAME = "emout Context"
 CODEX_PLUGIN_DEFAULT_SOURCE = "Nkzono99/emout"
 CODEX_PLUGIN_DEFAULT_REF = "main"
 CODEX_PLUGIN_SPARSE_PATHS = (".agents/plugins", "plugins/emout-context")
+CLAUDE_PLUGIN_MARKETPLACE_NAME = "emout"
+CLAUDE_PLUGIN_NAME = "emout-context"
+CLAUDE_PLUGIN_DEFAULT_SOURCE = "Nkzono99/emout"
+CLAUDE_PLUGIN_SPARSE_PATHS = (".claude-plugin", "plugins/emout-context")
 PYPI_JSON_URL = "https://pypi.org/pypi/emout/json"
 
 
@@ -777,6 +781,140 @@ def _add_codex_install_args(parser: argparse.ArgumentParser) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Claude Code plugin install / upgrade
+# ---------------------------------------------------------------------------
+
+
+def _claude_plugin_id(plugin: str = CLAUDE_PLUGIN_NAME, marketplace: str = CLAUDE_PLUGIN_MARKETPLACE_NAME) -> str:
+    """Return the Claude Code plugin identifier used by CLI commands."""
+    return f"{plugin}@{marketplace}"
+
+
+def _print_claude_cli_install_hint() -> None:
+    """Print a short Claude Code CLI installation hint."""
+    print("Claude Code CLI was not found on PATH.")
+    print()
+    print("Install Claude Code first, then run this command again:")
+    print("  npm install -g @anthropic-ai/claude-code")
+    print("  claude")
+    print("  emout claude install-plugin")
+    print()
+    print("Official Claude Code setup guide:")
+    print("  https://code.claude.com/docs/en/setup")
+
+
+def _print_claude_plugin_next_steps() -> None:
+    """Print the Claude Code steps after plugin installation or update."""
+    print()
+    print("Next steps:")
+    print("  1. Start or return to Claude Code")
+    print("  2. Run: /reload-plugins")
+    print(f"  3. Use skills such as /{CLAUDE_PLUGIN_NAME}:emout-usage-guide when needed")
+    print()
+    print("You can ask from a simulation output directory, for example:")
+    print("  emout で phisp を xz 平面に可視化する script を作って。remote_figure を使って。")
+
+
+def _require_claude_cli() -> None:
+    """Exit with installation guidance when the Claude Code CLI is unavailable."""
+    if shutil.which("claude") is None:
+        _print_claude_cli_install_hint()
+        sys.exit(1)
+
+
+def _claude_marketplace_add_command(args) -> list[str]:
+    """Build the `claude plugin marketplace add` command for emout."""
+    local = getattr(args, "local", None)
+    if local:
+        return ["claude", "plugin", "marketplace", "add", str(Path(local).expanduser())]
+
+    command = ["claude", "plugin", "marketplace", "add", args.source, "--sparse"]
+    command.extend(CLAUDE_PLUGIN_SPARSE_PATHS)
+    return command
+
+
+def _run_claude_command(command: list[str]) -> None:
+    """Run a Claude Code CLI command and surface a concise failure."""
+    try:
+        subprocess.run(command, check=True)
+    except FileNotFoundError:
+        _print_claude_cli_install_hint()
+        sys.exit(1)
+    except subprocess.CalledProcessError as exc:
+        print()
+        print(f"Claude Code CLI command failed with exit code {exc.returncode}:")
+        print(f"  {shlex.join(command)}")
+        print()
+        print("If the marketplace is already registered, update it with:")
+        print("  emout claude upgrade-plugin")
+        sys.exit(exc.returncode or 1)
+
+
+def cmd_claude_install_plugin(args):
+    """Register the emout Claude Code plugin marketplace and install the plugin."""
+    _require_claude_cli()
+    marketplace_command = _claude_marketplace_add_command(args)
+    install_command = ["claude", "plugin", "install", _claude_plugin_id()]
+    print("Registering the emout Claude Code plugin marketplace:")
+    print(f"  {shlex.join(marketplace_command)}")
+    print("Installing the emout Claude Code plugin:")
+    print(f"  {shlex.join(install_command)}")
+
+    if getattr(args, "dry_run", False):
+        _print_claude_plugin_next_steps()
+        return
+
+    _run_claude_command(marketplace_command)
+    _run_claude_command(install_command)
+    print()
+    print("Marketplace registered.")
+    print("Plugin installed.")
+    _print_claude_plugin_next_steps()
+
+
+def cmd_claude_upgrade_plugin(args):
+    """Update the registered emout Claude Code marketplace and plugin."""
+    _require_claude_cli()
+    marketplace = getattr(args, "marketplace", CLAUDE_PLUGIN_MARKETPLACE_NAME)
+    plugin = getattr(args, "plugin", CLAUDE_PLUGIN_NAME)
+    marketplace_command = ["claude", "plugin", "marketplace", "update", marketplace]
+    plugin_command = ["claude", "plugin", "update", _claude_plugin_id(plugin=plugin, marketplace=marketplace)]
+    print("Updating the emout Claude Code plugin marketplace:")
+    print(f"  {shlex.join(marketplace_command)}")
+    print("Updating the emout Claude Code plugin:")
+    print(f"  {shlex.join(plugin_command)}")
+
+    if getattr(args, "dry_run", False):
+        return
+
+    _run_claude_command(marketplace_command)
+    _run_claude_command(plugin_command)
+    print()
+    print("Marketplace updated.")
+    print("Plugin updated.")
+    _print_claude_plugin_next_steps()
+
+
+def _add_claude_install_args(parser: argparse.ArgumentParser) -> None:
+    """Add shared options for Claude Code plugin marketplace installation."""
+    parser.add_argument(
+        "--source",
+        default=CLAUDE_PLUGIN_DEFAULT_SOURCE,
+        help=f"GitHub repo, Git URL, or Claude Code marketplace source (default: {CLAUDE_PLUGIN_DEFAULT_SOURCE})",
+    )
+    parser.add_argument(
+        "--local",
+        nargs="?",
+        const=".",
+        default=None,
+        help="Register a local emout checkout as the marketplace root instead of GitHub",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Print the Claude Code CLI commands without running them"
+    )
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -894,6 +1032,39 @@ def main():
     )
     _add_codex_install_args(install_codex_plugin)
     install_codex_plugin.set_defaults(func=cmd_codex_install_plugin)
+
+    claude = sub.add_parser("claude", help="Install or update the emout Claude Code plugin")
+    claude_sub = claude.add_subparsers(dest="claude_command")
+
+    claude_install = claude_sub.add_parser("install-plugin", help="Install the emout Claude Code plugin")
+    _add_claude_install_args(claude_install)
+    claude_install.set_defaults(func=cmd_claude_install_plugin)
+
+    claude_upgrade = claude_sub.add_parser("upgrade-plugin", help="Update the emout Claude Code plugin")
+    claude_upgrade.add_argument(
+        "marketplace",
+        nargs="?",
+        default=CLAUDE_PLUGIN_MARKETPLACE_NAME,
+        help=f"Marketplace name to update (default: {CLAUDE_PLUGIN_MARKETPLACE_NAME})",
+    )
+    claude_upgrade.add_argument(
+        "--plugin",
+        default=CLAUDE_PLUGIN_NAME,
+        help=f"Plugin name to update (default: {CLAUDE_PLUGIN_NAME})",
+    )
+    claude_upgrade.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the Claude Code CLI commands without running them",
+    )
+    claude_upgrade.set_defaults(func=cmd_claude_upgrade_plugin)
+
+    install_claude_plugin = sub.add_parser(
+        "install-claude-plugin",
+        help="Alias for 'emout claude install-plugin'",
+    )
+    _add_claude_install_args(install_claude_plugin)
+    install_claude_plugin.set_defaults(func=cmd_claude_install_plugin)
 
     args = parser.parse_args()
     if hasattr(args, "func"):

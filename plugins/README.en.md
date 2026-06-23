@@ -1,8 +1,8 @@
 Lang: [English](README.en.md) | [日本語](README.md)
 
-# emout Codex Plugins
+# emout Agent Plugins
 
-This directory contains Codex plugins that package the context needed to analyze EMSES outputs with emout.
+This directory contains Codex and Claude Code plugins that package the context needed to analyze EMSES outputs with emout.
 
 ## Available Plugins
 
@@ -10,7 +10,7 @@ This directory contains Codex plugins that package the context needed to analyze
 | --- | --- |
 | [emout-context](emout-context/README.en.md) | Skills and bundled references for loading outputs, creating and improving visualization scripts, unit conversion, boundaries, large-scale visualization with `remote_scope` / `remote_figure`, troubleshooting, feedback, and issue reporting |
 
-## Installation
+## Codex Installation
 
 Use the standard Codex plugin CLI to sparse-install only the marketplace metadata and plugin from GitHub.
 
@@ -56,11 +56,56 @@ codex plugin add emout-context@emout
 
 In this case too, you can install from `/plugins` in the Codex app.
 
+## Claude Code Installation
+
+Add this repository as a Claude Code plugin marketplace, then install `emout-context`.
+
+```bash
+claude plugin marketplace add Nkzono99/emout \
+  --sparse .claude-plugin plugins/emout-context
+claude plugin install emout-context@emout
+```
+
+To install from the interactive Claude Code UI:
+
+```text
+/plugin marketplace add Nkzono99/emout
+/plugin install emout-context@emout
+/reload-plugins
+```
+
+To update an already registered marketplace:
+
+```bash
+claude plugin marketplace update emout
+claude plugin update emout-context@emout
+```
+
+To use a local checkout as the marketplace:
+
+```bash
+claude plugin marketplace add /path/to/emout
+claude plugin install emout-context@emout
+```
+
+If emout is already installed, these shortcut commands are also available. They call the Claude Code CLI internally.
+
+```bash
+emout claude install-plugin
+emout claude upgrade-plugin
+```
+
+For temporary development testing without installing the marketplace:
+
+```bash
+claude --plugin-dir ./plugins/emout-context
+```
+
 ## Skill Visibility
 
-The repo-root `.claude/skills/` directory contains project-local skills for emout developers. They are loaded only when Codex is started inside the emout repository.
+The repo-root `.claude/skills/` directory contains project-local skills for emout developers. They are loaded only when an agent is started inside the emout repository.
 
-The `plugins/emout-context/skills/` directory contains user-facing plugin skills. After installing the plugin from `/plugins` and restarting Codex, these skills are available from other working directories such as `~` or simulation output directories.
+The `plugins/emout-context/skills/` directory contains user-facing plugin skills. After installing the plugin from Codex `/plugins` or Claude Code `/plugin`, these skills are available from other working directories such as `~` or simulation output directories. In Claude Code, skills are namespaced as `/emout-context:<skill-name>`.
 
 ## Placement Policy
 
