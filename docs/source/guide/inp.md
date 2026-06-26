@@ -101,6 +101,16 @@ data.toml["tmgrid"]["nx"]        # dict-style access
 data.toml.species[0].wp          # nested structures
 ```
 
+When an attribute is not present at the current level, `TomlData`
+searches nested tables from the shallowest level. Multiple matches are
+returned as a list; a single match is returned as a scalar. Dict-style
+access remains direct-only.
+
+```python
+data.toml.wp                     # [1.0, 0.05] (collected from [[species]])
+data.toml.zssurf                 # shallow match such as data.toml.ptcond.zssurf
+```
+
 The TOML format uses section headers corresponding to namelist groups:
 
 ```toml

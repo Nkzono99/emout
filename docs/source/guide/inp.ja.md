@@ -100,6 +100,14 @@ data.toml["tmgrid"]["nx"]        # 辞書アクセス
 data.toml.species[0].wp          # ネスト構造へのアクセス
 ```
 
+属性が現在の階層にない場合、`TomlData` は浅い階層から順にネストを探索します。
+複数見つかった値はリスト、1 件だけならスカラーで返ります。辞書アクセスは従来どおり直下キーのみを参照します。
+
+```python
+data.toml.wp                     # [1.0, 0.05]（[[species]] から集約）
+data.toml.zssurf                 # data.toml.ptcond.zssurf など浅い一致
+```
+
 TOML 形式では namelist グループに対応するセクションヘッダーを使います:
 
 ```toml

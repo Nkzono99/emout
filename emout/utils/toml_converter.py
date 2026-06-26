@@ -42,8 +42,10 @@ class TomlData:
     """Attribute-access wrapper for a TOML dictionary structure.
 
     Enables dot-access like ``data.species[0].wp`` for nested dicts and
-    lists. Dictionary-style access (``data["tmgrid"]["nx"]``) is also
-    supported.
+    lists. If a requested attribute is not present at the current level,
+    the shallowest nested TOML level is searched. Multiple matches are
+    returned as a list, while a single match is returned as a scalar.
+    Dictionary-style access (``data["tmgrid"]["nx"]``) remains direct-only.
 
     Parameters
     ----------
@@ -84,6 +86,11 @@ class TomlData:
         try:
             return _wrap(self._data[key])
         except KeyError:
+            values = _find_transparent_values(self._data, key)
+            if len(values) == 1:
+                return _wrap(values[0])
+            if values:
+                return [_wrap(value) for value in values]
             raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
 
     # --- display ---
@@ -106,6 +113,28 @@ def _wrap(value: Any) -> Any:
     if isinstance(value, list):
         return [_wrap(v) for v in value]
     return value
+
+
+def _find_transparent_values(data: Dict[str, Any], key: str) -> list[Any]:
+    """Return values for *key* from the shallowest nested TOML level."""
+    matches: list[tuple[int, Any]] = []
+
+    def walk(value: Any, depth: int) -> None:
+        if isinstance(value, dict):
+            if key in value:
+                matches.append((depth, value[key]))
+            for child in value.values():
+                walk(child, depth + 1)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item, depth)
+
+    walk(data, 0)
+    if not matches:
+        return []
+
+    shallowest = min(depth for depth, _ in matches)
+    return [value for depth, value in matches if depth == shallowest]
 
 
 def _deep_merge(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:

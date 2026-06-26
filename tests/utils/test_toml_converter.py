@@ -61,6 +61,31 @@ class TestTomlData:
         assert td.species[0].wp == 2.1
         assert td.species[1].wp == 0.049
 
+    def test_transparent_access_collects_list_child_values(self):
+        td = TomlData({"species": [{"wp": 2.1}, {"wp": 0.049}]})
+
+        assert td.wp == [2.1, 0.049]
+
+    def test_transparent_access_finds_nested_scalar(self):
+        td = TomlData({"ptcond": {"zssurf": 60.0}})
+
+        assert td.zssurf == 60.0
+
+    def test_transparent_access_returns_scalar_for_single_list_child_value(self):
+        td = TomlData({"ptcond": {"boundaries": [{"type": "flat-surface", "zssurf": 60.0}]}})
+
+        assert td.zssurf == 60.0
+
+    def test_transparent_access_prefers_direct_key(self):
+        td = TomlData({"wp": 9.0, "species": [{"wp": 2.1}, {"wp": 0.049}]})
+
+        assert td.wp == 9.0
+
+    def test_transparent_access_prefers_shallow_nested_key(self):
+        td = TomlData({"ptcond": {"zssurf": 60.0, "boundaries": [{"zssurf": 70.0}]}})
+
+        assert td.zssurf == 60.0
+
     def test_contains(self):
         td = TomlData({"a": 1, "b": 2})
         assert "a" in td

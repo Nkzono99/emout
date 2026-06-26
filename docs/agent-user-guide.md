@@ -364,11 +364,17 @@ data.toml.meta.unit_conversion.dx  # unit conversion key
 
 ```python
 data.toml.tmgrid.nx              # attribute access → value
+data.toml.wp                     # transparent access → [wp1, wp2]
+data.toml.zssurf                 # transparent access → shallow nested scalar
 data.toml["tmgrid"]["nx"]        # dict-style access → value
 data.toml.tmgrid.keys()          # dict-like: keys(), values(), items(), get()
 data.toml.tmgrid.to_dict()       # unwrap to plain dict
 "tmgrid" in data.toml            # containment check
 ```
+
+Transparent attribute access is shallowest-level first. Direct keys win,
+multiple nested matches return a list, and a single nested match returns
+a scalar. Dict-style access and `get()` remain direct-only.
 
 ### When to use data.toml vs data.inp
 
