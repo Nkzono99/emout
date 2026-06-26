@@ -28,6 +28,7 @@ dependencies = [
   "pandas",
   "tqdm",
   "scikit-image",
+  "pyvista",
   "tomli; python_version < '3.11'",
   "mpiemses3d-tools",
   "psutil",

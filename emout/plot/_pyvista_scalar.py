@@ -6,6 +6,7 @@ import numpy as np
 
 from ._pyvista_helpers import (
     _SPATIAL_AXES,
+    _add_surface_overlays,
     _as_scalar_array,
     _axis_values,
     _require_pyvista,
@@ -146,6 +147,11 @@ def plot_scalar_plane(
     scalar_name=None,
     show_edges=False,
     add_scalar_bar=True,
+    surfaces=None,
+    surface_color="0.7",
+    surface_opacity=0.35,
+    surface_per=None,
+    surface_kwargs=None,
     **kwargs,
 ):
     """Plot a 2-D scalar field on a PyVista plane.
@@ -172,6 +178,16 @@ def plot_scalar_plane(
         Show mesh edge lines.
     add_scalar_bar : bool, optional
         Add a colour-bar to the plotter.
+    surfaces : object, optional
+        Boundary or mesh surface overlay to draw as a solid transparent mesh.
+    surface_color, surface_opacity : optional
+        Default style for ``surfaces``. ``RenderItem`` inputs override these.
+    surface_per : dict, optional
+        Per-boundary mesh overrides when ``surfaces`` is a
+        ``BoundaryCollection``.
+    surface_kwargs : dict, optional
+        Additional keyword arguments forwarded to PyVista for surface
+        overlays.
     **kwargs
         Additional keyword arguments forwarded to
         ``plotter.add_mesh``.
@@ -205,6 +221,16 @@ def plot_scalar_plane(
     plotter.add_mesh(mesh, **add_mesh_kwargs)
     if add_scalar_bar:
         plotter.add_scalar_bar(title=scalar_label)
+    _add_surface_overlays(
+        plotter,
+        surfaces,
+        use_si=use_si,
+        offsets=offsets,
+        per=surface_per,
+        surface_color=surface_color,
+        surface_opacity=surface_opacity,
+        **(surface_kwargs or {}),
+    )
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 
@@ -229,6 +255,11 @@ def plot_scalar_volume(
     outline_color="white",
     add_scalar_bar=True,
     show_edges=False,
+    surfaces=None,
+    surface_color="0.7",
+    surface_opacity=0.35,
+    surface_per=None,
+    surface_kwargs=None,
     **kwargs,
 ):
     """Plot a 3-D scalar field as a volume rendering.
@@ -269,6 +300,16 @@ def plot_scalar_volume(
         Add a colour-bar to the plotter.
     show_edges : bool, optional
         Show mesh edge lines (used in ``'box'`` mode).
+    surfaces : object, optional
+        Boundary or mesh surface overlay to draw as a solid transparent mesh.
+    surface_color, surface_opacity : optional
+        Default style for ``surfaces``. ``RenderItem`` inputs override these.
+    surface_per : dict, optional
+        Per-boundary mesh overrides when ``surfaces`` is a
+        ``BoundaryCollection``.
+    surface_kwargs : dict, optional
+        Additional keyword arguments forwarded to PyVista for surface
+        overlays.
     **kwargs
         Additional keyword arguments forwarded to
         ``plotter.add_mesh`` or ``plotter.add_volume``.
@@ -343,6 +384,16 @@ def plot_scalar_volume(
         plotter.add_mesh(mesh.outline(), color=outline_color)
     if add_scalar_bar:
         plotter.add_scalar_bar(title=scalar_label)
+    _add_surface_overlays(
+        plotter,
+        surfaces,
+        use_si=use_si,
+        offsets=offsets,
+        per=surface_per,
+        surface_color=surface_color,
+        surface_opacity=surface_opacity,
+        **(surface_kwargs or {}),
+    )
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 

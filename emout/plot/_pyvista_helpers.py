@@ -1,11 +1,11 @@
 """PyVista-based 3-D visualisation helpers for scalar and vector fields.
 
-All functions in this module require the optional ``pyvista`` dependency.
-They are called by :meth:`Data3d.plot_pyvista` and
+These helpers are called by :meth:`Data3d.plot_pyvista` and
 :meth:`VectorData.plot_pyvista`.
 """
 
 import importlib
+import inspect
 from typing import Union
 
 import numpy as np
@@ -177,9 +177,127 @@ def _show_bounds(plotter, axis_labels):
     """
     try:
         plotter.show_bounds(
-            xlabel=axis_labels["x"],
-            ylabel=axis_labels["y"],
-            zlabel=axis_labels["z"],
+            xtitle=axis_labels["x"],
+            ytitle=axis_labels["y"],
+            ztitle=axis_labels["z"],
         )
+    except AttributeError:
+        return
     except TypeError:
-        plotter.show_bounds()
+        try:
+            plotter.show_bounds(
+                xlabel=axis_labels["x"],
+                ylabel=axis_labels["y"],
+                zlabel=axis_labels["z"],
+            )
+        except TypeError:
+            plotter.show_bounds()
+
+
+def _surface_items(surfaces):
+    """Return surface overlay inputs as a list without splitting boundary collections."""
+    if surfaces is None:
+        return []
+    if isinstance(surfaces, (list, tuple)):
+        return list(surfaces)
+    return [surfaces]
+
+
+def _call_mesh(surface, *, use_si: bool, per=None):
+    """Call ``surface.mesh`` with the kwargs accepted by that object."""
+    mesh_method = getattr(surface, "mesh", None)
+    if mesh_method is None:
+        raise TypeError(f"Expected a mesh-like surface with a .mesh() method, got {type(surface).__name__}")
+
+    kwargs = {}
+    try:
+        parameters = inspect.signature(mesh_method).parameters
+    except (TypeError, ValueError):
+        parameters = {}
+
+    if "use_si" in parameters:
+        kwargs["use_si"] = use_si
+    if per is not None and "per" in parameters:
+        kwargs["per"] = per
+
+    return mesh_method(**kwargs)
+
+
+def _surface_mesh_arrays(surface, *, use_si: bool, per=None):
+    """Extract ``(vertices, faces)`` from a mesh surface, boundary, or collection."""
+    mesh_or_arrays = _call_mesh(surface, use_si=use_si, per=per)
+    if isinstance(mesh_or_arrays, tuple) and len(mesh_or_arrays) == 2:
+        return mesh_or_arrays
+
+    mesh_method = getattr(mesh_or_arrays, "mesh", None)
+    if mesh_method is None:
+        raise TypeError(
+            "surface.mesh() must return a (vertices, faces) tuple or another mesh-like object, "
+            f"got {type(mesh_or_arrays).__name__}"
+        )
+    return mesh_method()
+
+
+def _polydata_faces(faces: np.ndarray) -> np.ndarray:
+    """Convert an ``(n, k)`` face array to PyVista's flat face format."""
+    faces = np.asarray(faces, dtype=np.int64)
+    if faces.size == 0:
+        return np.empty(0, dtype=np.int64)
+    if faces.ndim != 2:
+        raise ValueError(f"Surface faces must be a 2-D array, got shape {faces.shape}")
+    counts = np.full((faces.shape[0], 1), faces.shape[1], dtype=np.int64)
+    return np.hstack((counts, faces)).ravel()
+
+
+def _surface_to_polydata(surface, *, use_si: bool, offsets=None, per=None):
+    """Convert a mesh surface, boundary, or collection into ``pyvista.PolyData``."""
+    vertices, faces = _surface_mesh_arrays(surface, use_si=use_si, per=per)
+    vertices = np.asarray(vertices, dtype=float)
+    if vertices.ndim != 2 or vertices.shape[1] != 3:
+        raise ValueError(f"Surface vertices must have shape (n, 3), got {vertices.shape}")
+
+    if offsets is not None:
+        vertices = vertices.copy()
+        for axis_idx, offset in enumerate(offsets[:3]):
+            vertices[:, axis_idx] = _offseted(vertices[:, axis_idx], offset)
+
+    pv = _require_pyvista()
+    return pv.PolyData(vertices, _polydata_faces(faces))
+
+
+def _add_surface_overlays(
+    plotter,
+    surfaces,
+    *,
+    use_si: bool = True,
+    offsets=None,
+    per=None,
+    surface_color="0.7",
+    surface_opacity=0.35,
+    **kwargs,
+):
+    """Add solid mesh-surface overlays to a PyVista plotter."""
+    if surfaces is None:
+        return plotter
+
+    from emout.plot.surface_cut import RenderItem
+
+    for item in _surface_items(surfaces):
+        color = surface_color
+        opacity = surface_opacity
+        surface = item
+        if isinstance(item, RenderItem):
+            surface = item.surface
+            color = item.solid_color
+            if item.alpha is not None:
+                opacity = item.alpha
+
+        poly = _surface_to_polydata(surface, use_si=use_si, offsets=offsets, per=per)
+        add_mesh_kwargs = {
+            "color": color,
+            "opacity": opacity,
+        }
+        add_mesh_kwargs.update(kwargs)
+        plotter.add_mesh(poly, **add_mesh_kwargs)
+
+    return plotter

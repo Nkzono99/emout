@@ -436,6 +436,76 @@ def test_collection_render_returns_render_item(boundaries: BoundaryCollection):
     assert item.alpha == 0.5
 
 
+def test_collection_plot_pyvista_adds_overlay(monkeypatch, boundaries: BoundaryCollection):
+    from emout.plot import _pyvista_helpers as helpers
+
+    class _FakePlotter:
+        def __init__(self):
+            self.show_called = False
+
+        def show(self):
+            self.show_called = True
+
+    class _FakePyVista:
+        Plotter = _FakePlotter
+
+    calls = []
+
+    def _fake_add_surface_overlays(plotter, surfaces, **kwargs):
+        calls.append((plotter, surfaces, kwargs))
+        return plotter
+
+    monkeypatch.setattr(helpers, "_require_pyvista", lambda: _FakePyVista)
+    monkeypatch.setattr(helpers, "_add_surface_overlays", _fake_add_surface_overlays)
+
+    result = boundaries.plot_pyvista(
+        use_si=False,
+        offsets=("left", None, None),
+        show=True,
+        surface_color="red",
+        surface_opacity=0.25,
+        surface_kwargs={"show_edges": True},
+    )
+
+    assert isinstance(result, _FakePlotter)
+    assert result.show_called is True
+    plotter, surfaces, kwargs = calls[0]
+    assert plotter is result
+    assert surfaces is boundaries
+    assert kwargs["use_si"] is False
+    assert kwargs["offsets"] == ("left", None, None)
+    assert kwargs["surface_color"] == "red"
+    assert kwargs["surface_opacity"] == 0.25
+    assert kwargs["show_edges"] is True
+
+
+def test_collection_plot_pyvista_backend_dispatch(monkeypatch, boundaries: BoundaryCollection):
+    calls = []
+
+    def _fake_plot_pyvista(self, **kwargs):
+        calls.append((self, kwargs))
+        return "pyvista-plotter"
+
+    monkeypatch.setattr(BoundaryCollection, "plot_pyvista", _fake_plot_pyvista)
+
+    result = boundaries.plot(backend="pyvista", show=True, surface_color="red")
+
+    assert result == "pyvista-plotter"
+    assert calls == [
+        (
+            boundaries,
+            {
+                "use_si": True,
+                "offsets": None,
+                "per": None,
+                "show": True,
+                "surface_color": "red",
+                "surface_opacity": 0.6,
+            },
+        )
+    ]
+
+
 # ---------------------------------------------------------------------------
 # plane-with-circle* and legacy *-hole / flat-surface boundaries
 # ---------------------------------------------------------------------------

@@ -140,17 +140,24 @@ class Data3d(Data):
         clim: Union[Tuple[float, float], None] = None,
         opacity: Union[float, str] = "sigmoid",
         contour_levels: Union[int, np.ndarray] = 8,
+        levels: Union[int, np.ndarray, None] = None,
         add_outline: bool = True,
         outline_color: str = "white",
         add_scalar_bar: bool = True,
         **kwargs,
     ):
-        """Render three-dimensional data with PyVista."""
+        """Render three-dimensional data with PyVista.
+
+        ``levels`` is an alias for ``contour_levels`` in
+        ``mode='contour'``.
+        """
         self._require_local_data_access("render field data with PyVista locally", self._target_name())
         from emout.plot.pyvista_plot import plot_scalar_volume
 
         if self.valunit is None:
             use_si = False
+        if levels is not None:
+            contour_levels = levels
 
         return plot_scalar_volume(
             self,

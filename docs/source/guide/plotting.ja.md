@@ -106,27 +106,30 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 
 ## 3D プロット（PyVista）
 
-3D プロットを使うには PyVista を追加インストールしてください:
-
-```bash
-pip install "emout[pyvista]"
-```
+3D プロットには PyVista を使います。PyVista は `emout` の標準インストールに含まれます。2D 以下の `.plot()` は従来どおり matplotlib、3D ベクトルデータの `.plot()` と `.plot3d()` は PyVista を使います。
 
 ```python
-# 3D ボリュームレンダリング
+# 3D scalar volume surface
 data.phisp[-1, :, :, :].plot3d(mode="box", show=True)
 
-# 2D スライスを 3D 空間に配置
+# 3D scalar isosurfaces
+data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)
+
+# 2D slice placed in 3D space
 data.phisp[-1, 100, :, :].plot3d(show=True)
 
-# 3D ベクトル場
-data.j1xyz[-1].plot3d(mode="stream", show=True)
+# 3D vector field: plot() defaults to PyVista streamlines
+data.j1xyz[-1].plot(show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
+
+# Overlay MPIEMSES boundaries as solid transparent surfaces
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
+data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
 ```
 
 ### メッシュサーフェスの描画
 
-`MeshSurface3D` を指定すると、面ごとにスタイルを変えながら 3D に描画できます:
+PyVista の `surfaces=` は `data.boundaries`、`Boundary`、`MeshSurface3D`、`RenderItem` を受け取り、透明な実体面として重ね描きします。境界面をスカラー値で塗る、等高線を境界面上に描く、といった field-sampled な描画には既存の matplotlib ベースの `plot_surfaces` を使います:
 
 ```python
 import matplotlib.pyplot as plt

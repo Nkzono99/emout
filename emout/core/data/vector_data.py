@@ -488,7 +488,7 @@ class VectorData(utils.Group):
                 **kwargs,
             )
         if self.x_data.ndim == 3:
-            return self.plot3d_mpl(
+            return self.plot3d(
                 *args,
                 **kwargs,
             )
@@ -830,7 +830,7 @@ class VectorData(utils.Group):
     def plot3d(
         self,
         mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
-        backend: Literal["mpl", "pyvista"] = "mpl",
+        backend: Literal["mpl", "pyvista"] = "pyvista",
         **kwargs,
     ):
         """Plot a 3-D vector field.
@@ -839,7 +839,7 @@ class VectorData(utils.Group):
         ----------
         mode : {'stream', 'streamline', 'vec', 'quiver'}
             Plot type.
-        backend : {'mpl', 'pyvista'}, default 'mpl'
+        backend : {'mpl', 'pyvista'}, default 'pyvista'
             ``'mpl'`` uses matplotlib 3-D axes;
             ``'pyvista'`` uses the PyVista renderer.
         **kwargs

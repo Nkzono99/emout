@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Literal, Mapping, Optional, Tuple
 
 
 from emout.plot.surface_cut import (
@@ -283,6 +283,7 @@ class BoundaryCollection:
         use_si: bool = True,
         offsets=None,
         per: Optional[Mapping[int, Mapping[str, Any]]] = None,
+        backend: Literal["mpl", "pyvista"] = "mpl",
         style: str = "solid",
         solid_color="0.7",
         alpha: float = 0.6,
@@ -304,9 +305,25 @@ class BoundaryCollection:
             Accepts ``"left"``, ``"center"``, ``"right"`` or numeric values.
         per : dict, optional
             Per-boundary mesh overrides.
+        backend : {'mpl', 'pyvista'}, default 'mpl'
+            Rendering backend.
         style, solid_color, alpha
             Rendering style forwarded to :class:`RenderItem`.
         """
+        if backend == "pyvista":
+            surface_color = kwargs.pop("surface_color", solid_color)
+            surface_opacity = kwargs.pop("surface_opacity", alpha)
+            return self.plot_pyvista(
+                use_si=use_si,
+                offsets=offsets,
+                per=per,
+                surface_color=surface_color,
+                surface_opacity=surface_opacity,
+                **kwargs,
+            )
+        if backend != "mpl":
+            raise ValueError(f'Unsupported backend "{backend}" for BoundaryCollection.plot.')
+
         from emout.distributed.remote_figure import (
             is_recording,
             record_boundary_plot,
@@ -344,6 +361,51 @@ class BoundaryCollection:
         item = RenderItem(composite, style=style, solid_color=solid_color, alpha=alpha, **kwargs)
         _plot_surfaces(ax, field=None, surfaces=item)
         return ax
+
+    def plot_pyvista(
+        self,
+        *,
+        plotter=None,
+        use_si: bool = True,
+        offsets=None,
+        per: Optional[Mapping[int, Mapping[str, Any]]] = None,
+        show: bool = False,
+        surface_color="0.7",
+        surface_opacity: float = 0.35,
+        surface_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ):
+        """Plot boundary meshes in 3-D with PyVista."""
+        from emout.plot import _pyvista_helpers as pv_helpers
+
+        pv = pv_helpers._require_pyvista()
+        if plotter is None:
+            plotter = pv.Plotter()
+
+        overlay_kwargs = {}
+        if surface_kwargs is not None:
+            overlay_kwargs.update(surface_kwargs)
+        overlay_kwargs.update(kwargs)
+
+        pv_helpers._add_surface_overlays(
+            plotter,
+            self,
+            use_si=use_si,
+            offsets=offsets,
+            per=per,
+            surface_color=surface_color,
+            surface_opacity=surface_opacity,
+            **overlay_kwargs,
+        )
+
+        unit_suffix = " [m]" if use_si and self.unit is not None else ""
+        axis_labels = {axis: f"{axis}{unit_suffix}" for axis in ("x", "y", "z")}
+        pv_helpers._show_bounds(plotter, axis_labels)
+        if hasattr(plotter, "add_axes"):
+            plotter.add_axes()
+        if show:
+            plotter.show()
+        return plotter
 
     # -- composite mesh ------------------------------------------------------
 

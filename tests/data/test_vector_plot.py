@@ -146,7 +146,7 @@ class TestVectorDataConstruction:
 
 
 class TestPlotDispatch:
-    """Test that plot() dispatches to plot2d or plot3d_mpl based on ndim."""
+    """Test that plot() dispatches to plot2d or plot3d based on ndim."""
 
     def test_2d_dispatches_to_plot2d(self, monkeypatch):
         vec = _make_2d_vec()
@@ -156,13 +156,15 @@ class TestPlotDispatch:
         mock.assert_called_once()
         assert result == "plot2d_result"
 
-    def test_3d_dispatches_to_plot3d_mpl(self, monkeypatch):
+    def test_3d_dispatches_to_plot3d(self, monkeypatch):
         vec = _make_3d_vec()
         mock = MagicMock(return_value="plot3d_result")
-        monkeypatch.setattr(VectorData, "plot3d_mpl", mock)
-        result = vec.plot(mode="vec", show=False)
+        monkeypatch.setattr(VectorData, "plot3d", mock)
+        result = vec.plot(mode="stream", show=False)
         mock.assert_called_once()
         assert result == "plot3d_result"
+        assert mock.call_args[1]["mode"] == "stream"
+        assert mock.call_args[1]["show"] is False
 
     def test_1d_raises(self):
         """1-D data should raise NotImplementedError."""
@@ -537,6 +539,15 @@ class TestPlotPyvista:
         call_kwargs = mock_stream.call_args[1]
         assert call_kwargs["n_points"] == 100
 
+    @patch("emout.plot.pyvista_plot.plot_vector_streamlines3d", return_value="pv_result")
+    def test_surfaces_forwarded(self, mock_stream):
+        """Boundary overlays should be forwarded to the PyVista renderer."""
+        vec = _make_3d_vec()
+        surfaces = object()
+        vec.plot_pyvista(mode="stream", use_si=False, surfaces=surfaces)
+        call_kwargs = mock_stream.call_args[1]
+        assert call_kwargs["surfaces"] is surfaces
+
 
 # ---------------------------------------------------------------------------
 # plot3d (backend dispatch)
@@ -564,12 +575,13 @@ class TestPlot3d:
         assert result == "pv"
         assert mock.call_args[1]["mode"] == "vec"
 
-    def test_default_backend_is_mpl(self, monkeypatch):
+    def test_default_backend_is_pyvista(self, monkeypatch):
         vec = _make_3d_vec()
-        mock = MagicMock(return_value="mpl")
-        monkeypatch.setattr(VectorData, "plot3d_mpl", mock)
-        vec.plot3d(mode="vec")
+        mock = MagicMock(return_value="pv")
+        monkeypatch.setattr(VectorData, "plot_pyvista", mock)
+        result = vec.plot3d(mode="vec")
         mock.assert_called_once()
+        assert result == "pv"
 
     def test_kwargs_forwarded_to_mpl(self, monkeypatch):
         """Extra kwargs should be forwarded to plot3d_mpl."""

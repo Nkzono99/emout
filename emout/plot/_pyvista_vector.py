@@ -6,6 +6,7 @@ import numpy as np
 
 from ._pyvista_helpers import (
     _SPATIAL_AXES,
+    _add_surface_overlays,
     _axis_values,
     _require_pyvista,
     _show_bounds,
@@ -109,6 +110,11 @@ def plot_vector_quiver3d(
     cmap="viridis",
     clim=None,
     add_scalar_bar=True,
+    surfaces=None,
+    surface_color="0.7",
+    surface_opacity=0.35,
+    surface_per=None,
+    surface_kwargs=None,
     **kwargs,
 ):
     """Plot a 3-D vector field as quiver arrows.
@@ -140,6 +146,16 @@ def plot_vector_quiver3d(
         ``(vmin, vmax)`` colour limits.
     add_scalar_bar : bool, optional
         Add a colour-bar to the plotter.
+    surfaces : object, optional
+        Boundary or mesh surface overlay to draw as a solid transparent mesh.
+    surface_color, surface_opacity : optional
+        Default style for ``surfaces``. ``RenderItem`` inputs override these.
+    surface_per : dict, optional
+        Per-boundary mesh overrides when ``surfaces`` is a
+        ``BoundaryCollection``.
+    surface_kwargs : dict, optional
+        Additional keyword arguments forwarded to PyVista for surface
+        overlays.
     **kwargs
         Additional keyword arguments forwarded to
         ``plotter.add_mesh``.
@@ -209,6 +225,16 @@ def plot_vector_quiver3d(
     plotter.add_mesh(glyph, **add_mesh_kwargs)
     if add_scalar_bar and cmap is not None and magnitude_name in glyph.array_names:
         plotter.add_scalar_bar(title="|v|")
+    _add_surface_overlays(
+        plotter,
+        surfaces,
+        use_si=use_si,
+        offsets=offsets,
+        per=surface_per,
+        surface_color=surface_color,
+        surface_opacity=surface_opacity,
+        **(surface_kwargs or {}),
+    )
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 
@@ -232,6 +258,11 @@ def plot_vector_streamlines3d(
     cmap="viridis",
     clim=None,
     add_scalar_bar=True,
+    surfaces=None,
+    surface_color="0.7",
+    surface_opacity=0.35,
+    surface_per=None,
+    surface_kwargs=None,
     **kwargs,
 ):
     """Plot a 3-D vector field as streamlines.
@@ -263,6 +294,16 @@ def plot_vector_streamlines3d(
         ``(vmin, vmax)`` colour limits.
     add_scalar_bar : bool, optional
         Add a colour-bar to the plotter.
+    surfaces : object, optional
+        Boundary or mesh surface overlay to draw as a solid transparent mesh.
+    surface_color, surface_opacity : optional
+        Default style for ``surfaces``. ``RenderItem`` inputs override these.
+    surface_per : dict, optional
+        Per-boundary mesh overrides when ``surfaces`` is a
+        ``BoundaryCollection``.
+    surface_kwargs : dict, optional
+        Additional keyword arguments forwarded to PyVista for surface
+        overlays.
     **kwargs
         Additional keyword arguments forwarded to
         ``mesh.streamlines``.
@@ -331,6 +372,16 @@ def plot_vector_streamlines3d(
     if add_scalar_bar and cmap is not None and magnitude_name in stream_mesh.array_names:
         plotter.add_scalar_bar(title="|v|")
     plotter.add_mesh(mesh.outline(), color="white")
+    _add_surface_overlays(
+        plotter,
+        surfaces,
+        use_si=use_si,
+        offsets=offsets,
+        per=surface_per,
+        surface_color=surface_color,
+        surface_opacity=surface_opacity,
+        **(surface_kwargs or {}),
+    )
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 

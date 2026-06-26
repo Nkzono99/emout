@@ -20,7 +20,7 @@ Import this file via `@docs/agent-user-guide.md` to get the full API context.
 
 ```bash
 pip install emout                  # Core (requires Python >=3.9; Dask included on 3.10+)
-pip install "emout[pyvista]"       # + 3D visualization
+# PyVista-based 3D visualization is included in the standard install
 ```
 
 ---
@@ -499,13 +499,15 @@ snap.plot_phase_space(
 
 ---
 
-## 3D plotting (requires `emout[pyvista]`)
+## 3D plotting
 
 ```python
-data.phisp[-1, :, :, :].plot3d(mode="box", show=True)       # volume
-data.phisp[-1, 100, :, :].plot3d(show=True)                  # 2D slice in 3D space
-data.j1xyz[-1].plot3d(mode="stream", show=True)              # 3D streamlines
-data.j1xyz[-1].plot3d(mode="quiver", show=True)              # 3D quiver
+data.phisp[-1, :, :, :].plot3d(mode="box", show=True)                         # volume surface
+data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)           # isosurfaces
+data.phisp[-1, 100, :, :].plot3d(show=True)                                   # 2D slice in 3D space
+data.j1xyz[-1].plot(show=True)                                                # 3D streamlines
+data.j1xyz[-1].plot3d(mode="quiver", show=True)                               # 3D quiver
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries) # boundary overlay
 ```
 
 ### 3D mesh surface rendering

@@ -30,8 +30,7 @@ emout is:
 ```bash
 pip install emout
 
-# For 3D visualization with PyVista
-pip install "emout[pyvista]"
+# PyVista-based 3D visualization is included in the standard install
 
 # Check the installed version and whether PyPI has a newer release
 emout version --check-update

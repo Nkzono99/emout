@@ -106,27 +106,30 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 
 ## 3D Plotting with PyVista
 
-For 3D visualization, install the optional PyVista dependency:
-
-```bash
-pip install "emout[pyvista]"
-```
+3D plotting uses PyVista, which is included in the standard `emout` install. `.plot()` for 2D and lower-dimensional data still uses matplotlib; `.plot()` and `.plot3d()` for 3D vector data use PyVista.
 
 ```python
-# 3D volume rendering
+# 3D scalar volume surface
 data.phisp[-1, :, :, :].plot3d(mode="box", show=True)
+
+# 3D scalar isosurfaces
+data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)
 
 # 2D slice placed in 3D space
 data.phisp[-1, 100, :, :].plot3d(show=True)
 
-# 3D vector field
-data.j1xyz[-1].plot3d(mode="stream", show=True)
+# 3D vector field: plot() defaults to PyVista streamlines
+data.j1xyz[-1].plot(show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
+
+# Overlay MPIEMSES boundaries as solid transparent surfaces
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
+data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
 ```
 
 ### Mesh Surface Rendering
 
-For face-oriented 3D rendering with explicit mesh surfaces:
+PyVista's `surfaces=` accepts `data.boundaries`, `Boundary`, `MeshSurface3D`, or `RenderItem` and overlays them as solid transparent surfaces. For field-sampled rendering, such as colouring boundary faces by scalar values or drawing contours on those faces, use the existing matplotlib-based `plot_surfaces` path:
 
 ```python
 import matplotlib.pyplot as plt

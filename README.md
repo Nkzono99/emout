@@ -30,8 +30,7 @@ emout でできること:
 ```bash
 pip install emout
 
-# 3D 可視化（PyVista）を使う場合
-pip install "emout[pyvista]"
+# PyVista による 3D 可視化も標準インストールに含まれます
 
 # インストール済み version と PyPI の更新確認
 emout version --check-update
