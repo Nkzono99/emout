@@ -31,9 +31,21 @@ class _FakePyVista:
 class _FakePlotter:
     def __init__(self):
         self.meshes = []
+        self.screenshot_path = None
+        self.show_kwargs = None
+        self.html_path = None
 
     def add_mesh(self, mesh, **kwargs):
         self.meshes.append((mesh, kwargs))
+
+    def screenshot(self, filename):
+        self.screenshot_path = filename
+
+    def show(self, **kwargs):
+        self.show_kwargs = kwargs
+
+    def export_html(self, filename):
+        self.html_path = filename
 
 
 def test_show_bounds_uses_current_pyvista_titles():
@@ -53,6 +65,52 @@ def test_show_bounds_uses_current_pyvista_titles():
         "ytitle": "y [m]",
         "ztitle": "z [m]",
     }
+
+
+def test_save_or_show_plotter_saves_screenshot(tmp_path):
+    plotter = _FakePlotter()
+    filename = tmp_path / "view.png"
+
+    returned = helpers._save_or_show_plotter(plotter, filename=filename)
+
+    assert returned is plotter
+    assert plotter.screenshot_path == str(filename)
+    assert plotter.show_kwargs is None
+
+
+def test_save_or_show_plotter_show_uses_screenshot_argument(tmp_path):
+    plotter = _FakePlotter()
+    filename = tmp_path / "view.png"
+
+    helpers._save_or_show_plotter(plotter, filename=filename, show=True)
+
+    assert plotter.screenshot_path is None
+    assert plotter.show_kwargs == {"screenshot": str(filename)}
+
+
+def test_save_or_show_plotter_exports_html(tmp_path):
+    plotter = _FakePlotter()
+    filename = tmp_path / "view.html"
+
+    helpers._save_or_show_plotter(plotter, filename=filename)
+
+    assert plotter.html_path == str(filename)
+    assert plotter.screenshot_path is None
+
+
+def test_save_or_show_plotter_rejects_conflicting_filenames(tmp_path):
+    plotter = _FakePlotter()
+
+    try:
+        helpers._save_or_show_plotter(
+            plotter,
+            filename=tmp_path / "a.png",
+            savefilename=tmp_path / "b.png",
+        )
+    except ValueError as exc:
+        assert "filename and savefilename" in str(exc)
+    else:
+        raise AssertionError("conflicting filenames should raise")
 
 
 def test_add_surface_overlays_converts_meshsurface(monkeypatch):

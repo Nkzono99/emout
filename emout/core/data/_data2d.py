@@ -277,6 +277,8 @@ class Data2d(Data):
         clim: Union[Tuple[float, float], None] = None,
         show_edges: bool = False,
         add_scalar_bar: bool = True,
+        filename=None,
+        savefilename=None,
         **kwargs,
     ):
         """Render two-dimensional data as a plane in 3-D space with PyVista."""
@@ -296,6 +298,8 @@ class Data2d(Data):
             clim=clim,
             show_edges=show_edges,
             add_scalar_bar=add_scalar_bar,
+            filename=filename,
+            savefilename=savefilename,
             **kwargs,
         )
 

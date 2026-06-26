@@ -508,6 +508,7 @@ data.phisp[-1, 100, :, :].plot3d(show=True)                                   # 
 data.j1xyz[-1].plot(show=True)                                                # 3D streamlines
 data.j1xyz[-1].plot3d(mode="quiver", show=True)                               # 3D quiver
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries) # boundary overlay
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="iso.png")       # save screenshot
 ```
 
 ### 3D mesh surface rendering

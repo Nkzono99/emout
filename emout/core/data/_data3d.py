@@ -144,6 +144,8 @@ class Data3d(Data):
         add_outline: bool = True,
         outline_color: str = "white",
         add_scalar_bar: bool = True,
+        filename=None,
+        savefilename=None,
         **kwargs,
     ):
         """Render three-dimensional data with PyVista.
@@ -173,6 +175,8 @@ class Data3d(Data):
             add_outline=add_outline,
             outline_color=outline_color,
             add_scalar_bar=add_scalar_bar,
+            filename=filename,
+            savefilename=savefilename,
             **kwargs,
         )
 

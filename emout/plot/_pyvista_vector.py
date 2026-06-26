@@ -9,6 +9,7 @@ from ._pyvista_helpers import (
     _add_surface_overlays,
     _axis_values,
     _require_pyvista,
+    _save_or_show_plotter,
     _show_bounds,
     _spacing,
 )
@@ -115,6 +116,8 @@ def plot_vector_quiver3d(
     surface_opacity=0.35,
     surface_per=None,
     surface_kwargs=None,
+    filename=None,
+    savefilename=None,
     **kwargs,
 ):
     """Plot a 3-D vector field as quiver arrows.
@@ -156,6 +159,9 @@ def plot_vector_quiver3d(
     surface_kwargs : dict, optional
         Additional keyword arguments forwarded to PyVista for surface
         overlays.
+    filename, savefilename : str, optional
+        Save the rendered scene. Static image suffixes use
+        ``plotter.screenshot``; ``.html`` uses ``plotter.export_html``.
     **kwargs
         Additional keyword arguments forwarded to
         ``plotter.add_mesh``.
@@ -238,9 +244,7 @@ def plot_vector_quiver3d(
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 
-    if show:
-        plotter.show()
-    return plotter
+    return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)
 
 
 def plot_vector_streamlines3d(
@@ -263,6 +267,8 @@ def plot_vector_streamlines3d(
     surface_opacity=0.35,
     surface_per=None,
     surface_kwargs=None,
+    filename=None,
+    savefilename=None,
     **kwargs,
 ):
     """Plot a 3-D vector field as streamlines.
@@ -304,6 +310,9 @@ def plot_vector_streamlines3d(
     surface_kwargs : dict, optional
         Additional keyword arguments forwarded to PyVista for surface
         overlays.
+    filename, savefilename : str, optional
+        Save the rendered scene. Static image suffixes use
+        ``plotter.screenshot``; ``.html`` uses ``plotter.export_html``.
     **kwargs
         Additional keyword arguments forwarded to
         ``mesh.streamlines``.
@@ -385,6 +394,4 @@ def plot_vector_streamlines3d(
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 
-    if show:
-        plotter.show()
-    return plotter
+    return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)

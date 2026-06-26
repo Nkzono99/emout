@@ -373,6 +373,8 @@ class BoundaryCollection:
         surface_color="0.7",
         surface_opacity: float = 0.35,
         surface_kwargs: Optional[Mapping[str, Any]] = None,
+        filename=None,
+        savefilename=None,
         **kwargs,
     ):
         """Plot boundary meshes in 3-D with PyVista."""
@@ -403,9 +405,12 @@ class BoundaryCollection:
         pv_helpers._show_bounds(plotter, axis_labels)
         if hasattr(plotter, "add_axes"):
             plotter.add_axes()
-        if show:
-            plotter.show()
-        return plotter
+        return pv_helpers._save_or_show_plotter(
+            plotter,
+            show=show,
+            filename=filename,
+            savefilename=savefilename,
+        )
 
     # -- composite mesh ------------------------------------------------------
 

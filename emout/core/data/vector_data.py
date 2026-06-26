@@ -650,6 +650,8 @@ class VectorData(utils.Group):
         use_si: bool = True,
         offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         plotter=None,
+        filename=None,
+        savefilename=None,
         **kwargs,
     ):
         """Render three-dimensional vector field with PyVista."""
@@ -680,6 +682,8 @@ class VectorData(utils.Group):
                 use_si=use_si,
                 offsets=offsets,
                 show=show,
+                filename=filename,
+                savefilename=savefilename,
                 **kwargs,
             )
 
@@ -694,6 +698,8 @@ class VectorData(utils.Group):
                 use_si=use_si,
                 offsets=offsets,
                 show=show,
+                filename=filename,
+                savefilename=savefilename,
                 **kwargs,
             )
 

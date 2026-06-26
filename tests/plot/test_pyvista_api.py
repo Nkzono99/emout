@@ -3,6 +3,31 @@ import numpy as np
 from emout.core.data.data import Data2d, Data3d
 from emout.core.data.vector_data import VectorData
 import emout.plot.pyvista_plot as pvplot
+import emout.plot._pyvista_scalar as pvscalar
+
+
+class _FakePlotter:
+    def __init__(self):
+        self.meshes = []
+        self.scalar_bar_title = None
+        self.bounds_kwargs = None
+        self.axes_added = False
+        self.screenshot_path = None
+
+    def add_mesh(self, mesh, **kwargs):
+        self.meshes.append((mesh, kwargs))
+
+    def add_scalar_bar(self, title=None):
+        self.scalar_bar_title = title
+
+    def show_bounds(self, **kwargs):
+        self.bounds_kwargs = kwargs
+
+    def add_axes(self):
+        self.axes_added = True
+
+    def screenshot(self, filename):
+        self.screenshot_path = filename
 
 
 def test_data2d_plot_pyvista_delegates(monkeypatch):
@@ -20,6 +45,31 @@ def test_data2d_plot_pyvista_delegates(monkeypatch):
     assert data2d.plot_pyvista(show=False, surfaces=surfaces) == "plane-plotter"
     assert calls[-1]["surfaces"] is surfaces
     assert data2d.plot3d(show=False) == "plane-plotter"
+
+
+def test_plot_scalar_plane_saves_filename_without_mesh_kwarg(monkeypatch, tmp_path):
+    plotter = _FakePlotter()
+    mesh = object()
+    filename = tmp_path / "slice.png"
+
+    monkeypatch.setattr(
+        pvscalar,
+        "create_plane_mesh",
+        lambda *args, **kwargs: (mesh, "phi", {"x": "x", "y": "y", "z": "z"}, "phi"),
+    )
+
+    returned = pvscalar.plot_scalar_plane(
+        object(),
+        plotter=plotter,
+        filename=filename,
+        show_edges=True,
+    )
+
+    assert returned is plotter
+    assert plotter.screenshot_path == str(filename)
+    assert plotter.meshes[0][0] is mesh
+    assert plotter.meshes[0][1]["show_edges"] is True
+    assert "filename" not in plotter.meshes[0][1]
 
 
 def test_data3d_plot_pyvista_delegates(monkeypatch):

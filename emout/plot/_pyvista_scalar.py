@@ -10,6 +10,7 @@ from ._pyvista_helpers import (
     _as_scalar_array,
     _axis_values,
     _require_pyvista,
+    _save_or_show_plotter,
     _scalar_label,
     _show_bounds,
     _spacing,
@@ -152,6 +153,8 @@ def plot_scalar_plane(
     surface_opacity=0.35,
     surface_per=None,
     surface_kwargs=None,
+    filename=None,
+    savefilename=None,
     **kwargs,
 ):
     """Plot a 2-D scalar field on a PyVista plane.
@@ -188,6 +191,9 @@ def plot_scalar_plane(
     surface_kwargs : dict, optional
         Additional keyword arguments forwarded to PyVista for surface
         overlays.
+    filename, savefilename : str, optional
+        Save the rendered scene. Static image suffixes use
+        ``plotter.screenshot``; ``.html`` uses ``plotter.export_html``.
     **kwargs
         Additional keyword arguments forwarded to
         ``plotter.add_mesh``.
@@ -234,9 +240,7 @@ def plot_scalar_plane(
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 
-    if show:
-        plotter.show()
-    return plotter
+    return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)
 
 
 def plot_scalar_volume(
@@ -260,6 +264,8 @@ def plot_scalar_volume(
     surface_opacity=0.35,
     surface_per=None,
     surface_kwargs=None,
+    filename=None,
+    savefilename=None,
     **kwargs,
 ):
     """Plot a 3-D scalar field as a volume rendering.
@@ -310,6 +316,9 @@ def plot_scalar_volume(
     surface_kwargs : dict, optional
         Additional keyword arguments forwarded to PyVista for surface
         overlays.
+    filename, savefilename : str, optional
+        Save the rendered scene. Static image suffixes use
+        ``plotter.screenshot``; ``.html`` uses ``plotter.export_html``.
     **kwargs
         Additional keyword arguments forwarded to
         ``plotter.add_mesh`` or ``plotter.add_volume``.
@@ -397,6 +406,4 @@ def plot_scalar_volume(
     _show_bounds(plotter, axis_labels)
     plotter.add_axes()
 
-    if show:
-        plotter.show()
-    return plotter
+    return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)

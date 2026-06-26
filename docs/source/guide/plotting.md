@@ -131,6 +131,13 @@ data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
 
 PyVista's `surfaces=` accepts `data.boundaries`, `Boundary`, `MeshSurface3D`, or `RenderItem` and overlays them as solid transparent surfaces. For field-sampled rendering, such as colouring boundary faces by scalar values or drawing contours on those faces, use the existing matplotlib-based `plot_surfaces` path:
 
+PyVista 3D plots can also be saved with `filename=`. Image suffixes such as `.png` use a screenshot. `.html` exports an interactive HTML view when PyVista's Jupyter/trame extras are installed. `savefilename=` is accepted as a compatibility alias matching the existing 2D plot API:
+
+```python
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
+data.j1xyz[-1].plot(surfaces=data.boundaries, filename="j1_stream.html")
+```
+
 ```python
 import matplotlib.pyplot as plt
 from emout.plot.surface_cut import (

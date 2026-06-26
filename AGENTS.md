@@ -26,7 +26,7 @@ pre-commit install        # git commit 時に ruff lint+format を自動実行
 pytest -q                 # 全テスト
 ```
 
-テストベースライン: **1480 passed, 0 skipped**（optional 依存の有無で skipped 数は変動）
+テストベースライン: **1485 passed, 0 skipped**（optional 依存の有無で skipped 数は変動）
 
 ## MPIEMSES 外部資料
 

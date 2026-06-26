@@ -131,6 +131,13 @@ data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
 
 PyVista の `surfaces=` は `data.boundaries`、`Boundary`、`MeshSurface3D`、`RenderItem` を受け取り、透明な実体面として重ね描きします。境界面をスカラー値で塗る、等高線を境界面上に描く、といった field-sampled な描画には既存の matplotlib ベースの `plot_surfaces` を使います:
 
+PyVista の 3D プロットも `filename=` で保存できます。`.png` などの画像拡張子は screenshot として保存します。`.html` は PyVista の Jupyter/trame 追加依存が入っている環境では interactive HTML として保存できます。既存の 2D plot と同じく `savefilename=` も互換エイリアスとして使えます:
+
+```python
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
+data.j1xyz[-1].plot(surfaces=data.boundaries, filename="j1_stream.html")
+```
+
 ```python
 import matplotlib.pyplot as plt
 from emout.plot.surface_cut import (

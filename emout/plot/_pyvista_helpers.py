@@ -6,6 +6,7 @@ These helpers are called by :meth:`Data3d.plot_pyvista` and
 
 import importlib
 import inspect
+from pathlib import Path
 from typing import Union
 
 import numpy as np
@@ -14,6 +15,7 @@ import emout.utils as utils
 
 _SPATIAL_AXES = ("x", "y", "z")
 _AXIS_TO_INDEX = {"t": 0, "z": 1, "y": 2, "x": 3}
+_GRAPHIC_SUFFIXES = {".eps", ".pdf", ".ps", ".svg", ".tex"}
 
 
 def _require_pyvista():
@@ -192,6 +194,43 @@ def _show_bounds(plotter, axis_labels):
             )
         except TypeError:
             plotter.show_bounds()
+
+
+def _resolve_filename(filename=None, savefilename=None):
+    """Resolve PyVista output filename aliases."""
+    if filename is not None and savefilename is not None and str(filename) != str(savefilename):
+        raise ValueError("filename and savefilename cannot both be set to different paths.")
+    return filename if filename is not None else savefilename
+
+
+def _save_plotter(plotter, filename):
+    """Save a PyVista plotter to a file selected by suffix."""
+    filename = str(filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix == ".html":
+        plotter.export_html(filename)
+    elif suffix in _GRAPHIC_SUFFIXES:
+        plotter.save_graphic(filename)
+    else:
+        plotter.screenshot(filename)
+
+
+def _save_or_show_plotter(plotter, *, show=False, filename=None, savefilename=None):
+    """Save and/or show a PyVista plotter."""
+    resolved = _resolve_filename(filename=filename, savefilename=savefilename)
+    if show:
+        if resolved is None:
+            plotter.show()
+        elif Path(str(resolved)).suffix.lower() in {".html", *_GRAPHIC_SUFFIXES}:
+            _save_plotter(plotter, resolved)
+            plotter.show()
+        else:
+            plotter.show(screenshot=str(resolved))
+        return plotter
+
+    if resolved is not None:
+        _save_plotter(plotter, resolved)
+    return plotter
 
 
 def _surface_items(surfaces):
