@@ -122,9 +122,21 @@ data.phisp[-1, 100, :, :].plot3d(show=True)
 data.j1xyz[-1].plot(show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
 
+# Streamlines seeded from an xy plane, with tube radius scaled by |v|
+data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
+
 # Overlay MPIEMSES boundaries as solid transparent surfaces
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
 data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
+```
+
+Choose 3D streamline seeds with `seed_mode`. The default `sphere` mode keeps the previous centre-source behaviour. `plane` often gives a view closest to 2D streamlines, `volume` fills the whole domain, and `surface` starts from boundary mesh vertices. Pass `seed_points` when you want fixed custom start points:
+
+```python
+data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
 ```
 
 ### Mesh Surface Rendering

@@ -506,6 +506,7 @@ data.phisp[-1, :, :, :].plot3d(mode="box", show=True)                         # 
 data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)           # isosurfaces
 data.phisp[-1, 100, :, :].plot3d(show=True)                                   # 2D slice in 3D space
 data.j1xyz[-1].plot(show=True)                                                # 3D streamlines
+data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xy", tube_radius="magnitude")
 data.j1xyz[-1].plot3d(mode="quiver", show=True)                               # 3D quiver
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries) # boundary overlay
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="iso.png")       # save screenshot

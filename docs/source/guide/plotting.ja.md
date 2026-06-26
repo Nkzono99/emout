@@ -122,9 +122,21 @@ data.phisp[-1, 100, :, :].plot3d(show=True)
 data.j1xyz[-1].plot(show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
 
+# Streamlines seeded from an xy plane, with tube radius scaled by |v|
+data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
+
 # Overlay MPIEMSES boundaries as solid transparent surfaces
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
 data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
+```
+
+3D ストリームラインの seed は `seed_mode` で選べます。既定の `sphere` は従来どおり中心付近から開始します。`plane` は 2D streamline に近い見え方になりやすく、`volume` は領域全体、`surface` は境界メッシュ上から開始します。任意の開始点を固定したい場合は `seed_points` を渡します:
+
+```python
+data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
 ```
 
 ### メッシュサーフェスの描画

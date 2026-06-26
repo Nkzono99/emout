@@ -7,12 +7,16 @@ import numpy as np
 from ._pyvista_helpers import (
     _SPATIAL_AXES,
     _add_surface_overlays,
+    _surface_items,
+    _surface_to_polydata,
     _axis_values,
     _require_pyvista,
     _save_or_show_plotter,
     _show_bounds,
     _spacing,
 )
+
+_AXIS_TO_INDEX = {"x": 0, "y": 1, "z": 2}
 
 
 def create_vector_mesh3d(
@@ -95,6 +99,178 @@ def create_vector_mesh3d(
     mesh.point_data[magnitude_name] = np.linalg.norm(vectors, axis=1)
 
     return mesh, vector_name, magnitude_name, axis_labels
+
+
+def _seed_resolution(seed_resolution, *, dims: int, n_points: int):
+    """Return per-axis seed counts for a regular seed grid."""
+    if seed_resolution is None:
+        count = max(int(np.ceil(float(n_points) ** (1.0 / dims))), 1)
+        return (count,) * dims
+    if isinstance(seed_resolution, int):
+        return (max(int(seed_resolution), 1),) * dims
+    if len(seed_resolution) != dims:
+        raise ValueError(f"seed_resolution must have {dims} entries for this seed mode.")
+    return tuple(max(int(value), 1) for value in seed_resolution)
+
+
+def _axis_points(mesh, axis: str, count: int):
+    """Return regular points along one mesh axis."""
+    axis_idx = _AXIS_TO_INDEX[axis]
+    lower = mesh.bounds[2 * axis_idx]
+    upper = mesh.bounds[2 * axis_idx + 1]
+    return np.linspace(lower, upper, count)
+
+
+def _as_seed_points(points):
+    """Validate and return an explicit seed point array."""
+    points = np.asarray(points, dtype=float)
+    if points.ndim != 2 or points.shape[1] != 3:
+        raise ValueError(f"seed_points must have shape (n, 3), got {points.shape}")
+    if len(points) == 0:
+        raise ValueError("seed_points must contain at least one point.")
+    return points
+
+
+def _plane_position(mesh, axis: str, seed_position, source_center=None):
+    """Resolve the fixed coordinate for a seed plane."""
+    if seed_position is None:
+        seed_position = "center"
+    if isinstance(seed_position, str):
+        if seed_position != "center":
+            raise ValueError('seed_position must be "center" or a numeric coordinate.')
+        if source_center is not None:
+            return float(source_center[_AXIS_TO_INDEX[axis]])
+        return float(mesh.center[_AXIS_TO_INDEX[axis]])
+    return float(seed_position)
+
+
+def _volume_seed_points(mesh, *, n_points: int, seed_resolution=None):
+    """Generate regular seed points across the full mesh volume."""
+    nx, ny, nz = _seed_resolution(seed_resolution, dims=3, n_points=n_points)
+    x = _axis_points(mesh, "x", nx)
+    y = _axis_points(mesh, "y", ny)
+    z = _axis_points(mesh, "z", nz)
+    grids = np.meshgrid(x, y, z, indexing="ij")
+    return np.column_stack([grid.ravel() for grid in grids])
+
+
+def _plane_seed_points(
+    mesh, *, seed_plane: str, seed_position="center", n_points: int, seed_resolution=None, source_center=None
+):
+    """Generate regular seed points on one coordinate plane."""
+    plane = seed_plane.lower()
+    if len(plane) != 2 or len(set(plane)) != 2 or any(axis not in _AXIS_TO_INDEX for axis in plane):
+        raise ValueError('seed_plane must be one of "xy", "xz", "yz" or reversed equivalents.')
+
+    axes = tuple(plane)
+    fixed_axis = next(axis for axis in _SPATIAL_AXES if axis not in axes)
+    n0, n1 = _seed_resolution(seed_resolution, dims=2, n_points=n_points)
+    values0 = _axis_points(mesh, axes[0], n0)
+    values1 = _axis_points(mesh, axes[1], n1)
+    mesh0, mesh1 = np.meshgrid(values0, values1, indexing="ij")
+
+    points = np.empty((mesh0.size, 3), dtype=float)
+    points[:, _AXIS_TO_INDEX[axes[0]]] = mesh0.ravel()
+    points[:, _AXIS_TO_INDEX[axes[1]]] = mesh1.ravel()
+    points[:, _AXIS_TO_INDEX[fixed_axis]] = _plane_position(
+        mesh,
+        fixed_axis,
+        seed_position,
+        source_center=source_center,
+    )
+    return points
+
+
+def _surface_seed_points(
+    pv,
+    *,
+    seed_surface,
+    n_points: int,
+    use_si: bool = True,
+    offsets=None,
+    surface_per=None,
+):
+    """Generate seed points from one or more mesh-like surfaces."""
+    if seed_surface is None:
+        raise ValueError("seed_mode='surface' requires seed_surface or surfaces.")
+
+    point_arrays = []
+    for item in _surface_items(seed_surface):
+        poly = _surface_to_polydata(item, use_si=use_si, offsets=offsets, per=surface_per)
+        point_arrays.append(np.asarray(poly.points, dtype=float))
+
+    points = np.vstack(point_arrays) if point_arrays else np.empty((0, 3), dtype=float)
+    points = _as_seed_points(points)
+    if n_points is not None and len(points) > n_points:
+        indices = np.linspace(0, len(points) - 1, int(n_points), dtype=int)
+        points = points[indices]
+    return pv.PolyData(points)
+
+
+def _make_streamline_source(
+    mesh,
+    pv,
+    *,
+    seed_mode="sphere",
+    n_points=200,
+    source_center=None,
+    seed_points=None,
+    seed_plane="xy",
+    seed_position="center",
+    seed_resolution=None,
+    seed_surface=None,
+    surfaces=None,
+    use_si=True,
+    offsets=None,
+    surface_per=None,
+):
+    """Create a PyVista source object for non-spherical streamline seeds."""
+    if seed_points is not None:
+        return pv.PolyData(_as_seed_points(seed_points))
+
+    mode = seed_mode.lower()
+    if mode == "sphere":
+        return None
+    if mode == "volume":
+        return pv.PolyData(_volume_seed_points(mesh, n_points=n_points, seed_resolution=seed_resolution))
+    if mode == "plane":
+        return pv.PolyData(
+            _plane_seed_points(
+                mesh,
+                seed_plane=seed_plane,
+                seed_position=seed_position,
+                n_points=n_points,
+                seed_resolution=seed_resolution,
+                source_center=source_center,
+            )
+        )
+    if mode == "surface":
+        surface = seed_surface if seed_surface is not None else surfaces
+        return _surface_seed_points(
+            pv,
+            seed_surface=surface,
+            n_points=n_points,
+            use_si=use_si,
+            offsets=offsets,
+            surface_per=surface_per,
+        )
+    raise ValueError(f'Unsupported seed_mode "{seed_mode}" for VectorData3d streamlines.')
+
+
+def _tube_streamline_mesh(streamline, *, tube_radius, magnitude_name, default_radius, tube_radius_factor=10.0):
+    """Return a fixed- or variable-radius tube mesh for streamlines."""
+    if tube_radius is None:
+        return streamline
+    if isinstance(tube_radius, str):
+        mode = tube_radius.lower()
+        if mode not in ("auto", "magnitude"):
+            raise ValueError('tube_radius must be numeric, None, "auto", or "magnitude".')
+        return streamline.tube(
+            radius=default_radius,
+            scalars=magnitude_name,
+            radius_factor=float(tube_radius_factor),
+        )
+    return streamline.tube(radius=float(tube_radius))
 
 
 def plot_vector_quiver3d(
@@ -258,7 +434,14 @@ def plot_vector_streamlines3d(
     n_points=200,
     source_radius=None,
     source_center=None,
+    seed_mode="sphere",
+    seed_points=None,
+    seed_plane="xy",
+    seed_position="center",
+    seed_resolution=None,
+    seed_surface=None,
     tube_radius=None,
+    tube_radius_factor=10.0,
     cmap="viridis",
     clim=None,
     add_scalar_bar=True,
@@ -292,8 +475,31 @@ def plot_vector_streamlines3d(
         smallest domain extent.
     source_center : tuple of float, optional
         Centre of the seed source.  Defaults to the mesh centre.
-    tube_radius : float, optional
-        If given, render streamlines as tubes with this radius.
+    seed_mode : {'sphere', 'volume', 'plane', 'surface'}, optional
+        Seed placement mode. ``'sphere'`` keeps the historical PyVista
+        spherical source, ``'volume'`` fills the domain with a regular
+        seed grid, ``'plane'`` seeds one coordinate plane, and
+        ``'surface'`` seeds mesh-surface vertices.
+    seed_points : array-like, optional
+        Explicit ``(n, 3)`` seed points. When supplied, this overrides
+        ``seed_mode``.
+    seed_plane : {'xy', 'xz', 'yz'}, optional
+        Coordinate plane used by ``seed_mode='plane'``. Reversed forms
+        such as ``'zx'`` are also accepted.
+    seed_position : {'center'} or float, optional
+        Fixed coordinate of the missing axis for ``seed_mode='plane'``.
+    seed_resolution : int or tuple of int, optional
+        Seed grid resolution. A 3-tuple is used for ``'volume'`` and a
+        2-tuple for ``'plane'``. Defaults are derived from ``n_points``.
+    seed_surface : object, optional
+        Boundary or mesh-like object used by ``seed_mode='surface'``.
+        Falls back to ``surfaces`` when omitted.
+    tube_radius : float or {'auto', 'magnitude'}, optional
+        If numeric, render fixed-radius tubes. ``'auto'`` and
+        ``'magnitude'`` scale tube radius by vector magnitude.
+    tube_radius_factor : float, optional
+        Ratio between minimum and maximum tube radius for magnitude
+        scaled tubes.
     cmap : str, optional
         Colour-map name forwarded to PyVista.
     clim : tuple of float, optional
@@ -351,23 +557,51 @@ def plot_vector_streamlines3d(
     if source_radius is None:
         source_radius = float(0.25 * np.min(lengths))
 
-    streamline = mesh.streamlines(
-        vectors=vector_name,
-        source_center=source_center,
-        source_radius=source_radius,
+    source = _make_streamline_source(
+        mesh,
+        pv,
+        seed_mode=seed_mode,
         n_points=n_points,
-        **kwargs,
+        source_center=source_center,
+        seed_points=seed_points,
+        seed_plane=seed_plane,
+        seed_position=seed_position,
+        seed_resolution=seed_resolution,
+        seed_surface=seed_surface,
+        surfaces=surfaces,
+        use_si=use_si,
+        offsets=offsets,
+        surface_per=surface_per,
     )
+    if source is None:
+        streamline = mesh.streamlines(
+            vectors=vector_name,
+            source_center=source_center,
+            source_radius=source_radius,
+            n_points=n_points,
+            **kwargs,
+        )
+    else:
+        streamline = mesh.streamlines_from_source(
+            source,
+            vectors=vector_name,
+            **kwargs,
+        )
     if streamline.n_points == 0:
-        raise RuntimeError("No streamlines were generated. Try increasing n_points/source_radius.")
+        raise RuntimeError("No streamlines were generated. Try changing seed_mode, n_points, or source_radius.")
 
     if magnitude_name not in streamline.array_names and vector_name in streamline.array_names:
         vecs = np.asarray(streamline[vector_name])
         streamline[magnitude_name] = np.linalg.norm(vecs, axis=1)
 
-    stream_mesh = streamline
-    if tube_radius is not None:
-        stream_mesh = streamline.tube(radius=tube_radius)
+    default_tube_radius = float(0.005 * np.min(lengths)) if np.min(lengths) > 0 else 1.0
+    stream_mesh = _tube_streamline_mesh(
+        streamline,
+        tube_radius=tube_radius,
+        magnitude_name=magnitude_name,
+        default_radius=default_tube_radius,
+        tube_radius_factor=tube_radius_factor,
+    )
 
     add_mesh_kwargs = dict(show_scalar_bar=False)
     if cmap is not None and magnitude_name in stream_mesh.array_names:
