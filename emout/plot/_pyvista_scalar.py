@@ -203,8 +203,8 @@ def plot_scalar_plane(
     pyvista.Plotter
         The plotter instance used for rendering.
     """
-    pv = _require_pyvista()
     if plotter is None:
+        pv = _require_pyvista()
         plotter = pv.Plotter()
 
     mesh, scalar_name, axis_labels, scalar_label = create_plane_mesh(

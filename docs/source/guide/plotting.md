@@ -109,7 +109,7 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 The PyVista backend can place 2-D slices in 3-D space and render 3-D scalar / vector fields interactively. See [PyVista Visualization](pyvista.md) for the full API and overlay examples.
 
 ```bash
-pip install "emout[pyvista]"
+pip install emout
 ```
 
 ```python

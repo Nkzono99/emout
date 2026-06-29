@@ -1,6 +1,6 @@
 # PyVista Visualization (`plot3d` / `plot_pyvista`)
 
-The PyVista backend is an optional API for placing 2-D slices in 3-D space, rendering 3-D scalar fields as volume / slice / contour views, and drawing 3-D vector fields as streamlines or quiver arrows. Use the regular `plot()` / `cmap()` / `contour()` APIs from [Plotting](plotting.md) for ordinary 1-D/2-D analysis, and switch to PyVista when you need interactive 3-D camera control or overlays.
+The PyVista backend is the 3-D visualization API for placing 2-D slices in 3-D space, rendering 3-D scalar fields as volume / slice / contour views, and drawing 3-D vector fields as streamlines or quiver arrows. Use the regular `plot()` / `cmap()` / `contour()` APIs from [Plotting](plotting.md) for ordinary 1-D/2-D analysis, and switch to PyVista when you need interactive 3-D camera control or overlays.
 
 ## Choosing an Entry Point
 
@@ -13,17 +13,17 @@ The PyVista backend is an optional API for placing 2-D slices in 3-D space, rend
 | Backtrace / trace paths | `trace.plot3d(plotter=...)` | `pyvista.Plotter` |
 | Mesh construction only | `emout.plot.pyvista_plot.create_*_mesh(...)` | PyVista mesh object |
 
-`Data2d.plot3d()` and `Data3d.plot3d()` are aliases for `plot_pyvista()`. `VectorData.plot3d()` uses the Matplotlib backend by default, so pass `backend="pyvista"` when you want PyVista.
+`Data2d.plot3d()` and `Data3d.plot3d()` are aliases for `plot_pyvista()`. `VectorData.plot3d()` uses the PyVista backend by default; pass `backend="mpl"` when you want the Matplotlib 3-D backend.
 
 ## Installation
 
-PyVista is optional. Install it in the environment where you will render 3-D views.
+PyVista is installed as a regular emout dependency, so no extra selector is needed for 3-D views.
 
 ```bash
-pip install "emout[pyvista]"
+pip install emout
 ```
 
-If PyVista is not installed, emout raises `ModuleNotFoundError` when you call the PyVista backend. Regular `plot()` calls and the Matplotlib backend do not require PyVista.
+If an old environment or editable install raises `ModuleNotFoundError`, reinstall emout so the dependency set is refreshed.
 
 ## Scalar Fields
 
@@ -200,7 +200,7 @@ Low-level helpers return PyVista objects directly; they are not high-level emout
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `ModuleNotFoundError: pyvista` | optional dependency is missing | `pip install "emout[pyvista]"` |
+| `ModuleNotFoundError: pyvista` | old environment or dependencies not refreshed | `pip install -U emout` |
 | `Data2d with time axis is not supported` | the 2-D slice still includes `t` | fix time to a single index and pass a spatial 2-D slice |
 | `plot_pyvista ... requires spatial axes x,y,z` | the 3-D spatial axes are not all present | select only time, e.g. `data.phisp[-1]` |
 | no streamlines appear | too few seeds or too small a seed radius | increase `n_points` / `source_radius` |

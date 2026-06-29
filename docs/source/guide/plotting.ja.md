@@ -109,7 +109,7 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 PyVista backend を使うと、2D スライスを 3D 空間に配置したり、3D scalar / vector field を対話的に描画できます。詳しい API と重ね描きの例は [PyVista 可視化](pyvista.ja.md) を参照してください。
 
 ```bash
-pip install "emout[pyvista]"
+pip install emout
 ```
 
 ```python

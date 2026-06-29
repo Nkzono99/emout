@@ -1,6 +1,6 @@
 # PyVista 可視化 (`plot3d` / `plot_pyvista`)
 
-PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場を volume / slice / contour として描く、3D ベクトル場を streamlines / quiver として描くための optional API です。通常の 1D/2D 解析は [プロット](plotting.ja.md) の `plot()` / `cmap()` / `contour()` を使い、3D の視点操作や重ね描きが必要なときに PyVista を使います。
+PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場を volume / slice / contour として描く、3D ベクトル場を streamlines / quiver として描くための 3D 可視化 API です。通常の 1D/2D 解析は [プロット](plotting.ja.md) の `plot()` / `cmap()` / `contour()` を使い、3D の視点操作や重ね描きが必要なときに PyVista を使います。
 
 ## 入口の選び方
 
@@ -13,17 +13,17 @@ PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場
 | Backtrace / trace paths | `trace.plot3d(plotter=...)` | `pyvista.Plotter` |
 | Mesh construction only | `emout.plot.pyvista_plot.create_*_mesh(...)` | PyVista mesh object |
 
-`Data2d.plot3d()` と `Data3d.plot3d()` は `plot_pyvista()` の alias です。`VectorData.plot3d()` は既定では Matplotlib backend を使うため、PyVista を使うときは `backend="pyvista"` を指定します。
+`Data2d.plot3d()` と `Data3d.plot3d()` は `plot_pyvista()` の alias です。`VectorData.plot3d()` は既定で PyVista backend を使います。Matplotlib 3D backend を使う場合は `backend="mpl"` を指定します。
 
 ## インストール
 
-PyVista は optional 依存です。3D 表示を使う環境で追加インストールしてください。
+PyVista は emout の通常依存としてインストールされます。3D 表示を使う環境でも追加の extra 指定は不要です。
 
 ```bash
-pip install "emout[pyvista]"
+pip install emout
 ```
 
-未インストールの場合、PyVista backend を呼んだ時点で `ModuleNotFoundError` が出ます。通常の `plot()` や Matplotlib backend は PyVista なしで使えます。
+古い環境や editable install で `ModuleNotFoundError` が出る場合は、emout を再インストールして依存関係を更新してください。
 
 ## スカラー場
 
@@ -200,7 +200,7 @@ mesh, scalar_name, axis_labels, scalar_label = create_volume_mesh(data.phisp[-1]
 
 | 症状 | 原因 | 対処 |
 | --- | --- | --- |
-| `ModuleNotFoundError: pyvista` | optional 依存が未導入 | `pip install "emout[pyvista]"` |
+| `ModuleNotFoundError: pyvista` | 古い環境または依存関係が未更新 | `pip install -U emout` |
 | `Data2d with time axis is not supported` | `t` 軸を含む 2D slice を渡した | 時刻を 1 つに固定して空間 2D slice にする |
 | `plot_pyvista ... requires spatial axes x,y,z` | 3D 空間軸が揃っていない | `data.phisp[-1]` のように time だけ固定する |
 | streamlines が出ない | seed 数や seed 半径が小さい | `n_points` / `source_radius` を増やす |

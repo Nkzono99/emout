@@ -49,9 +49,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-pyvista = [
-  "pyvista",
-]
+# Kept as a compatibility alias for existing ``emout[pyvista]`` installs.
+pyvista = []
 distributed = [
   "psutil",
   "dask; python_version >= \"3.10\"",
