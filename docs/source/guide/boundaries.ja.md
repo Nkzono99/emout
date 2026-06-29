@@ -43,6 +43,35 @@ data.phisp[-1].plot_surfaces(
 plt.show()
 ```
 
+## PyVista へのオーバーレイ
+
+PyVista backend を使う場合は、フィールドの `plot3d(show=False)` が返した plotter に `data.boundaries.plot3d(plotter=...)` で境界メッシュを追加できます。単独の境界や `MeshSurface3D` に対しても同じ `plot3d()` を使えます。
+
+```python
+plotter = data.phisp[-1].plot3d(mode="slice", show=False)
+
+data.boundaries.plot3d(
+    plotter=plotter,
+    color="0.7",
+    opacity=0.35,
+    show_edges=True,
+    show=True,
+)
+```
+
+境界メッシュの解像度や形状を調整するときは `mesh_kwargs` と `per` を使います。`mesh_kwargs` は全境界へ共通に渡され、各境界が受け取れる引数だけが使われます。`per` は境界 index ごとの上書きです。
+
+```python
+data.boundaries.plot3d(
+    plotter=plotter,
+    mesh_kwargs={"ntheta": 64},
+    per={2: {"naxial": 8}},
+    color="white",
+    opacity=0.4,
+    show=True,
+)
+```
+
 ## 複合メッシュ
 
 全境界をひとつのメッシュに結合して取り出すこともできます:
@@ -61,12 +90,10 @@ combined = data.boundaries[0] + data.boundaries[1]
 # 境界ごとにスタイルを変える
 data.phisp[-1].plot_surfaces(
     ax=ax,
-    surfaces=data.boundaries.render(
-        per={
-            0: dict(style="solid", solid_color="0.7"),
-            1: dict(alpha=0.5),
-        },
-    ),
+    surfaces=[
+        data.boundaries[0].render(style="solid", solid_color="0.7"),
+        data.boundaries[1].render(alpha=0.5),
+    ],
 )
 ```
 

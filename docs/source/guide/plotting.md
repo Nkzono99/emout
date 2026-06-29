@@ -106,7 +106,11 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 
 ## 3D Plotting with PyVista
 
-3D plotting uses PyVista, which is included in the standard `emout` install. `.plot()` for 2D and lower-dimensional data still uses matplotlib; `.plot()` and `.plot3d()` for 3D vector data use PyVista.
+The PyVista backend can place 2-D slices in 3-D space and render 3-D scalar / vector fields interactively. See [PyVista Visualization](pyvista.md) for the full API and overlay examples.
+
+```bash
+pip install "emout[pyvista]"
+```
 
 ```python
 # 3D scalar volume surface
@@ -118,28 +122,28 @@ data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)
 # 2D slice placed in 3D space
 data.phisp[-1, 100, :, :].plot3d(show=True)
 
-# 3D vector field: plot() defaults to PyVista streamlines
-data.j1xyz[-1].plot(show=True)
+# 3D vector field: plot3d() defaults to PyVista streamlines
+data.j1xyz[-1].plot3d(mode="stream", show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
 
 # Streamlines seeded from an xy plane, with tube radius scaled by |v|
-data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
 
 # Overlay MPIEMSES boundaries as solid transparent surfaces
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
-data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
+data.j1xyz[-1].plot3d(surfaces=data.boundaries, show=True)
 ```
 
 Choose 3D streamline seeds with `seed_mode`. The default `sphere` mode keeps the previous centre-source behaviour. `plane` often gives a view closest to 2D streamlines, `volume` fills the whole domain, and `surface` starts from boundary mesh vertices. Pass `seed_points` when you want fixed custom start points:
 
 ```python
-data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xz", seed_position="center")
-data.j1xyz[-1].plot(seed_mode="volume", n_points=1000)
-data.j1xyz[-1].plot(seed_mode="surface", seed_surface=data.boundaries)
-data.j1xyz[-1].plot(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot3d(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot3d(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot3d(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
 ```
 
-### Mesh Surface Rendering
+## Mesh Surface Rendering
 
 PyVista's `surfaces=` accepts `data.boundaries`, `Boundary`, `MeshSurface3D`, or `RenderItem` and overlays them as solid transparent surfaces. For field-sampled rendering, such as colouring boundary faces by scalar values or drawing contours on those faces, use the existing matplotlib-based `plot_surfaces` path:
 

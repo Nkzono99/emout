@@ -18,6 +18,8 @@ emout
    guide/quickstart.ja
    guide/plotting
    guide/plotting.ja
+   guide/pyvista
+   guide/pyvista.ja
    guide/animation
    guide/animation.ja
    guide/inp

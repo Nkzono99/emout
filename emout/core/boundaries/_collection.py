@@ -362,16 +362,21 @@ class BoundaryCollection:
         _plot_surfaces(ax, field=None, surfaces=item)
         return ax
 
-    def plot_pyvista(
+    def plot3d(
         self,
         *,
         plotter=None,
         use_si: bool = True,
         offsets=None,
         per: Optional[Mapping[int, Mapping[str, Any]]] = None,
+        mesh_kwargs: Optional[Mapping[str, Any]] = None,
         show: bool = False,
+        color=None,
+        opacity=None,
         surface_color="0.7",
-        surface_opacity: float = 0.35,
+        surface_opacity: float = 0.6,
+        show_edges: bool = False,
+        add_axes: bool = True,
         surface_kwargs: Optional[Mapping[str, Any]] = None,
         filename=None,
         savefilename=None,
@@ -380,37 +385,54 @@ class BoundaryCollection:
         """Plot boundary meshes in 3-D with PyVista."""
         from emout.plot import _pyvista_helpers as pv_helpers
 
+        if color is not None:
+            surface_color = color
+        if opacity is not None:
+            surface_opacity = opacity
+
         pv = pv_helpers._require_pyvista()
         if plotter is None:
             plotter = pv.Plotter()
 
+        surface = self
+        overlay_per = per
+        if mesh_kwargs is not None:
+            surface = self.mesh(use_si=use_si, per=per, **dict(mesh_kwargs))
+            overlay_per = None
+
         overlay_kwargs = {}
         if surface_kwargs is not None:
             overlay_kwargs.update(surface_kwargs)
+        overlay_kwargs.setdefault("show_edges", show_edges)
         overlay_kwargs.update(kwargs)
 
         pv_helpers._add_surface_overlays(
             plotter,
-            self,
+            surface,
             use_si=use_si,
             offsets=offsets,
-            per=per,
+            per=overlay_per,
             surface_color=surface_color,
             surface_opacity=surface_opacity,
             **overlay_kwargs,
         )
 
-        unit_suffix = " [m]" if use_si and self.unit is not None else ""
-        axis_labels = {axis: f"{axis}{unit_suffix}" for axis in ("x", "y", "z")}
-        pv_helpers._show_bounds(plotter, axis_labels)
-        if hasattr(plotter, "add_axes"):
-            plotter.add_axes()
+        if add_axes:
+            unit_suffix = " [m]" if use_si and self.unit is not None else ""
+            axis_labels = {axis: f"{axis}{unit_suffix}" for axis in ("x", "y", "z")}
+            pv_helpers._show_bounds(plotter, axis_labels)
+            if hasattr(plotter, "add_axes"):
+                plotter.add_axes()
         return pv_helpers._save_or_show_plotter(
             plotter,
             show=show,
             filename=filename,
             savefilename=savefilename,
         )
+
+    def plot_pyvista(self, *args, **kwargs):
+        """Alias for :meth:`plot3d`."""
+        return self.plot3d(*args, **kwargs)
 
     # -- composite mesh ------------------------------------------------------
 

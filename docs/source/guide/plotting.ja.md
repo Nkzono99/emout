@@ -106,7 +106,11 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 
 ## 3D プロット（PyVista）
 
-3D プロットには PyVista を使います。PyVista は `emout` の標準インストールに含まれます。2D 以下の `.plot()` は従来どおり matplotlib、3D ベクトルデータの `.plot()` と `.plot3d()` は PyVista を使います。
+PyVista backend を使うと、2D スライスを 3D 空間に配置したり、3D scalar / vector field を対話的に描画できます。詳しい API と重ね描きの例は [PyVista 可視化](pyvista.ja.md) を参照してください。
+
+```bash
+pip install "emout[pyvista]"
+```
 
 ```python
 # 3D scalar volume surface
@@ -118,28 +122,28 @@ data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)
 # 2D slice placed in 3D space
 data.phisp[-1, 100, :, :].plot3d(show=True)
 
-# 3D vector field: plot() defaults to PyVista streamlines
-data.j1xyz[-1].plot(show=True)
+# 3D vector field: plot3d() defaults to PyVista streamlines
+data.j1xyz[-1].plot3d(mode="stream", show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
 
 # Streamlines seeded from an xy plane, with tube radius scaled by |v|
-data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
 
 # Overlay MPIEMSES boundaries as solid transparent surfaces
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
-data.j1xyz[-1].plot(surfaces=data.boundaries, show=True)
+data.j1xyz[-1].plot3d(surfaces=data.boundaries, show=True)
 ```
 
 3D ストリームラインの seed は `seed_mode` で選べます。既定の `sphere` は従来どおり中心付近から開始します。`plane` は 2D streamline に近い見え方になりやすく、`volume` は領域全体、`surface` は境界メッシュ上から開始します。任意の開始点を固定したい場合は `seed_points` を渡します:
 
 ```python
-data.j1xyz[-1].plot(seed_mode="plane", seed_plane="xz", seed_position="center")
-data.j1xyz[-1].plot(seed_mode="volume", n_points=1000)
-data.j1xyz[-1].plot(seed_mode="surface", seed_surface=data.boundaries)
-data.j1xyz[-1].plot(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot3d(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot3d(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot3d(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
 ```
 
-### メッシュサーフェスの描画
+## メッシュサーフェスの描画
 
 PyVista の `surfaces=` は `data.boundaries`、`Boundary`、`MeshSurface3D`、`RenderItem` を受け取り、透明な実体面として重ね描きします。境界面をスカラー値で塗る、等高線を境界面上に描く、といった field-sampled な描画には既存の matplotlib ベースの `plot_surfaces` を使います:
 

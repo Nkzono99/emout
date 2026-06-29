@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Optional, Type
 
-
 from emout.plot.surface_cut import MeshSurface3D
 
 
@@ -128,3 +127,38 @@ class Boundary:
         ``boundary.mesh(ntheta=96).render(style="solid")``.
         """
         return self.mesh(use_si=use_si).render(**style_kwargs)
+
+    def plot3d(
+        self,
+        *,
+        use_si: bool = True,
+        mesh_kwargs: Optional[Mapping[str, Any]] = None,
+        plotter=None,
+        offsets=None,
+        show: bool = False,
+        color="0.7",
+        opacity: float = 0.6,
+        show_edges: bool = False,
+        add_axes: bool = True,
+        **kwargs,
+    ):
+        """Draw this boundary mesh on a PyVista plotter and return it.
+
+        ``mesh_kwargs`` is forwarded to :meth:`mesh`; remaining keyword
+        arguments are forwarded to PyVista ``plotter.add_mesh``.
+        """
+        mesh_kwargs = {} if mesh_kwargs is None else dict(mesh_kwargs)
+        return self.mesh(use_si=use_si, **mesh_kwargs).plot3d(
+            plotter=plotter,
+            offsets=offsets,
+            show=show,
+            color=color,
+            opacity=opacity,
+            show_edges=show_edges,
+            add_axes=add_axes,
+            **kwargs,
+        )
+
+    def plot_pyvista(self, *args, **kwargs):
+        """Alias for :meth:`plot3d`."""
+        return self.plot3d(*args, **kwargs)

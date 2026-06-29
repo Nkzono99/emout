@@ -436,7 +436,7 @@ def test_collection_render_returns_render_item(boundaries: BoundaryCollection):
     assert item.alpha == 0.5
 
 
-def test_collection_plot_pyvista_adds_overlay(monkeypatch, boundaries: BoundaryCollection):
+def test_collection_plot3d_adds_overlay(monkeypatch, boundaries: BoundaryCollection):
     from emout.plot import _pyvista_helpers as helpers
 
     class _FakePlotter:
@@ -458,7 +458,7 @@ def test_collection_plot_pyvista_adds_overlay(monkeypatch, boundaries: BoundaryC
     monkeypatch.setattr(helpers, "_require_pyvista", lambda: _FakePyVista)
     monkeypatch.setattr(helpers, "_add_surface_overlays", _fake_add_surface_overlays)
 
-    result = boundaries.plot_pyvista(
+    result = boundaries.plot3d(
         use_si=False,
         offsets=("left", None, None),
         show=True,
@@ -504,6 +504,93 @@ def test_collection_plot_pyvista_backend_dispatch(monkeypatch, boundaries: Bound
             },
         )
     ]
+
+
+def test_boundary_plot3d_delegates_to_mesh_pyvista(boundaries: BoundaryCollection, monkeypatch):
+    captured = {}
+
+    def fake_plot3d(self, **kwargs):
+        captured["mesh"] = self
+        captured["kwargs"] = kwargs
+        return "plotter"
+
+    monkeypatch.setattr(SphereMeshSurface, "plot3d", fake_plot3d)
+
+    result = boundaries[0].plot3d(
+        use_si=False,
+        mesh_kwargs={"ntheta": 12, "nphi": 6},
+        plotter="existing",
+        color="red",
+        opacity=0.4,
+        show=True,
+    )
+
+    assert result == "plotter"
+    assert captured["mesh"].ntheta == 12
+    assert captured["mesh"].nphi == 6
+    assert captured["mesh"].radius == 4.0
+    assert captured["kwargs"]["plotter"] == "existing"
+    assert captured["kwargs"]["color"] == "red"
+    assert captured["kwargs"]["opacity"] == pytest.approx(0.4)
+    assert captured["kwargs"]["show"] is True
+
+
+def test_collection_plot3d_mesh_kwargs_builds_composite(boundaries: BoundaryCollection, monkeypatch):
+    from emout.plot import _pyvista_helpers as helpers
+
+    class _FakePlotter:
+        pass
+
+    class _FakePyVista:
+        Plotter = _FakePlotter
+
+    captured = {}
+
+    def _fake_add_surface_overlays(plotter, surfaces, **kwargs):
+        captured["plotter"] = plotter
+        captured["surfaces"] = surfaces
+        captured["kwargs"] = kwargs
+        return plotter
+
+    monkeypatch.setattr(helpers, "_require_pyvista", lambda: _FakePyVista)
+    monkeypatch.setattr(helpers, "_add_surface_overlays", _fake_add_surface_overlays)
+
+    result = boundaries.plot3d(
+        use_si=False,
+        per={0: {"ntheta": 10}},
+        mesh_kwargs={"nphi": 5, "naxial": 3},
+        plotter="existing",
+        offsets=("left", None, None),
+        color="0.8",
+        opacity=0.5,
+        show_edges=True,
+    )
+
+    assert result == "existing"
+    assert captured["plotter"] is result
+    assert isinstance(captured["surfaces"], CompositeMeshSurface)
+    sphere_child = captured["surfaces"].children[0]
+    cylinder_child = captured["surfaces"].children[2]
+    assert sphere_child.ntheta == 10
+    assert sphere_child.nphi == 5
+    assert cylinder_child.naxial == 3
+    assert captured["kwargs"]["offsets"] == ("left", None, None)
+    assert captured["kwargs"]["surface_color"] == "0.8"
+    assert captured["kwargs"]["surface_opacity"] == pytest.approx(0.5)
+    assert captured["kwargs"]["show_edges"] is True
+
+
+def test_collection_plot_pyvista_aliases_plot3d(boundaries: BoundaryCollection, monkeypatch):
+    captured = {}
+
+    def fake_plot3d(self, **kwargs):
+        captured.update(kwargs)
+        return "plotter"
+
+    monkeypatch.setattr(BoundaryCollection, "plot3d", fake_plot3d)
+
+    assert boundaries.plot_pyvista(color="blue") == "plotter"
+    assert captured["color"] == "blue"
 
 
 # ---------------------------------------------------------------------------

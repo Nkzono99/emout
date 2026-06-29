@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,6 +51,71 @@ def test_box_mesh_surface_selects_requested_face():
     assert np.isclose(V[:, 0].max(), 2.0)
     assert np.isclose(V[:, 1].min(), 0.0)
     assert np.isclose(V[:, 1].max(), 3.0)
+
+
+def test_mesh_surface_plot3d_adds_pyvista_mesh(monkeypatch):
+    from emout.plot import _pyvista_surface
+
+    class FakePolyData:
+        def __init__(self, points, faces=None):
+            self.points = np.asarray(points)
+            self.faces = np.asarray(faces)
+
+    class FakePlotter:
+        def __init__(self):
+            self.meshes = []
+            self.axes_added = False
+            self.shown = False
+
+        def add_mesh(self, mesh, **kwargs):
+            self.meshes.append((mesh, kwargs))
+
+        def add_axes(self):
+            self.axes_added = True
+
+        def show(self):
+            self.shown = True
+
+    monkeypatch.setattr(
+        _pyvista_surface,
+        "_require_pyvista",
+        lambda: SimpleNamespace(Plotter=FakePlotter, PolyData=FakePolyData),
+    )
+
+    surface = BoxMeshSurface(
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        faces=("zmax",),
+        resolution=(2, 2),
+    )
+
+    plotter = surface.plot3d(
+        color="red",
+        opacity=0.25,
+        show_edges=True,
+        show=True,
+        name="boundary",
+    )
+
+    assert plotter.shown is True
+    assert plotter.axes_added is True
+    assert len(plotter.meshes) == 1
+    mesh, kwargs = plotter.meshes[0]
+    assert mesh.points.shape[1] == 3
+    assert mesh.faces.reshape(-1, 4)[:, 0].tolist() == [3, 3]
+    assert kwargs["color"] == "red"
+    assert kwargs["opacity"] == pytest.approx(0.25)
+    assert kwargs["show_edges"] is True
+    assert kwargs["name"] == "boundary"
+
+    existing = FakePlotter()
+    returned = surface.plot3d(plotter=existing, show=False)
+    assert returned is existing
+    assert len(existing.meshes) == 1
 
 
 def test_cylinder_mesh_surface_side_has_constant_radius():

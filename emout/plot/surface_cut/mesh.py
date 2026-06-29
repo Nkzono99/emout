@@ -108,6 +108,43 @@ class MeshSurface3D(ABC):
 
         return RenderItem(surface=self, **style_kwargs)
 
+    def to_pyvista(self, *, offsets=None):
+        """Return this triangle mesh as a PyVista ``PolyData`` object."""
+        from emout.plot.pyvista_plot import create_surface_mesh
+
+        return create_surface_mesh(self, offsets=offsets)
+
+    def plot3d(
+        self,
+        *,
+        plotter=None,
+        offsets=None,
+        show: bool = False,
+        color="0.7",
+        opacity: float = 0.6,
+        show_edges: bool = False,
+        add_axes: bool = True,
+        **kwargs,
+    ):
+        """Draw this mesh surface on a PyVista plotter and return it."""
+        from emout.plot.pyvista_plot import plot_surface_mesh
+
+        return plot_surface_mesh(
+            self,
+            plotter=plotter,
+            offsets=offsets,
+            show=show,
+            color=color,
+            opacity=opacity,
+            show_edges=show_edges,
+            add_axes=add_axes,
+            **kwargs,
+        )
+
+    def plot_pyvista(self, *args, **kwargs):
+        """Alias for :meth:`plot3d`."""
+        return self.plot3d(*args, **kwargs)
+
 
 def _normalize_count(value: int, *, name: str, minimum: int) -> int:
     ivalue = int(value)
