@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from .backtrace.solver_wrapper import BacktraceWrapper
+from .backtrace.trace_wrapper import TraceWrapper
 from .data.griddata_series import GridDataSeries
 from .data.vector_data import VectorData2d
 from .facade import Emout
@@ -178,6 +179,11 @@ class EmoutDataExtraction:
             Backtrace API bound to the underlying simulation data.
         """
         return self._data.backtrace
+
+    @property
+    def trace(self) -> TraceWrapper:
+        """Return the high-level trace workflow wrapper."""
+        return self._data.trace
 
     @property
     def extract_dir(self):

@@ -1,23 +1,26 @@
-# Backtrace (`data.backtrace`) — Experimental
+# Backtrace (`data.trace` / `data.backtrace`) — Experimental
 
-`data.backtrace` is the entry point for integrating particle trajectories
-**backwards in time** through EMSES fields. You can compute arrival
-probabilities (`get_probabilities`) or trajectories for individual
-particles (`get_backtrace` / `get_backtraces`). Results come back wrapped
-in dedicated containers that let you chain straight into visualization
-with shorthand like `.vxvz.plot()`.
+`data.trace` is the high-level workflow API for combining arrival
+probabilities, backward traces, and forward traces. The older
+`data.backtrace` entry point remains available as the lower-level API for
+single-particle traces and existing code.
+
+Calling `data.trace.forward(..., get_trace=True)` builds particles from a
+6-D phase-space grid, computes arrival probabilities when requested, and
+returns one result object that can plot probability-weighted trajectories.
 
 > **Requirements:** backtrace relies on the external
 > [`vdist-solver-fortran`](https://github.com/Nkzono99/vdist-solver-fortran)
 > package (`vdsolverf`). Install it with `pip install vdist-solver-fortran`.
-> Without it, calls to `data.backtrace.*` raise `ImportError`.
+> Without it, calls to `data.trace.*` / `data.backtrace.*` raise
+> `ImportError`.
 
 ## Input Unit Contract
 
-The `position`, `velocity`, and `dt` values passed to `data.backtrace`,
-and the `x` / `y` / `z` / `vx` / `vy` / `vz` axes passed to
-`get_probabilities()`, are **all EMSES simulation units**. emout does not
-convert these inputs from SI; it forwards them to `vdsolverf` unchanged.
+The `position`, `velocity`, and `dt` values passed to `data.trace` /
+`data.backtrace`, and the phase-space-grid `x` / `y` / `z` / `vx` / `vy` /
+`vz` axes, are **all EMSES simulation units**. emout does not convert
+these inputs from SI; it forwards them to `vdsolverf` unchanged.
 
 If you want to specify SI values, convert them to EMSES units with
 `data.unit` before calling the backtrace APIs:
@@ -108,6 +111,81 @@ result = data.backtrace.get_probabilities(
 
 result.vxvz.plot(cmap="viridis")      # heatmap in the vx-vz plane
 result.plot_energy_spectrum(scale="log")
+
+# High-level workflow: probability + forward trace in one result
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    ispec=0,
+    get_trace=True,
+)
+
+trace.plot("vx", "vz", cmap="viridis")      # ProbabilityResult projection
+trace.plot_traces("x", "z")                 # probability-weighted trajectories
+```
+
+## High-level workflow: `data.trace`
+
+`data.trace.backward()` / `data.trace.forward()` / `data.trace.both()`
+always return a :class:`TraceResult`. Payloads that were not requested are
+stored as `None`.
+
+```python
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+    get_probabilities=True,
+)
+
+trace.probabilities        # ProbabilityResult
+trace.forward_traces       # MultiBacktraceResult
+trace.backward_traces      # None
+trace.alpha                # np.clip(trace.probabilities.probabilities, 0, 1)
+
+trace.plot("vx", "vz")     # arrival-probability heatmap
+trace.plot_traces("x", "z")
+```
+
+Set `get_probabilities=False` to skip the probability solve, create only
+particles from the phase-space grid, and return trajectories. In that
+case `trace.probabilities` and `trace.alpha` are `None`, and
+`plot_traces()` uses a uniform alpha unless you pass one explicitly.
+
+```python
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+    get_probabilities=False,
+)
+
+trace.forward_traces.xz.plot(alpha=0.3)
+trace.plot_traces("x", "z", alpha=0.3)
+```
+
+`both()` computes backward and forward trajectories from the same
+phase-space grid. If probabilities are requested, the probability solve
+runs only once.
+
+```python
+trace = data.trace.both(..., get_trace=True)
+trace.backward_traces.xz.plot(alpha=trace.alpha)
+trace.forward_traces.xz.plot(alpha=trace.alpha)
+```
+
+For 3-D views, `plot3d()` returns a PyVista plotter. Pass an existing
+plotter to overlay traces on a field or boundary view.
+
+```python
+plotter = data.phisp[-1].plot3d(mode="slice", show=False)
+trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
 ```
 
 ## Single particle: `get_backtrace`

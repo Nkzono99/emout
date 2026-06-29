@@ -124,6 +124,10 @@ class TestDelegatedProperties:
         bt = ext.backtrace
         assert bt is not None
 
+    def test_trace(self, ext):
+        trace = ext.trace
+        assert trace is not None
+
 
 # ===================================================================
 # extract_dir computation

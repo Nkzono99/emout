@@ -424,6 +424,8 @@ result.drop()
 
 `data.backtrace...` と `data.remote().backtrace...` のどちらを使っても、返り値は
 同じ専用 proxy (`RemoteProbabilityResult` / `RemoteBacktraceResult`) です。
+高水準 workflow の `data.trace...` / `data.remote().trace...` は
+`RemoteTraceResult` を返し、確率計算と軌跡計算の中間データを worker 側に保持します。
 既存コードの流れを活かすなら前者、field や境界と同じ explicit-remote のスタイルに
 揃えたいなら後者を選びます:
 
@@ -435,14 +437,18 @@ with remote_scope():
     result = rdata.backtrace.get_probabilities(
         x, y, z, vx_range, vy_center, vz_range, ispec=0,
     )
+    trace = rdata.trace.forward(
+        x, y, z, vx_range, vy_center, vz_range, ispec=0, get_trace=True,
+    )
 
     with remote_figure():
         bt.tx.plot()
         result.vxvz.plot(cmap="viridis")
+        trace.plot_traces("x", "z")
 ```
 
 バックトレース API そのもの（`BacktraceResult` / `MultiBacktraceResult` /
-`ProbabilityResult` のショートハンドや軸一覧）は、専用の
+`ProbabilityResult` / `TraceResult` のショートハンドや軸一覧）は、専用の
 [バックトレースガイド](backtrace.ja.md) を参照してください。
 
 #### fetch() によるローカル加工

@@ -1,20 +1,22 @@
-# バックトレース (`data.backtrace`) — 実験的
+# バックトレース (`data.trace` / `data.backtrace`) — 実験的
 
-`data.backtrace` は、EMSES の電磁場に対して粒子の軌道を逆向きに積分する
-バックトレース機能への入口です。到達確率（`get_probabilities`）や
-個別粒子の軌跡（`get_backtrace` / `get_backtraces`）を計算でき、
-結果は専用コンテナに包まれて返るので `.vxvz.plot()` のような短い記法で
-可視化まで一直線につなげられます。
+`data.trace` は、到達確率、backward trace、forward trace をまとめて扱う
+高水準 workflow API です。従来の `data.backtrace` は低水準 API として残っており、
+単一粒子や既存コードではそのまま使えます。
+
+`data.trace.forward(..., get_trace=True)` のように呼ぶと、6D 位相空間グリッドから
+粒子を作り、必要なら到達確率を計算し、その確率を alpha に使った軌跡描画まで
+ひとつの結果オブジェクトから実行できます。
 
 > **要件:** バックトレースは外部の [`vdist-solver-fortran`](https://github.com/Nkzono99/vdist-solver-fortran)
 > パッケージ (`vdsolverf`) に依存します。`pip install vdist-solver-fortran` で
-> インストールしてください。未インストールの環境では `data.backtrace.*` の
+> インストールしてください。未インストールの環境では `data.trace.*` / `data.backtrace.*` の
 > 呼び出し時に `ImportError` が出ます。
 
 ## 入力単位の約束
 
-`data.backtrace` に渡す `position`、`velocity`、`dt`、および
-`get_probabilities()` の `x` / `y` / `z` / `vx` / `vy` / `vz` は
+`data.trace` / `data.backtrace` に渡す `position`、`velocity`、`dt`、および
+位相空間グリッドの `x` / `y` / `z` / `vx` / `vy` / `vz` は
 **すべて EMSES シミュレーション単位**です。値は SI から自動変換されず、
 `vdsolverf` にそのまま渡されます。
 
@@ -104,6 +106,78 @@ result = data.backtrace.get_probabilities(
 
 result.vxvz.plot(cmap="viridis")      # vx-vz 平面上のヒートマップ
 result.plot_energy_spectrum(scale="log")
+
+# 高水準 workflow: 確率 + forward trace をまとめて実行
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    ispec=0,
+    get_trace=True,
+)
+
+trace.plot("vx", "vz", cmap="viridis")      # ProbabilityResult の射影
+trace.plot_traces("x", "z")                 # 確率 alpha 付き軌跡
+```
+
+## 高水準 workflow：`data.trace`
+
+`data.trace.backward()` / `data.trace.forward()` / `data.trace.both()` は、
+常に :class:`TraceResult` を返します。要求しなかった payload は `None` です。
+
+```python
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+    get_probabilities=True,
+)
+
+trace.probabilities        # ProbabilityResult
+trace.forward_traces       # MultiBacktraceResult
+trace.backward_traces      # None
+trace.alpha                # np.clip(trace.probabilities.probabilities, 0, 1)
+
+trace.plot("vx", "vz")     # 到達確率 heatmap
+trace.plot_traces("x", "z")
+```
+
+`get_probabilities=False` にすると、確率計算を省略して phase-space grid から
+粒子だけを作り、軌跡だけを得ます。この場合 `trace.probabilities` と
+`trace.alpha` は `None` で、`plot_traces()` は一様な alpha で描画します。
+
+```python
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+    get_probabilities=False,
+)
+
+trace.forward_traces.xz.plot(alpha=0.3)
+trace.plot_traces("x", "z", alpha=0.3)
+```
+
+`both()` は同じ phase-space grid から backward / forward の両方を計算します。
+確率も要求した場合、確率計算は 1 回だけです。
+
+```python
+trace = data.trace.both(..., get_trace=True)
+trace.backward_traces.xz.plot(alpha=trace.alpha)
+trace.forward_traces.xz.plot(alpha=trace.alpha)
+```
+
+3D では PyVista plotter を返します。既存の 3D field / boundary 表示に重ねたい
+場合は、その plotter を渡します。
+
+```python
+plotter = data.phisp[-1].plot3d(mode="slice", show=False)
+trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
 ```
 
 ## 単一粒子：`get_backtrace`

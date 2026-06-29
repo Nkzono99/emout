@@ -15,6 +15,7 @@ from emout.local_data_policy import LOCAL_DATA_POLICY_ALLOW, normalize_local_dat
 from emout.utils import InpFile, Units
 
 from .backtrace.solver_wrapper import BacktraceWrapper
+from .backtrace.trace_wrapper import TraceWrapper
 from .data.griddata_series import GridDataSeries
 from .data.vector_data import VectorData2d, VectorData3d
 from .io.directory import DirectoryInspector
@@ -399,6 +400,16 @@ class Emout:
             parameters.
         """
         return BacktraceWrapper(
+            directory=self._dir_inspector.main_directory,
+            inp=self._dir_inspector.inp,
+            unit=self.unit,
+            remote_open_kwargs=self._remote_open_kwargs,
+        )
+
+    @property
+    def trace(self) -> TraceWrapper:
+        """Return the high-level trace workflow wrapper."""
+        return TraceWrapper(
             directory=self._dir_inspector.main_directory,
             inp=self._dir_inspector.inp,
             unit=self.unit,

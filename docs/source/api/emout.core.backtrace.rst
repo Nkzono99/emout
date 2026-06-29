@@ -36,6 +36,22 @@ emout.core.backtrace.solver\_wrapper module
    :show-inheritance:
    :undoc-members:
 
+emout.core.backtrace.trace\_result module
+------------------------------------------
+
+.. automodule:: emout.core.backtrace.trace_result
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+emout.core.backtrace.trace\_wrapper module
+-------------------------------------------
+
+.. automodule:: emout.core.backtrace.trace_wrapper
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 emout.core.backtrace.xy\_data module
 -------------------------------------
 

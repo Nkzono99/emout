@@ -434,6 +434,9 @@ result.drop()
 
 Both `data.backtrace...` and `data.remote().backtrace...` return the same
 dedicated proxies (`RemoteProbabilityResult` / `RemoteBacktraceResult`).
+The high-level `data.trace...` / `data.remote().trace...` workflow returns
+`RemoteTraceResult` and keeps intermediate probability and trajectory data
+on the worker.
 Use the former when you want to keep existing code almost unchanged, and
 the latter when you want one explicit-remote workflow across fields,
 boundaries, and backtrace results:
@@ -446,14 +449,18 @@ with remote_scope():
     result = rdata.backtrace.get_probabilities(
         x, y, z, vx_range, vy_center, vz_range, ispec=0,
     )
+    trace = rdata.trace.forward(
+        x, y, z, vx_range, vy_center, vz_range, ispec=0, get_trace=True,
+    )
 
     with remote_figure():
         bt.tx.plot()
         result.vxvz.plot(cmap="viridis")
+        trace.plot_traces("x", "z")
 ```
 
 For the backtrace API itself (`BacktraceResult` / `MultiBacktraceResult` /
-`ProbabilityResult`, shorthand attribute access, axis lists), see the
+`ProbabilityResult` / `TraceResult`, shorthand attribute access, axis lists), see the
 dedicated [backtrace guide](backtrace.md).
 
 #### Local customisation with fetch()

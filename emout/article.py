@@ -707,6 +707,11 @@ class ArticleReplayEmout:
         """Backtrace is not part of article replay bundles."""
         _raise_unsupported_replay_api("backtrace")
 
+    @property
+    def trace(self):
+        """Trace workflows are not part of article replay bundles."""
+        _raise_unsupported_replay_api("trace")
+
     def remote(self, *args, **kwargs):
         """Remote execution is not available for article replay bundles."""
         _raise_unsupported_replay_api("remote")

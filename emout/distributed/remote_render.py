@@ -211,6 +211,15 @@ class RemoteSession:
         self._cache[key] = result
         return True
 
+    def compute_trace(self, key: str, emout_kwargs=None, **kwargs) -> bool:
+        """Run a high-level trace workflow and cache the integrated result."""
+        data = self._resolve(emout_kwargs)
+        kwargs = self._decode_remote_value(kwargs)
+        method = kwargs.pop("method")
+        result = getattr(data.trace, method)(**kwargs)
+        self._cache[key] = result
+        return True
+
     def _decode_remote_value(self, value):
         if isinstance(value, dict):
             if set(value) == {_REMOTE_REF_MARKER}:
@@ -453,6 +462,56 @@ class RemoteSession:
         xy = result.pair(var1, var2)
         return self._render_to_bytes(
             lambda fig, ax: xy.plot(ax=ax, **plot_kwargs),
+            fmt,
+            dpi,
+        )
+
+    def render_trace_plot(
+        self,
+        key: str,
+        var1: str = "vx",
+        var2: str = "vz",
+        kind: str = "auto",
+        direction: Optional[str] = None,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
+    ) -> bytes:
+        """Render a cached TraceResult plot on the worker."""
+        result = self._cache[key]
+        return self._render_to_bytes(
+            lambda fig, ax: result.plot(
+                var1=var1,
+                var2=var2,
+                kind=kind,
+                direction=direction,
+                ax=ax,
+                **plot_kwargs,
+            ),
+            fmt,
+            dpi,
+        )
+
+    def render_trace_traces(
+        self,
+        key: str,
+        var1: str = "x",
+        var2: str = "z",
+        direction: Optional[str] = None,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
+    ) -> bytes:
+        """Render cached TraceResult trajectories on the worker."""
+        result = self._cache[key]
+        return self._render_to_bytes(
+            lambda fig, ax: result.plot_traces(
+                var1=var1,
+                var2=var2,
+                direction=direction,
+                ax=ax,
+                **plot_kwargs,
+            ),
             fmt,
             dpi,
         )
@@ -1051,6 +1110,8 @@ class RemoteEmout:
     def __getattr__(self, name: str):
         if name == "backtrace":
             return RemoteBacktraceWrapper(self._session, self._emout_kwargs)
+        if name == "trace":
+            return RemoteTraceWrapper(self._session, self._emout_kwargs)
         key = _next_key("ref")
         _await_remote(self._session.cache_emout_attr(key, self._emout_kwargs, name))
         return RemoteRef(self._session, key)
@@ -1138,6 +1199,58 @@ class RemoteBacktraceWrapper:
     def __repr__(self):
         directory = self._emout_kwargs.get("output_directory", self._emout_kwargs.get("directory"))
         return f"<RemoteBacktraceWrapper directory={directory!r}>"
+
+
+class RemoteTraceWrapper:
+    """Explicit-remote proxy for ``Emout.trace`` workflow methods."""
+
+    def __init__(self, session: RemoteSession, emout_kwargs: dict[str, Any]):
+        self._session = session
+        self._emout_kwargs = dict(emout_kwargs)
+        self._ref: Optional[RemoteRef] = None
+
+    def _ensure_ref(self) -> "RemoteRef":
+        if self._ref is None:
+            key = _next_key("ref")
+            _await_remote(self._session.cache_emout_attr(key, self._emout_kwargs, "trace"))
+            self._ref = RemoteRef(self._session, key)
+        return self._ref
+
+    def backward(self, x, y, z, vx, vy, vz, **kwargs) -> "RemoteTraceResult":
+        return self._compute("backward", x, y, z, vx, vy, vz, **kwargs)
+
+    def forward(self, x, y, z, vx, vy, vz, **kwargs) -> "RemoteTraceResult":
+        return self._compute("forward", x, y, z, vx, vy, vz, **kwargs)
+
+    def both(self, x, y, z, vx, vy, vz, **kwargs) -> "RemoteTraceResult":
+        return self._compute("both", x, y, z, vx, vy, vz, **kwargs)
+
+    def _compute(self, method: str, x, y, z, vx, vy, vz, **kwargs) -> "RemoteTraceResult":
+        key = _next_key("trace")
+        kwargs = dict(kwargs)
+        kwargs["remote"] = False
+        _await_remote(
+            self._session.compute_trace(
+                key,
+                emout_kwargs=self._emout_kwargs,
+                method=method,
+                x=x,
+                y=y,
+                z=z,
+                vx=vx,
+                vy=vy,
+                vz=vz,
+                **kwargs,
+            )
+        )
+        return RemoteTraceResult(self._session, key)
+
+    def __getattr__(self, name: str):
+        return getattr(self._ensure_ref(), name)
+
+    def __repr__(self):
+        directory = self._emout_kwargs.get("output_directory", self._emout_kwargs.get("directory"))
+        return f"<RemoteTraceWrapper directory={directory!r}>"
 
 
 class RemoteRef:
@@ -1834,6 +1947,142 @@ class RemoteBacktraceResult:
 
     def __repr__(self):
         return f"<RemoteBacktraceResult (key={self._key!r})>"
+
+
+class RemoteTraceResult:
+    """Proxy with the same high-level interface as ``TraceResult``."""
+
+    def __init__(self, session: RemoteSession, cache_key: str):
+        self._session = session
+        self._key = cache_key
+        _register_remote_key(session, cache_key)
+
+    def fetch(self):
+        """Fetch the remote trace result as a local object."""
+        return _await_remote(self._session.fetch_object(self._key))
+
+    @property
+    def probabilities(self) -> RemoteRef:
+        return self._cached_attr("probabilities")
+
+    @property
+    def backward_traces(self) -> RemoteRef:
+        return self._cached_attr("backward_traces")
+
+    @property
+    def forward_traces(self) -> RemoteRef:
+        return self._cached_attr("forward_traces")
+
+    @property
+    def traces(self) -> RemoteRef:
+        return self._cached_attr("traces")
+
+    @property
+    def alpha(self) -> RemoteRef:
+        return self._cached_attr("alpha")
+
+    def _cached_attr(self, name: str) -> RemoteRef:
+        key = _next_key("ref")
+        _await_remote(self._session.cache_attr(key, self._key, name))
+        return RemoteRef(self._session, key)
+
+    def pair(self, var1: str, var2: str) -> RemoteHeatmap:
+        return RemoteHeatmap(self._session, self._key, var1, var2)
+
+    def plot(
+        self,
+        var1: str = "vx",
+        var2: str = "vz",
+        kind: str = "auto",
+        direction: Optional[str] = None,
+        ax=None,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
+    ):
+        from .remote_figure import bind_session, is_recording, record_cached_plot
+
+        if is_recording():
+            bind_session(self._session)
+            record_cached_plot(
+                self._key,
+                {
+                    "var1": var1,
+                    "var2": var2,
+                    "kind": kind,
+                    "direction": direction,
+                    **plot_kwargs,
+                },
+            )
+            return None
+        img = self._session.render_trace_plot(
+            self._key,
+            var1=var1,
+            var2=var2,
+            kind=kind,
+            direction=direction,
+            fmt=fmt,
+            dpi=dpi,
+            **plot_kwargs,
+        ).result()
+        return display_image(img, ax=ax)
+
+    def plot_probabilities(
+        self,
+        var1: str = "vx",
+        var2: str = "vz",
+        ax=None,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
+    ):
+        return self.plot(var1=var1, var2=var2, kind="probability", ax=ax, fmt=fmt, dpi=dpi, **plot_kwargs)
+
+    def plot_traces(
+        self,
+        var1: str = "x",
+        var2: str = "z",
+        direction: Optional[str] = None,
+        ax=None,
+        fmt: str = "png",
+        dpi: int = 150,
+        **plot_kwargs,
+    ):
+        from .remote_figure import bind_session, is_recording, record_cached_plot
+
+        if is_recording():
+            bind_session(self._session)
+            record_cached_plot(
+                self._key,
+                {
+                    "var1": var1,
+                    "var2": var2,
+                    "kind": "trace",
+                    "direction": direction,
+                    **plot_kwargs,
+                },
+            )
+            return None
+        img = self._session.render_trace_traces(
+            self._key,
+            var1=var1,
+            var2=var2,
+            direction=direction,
+            fmt=fmt,
+            dpi=dpi,
+            **plot_kwargs,
+        ).result()
+        return display_image(img, ax=ax)
+
+    def plot3d(self, *args, **kwargs):
+        """Fetch locally and delegate to ``TraceResult.plot3d``."""
+        return self.fetch().plot3d(*args, **kwargs)
+
+    def drop(self) -> None:
+        self._session.drop(self._key)
+
+    def __repr__(self):
+        return f"<RemoteTraceResult (key={self._key!r})>"
 
 
 # ---------------------------------------------------------------------------

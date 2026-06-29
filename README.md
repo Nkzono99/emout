@@ -101,7 +101,7 @@ data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
 | **パラメータ** | `data.inp.nx`, `data.toml.species[0].wp` | [→ パラメータ](https://nkzono99.github.io/emout/guide/inp.ja.html) |
 | **単位変換** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ 単位変換](https://nkzono99.github.io/emout/guide/units.ja.html) |
 | **境界メッシュ** | `data.boundaries.mesh()`, `plot_surfaces` へのオーバーレイ | [→ 境界メッシュ](https://nkzono99.github.io/emout/guide/boundaries.ja.html) |
-| **バックトレース** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
+| **バックトレース** | `data.trace.forward(...)`, `data.backtrace.get_probabilities(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ クイックスタート](https://nkzono99.github.io/emout/guide/quickstart.ja.html) |
 | **リモート実行** | Dask Actor で計算ノードに処理を委譲、ローカルは画像だけ | [→ リモート実行](https://nkzono99.github.io/emout/guide/distributed.ja.html) |
 | **論文用公開データ** | `plot()` / `to_numpy()` に使った最小スライスを記録・再生 | [→ 論文用データ](https://nkzono99.github.io/emout/guide/article.ja.html) |

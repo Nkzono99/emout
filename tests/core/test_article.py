@@ -922,6 +922,8 @@ def test_replay_unsupported_api_raises_clear_error(tmp_path):
         replay.particle(1)
     with pytest.raises(NotImplementedError, match="Article replay"):
         replay.backtrace
+    with pytest.raises(NotImplementedError, match="Article replay"):
+        replay.trace
 
 
 def test_record_copies_diagnostic_files_for_replay(tmp_path):

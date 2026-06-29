@@ -118,6 +118,11 @@ class FakeActorSession:
 
         return FakeFuture(RemoteSession.compute_backtraces(self, key, emout_kwargs=emout_kwargs, **kwargs))
 
+    def compute_trace(self, key, emout_kwargs=None, **kwargs):
+        from emout.distributed.remote_render import RemoteSession
+
+        return FakeFuture(RemoteSession.compute_trace(self, key, emout_kwargs=emout_kwargs, **kwargs))
+
     def fetch_object(self, key):
         from emout.distributed.remote_render import RemoteSession
 
@@ -301,6 +306,32 @@ def test_remote_emout_backtrace_returns_specialized_probability_proxy():
     assert backtrace.calls[0][1]["remote"] is False
 
 
+def test_remote_emout_trace_returns_specialized_trace_proxy():
+    from emout.distributed.remote_render import RemoteEmout, RemoteTraceResult, RemoteTraceWrapper
+
+    trace_result = SimpleNamespace(kind="trace-result")
+
+    class DummyTrace:
+        def __init__(self):
+            self.calls = []
+
+        def forward(self, *args, **kwargs):
+            self.calls.append((args, kwargs))
+            return trace_result
+
+    trace = DummyTrace()
+    session = FakeActorSession(emout=SimpleNamespace(trace=trace))
+    remote_data = RemoteEmout(session, {"directory": "/tmp/input"})
+
+    wrapper = remote_data.trace
+    result = wrapper.forward(1, 2, 3, 4, 5, 6, get_trace=True)
+
+    assert isinstance(wrapper, RemoteTraceWrapper)
+    assert isinstance(result, RemoteTraceResult)
+    assert result.fetch() is trace_result
+    assert trace.calls[0][1]["remote"] is False
+
+
 def test_remote_probability_particles_can_seed_remote_backtraces():
     from emout.distributed.remote_render import RemoteBacktraceResult, RemoteEmout, RemoteRef
 
@@ -412,6 +443,46 @@ def test_remote_backtrace_xy_plot_replays_inside_remote_figure(monkeypatch):
         bt.xz.plot()
         plt.title("single particle backtrace: x-z")
 
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
+def test_remote_trace_plot_replays_inside_remote_figure(monkeypatch):
+    from emout.core.backtrace.trace_result import TraceResult
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteTraceResult
+
+    captured = {}
+
+    class DummyXY:
+        def plot(self, **kwargs):
+            captured.update(kwargs)
+            return "axes"
+
+    class DummyTraces:
+        def pair(self, var1, var2):
+            captured["pair"] = (var1, var2)
+            return DummyXY()
+
+    session = FakeActorSession()
+    session._cache["trace_0"] = TraceResult(direction="forward", forward_traces=DummyTraces())
+    displayed = []
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    trace = RemoteTraceResult(session, "trace_0")
+    with remote_figure(session=session):
+        trace.plot_traces("x", "z", color="black")
+        plt.title("forward trace: x-z")
+
+    assert captured["pair"] == ("x", "z")
+    assert captured["color"] == "black"
     assert len(displayed) == 1
     assert displayed[0][0]
 
