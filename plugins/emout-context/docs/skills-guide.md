@@ -18,6 +18,7 @@ Lang: [日本語](skills-guide.md) | [English](skills-guide.en.md)
 | --- | --- | --- | --- | --- |
 | `emout-usage-guide` | emout の基本的な使い方、変数アクセス、単位変換、パラメータ参照を案内する | 出力ディレクトリ、目的の物理量、入力ファイル形式 | 最小コード例、軸順序、単位変換、次に読む guide | `README.md`, `quickstart.ja.md`, `inp.ja.md`, `units.ja.md` |
 | `emout-article-publication` | 論文・公開データ用の article record/replay、環境変数、archive、平均データ保存を案内する | 可視化 script、公開データ要件、records path、複数 simulation、平均範囲 | record/replay 実行方法、環境変数、保存粒度、注意点 | `article-publication.md`, `usage-workflows.md` |
+| `emout-pyvista-3d-visualization` | PyVista 3D scene、境界・trace 重ね描き、streamline seed、保存、HPC 実行を案内する | 物理量、3D layer、境界/trace の有無、保存形式、実行環境 | `plot3d()` 手順、重ね描き例、保存方法、注意点 | `pyvista.ja.md`, `plotting.ja.md`, `boundaries.ja.md`, `backtrace.ja.md` |
 | `emout-visualization-workflow` | 1D/2D/3D プロット、アニメーション、境界オーバーレイを設計する | 物理量、スライス条件、表示形式、出力先 | プロット手順、Python 例、依存関係、保存方法 | `plotting.ja.md`, `animation.ja.md`, `boundaries.ja.md`, `distributed.ja.md`, `backtrace.ja.md` |
 | `emout-visualization-script` | 自然言語の依頼や既存 script から可視化 script を作成・改善する | 目的、出力ディレクトリ、物理量、既存 script、HPC 制約 | runnable script、remote 実行版、実行手順、前提条件 | `quickstart.ja.md`, `plotting.ja.md`, `animation.ja.md`, `distributed.ja.md`, `backtrace.ja.md` |
 | `emout-output-diagnose` | 読み込み失敗、plot エラー、単位変換、remote execution の問題を切り分ける | traceback、出力一覧、入力ファイル、実行環境 | 原因候補、確認コマンド、最小対処、追加で必要な情報 | `quickstart.ja.md`, `inp.ja.md`, `units.ja.md`, `backtrace.ja.md`, `analysis-pitfalls.md` |
@@ -31,6 +32,7 @@ Lang: [日本語](skills-guide.md) | [English](skills-guide.en.md)
 emout で output_dir の phisp を xz 平面で描画したい。
 論文公開用に data.phisp[-20:].mean().plot_surfaces(..., bounds=...) の record/replay 方法を教えて。
 output_dir の phisp と nd1p を 2 パネルで保存する script を作って。大きいので remote_figure を使って。
+phisp の 3D slice に j1xyz streamlines と data.boundaries を PyVista で重ねて png 保存したい。
 この traceback から emout の読み込み失敗を診断して。
 この analysis.py の軸順序と SI 変換が正しいかレビューして。
 emout の remote_figure が使いづらかった点を maintainer に送る feedback にして。

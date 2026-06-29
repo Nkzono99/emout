@@ -30,8 +30,7 @@ emout でできること:
 ```bash
 pip install emout
 
-# 3D 可視化（PyVista）を使う場合
-pip install "emout[pyvista]"
+# PyVista による 3D 可視化も標準インストールに含まれます
 
 # インストール済み version と PyPI の更新確認
 emout version --check-update
@@ -79,7 +78,7 @@ data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
 | **単位変換** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ 単位変換](https://nkzono99.github.io/emout/guide/units.ja.html) |
 | **境界メッシュ** | `data.boundaries.mesh()`, `plot_surfaces` へのオーバーレイ | [→ 境界メッシュ](https://nkzono99.github.io/emout/guide/boundaries.ja.html) |
 | **バックトレース** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
-| **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ クイックスタート](https://nkzono99.github.io/emout/guide/quickstart.ja.html) |
+| **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista 可視化](https://nkzono99.github.io/emout/guide/pyvista.ja.html) |
 | **リモート実行** | Dask Actor で計算ノードに処理を委譲、ローカルは画像だけ | [→ リモート実行](https://nkzono99.github.io/emout/guide/distributed.ja.html) |
 
 ---

@@ -11,7 +11,7 @@
     {
       "name": "emout-context",
       "source": "./plugins/emout-context",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "description": "User-facing guidance for loading, plotting, scripting, diagnosing, and reporting emout analyses.",
       "author": {
         "name": "Nkzono99",

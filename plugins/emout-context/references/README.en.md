@@ -30,8 +30,7 @@ emout is:
 ```bash
 pip install emout
 
-# For 3D visualization with PyVista
-pip install "emout[pyvista]"
+# PyVista-based 3D visualization is included in the standard install
 
 # Check the installed version and whether PyPI has a newer release
 emout version --check-update
@@ -79,7 +78,7 @@ See the user guide for detailed usage of each feature.
 | **Unit conversion** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ Units](https://nkzono99.github.io/emout/guide/units.html) |
 | **Boundary meshes** | `data.boundaries.mesh()`, overlay on `plot_surfaces` | [→ Boundaries](https://nkzono99.github.io/emout/guide/boundaries.html) |
 | **Backtrace** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
-| **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ Quick Start](https://nkzono99.github.io/emout/guide/quickstart.html) |
+| **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista Visualization](https://nkzono99.github.io/emout/guide/pyvista.html) |
 | **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
 
 ---

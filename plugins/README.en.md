@@ -8,7 +8,7 @@ This directory contains Codex and Claude Code plugins that package the context n
 
 | Plugin | Contents |
 | --- | --- |
-| [emout-context](emout-context/README.en.md) | Skills and bundled references for loading outputs, creating and improving visualization scripts, unit conversion, boundaries, large-scale visualization with `remote_scope` / `remote_figure`, troubleshooting, feedback, and issue reporting |
+| [emout-context](emout-context/README.en.md) | Skills and bundled references for loading outputs, PyVista 3D visualization, creating and improving visualization scripts, unit conversion, boundaries, large-scale visualization with `remote_scope` / `remote_figure`, troubleshooting, feedback, and issue reporting |
 
 ## Codex Installation
 

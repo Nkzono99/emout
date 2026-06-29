@@ -6,11 +6,7 @@
 pip install emout
 ```
 
-3D 可視化（PyVista）を使う場合:
-
-```bash
-pip install "emout[pyvista]"
-```
+PyVista による 3D 可視化も標準インストールに含まれます。
 
 > Dask によるリモート実行は Python 3.10 以上で自動的に有効になります（別途インストール不要）。
 

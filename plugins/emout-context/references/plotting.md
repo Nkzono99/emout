@@ -106,27 +106,53 @@ data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 
 ## 3D Plotting with PyVista
 
-For 3D visualization, install the optional PyVista dependency:
+The PyVista backend can place 2-D slices in 3-D space and render 3-D scalar / vector fields interactively. See [PyVista Visualization](pyvista.md) for the full API and overlay examples.
 
 ```bash
-pip install "emout[pyvista]"
+pip install emout
 ```
 
 ```python
-# 3D volume rendering
+# 3D scalar volume surface
 data.phisp[-1, :, :, :].plot3d(mode="box", show=True)
+
+# 3D scalar isosurfaces
+data.phisp[-1].plot3d(mode="contour", levels=[0.0, 5.0], show=True)
 
 # 2D slice placed in 3D space
 data.phisp[-1, 100, :, :].plot3d(show=True)
 
-# 3D vector field
+# 3D vector field: plot3d() defaults to PyVista streamlines
 data.j1xyz[-1].plot3d(mode="stream", show=True)
 data.j1xyz[-1].plot3d(mode="quiver", show=True)
+
+# Streamlines seeded from an xy plane, with tube radius scaled by |v|
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xy", tube_radius="magnitude", show=True)
+
+# Overlay MPIEMSES boundaries as solid transparent surfaces
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], surfaces=data.boundaries, show=True)
+data.j1xyz[-1].plot3d(surfaces=data.boundaries, show=True)
 ```
 
-### Mesh Surface Rendering
+Choose 3D streamline seeds with `seed_mode`. The default `sphere` mode keeps the previous centre-source behaviour. `plane` often gives a view closest to 2D streamlines, `volume` fills the whole domain, and `surface` starts from boundary mesh vertices. Pass `seed_points` when you want fixed custom start points:
 
-For face-oriented 3D rendering with explicit mesh surfaces:
+```python
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot3d(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot3d(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot3d(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+```
+
+## Mesh Surface Rendering
+
+PyVista's `surfaces=` accepts `data.boundaries`, `Boundary`, `MeshSurface3D`, or `RenderItem` and overlays them as solid transparent surfaces. For field-sampled rendering, such as colouring boundary faces by scalar values or drawing contours on those faces, use the existing matplotlib-based `plot_surfaces` path:
+
+PyVista 3D plots can also be saved with `filename=`. Image suffixes such as `.png` use a screenshot. `.html` exports an interactive HTML view when PyVista's Jupyter/trame extras are installed. `savefilename=` is accepted as a compatibility alias matching the existing 2D plot API:
+
+```python
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
+data.j1xyz[-1].plot3d(surfaces=data.boundaries, filename="j1_stream.html")
+```
 
 ```python
 import matplotlib.pyplot as plt

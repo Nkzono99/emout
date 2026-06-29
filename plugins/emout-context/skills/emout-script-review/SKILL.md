@@ -27,7 +27,7 @@ Use this skill when a user asks whether an emout analysis script is correct, why
 - Check vector attributes and slice planes for component mismatch.
 - If the script calls `data.backtrace`, check that `position`, `velocity`, `dt`, and probability-grid axes are EMSES-unit values, or are converted from SI with `data.unit.length.trans(...)`, `data.unit.v.trans(...)`, or `data.unit.t.trans(...)`.
 - Check plotting code for unnecessary global matplotlib state when the user wants reusable scripts.
-- Check optional dependencies such as PyVista only when 3D plotting is involved.
+- For PyVista 3D plotting, check that overlays reuse a `plotter`, that `show=False` / screenshots are used for batch environments, and that emout 2.20.0+ installs PyVista as a regular dependency.
 - If the script is intended for publication/article data, check that `plot_surfaces()` has `bounds`, time averages use `data.field[-N:].mean()`, and record/replay can be controlled with `EMOUT_ARTICLE_*` environment variables.
 - For HPC use, suggest explicit `Emout.remote()`, `remote_scope()`, and `remote_figure()` when it reduces data transfer or login-node work.
 - Treat `RemoteSession` as internal architecture. Recommend direct `RemoteSession` construction only for maintainers or tests.

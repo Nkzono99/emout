@@ -13,7 +13,7 @@ The same classes of mistakes often appear in emout user questions. During diagno
 | `val_si` or displayed units look wrong | Whether `!!key` or `[meta.unit_conversion]` is present | Check unit conversion metadata; without it, treat values as EMSES units |
 | A variable attribute is missing | Whether HDF5 filenames map to the expected EMSES variable names | Check `ls *.h5` and the variable resolution rules in the guides |
 | Vector plots do not match expectations | Whether `j1xy` / `j1xyz` components match the slice plane | Choose the vector attribute that matches the view plane |
-| 3D plotting raises an import error | Whether PyVista is installed | Suggest `pip install "emout[pyvista]"` |
+| 3D plotting raises an import error | Whether emout / PyVista dependencies are current | Update to emout 2.20.0+ and reinstall stale editable environments |
 | Boundaries do not render | Whether `data.boundaries` is empty or the finbound shape is supported | Check the input boundary settings and the boundaries guide |
 | Remote plotting fails | Python 3.10+, Dask server, TLS settings, session name | Check `emout server status` and the distributed guide |
 | Continuation output is not joined | Whether appended output was requested | Try `emout.Emout("output_dir", ad="auto")` |

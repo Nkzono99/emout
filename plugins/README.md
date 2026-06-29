@@ -8,7 +8,7 @@ Lang: [日本語](README.md) | [English](README.en.md)
 
 | Plugin | 内容 |
 | --- | --- |
-| [emout-context](emout-context/README.md) | 出力読み込み、可視化 script 作成・改善、単位変換、境界、`remote_scope` / `remote_figure` を使う大規模可視化、トラブルシュート、feedback / issue 作成補助用の skill と同梱 reference |
+| [emout-context](emout-context/README.md) | 出力読み込み、PyVista 3D 可視化、可視化 script 作成・改善、単位変換、境界、`remote_scope` / `remote_figure` を使う大規模可視化、トラブルシュート、feedback / issue 作成補助用の skill と同梱 reference |
 
 ## Codex での導入
 

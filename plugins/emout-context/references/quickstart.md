@@ -6,11 +6,7 @@
 pip install emout
 ```
 
-For 3D visualization with PyVista:
-
-```bash
-pip install "emout[pyvista]"
-```
+PyVista-based 3D visualization is included in the standard install.
 
 > Dask-based remote execution is automatically available on Python 3.10+ (no extra install needed).
 

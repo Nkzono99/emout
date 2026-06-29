@@ -42,7 +42,7 @@ data.phisp[-1].val_si        # SI 値の ndarray
 
 - 1D/2D は `plot()`、`cmap()`、`contour()` を基本にする。
 - 時系列は `gifplot()` で GIF/HTML にできる。
-- 3D は `plot3d()` を使い、必要なら `pip install "emout[pyvista]"` を案内する。
+- 3D は `plot3d()` を使う。PyVista は emout 2.20.0 以降の通常依存なので、import error では古い環境や editable install の依存更新を疑う。
 - 境界は `data.boundaries` から `mesh()` を作り、`plot_surfaces` などに渡す。
 - HPC では `emout server start` と `Emout.remote()` / `remote_figure()` で計算ノードに処理を寄せられる。
 - 大規模可視化 script では、`RemoteSession` を直接作るより `Emout.remote()`、`remote_scope()`、`remote_figure()`、`RemoteFigure` を使う。`RemoteSession` は共有 Dask Actor の内部名として説明する。

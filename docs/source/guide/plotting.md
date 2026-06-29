@@ -151,7 +151,7 @@ PyVista 3D plots can also be saved with `filename=`. Image suffixes such as `.pn
 
 ```python
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
-data.j1xyz[-1].plot(surfaces=data.boundaries, filename="j1_stream.html")
+data.j1xyz[-1].plot3d(surfaces=data.boundaries, filename="j1_stream.html")
 ```
 
 ```python

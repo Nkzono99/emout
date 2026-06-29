@@ -1,6 +1,6 @@
 {
   "name": "emout-context",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Context, workflows, and skills for emout users analyzing EMSES simulation outputs.",
   "author": {
     "name": "Nkzono99",
@@ -20,8 +20,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "emout Context",
-    "shortDescription": "User-facing guidance for loading, plotting, scripting, diagnosing, and reporting emout analyses.",
-    "longDescription": "Skills and bundled references for using emout with EMSES outputs: loading HDF5 grids and text diagnostics, slicing data in the correct axis order, applying SI conversion, generating and improving visualization scripts, using boundary meshes, remote_scope, remote_figure, and RemoteFigure for large HPC outputs, recording and replaying minimal article publication data, diagnosing common failures, reviewing analysis scripts, collecting maintainer-ready feedback, and preparing concise GitHub issues.",
+    "shortDescription": "User-facing guidance for loading, PyVista 3D plotting, scripting, diagnosing, and reporting emout analyses.",
+    "longDescription": "Skills and bundled references for using emout with EMSES outputs: loading HDF5 grids and text diagnostics, slicing data in the correct axis order, applying SI conversion, generating and improving visualization scripts, creating PyVista 3D scenes with scalar/vector fields, boundary meshes, and trace overlays, using remote_scope, remote_figure, and RemoteFigure for large HPC outputs, recording and replaying minimal article publication data, diagnosing common failures, reviewing analysis scripts, collecting maintainer-ready feedback, and preparing concise GitHub issues.",
     "developerName": "Nkzono99",
     "category": "Productivity",
     "capabilities": [
@@ -31,6 +31,7 @@
     "websiteURL": "https://github.com/Nkzono99/emout",
     "defaultPrompt": [
       "Create an emout visualization script for this EMSES output directory.",
+      "Create a PyVista 3D view with scalar fields, streamlines, boundaries, and trace overlays.",
       "Record and replay minimal article data for a paper figure.",
       "Diagnose this emout loading or plotting error.",
       "Improve my emout analysis script and use remote_figure for large data.",

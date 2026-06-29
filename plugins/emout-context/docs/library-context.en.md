@@ -42,7 +42,7 @@ For outputs without unit conversion metadata, do not assume `val_si` is valid. F
 
 - Use `plot()`, `cmap()`, and `contour()` for 1D/2D views.
 - Use `gifplot()` for GIF/HTML time-series output.
-- Use `plot3d()` for 3D views, and suggest `pip install "emout[pyvista]"` when needed.
+- Use `plot3d()` for 3D views. PyVista is a regular dependency in emout 2.20.0+, so import errors usually indicate an old environment or stale editable install.
 - Build boundary meshes from `data.boundaries` and pass them to APIs such as `plot_surfaces`.
 - On HPC systems, `emout server start` plus `Emout.remote()` / `remote_figure()` can offload work to compute nodes.
 - For large visualization scripts, use `Emout.remote()`, `remote_scope()`, `remote_figure()`, or `RemoteFigure` instead of constructing `RemoteSession` directly. Explain `RemoteSession` as the internal shared Dask Actor.

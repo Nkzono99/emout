@@ -26,7 +26,7 @@ Use this skill when a user provides an emout traceback, says an output directory
 - Check whether full arrays are loaded before slicing for memory or performance failures.
 - Check `!!key` or `[meta.unit_conversion]` before diagnosing SI conversion.
 - For backtrace problems, verify whether SI values were accidentally passed to APIs that require EMSES-unit inputs.
-- For 3D plotting failures, check whether PyVista is installed.
+- For 3D plotting failures, check whether the installed emout environment includes PyVista; in emout 2.20.0+ it is a regular dependency, so stale editable installs may need reinstalling.
 - For remote failures, check Python 3.10+, `emout server status`, session naming, and whether the server is already running.
 - When the user says `remote_session`, map that to the internal shared `RemoteSession` architecture and check whether their script should instead use `Emout.remote()`, `remote_scope()`, `remote_figure()`, or `RemoteFigure`.
 - For suspected emout bugs, reduce the reproduction to the smallest output listing, input snippet, script, and traceback.

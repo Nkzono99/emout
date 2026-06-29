@@ -119,6 +119,7 @@ Add `hooks/`, `.mcp.json`, `.app.json`, or `assets/` at the plugin root only whe
 
 - `emout-usage-guide`: guidance for `emout.Emout` loading, variable access, slicing, unit conversion, and parameter inspection
 - `emout-article-publication`: guidance for article record/replay, environment variables, archives, and averaged data for paper/publication bundles
+- `emout-pyvista-3d-visualization`: guidance for PyVista `plot3d()` / `plot_pyvista()`, scalar/vector 3D views, boundary and trace overlays, saving, and HPC execution
 - `emout-visualization-workflow`: plot design for 1D/2D/3D views, animations, boundary overlays, and remote rendering
 - `emout-visualization-script`: create or improve emout visualization scripts from natural-language plotting requests or existing scripts, including `remote_scope` / `remote_figure`
 - `emout-output-diagnose`: diagnosis for loading failures, HDF5/input mismatches, unit conversion, optional dependencies, and remote execution
@@ -135,6 +136,7 @@ See [docs/skills-guide.en.md](docs/skills-guide.en.md) for detailed skill select
 - `README.md` / `README.en.md`
 - `quickstart.ja.md` / `quickstart.md`
 - `plotting.ja.md` / `plotting.md`
+- `pyvista.ja.md` / `pyvista.md`
 - `animation.ja.md` / `animation.md`
 - `article.ja.md` / `article.md`
 - `inp.ja.md` / `inp.md`
