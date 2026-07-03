@@ -10,6 +10,18 @@
  *   - Index:  index.html (JA)         / index.en.html (EN mirror)
  */
 const STORAGE_KEY = "emout-docs-lang";
+const GUIDE_SLUGS = new Set([
+  "quickstart",
+  "plotting",
+  "pyvista",
+  "animation",
+  "inp",
+  "units",
+  "boundaries",
+  "backtrace",
+  "distributed",
+  "article",
+]);
 
 // Early redirect: if the user previously chose a language, send them to the
 // matching counterpart before the page paints. Runs at script-load time so
@@ -96,6 +108,34 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
+  function guideLinkInfo(href) {
+    if (href === "#") {
+      return isGuide ? { lang: pageLang, isGuide: true } : null;
+    }
+
+    let url;
+    try {
+      url = new URL(href, window.location.href);
+    } catch (_e) {
+      return null;
+    }
+
+    if (url.origin !== window.location.origin) {
+      return null;
+    }
+
+    const filename = url.pathname.split("/").pop() || "";
+    const match = filename.match(/^(.+?)(\.ja)?\.html$/);
+    if (!match || !GUIDE_SLUGS.has(match[1])) {
+      return null;
+    }
+
+    return {
+      lang: match[2] ? "ja" : "en",
+      isGuide: true,
+    };
+  }
+
   // --- Sidebar filtering ---
   function filterSidebar(activeLang) {
     const sidebarLinks = document.querySelectorAll(".sidebar-tree .toctree-l1");
@@ -103,27 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const a = li.querySelector("a");
       if (!a) return;
       const href = a.getAttribute("href") || "";
-      const isJaLink = href.endsWith(".ja.html") || href.includes(".ja.html");
-      const isGuideLink = href.includes("guide/") || href.endsWith(".ja.html") ||
-        /^(quickstart|plotting|animation|inp|units|boundaries|distributed)/.test(href);
+      const info = guideLinkInfo(href);
+      if (!info) return; // don't touch API Reference etc.
 
-      if (!isGuideLink) return; // don't touch API Reference etc.
-
-      // href="#" means the current page's self-link in the sidebar.
-      if (href === "#") {
-        if (activeLang === "ja") {
-          li.style.display = (isGuideJa || isIndexJa) ? "" : "none";
-        } else {
-          li.style.display = (isGuideJa || isIndexJa) ? "none" : "";
-        }
-        return;
-      }
-
-      if (activeLang === "ja") {
-        li.style.display = isJaLink ? "" : "none";
-      } else {
-        li.style.display = isJaLink ? "none" : "";
-      }
+      li.style.display = info.lang === activeLang ? "" : "none";
     });
   }
 
