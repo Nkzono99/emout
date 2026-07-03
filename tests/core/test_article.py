@@ -931,11 +931,15 @@ def test_record_copies_diagnostic_files_for_replay(tmp_path):
     sim.mkdir()
     (sim / "plasma.inp").write_text(_BOUNDARY_INP, encoding="utf-8")
     (sim / "icur").write_text("0 0.0 0.0\n2 1.0 2.0\n", encoding="utf-8")
+    (sim / "ocur").write_text("0 0.0 0.0\n2 3.0 4.0\n", encoding="utf-8")
     (sim / "pbody").write_text("2 10 20\n", encoding="utf-8")
 
     replay = _record_empty_article(sim, tmp_path / "records", article_name="fig_diag")
 
     assert list(replay.icur.columns) == ["1_step", "1_body1", "1_body1_ema"]
     assert replay.icur.iloc[-1]["1_step"] == 2
+    assert list(replay.ocur.columns) == ["1_step", "1_body1", "1_body1_ema"]
+    assert replay.ocur.iloc[-1]["1_body1_ema"] == 4.0
+    assert replay.ocur.val_si.iloc[-1]["1_body1"] == replay.unit.i.reverse(3.0)
     assert list(replay.pbody.columns) == ["step", "body1", "body2"]
     assert replay.pbody.iloc[0]["body2"] == 20

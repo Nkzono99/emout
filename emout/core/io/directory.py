@@ -327,7 +327,22 @@ class DirectoryInspector:
 
         from emout.core.io.diagnostics import read_icur
 
-        return read_icur(self.main_directory / "icur", self._inp)
+        return read_icur(self.main_directory / "icur", self._inp, self._unit)
+
+    def read_ocur_as_dataframe(self) -> pd.DataFrame:
+        """Read the ``ocur`` diagnostic file as a DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Table with step and per-species/per-body outward-current columns.
+        """
+        if self._inp is None:
+            raise RuntimeError("read_ocur: .inp has not been loaded")
+
+        from emout.core.io.diagnostics import read_ocur
+
+        return read_ocur(self.main_directory / "ocur", self._inp, self._unit)
 
     def read_pbody_as_dataframe(self) -> pd.DataFrame:
         """Read the ``pbody`` diagnostic file as a DataFrame.
@@ -335,14 +350,14 @@ class DirectoryInspector:
         Returns
         -------
         pandas.DataFrame
-            Table with ``step`` and per-body particle-count columns.
+            Table with ``step`` and per-body conductor-potential columns.
         """
         if self._inp is None:
             raise RuntimeError("read_pbody: .inp has not been loaded")
 
         from emout.core.io.diagnostics import read_pbody
 
-        return read_pbody(self.main_directory / "pbody", self._inp)
+        return read_pbody(self.main_directory / "pbody", self._inp, self._unit)
 
     def to_emout_open_kwargs(self) -> dict:
         """Return kwargs that reopen this dataset in a remote worker."""

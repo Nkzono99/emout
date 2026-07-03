@@ -90,7 +90,7 @@ field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
 | `source.json` | 元 simulation path、basename、recorded files の hash | 別環境で source を対応付け、改変を検出する |
 | `plasma.inp` | 入力ファイル | `data.inp`、単位変換、境界メッシュ再構築 |
 | `plasma.toml` | TOML 入力ファイル | `data.toml` の再現 |
-| `icur`, `pbody` | 小さな診断ファイル（存在する場合） | `data.icur` / `data.pbody` の再現 |
+| `icur`, `ocur`, `pbody` | 小さな診断ファイル（存在する場合） | `data.icur` / `data.ocur` / `data.pbody` の再現 |
 
 `data.h5` 内の dataset は HDF5 gzip 圧縮で保存されます。replay 側では HDF5 が透過的に展開するため、
 通常の `plot()` / `to_numpy()` の使い方は変わりません。
@@ -111,6 +111,7 @@ article-records/
             ├── plasma.inp
             ├── plasma.toml
             ├── icur
+            ├── ocur
             └── pbody
 ```
 
@@ -205,6 +206,7 @@ data.exz[-1, :, ymid, :].plot()
 data.boundaries.plot()
 data.phisp[-1].plot_surfaces(data.boundaries, bounds=bounds)
 icur = data.icur
+ocur = data.ocur
 pbody = data.pbody
 ```
 

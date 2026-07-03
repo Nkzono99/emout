@@ -97,7 +97,7 @@ The field returned by `mean()` also exposes `field.inp`, `field.unit`, and
 | `source.json` | Original simulation path, basename, recorded file hashes | Matches sources on another machine and detects tampering |
 | `plasma.inp` | Input file | Replays `data.inp`, unit conversion, and boundary meshes |
 | `plasma.toml` | TOML input file | Replays `data.toml` |
-| `icur`, `pbody` | Small diagnostics, when present | Replays `data.icur` / `data.pbody` |
+| `icur`, `ocur`, `pbody` | Small diagnostics, when present | Replays `data.icur` / `data.ocur` / `data.pbody` |
 
 Datasets inside `data.h5` are written with HDF5 gzip compression. HDF5
 decompresses them transparently during replay, so normal `plot()` /
@@ -119,6 +119,7 @@ article-records/
             ├── plasma.inp
             ├── plasma.toml
             ├── icur
+            ├── ocur
             └── pbody
 ```
 
@@ -219,6 +220,7 @@ Input metadata and boundaries are replayable too.
 data.boundaries.plot()
 data.phisp[-1].plot_surfaces(data.boundaries, bounds=bounds)
 icur = data.icur
+ocur = data.ocur
 pbody = data.pbody
 ```
 

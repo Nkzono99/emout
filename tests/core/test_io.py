@@ -67,6 +67,20 @@ def _write_icur(directory: Path, last_step: int = 100, *, nspec: int = 2, npc: i
     return icur_path
 
 
+def _write_ocur(directory: Path, last_step: int = 100, *, nspec: int = 2, npc: int = 1) -> Path:
+    """Write a minimal ``ocur`` file using the same layout as ``icur``."""
+    ocur_path = directory / "ocur"
+    cols_per_spec = 1 + npc * 2
+    lines = []
+    for step in [1, last_step]:
+        vals = [str(step)] + ["0.0"] * (cols_per_spec * nspec - 1)
+        while len(vals) < cols_per_spec * nspec:
+            vals.append("0.0")
+        lines.append("  ".join(vals))
+    ocur_path.write_text("\n".join(lines) + "\n")
+    return ocur_path
+
+
 def _write_pbody(directory: Path, npc: int = 1) -> Path:
     pbody_path = directory / "pbody"
     # step + npc+1 body columns
@@ -298,6 +312,66 @@ class TestReadIcur:
         with pytest.raises(FileNotFoundError):
             di.read_icur_as_dataframe()
 
+    def test_val_si_converts_steps_and_current_columns(self, tmp_path: Path):
+        _write_inp(tmp_path)
+        (tmp_path / "icur").write_text("2 3.0 4.0\n", encoding="utf-8")
+        di = DirectoryInspector(tmp_path)
+
+        df = di.read_icur_as_dataframe()
+        si = df.val_si
+
+        assert isinstance(df, pd.DataFrame)
+        assert isinstance(si, pd.DataFrame)
+        assert si is not df
+        assert si.loc[0, "1_step"] == di.unit.t.reverse(2)
+        assert si.loc[0, "1_body1"] == di.unit.i.reverse(3.0)
+        assert si.loc[0, "1_body1_ema"] == di.unit.i.reverse(4.0)
+
+
+# ===================================================================
+# read_ocur_as_dataframe
+# ===================================================================
+
+
+class TestReadOcur:
+    def test_read_ocur(self, tmp_path: Path):
+        _write_inp(tmp_path)
+        _write_ocur(tmp_path, last_step=100, nspec=2, npc=1)
+        di = DirectoryInspector(tmp_path)
+        df = di.read_ocur_as_dataframe()
+        assert isinstance(df, pd.DataFrame)
+        assert list(df.columns) == [
+            "1_step",
+            "1_body1",
+            "1_body1_ema",
+            "2_step",
+            "2_body1",
+            "2_body1_ema",
+        ]
+        assert len(df) == 2
+
+    def test_val_si_converts_like_icur(self, tmp_path: Path):
+        _write_inp(tmp_path)
+        (tmp_path / "ocur").write_text("2 5.0 6.0\n", encoding="utf-8")
+        di = DirectoryInspector(tmp_path)
+
+        si = di.read_ocur_as_dataframe().val_si
+
+        assert si.loc[0, "1_step"] == di.unit.t.reverse(2)
+        assert si.loc[0, "1_body1"] == di.unit.i.reverse(5.0)
+        assert si.loc[0, "1_body1_ema"] == di.unit.i.reverse(6.0)
+
+    def test_read_ocur_no_inp_raises(self, tmp_path: Path):
+        di = DirectoryInspector(tmp_path, inpfilename=None)
+        with pytest.raises(RuntimeError, match="read_ocur"):
+            di.read_ocur_as_dataframe()
+
+    def test_read_ocur_no_file_raises(self, tmp_path: Path):
+        _write_inp(tmp_path)
+        di = DirectoryInspector(tmp_path)
+        with pytest.raises(FileNotFoundError):
+            di.read_ocur_as_dataframe()
+
 
 # ===================================================================
 # read_pbody_as_dataframe
@@ -324,6 +398,45 @@ class TestReadPbody:
         di = DirectoryInspector(tmp_path)
         with pytest.raises(FileNotFoundError):
             di.read_pbody_as_dataframe()
+
+    def test_val_si_converts_step_and_potential_columns(self, tmp_path: Path):
+        _write_inp(tmp_path)
+        (tmp_path / "pbody").write_text("2 3.0 4.0\n", encoding="utf-8")
+        di = DirectoryInspector(tmp_path)
+
+        si = di.read_pbody_as_dataframe().val_si
+
+        assert isinstance(si, pd.DataFrame)
+        assert si.loc[0, "step"] == di.unit.t.reverse(2)
+        assert si.loc[0, "body1"] == di.unit.phi.reverse(3.0)
+        assert si.loc[0, "body2"] == di.unit.phi.reverse(4.0)
+
+
+# ===================================================================
+# Emout diagnostic facade properties
+# ===================================================================
+
+
+class TestEmoutDiagnostics:
+    def test_ocur_property_returns_dataframe_with_val_si(self, tmp_path: Path):
+        from emout import Emout
+
+        _write_inp(tmp_path)
+        (tmp_path / "ocur").write_text("2 5.0 6.0 2 7.0 8.0\n", encoding="utf-8")
+
+        data = Emout(tmp_path)
+        ocur = data.ocur
+
+        assert isinstance(ocur, pd.DataFrame)
+        assert list(ocur.columns) == [
+            "1_step",
+            "1_body1",
+            "1_body1_ema",
+            "2_step",
+            "2_body1",
+            "2_body1_ema",
+        ]
+        assert ocur.val_si.loc[0, "1_body1"] == data.unit.i.reverse(5.0)
 
 
 # ===================================================================

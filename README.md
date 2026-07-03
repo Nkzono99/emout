@@ -83,7 +83,7 @@ data.nd1p           # 種1 数密度
 data.j1x            # 種1 電流密度 x成分
 data.j1xy           # j1x + j1y 自動結合 → 2D ベクトル
 data.j1xyz          # 3D ベクトル
-data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
+data.icur, data.ocur, data.pbody  # テキスト診断出力 (.val_si で SI 変換)
 ```
 
 スライスの軸順序は `(t, z, y, x)` です。
@@ -233,7 +233,7 @@ data = emout.Emout(
 
 replay mode では未記録のスライスにアクセスすると例外になります。これは公開データに
 図の再現に必要なデータが含まれているかを確認するためです。
-`plasma.inp` と `plasma.toml`、小さな診断ファイル（`icur`, `pbody`）も保存されるため、
+`plasma.inp` と `plasma.toml`、小さな診断ファイル（`icur`, `ocur`, `pbody`）も保存されるため、
 `data.inp` / `data.toml` / `data.boundaries.plot()` /
 `data.phisp[-1].plot_surfaces(data.boundaries)` のような入力パラメータや境界メッシュに
 依存する可視化も replay できます。

@@ -455,7 +455,7 @@ def cmd_inspect(args):
         print(f"\nParticle species: {', '.join(species)}")
 
     diag_files = []
-    for name in ("icur", "pbody"):
+    for name in ("icur", "ocur", "pbody"):
         candidate = data.directory / name
         if candidate.exists():
             diag_files.append(name)

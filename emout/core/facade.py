@@ -261,13 +261,25 @@ class Emout:
         return self._dir_inspector.read_icur_as_dataframe()
 
     @property
+    def ocur(self) -> pd.DataFrame:
+        """Return the ``ocur`` diagnostic file as a DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Table with step numbers and per-species / per-body outward-current
+            columns parsed from the ``ocur`` text file.
+        """
+        return self._dir_inspector.read_ocur_as_dataframe()
+
+    @property
     def pbody(self) -> pd.DataFrame:
         """Return the ``pbody`` diagnostic file as a DataFrame.
 
         Returns
         -------
         pd.DataFrame
-            Table with a ``step`` column and per-body particle-count
+            Table with a ``step`` column and per-body conductor-potential
             columns parsed from the ``pbody`` text file.
         """
         return self._dir_inspector.read_pbody_as_dataframe()

@@ -28,7 +28,7 @@ from emout.core.data.selectors import (
     normalize_item as _normalize_item_base,
     selector_length as _selector_length,
 )
-from emout.core.io.diagnostics import read_icur, read_pbody
+from emout.core.io.diagnostics import read_icur, read_ocur, read_pbody
 from emout.utils import InpFile, UnitTranslator, Units
 
 ENV_MODE = "EMOUT_ARTICLE_MODE"
@@ -520,7 +520,7 @@ class ArticleRecorder:
             if src.exists():
                 shutil.copyfile(src, self.record_dir / filename)
 
-        for filename in ("icur", "pbody"):
+        for filename in ("icur", "ocur", "pbody"):
             src = output_directory / filename
             if src.exists():
                 shutil.copyfile(src, self.record_dir / filename)
@@ -600,7 +600,7 @@ class ArticleRecorder:
 
     def _recorded_file_hashes(self) -> dict[str, str]:
         files = {}
-        for filename in ("plasma.inp", "plasma.toml", "icur", "pbody"):
+        for filename in ("plasma.inp", "plasma.toml", "icur", "ocur", "pbody"):
             path = self.record_dir / filename
             if path.exists():
                 files[filename] = _sha256_file(path)
@@ -686,14 +686,21 @@ class ArticleReplayEmout:
         """Return the recorded ``icur`` diagnostic file as a DataFrame."""
         if self._inp is None:
             raise RuntimeError("icur replay requires a recorded plasma.inp")
-        return read_icur(self._record_dir / "icur", self._inp)
+        return read_icur(self._record_dir / "icur", self._inp, self._unit)
+
+    @property
+    def ocur(self) -> pd.DataFrame:
+        """Return the recorded ``ocur`` diagnostic file as a DataFrame."""
+        if self._inp is None:
+            raise RuntimeError("ocur replay requires a recorded plasma.inp")
+        return read_ocur(self._record_dir / "ocur", self._inp, self._unit)
 
     @property
     def pbody(self) -> pd.DataFrame:
         """Return the recorded ``pbody`` diagnostic file as a DataFrame."""
         if self._inp is None:
             raise RuntimeError("pbody replay requires a recorded plasma.inp")
-        return read_pbody(self._record_dir / "pbody", self._inp)
+        return read_pbody(self._record_dir / "pbody", self._inp, self._unit)
 
     @property
     def boundaries(self):

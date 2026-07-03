@@ -39,6 +39,7 @@ def _make_mock_data(directory, convkey=None):
     mock.unit = MagicMock()
     mock.is_valid.return_value = True
     mock.icur = pd.DataFrame({"step": [0, 1], "current": [1.0, 2.0]})
+    mock.ocur = pd.DataFrame({"step": [0, 1], "current": [3.0, 4.0]})
     mock.pbody = pd.DataFrame({"step": [0, 1], "count": [100, 200]})
     mock.backtrace = MagicMock()
     return mock
@@ -112,6 +113,11 @@ class TestDelegatedProperties:
 
     def test_icur(self, ext):
         df = ext.icur
+        assert isinstance(df, pd.DataFrame)
+        assert "step" in df.columns
+
+    def test_ocur(self, ext):
+        df = ext.ocur
         assert isinstance(df, pd.DataFrame)
         assert "step" in df.columns
 

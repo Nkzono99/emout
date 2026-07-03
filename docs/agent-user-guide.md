@@ -46,7 +46,7 @@ data = emout.Emout("output_dir")
 | --- | --- | --- |
 | `directory` | Base directory (input + output when others unset) | `"./"` |
 | `input_path` | Full path to input file (e.g. `/path/to/plasma.toml`). Overrides `directory`/`inpfilename` for input. | `None` |
-| `output_directory` | Directory for output files (h5, icur, pbody). Defaults to `directory`. | `None` |
+| `output_directory` | Directory for output files (h5, icur, ocur, pbody). Defaults to `directory`. | `None` |
 | `append_directories` / `ad` | Additional output directories or `"auto"` | `None` |
 | `inpfilename` | Input filename (ignored when `input_path` is set) | `"plasma.inp"` |
 
@@ -67,7 +67,7 @@ Variables are resolved dynamically from EMSES filenames via `data.<name>`:
 | Relocated field | `data.rex`, `data.rby` | `GridDataSeries` |
 | 2D vector | `data.j1xy` | `VectorData2d` (auto-combines x+y) |
 | 3D vector | `data.j1xyz` | `VectorData3d` (auto-combines x+y+z) |
-| Text output | `data.icur`, `data.pbody` | `pandas.DataFrame` |
+| Text output | `data.icur`, `data.ocur`, `data.pbody` | `pandas.DataFrame` |
 | Particle species | `data.p4` | `ParticlesSeries` (species 4) |
 
 Indexing a time series by timestep returns a NumPy-subclass array (`Data1d`, `Data2d`, `Data3d`):

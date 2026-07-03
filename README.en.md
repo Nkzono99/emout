@@ -83,7 +83,7 @@ data.nd1p           # Species-1 number density
 data.j1x            # Species-1 current density (x)
 data.j1xy           # j1x + j1y auto-combined → 2D vector
 data.j1xyz          # 3D vector
-data.icur, data.pbody  # Text outputs (pandas DataFrame)
+data.icur, data.ocur, data.pbody  # Text diagnostics (SI conversion via .val_si)
 ```
 
 Axis order is `(t, z, y, x)`.
@@ -235,7 +235,7 @@ data = emout.Emout(
 Replay mode raises an exception when a script asks for an unrecorded slice.
 This makes it clear whether the public data bundle contains everything
 needed to reproduce a figure.
-`plasma.inp`, `plasma.toml`, and small diagnostic files (`icur`, `pbody`)
+`plasma.inp`, `plasma.toml`, and small diagnostic files (`icur`, `ocur`, `pbody`)
 are saved as well, so visualizations that depend on input parameters and
 boundary meshes also replay, including `data.inp`, `data.toml`,
 `data.boundaries.plot()`, and `data.phisp[-1].plot_surfaces(data.boundaries)`.
