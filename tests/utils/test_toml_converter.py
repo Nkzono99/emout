@@ -1,16 +1,13 @@
 """Unit tests for ``emout.utils.toml_converter``.
 
-The module historically exposed TOML→namelist conversion helpers
-(``_convert_v1``, ``_convert_v2``, ``load_toml_as_namelist``), but that
-path has since been delegated to the external ``toml2inp`` command
-bundled with MPIEMSES3D. Only the :class:`TomlData` attribute-access
-wrapper and :func:`load_toml` remain in-process, so the tests here
-cover just those.
+The module exposes the :class:`TomlData` attribute-access wrapper,
+:func:`load_toml`, and the TOML-backed :class:`InpFile` compatibility
+view used by ``data.inp``.
 """
 
 import pytest
 
-from emout.utils.toml_converter import TomlData, load_toml
+from emout.utils.toml_converter import TomlData, load_toml, load_toml_as_inp
 
 
 V2_TOML = """\
@@ -142,3 +139,50 @@ class TestLoadToml:
         assert td["meta"]["unit_conversion"]["dx"] == 0.5
         assert len(td.species) == 2
         assert td.species[1].qm == 0.000545
+
+
+# ---------------------------------------------------------------------------
+# load_toml_as_inp
+# ---------------------------------------------------------------------------
+
+
+class TestLoadTomlAsInp:
+    def test_loads_v2_species_as_legacy_arrays(self, tmp_path):
+        toml_file = tmp_path / "plasma.toml"
+        toml_file.write_text(V2_TOML, encoding="utf-8")
+
+        inp = load_toml_as_inp(toml_file)
+
+        assert inp.nx == 64
+        assert inp.nspec == 2
+        assert inp.wp == [2.1, 0.049]
+        assert inp.qm == [-1.0, 0.000545]
+        assert inp.path == [44.24, 1.03]
+        assert inp.dx == 0.5
+
+    def test_flattens_ptcond_boundary_entries(self, tmp_path):
+        toml_file = tmp_path / "plasma.toml"
+        toml_file.write_text(
+            """\
+[ptcond]
+boundary_type = "complex"
+
+[[ptcond.boundaries]]
+type = "sphere"
+sphere_origin = [1.0, 2.0, 3.0]
+sphere_radius = 0.5
+
+[[ptcond.boundaries]]
+type = "cuboid"
+cuboid_min = [0.0, 0.0, 0.0]
+cuboid_max = [1.0, 1.0, 1.0]
+""",
+            encoding="utf-8",
+        )
+
+        inp = load_toml_as_inp(toml_file)
+
+        assert inp.boundary_type == "complex"
+        assert inp.boundary_types == ["sphere", "cuboid"]
+        assert inp.sphere_origin == [[1.0, 2.0, 3.0], None]
+        assert inp.nml["ptcond"].start_index["sphere_origin"] == [None, 1]

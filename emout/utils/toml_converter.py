@@ -1,14 +1,20 @@
-"""Attribute-access wrapper for raw TOML data via :class:`TomlData`.
+"""TOML loading helpers for EMSES ``plasma.toml`` files.
 
-The plasma.toml to plasma.inp conversion is handled by the MPIEMSES3D
-``toml2inp`` command.
+The public ``data.toml`` interface preserves the native TOML structure via
+:class:`TomlData`.  ``load_toml_as_inp`` also builds an :class:`InpFile`
+compatible namelist view so existing ``data.inp`` code can use TOML-backed
+parameters without relying on an external ``toml2inp`` command.
 """
 
 from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+import f90nml
+
+from emout.utils.emsesinp import InpFile, UnitConversionKey
 
 try:
     import tomllib
@@ -30,6 +36,16 @@ _GROUP_TABLE_MAP = {
     ("dipole",): {"sources": "source_groups"},
     ("jsrc",): {"sources": "source_groups"},
     ("testch",): {"charges": "charge_groups"},
+}
+
+
+_SPECIES_KEY_GROUPS = {
+    "wp": "plasma",
+    "qm": "intp",
+    "npin": "intp",
+    "path": "intp",
+    "peth": "intp",
+    "vdri": "intp",
 }
 
 
@@ -214,6 +230,139 @@ def _resolve_groups_in_data(
     return resolved
 
 
+def _load_toml_dict(toml_path: Path) -> Dict[str, Any]:
+    """Load *toml_path* and return a plain dictionary."""
+    with open(toml_path, "rb") as f:
+        return tomllib.load(f)
+
+
+def _unit_conversion_key(data: Dict[str, Any]) -> Optional[UnitConversionKey]:
+    """Return a unit conversion key from ``[meta.unit_conversion]``."""
+    meta = data.get("meta")
+    if not isinstance(meta, dict):
+        return None
+    unit_conversion = meta.get("unit_conversion")
+    if not isinstance(unit_conversion, dict):
+        return None
+    if "dx" not in unit_conversion or "to_c" not in unit_conversion:
+        return None
+    return UnitConversionKey(
+        float(unit_conversion["dx"]),
+        float(unit_conversion["to_c"]),
+    )
+
+
+def _plain_value(value: Any) -> Any:
+    """Return a deepcopy of TOML values with nested mappings normalized."""
+    if isinstance(value, dict):
+        return {key: _plain_value(child) for key, child in value.items()}
+    if isinstance(value, list):
+        return [_plain_value(child) for child in value]
+    return copy.deepcopy(value)
+
+
+def _is_list_of_dicts(value: Any) -> bool:
+    """Return whether *value* is a non-empty list of dictionaries."""
+    return isinstance(value, list) and bool(value) and all(isinstance(item, dict) for item in value)
+
+
+def _set_group_value(group: f90nml.Namelist, key: str, value: Any) -> None:
+    """Set a namelist value and attach Fortran-style start indexes for lists."""
+    value = _plain_value(value)
+    group[key] = value
+    if isinstance(value, list):
+        if value and all(isinstance(item, list) or item is None for item in value):
+            group.start_index[key] = [None, 1]
+        else:
+            group.start_index[key] = [1]
+
+
+def _ensure_group(nml: f90nml.Namelist, group_name: str) -> f90nml.Namelist:
+    """Return an existing namelist group or create it."""
+    if group_name not in nml:
+        nml[group_name] = f90nml.Namelist()
+    return nml[group_name]
+
+
+def _entry_target_key(group_name: str, entries_key: str, entry_key: str) -> str:
+    """Map TOML list-entry keys onto legacy namelist parameter names."""
+    if group_name == "ptcond" and entries_key == "boundaries" and entry_key == "type":
+        return "boundary_types"
+    return entry_key
+
+
+def _flatten_entry_list(group_name: str, entries_key: str, entries: list[dict]) -> Dict[str, list[Any]]:
+    """Flatten ``[[group.entries]]`` into namelist-style arrays."""
+    flattened: Dict[str, list[Any]] = {}
+    for index, entry in enumerate(entries):
+        for key, value in entry.items():
+            target = _entry_target_key(group_name, entries_key, key)
+            flattened.setdefault(target, [None] * len(entries))
+            flattened[target][index] = _plain_value(value)
+    return flattened
+
+
+def _group_values_from_table(group_name: str, table: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a TOML table into values for a single namelist group."""
+    values: Dict[str, Any] = {}
+    for key, value in table.items():
+        if key.endswith("_groups"):
+            continue
+        if isinstance(value, dict):
+            continue
+        if _is_list_of_dicts(value):
+            values.update(_flatten_entry_list(group_name, key, value))
+        else:
+            values[key] = _plain_value(value)
+    return values
+
+
+def _merge_group_values(nml: f90nml.Namelist, group_name: str, values: Dict[str, Any]) -> None:
+    """Merge *values* into *group_name* of a namelist."""
+    if not values:
+        return
+    group = _ensure_group(nml, group_name)
+    for key, value in values.items():
+        _set_group_value(group, key, value)
+
+
+def _merge_species(nml: f90nml.Namelist, species: Any) -> None:
+    """Fold top-level ``[[species]]`` entries into legacy namelist arrays."""
+    if not _is_list_of_dicts(species):
+        return
+
+    aggregated: Dict[str, list[Any]] = {}
+    for index, entry in enumerate(species):
+        for key, value in entry.items():
+            if key == "group_id":
+                continue
+            aggregated.setdefault(key, [None] * len(species))
+            aggregated[key][index] = _plain_value(value)
+
+    for key, values in aggregated.items():
+        group_name = _SPECIES_KEY_GROUPS.get(key, "plasma")
+        _merge_group_values(nml, group_name, {key: values})
+
+    emissn = _ensure_group(nml, "emissn")
+    if "nspec" not in emissn:
+        emissn["nspec"] = len(species)
+
+
+def _toml_data_to_namelist(data: Dict[str, Any]) -> f90nml.Namelist:
+    """Convert resolved TOML data into a legacy namelist view."""
+    nml = f90nml.Namelist()
+
+    for group_name, table in data.items():
+        if group_name in {"meta", "species"} or group_name.endswith("_groups"):
+            continue
+        if not isinstance(table, dict):
+            continue
+        _merge_group_values(nml, group_name, _group_values_from_table(group_name, table))
+
+    _merge_species(nml, data.get("species"))
+    return nml
+
+
 def load_toml(
     toml_path: Path,
     *,
@@ -238,8 +387,38 @@ def load_toml(
     TomlData
         Attribute-access wrapper for the TOML dictionary.
     """
-    with open(toml_path, "rb") as f:
-        data = tomllib.load(f)
+    data = _load_toml_dict(toml_path)
     if resolve_groups:
         data = _resolve_groups_in_data(data, purge_groups=purge_groups)
     return TomlData(data)
+
+
+def load_toml_as_inp(
+    toml_path: Path,
+    *,
+    resolve_groups: bool = True,
+    purge_groups: bool = True,
+) -> InpFile:
+    """Load ``plasma.toml`` and return an :class:`InpFile` compatible view.
+
+    Parameters
+    ----------
+    toml_path : Path
+        Path to ``plasma.toml``.
+    resolve_groups : bool, optional
+        Resolve ``group_id`` references before building the namelist view.
+    purge_groups : bool, optional
+        Remove ``*_groups`` tables after group resolution.
+
+    Returns
+    -------
+    InpFile
+        TOML-backed namelist-compatible parameter object.
+    """
+    data = _load_toml_dict(toml_path)
+    if resolve_groups:
+        data = _resolve_groups_in_data(data, purge_groups=purge_groups)
+
+    inp = InpFile(convkey=_unit_conversion_key(data))
+    inp.nml = _toml_data_to_namelist(data)
+    return inp

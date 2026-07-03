@@ -8,8 +8,6 @@ input parameters and unit conversion objects.
 # emout/io/directory.py
 
 import logging
-import shutil
-import subprocess
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -142,8 +140,9 @@ class DirectoryInspector:
     def _load_inpfile(self, inpfilename: Union[Path, str]) -> None:
         """Load the parameter file and initialise unit conversion.
 
-        When ``plasma.toml`` exists, ``toml2inp`` is invoked to
-        generate/update ``plasma.inp`` before loading.
+        When ``plasma.toml`` exists, it is loaded as the authoritative
+        source for both ``data.toml`` and the ``data.inp`` compatibility
+        view.  ``plasma.inp`` remains the fallback when TOML is absent.
 
         Parameters
         ----------
@@ -161,24 +160,18 @@ class DirectoryInspector:
             inp_path = self._input_directory / "plasma.inp"
 
             if toml_path.exists():
-                self._run_toml2inp(toml_path, inp_path)
-                self._store_toml_data(toml_path)
-
-            if inp_path.exists():
+                self._load_from_toml(toml_path, fallback_inp_path=inp_path)
+            elif inp_path.exists():
                 self._load_from_inp(inp_path)
             return
 
-        # Explicit path: convert via toml2inp even when .toml is specified
+        # Explicit path: .toml is the authoritative source for the inp view.
         path = self._input_directory / inpfilename
         if not path.exists():
             return
 
         if path.suffix == ".toml":
-            inp_path = path.with_suffix(".inp")
-            self._run_toml2inp(path, inp_path)
-            self._store_toml_data(path)
-            if inp_path.exists():
-                self._load_from_inp(inp_path)
+            self._load_from_toml(path, fallback_inp_path=path.with_suffix(".inp"))
         else:
             self._load_from_inp(path)
 
@@ -189,6 +182,22 @@ class DirectoryInspector:
         convkey = UnitConversionKey.load(inp_path)
         if convkey is not None:
             self._unit = Units(dx=convkey.dx, to_c=convkey.to_c)
+
+    def _load_from_toml(self, toml_path: Path, fallback_inp_path: Optional[Path] = None) -> None:
+        """Load a TOML parameter file and build the ``data.inp`` view."""
+        from emout.utils.toml_converter import load_toml_as_inp
+
+        logger.info(f"Loading TOML parameter file: {toml_path.resolve()}")
+        self._store_toml_data(toml_path)
+        self._inp = load_toml_as_inp(
+            toml_path,
+            resolve_groups=True,
+            purge_groups=True,
+        )
+        if self._inp.convkey is None and fallback_inp_path is not None and fallback_inp_path.exists():
+            self._inp.convkey = UnitConversionKey.load(fallback_inp_path)
+        if self._inp.convkey is not None:
+            self._unit = Units(dx=self._inp.convkey.dx, to_c=self._inp.convkey.to_c)
 
     def _store_toml_data(self, toml_path: Path) -> None:
         """Store ``plasma.toml`` as a :class:`TomlData` instance.
@@ -205,40 +214,16 @@ class DirectoryInspector:
             purge_groups=True,
         )
 
-    @staticmethod
-    def _run_toml2inp(toml_path: Path, inp_path: Path) -> None:
-        """Generate plasma.inp from plasma.toml via the ``toml2inp`` command."""
-        toml2inp = shutil.which("toml2inp")
-        if toml2inp is None:
-            logger.warning(
-                "toml2inp command not found; skipping conversion from %s",
-                toml_path,
-            )
-            return
-
-        logger.info("Running toml2inp: %s -> %s", toml_path, inp_path)
-        try:
-            subprocess.run(
-                [toml2inp, str(toml_path), "-o", str(inp_path)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            logger.error(
-                "toml2inp failed (returncode=%d): %s",
-                exc.returncode,
-                exc.stderr.strip(),
-            )
-
     @property
     def inp(self) -> Optional[InpFile]:
-        """Return the parsed input parameter file.
+        """Return the parsed input parameters.
 
         Returns
         -------
         InpFile or None
-            Parsed ``plasma.inp`` if loaded, otherwise ``None``.
+            ``InpFile`` compatible parameters.  TOML-backed when
+            ``plasma.toml`` is available, otherwise loaded from
+            ``plasma.inp``.  ``None`` if no parameter file was loaded.
         """
         return self._inp
 
@@ -308,9 +293,11 @@ class DirectoryInspector:
             toml_path = self._input_directory / "plasma.toml"
             inp_path = self._input_directory / "plasma.inp"
             if toml_path.exists():
-                self._run_toml2inp(toml_path, inp_path)
-            if inp_path.exists():
+                self._load_from_toml(toml_path, fallback_inp_path=inp_path)
+            elif inp_path.exists():
                 self._inp = InpFile(inp_path)
+            if self._inp is None:
+                return False
 
         return int(last_line.split()[0]) == int(self._inp.nstep)
 

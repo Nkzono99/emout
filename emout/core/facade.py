@@ -181,12 +181,14 @@ class Emout:
 
     @property
     def inp(self) -> Union[InpFile, None]:
-        """Return the parsed input parameter file.
+        """Return the parsed input parameters.
 
         Returns
         -------
         InpFile or None
-            Parsed ``plasma.inp`` parameters, or ``None`` if not loaded.
+            Parsed parameters as an ``InpFile`` compatible object.
+            When ``plasma.toml`` is available, this view is backed by
+            TOML; otherwise it is loaded from ``plasma.inp``.
         """
         return self._dir_inspector.inp
 

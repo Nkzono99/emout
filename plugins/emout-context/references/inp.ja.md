@@ -81,8 +81,8 @@ btypes = data.inp.mtd_vbnd  # 例: [0, 2, 0] → 周期-ノイマン-周期
 
 ## TOML 形式 (`plasma.toml`)
 
-`plasma.toml` が存在する場合、emout は自動的に `toml2inp` を実行して `plasma.inp` を生成し、それを読み込みます。
-`toml2inp` コマンドは [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D) に同梱されています。
+`plasma.toml` が存在する場合、emout は TOML を優先して読み込み、そこから `data.inp` 互換の `InpFile` ビューを構築します。
+古い `plasma.inp` は `plasma.toml` がない場合のフォールバックとして引き続き使えます。
 
 ```python
 data = emout.Emout("output_dir")
@@ -142,5 +142,8 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 dx = 0.5
 to_c = 10000.0
 ```
+
+`plasma.toml` と `plasma.inp` が両方ある場合は `[meta.unit_conversion]` が優先されます。
+TOML 側にこのセクションがなく、`plasma.inp` の `!!key` ヘッダーだけがある場合は、後方互換のためそのキーを `data.unit` に使います。
 
 変換キーがない場合は `data.unit` が `None` になり、`val_si` や `plot(use_si=True)` を呼ぶと `AttributeError` になります。対処は [単位変換ガイド](units.ja.md) の「前提条件」を参照してください。

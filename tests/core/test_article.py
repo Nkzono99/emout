@@ -869,6 +869,9 @@ def test_record_copies_plasma_inp_and_toml_for_replay(tmp_path):
 
     assert replay.inp is not None
     assert replay.is_valid()
+    assert replay.inp.nx == 4
+    assert replay.unit is not None
+    assert replay.unit.dx == 0.1
     assert replay.toml.tmgrid.nx == 4
     record_dir = next((tmp_path / "records").glob("datasets/*/fig_meta"))
     assert (record_dir / "plasma.inp").exists()

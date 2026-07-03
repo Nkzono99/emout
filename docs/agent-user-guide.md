@@ -346,7 +346,7 @@ Unregistered types are recorded in `data.boundaries.skipped` instead of raising 
 
 ## data.toml — Parameter file (recommended for plasma.toml)
 
-When `plasma.toml` is present, emout runs the `toml2inp` command to generate `plasma.inp`, then loads it. **Use `data.toml` for native TOML structure access** via the `TomlData` wrapper.
+When `plasma.toml` is present, emout reads it first and builds a `data.inp`-compatible `InpFile` view from the same TOML data. **Use `data.toml` for native TOML structure access** via the `TomlData` wrapper.
 
 ```python
 data.toml                        # TomlData object (None if plasma.inp only)
@@ -356,7 +356,7 @@ data.toml.species[0].wp          # nested structures (V2 format)
 data.toml.meta.unit_conversion.dx  # unit conversion key
 ```
 
-> **Requirement:** `toml2inp` must be on PATH (bundled with [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D)). If missing, a warning is logged and only an existing `plasma.inp` is loaded.
+> **Compatibility:** `plasma.inp` remains the fallback when `plasma.toml` is absent. If TOML lacks `[meta.unit_conversion]` but a paired `plasma.inp` has a `!!key` header, emout uses that key for `data.unit`.
 
 ### TomlData API
 
@@ -380,14 +380,14 @@ a scalar. Dict-style access and `get()` remain direct-only.
 
 | | `data.toml` | `data.inp` |
 | --- | --- | --- |
-| Available when | `plasma.toml` exists | Always (`toml2inp` generates it from .toml) |
+| Available when | `plasma.toml` exists | `plasma.toml` or `plasma.inp` exists |
 | Structure | Native TOML (nested, lists) | Flat namelist (group → key → value) |
 | V2 species access | `data.toml.species[0].wp` | `data.inp.wp[0]` (flat list) |
 | **Recommendation** | **Preferred when plasma.toml is used** | Fallback for plasma.inp-only projects |
 
 ### data.inp — Legacy / fallback
 
-`data.inp` is always available. When `plasma.toml` exists, `toml2inp` auto-generates `plasma.inp`:
+`data.inp` exposes an `InpFile`-compatible view. When `plasma.toml` exists, that view is TOML-backed; when TOML is absent, it is loaded from `plasma.inp`:
 
 ```python
 data.inp                     # InpFile object (dict-like)

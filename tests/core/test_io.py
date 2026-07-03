@@ -7,7 +7,6 @@ with ``create_h5file()`` and ``create_inpfile()`` from conftest.
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -239,16 +238,86 @@ class TestLoadInpFile:
         di = DirectoryInspector(tmp_path, inpfilename="custom.inp")
         assert di.inp is not None
 
-    def test_toml_file_without_toml2inp(self, tmp_path: Path):
-        # Write a plasma.toml but toml2inp is not available
+    def test_toml_file_preferred_over_inp(self, tmp_path: Path):
         toml_path = tmp_path / "plasma.toml"
-        toml_path.write_text("[tmgrid]\nnx = 10\n")
-        # Also write a plasma.inp so loading can proceed
+        toml_path.write_text(
+            """\
+[meta.unit_conversion]
+dx = 1.25
+to_c = 20000.0
+
+[tmgrid]
+nx = 10
+nstep = 22
+""",
+            encoding="utf-8",
+        )
         _write_inp(tmp_path)
-        with patch("shutil.which", return_value=None):
-            di = DirectoryInspector(tmp_path)
-        # Should still load the .inp that exists
+        di = DirectoryInspector(tmp_path)
+
+        assert di.toml is not None
         assert di.inp is not None
+        assert di.inp.nx == 10
+        assert di.inp.nstep == 22
+        assert di.inp.dx == 1.25
+        assert di.unit is not None
+        assert di.unit.dx == 1.25
+
+    def test_toml_file_without_generated_inp(self, tmp_path: Path):
+        (tmp_path / "plasma.toml").write_text(
+            """\
+[meta.unit_conversion]
+dx = 0.25
+to_c = 15000.0
+
+[[species]]
+wp = 2.1
+qm = -1.0
+npin = 100
+
+[[species]]
+wp = 0.049
+qm = 0.000545
+npin = 200
+
+[tmgrid]
+dt = 0.002
+nx = 32
+nstep = 12
+""",
+            encoding="utf-8",
+        )
+
+        di = DirectoryInspector(tmp_path)
+
+        assert di.inp is not None
+        assert di.inp.nx == 32
+        assert di.inp.nspec == 2
+        assert di.inp.wp == [2.1, 0.049]
+        assert di.inp.qm == [-1.0, 0.000545]
+        assert di.inp.npin == [100, 200]
+        assert di.unit is not None
+        assert di.unit.dx == 0.25
+
+    def test_toml_parameters_use_inp_unit_key_as_fallback(self, tmp_path: Path):
+        (tmp_path / "plasma.toml").write_text(
+            """\
+[tmgrid]
+nx = 10
+nstep = 22
+""",
+            encoding="utf-8",
+        )
+        _write_inp(tmp_path)
+
+        di = DirectoryInspector(tmp_path)
+
+        assert di.inp is not None
+        assert di.inp.nx == 10
+        assert di.inp.nstep == 22
+        assert di.inp.dx == 0.5
+        assert di.unit is not None
+        assert di.unit.dx == 0.5
 
 
 # ===================================================================

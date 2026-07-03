@@ -82,8 +82,8 @@ btypes = data.inp.mtd_vbnd  # e.g., [0, 2, 0] for periodic-Neumann-periodic
 
 ## TOML Format (`plasma.toml`)
 
-When `plasma.toml` exists, emout automatically runs `toml2inp` to generate `plasma.inp`, then loads it.
-The `toml2inp` command is bundled with [MPIEMSES3D](https://github.com/Nkzono99/MPIEMSES3D).
+When `plasma.toml` exists, emout reads TOML first and builds a `data.inp`-compatible `InpFile` view from it.
+The older `plasma.inp` path remains available as the fallback when `plasma.toml` is absent.
 
 ```python
 data = emout.Emout("output_dir")
@@ -153,6 +153,9 @@ This key enables SI unit conversion via `data.unit`. In `plasma.toml`, this is e
 dx = 0.5
 to_c = 10000.0
 ```
+
+When both `plasma.toml` and `plasma.inp` exist, `[meta.unit_conversion]` takes precedence.
+If TOML does not contain this section but `plasma.inp` still has a `!!key` header, emout uses that key for `data.unit` for backward compatibility.
 
 If no conversion key is present, `data.unit` is `None`, and calling
 `val_si` or `plot(use_si=True)` raises `AttributeError`. See the

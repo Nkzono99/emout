@@ -29,7 +29,7 @@ from emout.core.data.selectors import (
     selector_length as _selector_length,
 )
 from emout.core.io.diagnostics import read_icur, read_ocur, read_pbody
-from emout.utils import InpFile, UnitTranslator, Units
+from emout.utils import InpFile, UnitConversionKey, UnitTranslator, Units
 
 ENV_MODE = "EMOUT_ARTICLE_MODE"
 ENV_RECORDS_PATH = "EMOUT_ARTICLE_RECORDS_PATH"
@@ -638,15 +638,18 @@ class ArticleReplayEmout:
             if field is not None:
                 self._records_by_field.setdefault(field, []).append(record)
 
-        inp_path = self._record_dir / "plasma.inp"
-        self._inp = InpFile(inp_path) if inp_path.exists() else None
         toml_path = self._record_dir / "plasma.toml"
+        inp_path = self._record_dir / "plasma.inp"
         if toml_path.exists():
-            from emout.utils.toml_converter import load_toml
+            from emout.utils.toml_converter import load_toml, load_toml_as_inp
 
             self._toml = load_toml(toml_path, resolve_groups=True, purge_groups=True)
+            self._inp = load_toml_as_inp(toml_path, resolve_groups=True, purge_groups=True)
+            if self._inp.convkey is None and inp_path.exists():
+                self._inp.convkey = UnitConversionKey.load(inp_path)
         else:
             self._toml = None
+            self._inp = InpFile(inp_path) if inp_path.exists() else None
 
         if self._inp is not None and self._inp.convkey is not None:
             self._unit = Units(self._inp.convkey.dx, self._inp.convkey.to_c)
@@ -660,7 +663,12 @@ class ArticleReplayEmout:
 
     @property
     def inp(self) -> InpFile | None:
-        """Return the recorded input file."""
+        """Return recorded input parameters.
+
+        When a recorded ``plasma.toml`` exists, this is the TOML-backed
+        ``InpFile`` compatibility view.  Otherwise it is loaded from the
+        recorded ``plasma.inp``.
+        """
         return self._inp
 
     @property
