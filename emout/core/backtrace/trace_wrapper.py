@@ -74,7 +74,7 @@ class TraceWrapper:
             return remote_result
 
         trace_dt = self._backward_dt(dt)
-        prob_dt = self._backward_dt(probability_dt)
+        prob_dt = self._probability_dt(probability_dt)
         return self._run_one_direction(
             "backward",
             x,
@@ -146,7 +146,7 @@ class TraceWrapper:
             return remote_result
 
         trace_dt = self._forward_dt(dt)
-        prob_dt = self._backward_dt(probability_dt)
+        prob_dt = self._probability_dt(probability_dt)
         return self._run_one_direction(
             "forward",
             x,
@@ -227,7 +227,7 @@ class TraceWrapper:
             vz,
             ispec=ispec,
             istep=istep,
-            probability_dt=self._backward_dt(probability_dt),
+            probability_dt=self._probability_dt(probability_dt),
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,
@@ -436,14 +436,19 @@ class TraceWrapper:
         return PhaseGrid
 
     def _backward_dt(self, dt: Optional[float]) -> float:
-        if dt is None:
-            return abs(float(self.inp.dt))
-        return float(dt)
+        return self._dt_magnitude(dt, name="dt")
 
     def _forward_dt(self, dt: Optional[float]) -> float:
-        if dt is None:
-            return -abs(float(self.inp.dt))
-        return float(dt)
+        return -self._dt_magnitude(dt, name="dt")
+
+    def _probability_dt(self, dt: Optional[float]) -> float:
+        return self._dt_magnitude(dt, name="probability_dt")
+
+    def _dt_magnitude(self, dt: Optional[float], *, name: str) -> float:
+        value = abs(float(self.inp.dt)) if dt is None else float(dt)
+        if value < 0:
+            raise ValueError(f"{name} must be >= 0")
+        return value
 
     def _validate_requested_payloads(self, get_trace: bool, get_probabilities: bool) -> None:
         if not get_trace and not get_probabilities:

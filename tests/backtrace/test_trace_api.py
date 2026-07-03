@@ -103,6 +103,44 @@ def test_forward_trace_only_builds_particles_without_probabilities(monkeypatch):
     ]
 
 
+def test_forward_positive_dt_is_negated_for_trace(monkeypatch):
+    wrapper = _make_wrapper(dt=0.5)
+    traces = _make_multi_backtrace_result(n_traj=2, n_steps=4)
+    trace_calls = []
+
+    class FakePhaseGrid:
+        def __init__(self, x, y, z, vx, vy, vz):
+            self.axes = (x, y, z, vx, vy, vz)
+
+        def create_grid(self):
+            return np.zeros((2, 6))
+
+        def create_particles(self):
+            return ["p0", "p1"]
+
+    def fake_get_backtraces_from_particles(particles, **kwargs):
+        trace_calls.append((particles, kwargs))
+        return traces
+
+    monkeypatch.setattr(wrapper, "_phase_grid_cls", lambda: FakePhaseGrid)
+    monkeypatch.setattr(wrapper.backtrace, "get_backtraces_from_particles", fake_get_backtraces_from_particles)
+
+    result = wrapper.forward(
+        [1.0, 2.0],
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        dt=0.125,
+        get_trace=True,
+        get_probabilities=False,
+    )
+
+    assert result.forward_traces is traces
+    assert trace_calls[0][1]["dt"] == pytest.approx(-0.125)
+
+
 def test_both_reuses_one_probability_grid_for_both_directions(monkeypatch):
     wrapper = _make_wrapper(dt=0.25)
     probability = SimpleNamespace(probabilities=np.array([0.2, 0.8]), particles=["p0", "p1"])
@@ -131,6 +169,67 @@ def test_both_reuses_one_probability_grid_for_both_directions(monkeypatch):
     assert [call[1]["dt"] for call in trace_calls] == [pytest.approx(0.25), pytest.approx(-0.25)]
     with pytest.raises(ValueError, match="both backward and forward"):
         _ = result.traces
+
+
+def test_both_positive_dt_applies_opposite_signs(monkeypatch):
+    wrapper = _make_wrapper(dt=0.25)
+    probability = SimpleNamespace(probabilities=np.array([0.2, 0.8]), particles=["p0", "p1"])
+    backward = _make_multi_backtrace_result(n_traj=2, n_steps=3)
+    forward = _make_multi_backtrace_result(n_traj=2, n_steps=5)
+    trace_calls = []
+
+    def fake_get_probabilities(*args, **kwargs):
+        return probability
+
+    def fake_get_backtraces_from_particles(particles, **kwargs):
+        trace_calls.append((particles, kwargs))
+        return backward if kwargs["dt"] > 0 else forward
+
+    monkeypatch.setattr(wrapper.backtrace, "get_probabilities", fake_get_probabilities)
+    monkeypatch.setattr(wrapper.backtrace, "get_backtraces_from_particles", fake_get_backtraces_from_particles)
+
+    result = wrapper.both(1, 2, 3, 4, 5, 6, dt=0.125, get_trace=True)
+
+    assert result.backward_traces is backward
+    assert result.forward_traces is forward
+    assert [call[1]["dt"] for call in trace_calls] == [pytest.approx(0.125), pytest.approx(-0.125)]
+
+
+def test_trace_dt_rejects_negative_values(monkeypatch):
+    wrapper = _make_wrapper(dt=0.25)
+    traces = _make_multi_backtrace_result(n_traj=1, n_steps=2)
+
+    class FakePhaseGrid:
+        def __init__(self, x, y, z, vx, vy, vz):
+            self.axes = (x, y, z, vx, vy, vz)
+
+        def create_grid(self):
+            return np.zeros((1, 6))
+
+        def create_particles(self):
+            return ["p0"]
+
+    def fake_get_backtraces_from_particles(particles, **kwargs):
+        return traces
+
+    monkeypatch.setattr(wrapper, "_phase_grid_cls", lambda: FakePhaseGrid)
+    monkeypatch.setattr(wrapper.backtrace, "get_backtraces_from_particles", fake_get_backtraces_from_particles)
+
+    with pytest.raises(ValueError, match="dt must be >= 0"):
+        wrapper.forward(1, 2, 3, 4, 5, 6, dt=-0.1, get_trace=True, get_probabilities=False)
+
+
+def test_probability_dt_rejects_negative_values(monkeypatch):
+    wrapper = _make_wrapper(dt=0.25)
+    probability = SimpleNamespace(probabilities=np.array([1.0]), particles=["p0"])
+
+    def fake_get_probabilities(*args, **kwargs):
+        return probability
+
+    monkeypatch.setattr(wrapper.backtrace, "get_probabilities", fake_get_probabilities)
+
+    with pytest.raises(ValueError, match="probability_dt must be >= 0"):
+        wrapper.forward(1, 2, 3, 4, 5, 6, probability_dt=-0.1)
 
 
 def test_trace_result_plot_traces_uses_probability_alpha():
