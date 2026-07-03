@@ -11,6 +11,7 @@ Subpackages
    emout.distributed
    emout.plot
    emout.utils
+   emout.article
 
 Module contents
 ---------------

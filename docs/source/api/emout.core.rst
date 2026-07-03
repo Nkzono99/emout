@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    emout.core.backtrace
+   emout.core.boundaries
    emout.core.data
    emout.core.io
    emout.core.relocation

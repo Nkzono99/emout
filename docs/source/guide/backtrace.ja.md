@@ -6,36 +6,6 @@
 
 > **要件:** バックトレースは外部の [`vdist-solver-fortran`](https://github.com/Nkzono99/vdist-solver-fortran) パッケージ (`vdsolverf`) に依存します。`pip install vdist-solver-fortran` でインストールしてください。未インストールの環境では `data.trace.*` の呼び出し時に `ImportError` が出ます。
 
-## 入力単位の約束
-
-`data.trace` に渡す `x` / `y` / `z` / `vx` / `vy` / `vz`、`dt`、`probability_dt` は **すべて EMSES シミュレーション単位**です。emout は SI から自動変換しません。
-
-SI 値から指定したい場合は、呼び出し前に `data.unit` で EMSES 単位へ変換してください:
-
-```python
-position = (
-    data.unit.length.trans(0.20),  # m -> EMSES length
-    data.unit.length.trans(0.32),
-    data.unit.length.trans(0.40),
-)
-vx_scan = (
-    data.unit.v.trans(-3.0e5),     # m/s -> EMSES velocity
-    data.unit.v.trans(3.0e5),
-    64,
-)
-vz_scan = (
-    data.unit.v.trans(-3.0e5),
-    data.unit.v.trans(3.0e5),
-    64,
-)
-```
-
-`data.unit` は `plasma.inp` の `!!key dx=...,to_c=...` ヘッダー（または `plasma.toml` の `[meta.unit_conversion]`）がある場合にだけ利用できます。単位変換 metadata がない場合は、EMSES 単位の値を直接渡してください。
-
-`TraceResult.phases`、`TraceResult.particles`、`trace.traces.positions_list` などの配列も EMSES 単位のまま保持されます。一方で、`trace.plot()` / `trace.plot_traces()` / `trace.traces.xz.plot()` は unit metadata がある場合に既定で SI 単位へ変換して表示します（`use_si=False` で EMSES 単位表示）。
-
-`dt` と `probability_dt` は EMSES 時間単位の非負の刻み幅です。`None` の場合は `abs(data.inp.dt)` を使います。`data.trace.backward()` は solver に `+dt`、`data.trace.forward()` は内部で符号を反転して `-dt` を渡します。`data.trace.both()` は同じ `dt` から backward に `+dt`、forward に `-dt` を使います。到達確率計算は `probability_dt` を backward 側の符号で使います。負の値を渡すと `ValueError` になります。
-
 ## いつ使うか
 
 - ある観測点に到達する粒子の **位相空間分布** を見たい
@@ -44,6 +14,8 @@ vz_scan = (
 - 確率と軌跡を同じ粒子集合から計算して、確率を alpha に使いたい
 
 バックトレースは保存済みフィールドを使って ODE を解くため、大きな `max_step` や細かい位相空間グリッドでは時間がかかります。HPC ノードに処理を任せたい場合は、リモート実行と組み合わせてください（後述）。
+
+> **単位に注意:** `data.trace` の入力は EMSES シミュレーション単位です。SI 値から指定する場合は `data.unit` で変換してから渡します。
 
 ## クイックスタート
 
@@ -88,6 +60,36 @@ single = data.trace.backward(
 single.plot_traces("t", "x")
 single.traces.xvz.plot()
 ```
+
+## 入力単位の約束
+
+`data.trace` に渡す `x` / `y` / `z` / `vx` / `vy` / `vz`、`dt`、`probability_dt` は **すべて EMSES シミュレーション単位**です。emout は SI から自動変換しません。
+
+SI 値から指定したい場合は、呼び出し前に `data.unit` で EMSES 単位へ変換してください:
+
+```python
+position = (
+    data.unit.length.trans(0.20),  # m -> EMSES length
+    data.unit.length.trans(0.32),
+    data.unit.length.trans(0.40),
+)
+vx_scan = (
+    data.unit.v.trans(-3.0e5),     # m/s -> EMSES velocity
+    data.unit.v.trans(3.0e5),
+    64,
+)
+vz_scan = (
+    data.unit.v.trans(-3.0e5),
+    data.unit.v.trans(3.0e5),
+    64,
+)
+```
+
+`data.unit` は `plasma.inp` の `!!key dx=...,to_c=...` ヘッダー（または `plasma.toml` の `[meta.unit_conversion]`）がある場合にだけ利用できます。単位変換 metadata がない場合は、EMSES 単位の値を直接渡してください。
+
+`TraceResult.phases`、`TraceResult.particles`、`trace.traces.positions_list` などの配列も EMSES 単位のまま保持されます。一方で、`trace.plot()` / `trace.plot_traces()` / `trace.traces.xz.plot()` は unit metadata がある場合に既定で SI 単位へ変換して表示します（`use_si=False` で EMSES 単位表示）。
+
+`dt` と `probability_dt` は EMSES 時間単位の非負の刻み幅です。`None` の場合は `abs(data.inp.dt)` を使います。`data.trace.backward()` は solver に `+dt`、`data.trace.forward()` は内部で符号を反転して `-dt` を渡します。`data.trace.both()` は同じ `dt` から backward に `+dt`、forward に `-dt` を使います。到達確率計算は `probability_dt` を backward 側の符号で使います。負の値を渡すと `ValueError` になります。
 
 ## Workflow API: `data.trace`
 
@@ -241,11 +243,11 @@ ax.axhline(y=0, color="red", linestyle="--")
 <details>
 <summary>既存コード向け: 低水準 API `data.backtrace` を表示</summary>
 
-## 低水準 API: `data.backtrace`
+**低水準 API: `data.backtrace`**
 
 `data.backtrace` は、`data.trace` が内部で使っている `BacktraceWrapper` です。1 本の軌跡を明示的な `position` / `velocity` で計算したい場合、`vdsolverf.core.Particle` を直接渡したい場合、または solver に渡す `dt` の符号を直接制御したい場合に使います。新しい位相空間 workflow は `data.trace` を優先してください。
 
-### 単一粒子: `get_backtrace`
+**単一粒子: `get_backtrace`**
 
 ```python
 position = (20.0, 32.0, 40.0)
@@ -264,7 +266,7 @@ bt.yz.plot(color="black")    # 軌道の yz 投影
 
 `bt.ts`、`bt.probability`、`bt.positions`、`bt.velocities` は EMSES 単位の配列です。`XYData.plot()` はデフォルトで SI 単位に変換し、軸ラベルも自動生成します（`use_si=False` で EMSES 単位のまま表示できます）。
 
-### 複数粒子: `get_backtraces`
+**複数粒子: `get_backtraces`**
 
 ```python
 import numpy as np
@@ -280,7 +282,7 @@ many.sample(50, random_state=0).tvx.plot()
 
 `positions` と `velocities` は対応する粒子ごとの `(N, 3)` 配列です。Cartesian product の位相空間グリッドを作りたい場合は `data.trace` を使ってください。
 
-### Particle オブジェクトを直接渡す
+**Particle オブジェクトを直接渡す**
 
 ```python
 from vdsolverf.core import Particle
@@ -297,7 +299,7 @@ bt = data.backtrace.get_backtraces_from_particles(result.particles, ispec=0)
 bt.xz.plot(alpha=np.clip(result.probabilities, 0, 1))
 ```
 
-### 到達確率: `get_probabilities`
+**到達確率: `get_probabilities`**
 
 `data.trace` は内部で `data.backtrace.get_probabilities(...)` を呼び、`ProbabilityResult` を `trace.probabilities` として保持します。低水準 API を直接使う場合は次の形です:
 
@@ -316,7 +318,7 @@ result.vxvz.plot(cmap="viridis")
 result.plot_energy_spectrum(scale="log")
 ```
 
-### MPI backend
+**MPI backend**
 
 `parallel="mpi"` / `parallel="srun"` は低水準 `get_probabilities()` の backend オプションです。`data.trace` にも `**kwargs` として渡せます。
 

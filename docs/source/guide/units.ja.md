@@ -82,6 +82,14 @@ nd1p_m3 = data.nd1p[-1].val_si
 phi_slice = data.phisp[-1, :, 32, :].val_si
 ```
 
+テキスト診断出力の `icur` / `ocur` / `pbody` も `.val_si` で SI 単位系に変換できます:
+
+```python
+icur_si = data.icur.val_si      # 流入電流
+ocur_si = data.ocur.val_si      # 流出電流
+pbody_si = data.pbody.val_si    # 導体電位
+```
+
 ## プロットでの SI 単位
 
 デフォルトでは `plot()` は軸ラベルとカラーバーに SI 単位を使用します:
@@ -89,6 +97,26 @@ phi_slice = data.phisp[-1, :, 32, :].val_si
 ```python
 data.phisp[-1, 100, :, :].plot()              # SI 単位（デフォルト）
 data.phisp[-1, 100, :, :].plot(use_si=False)  # EMSES 単位
+```
+
+## 時間軸の単位カスタマイズ
+
+デフォルトでは時間軸は秒 (SI) で表示されます。プラズマ周波数規格化時間（$\omega_{pe} t$）に切り替えることもできます:
+
+```python
+from emout.emout.units import wpet_unit
+
+# 以降のすべてのプロットに対してグローバルに登録
+emout.Emout.name2unit["t"] = wpet_unit
+```
+
+## 変換器の合成
+
+`UnitTranslator` オブジェクトは乗算で合成できます:
+
+```python
+# 出力ステップ → SI 秒の変換
+t_translator = data.unit.t * UnitTranslator(data.inp.ifdiag * data.inp.dt, 1)
 ```
 
 ## 利用可能な単位変換器
@@ -127,23 +155,3 @@ data.phisp[-1, 100, :, :].plot(use_si=False)  # EMSES 単位
 | `kB` | ボルツマン定数 | J/K |
 | `e0` | 真空誘電率 | F/m |
 | `m0` | 真空透磁率 | N/A^2 |
-
-## 時間軸の単位カスタマイズ
-
-デフォルトでは時間軸は秒 (SI) で表示されます。プラズマ周波数規格化時間（$\omega_{pe} t$）に切り替えることもできます:
-
-```python
-from emout.emout.units import wpet_unit
-
-# 以降のすべてのプロットに対してグローバルに登録
-emout.Emout.name2unit["t"] = wpet_unit
-```
-
-## 変換器の合成
-
-`UnitTranslator` オブジェクトは乗算で合成できます:
-
-```python
-# 出力ステップ → SI 秒の変換
-t_translator = data.unit.t * UnitTranslator(data.inp.ifdiag * data.inp.dt, 1)
-```

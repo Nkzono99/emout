@@ -126,7 +126,7 @@ wp = 0.05
 qm = 0.001
 ```
 
-### 入力ファイルと出力ディレクトリの分離
+## 入力ファイルと出力ディレクトリの分離
 
 ```python
 data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")

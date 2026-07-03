@@ -84,6 +84,14 @@ This also works for sliced data:
 phi_slice = data.phisp[-1, :, 32, :].val_si
 ```
 
+Text diagnostics such as `icur`, `ocur`, and `pbody` also provide `.val_si` for SI-unit values:
+
+```python
+icur_si = data.icur.val_si      # inward current
+ocur_si = data.ocur.val_si      # outward current
+pbody_si = data.pbody.val_si    # conductor potential
+```
+
 ## SI Units in Plots
 
 By default, `plot()` uses SI units for axis labels and colorbar:
@@ -91,6 +99,26 @@ By default, `plot()` uses SI units for axis labels and colorbar:
 ```python
 data.phisp[-1, 100, :, :].plot()              # SI units (default)
 data.phisp[-1, 100, :, :].plot(use_si=False)  # EMSES units
+```
+
+## Custom Time-Axis Units
+
+By default, the time axis in plots uses seconds (SI). You can switch to plasma-frequency-normalized time ($\omega_{pe} t$):
+
+```python
+from emout.emout.units import wpet_unit
+
+# Register globally for all subsequent plots
+emout.Emout.name2unit["t"] = wpet_unit
+```
+
+## Combining Translators
+
+`UnitTranslator` objects support multiplication to compose conversions:
+
+```python
+# Time axis in output steps → SI seconds
+t_translator = data.unit.t * UnitTranslator(data.inp.ifdiag * data.inp.dt, 1)
 ```
 
 ## Available Unit Translators
@@ -129,23 +157,3 @@ data.phisp[-1, 100, :, :].plot(use_si=False)  # EMSES units
 | `kB` | Boltzmann constant | J/K |
 | `e0` | Vacuum permittivity | F/m |
 | `m0` | Vacuum permeability | N/A^2 |
-
-## Custom Time-Axis Units
-
-By default, the time axis in plots uses seconds (SI). You can switch to plasma-frequency-normalized time ($\omega_{pe} t$):
-
-```python
-from emout.emout.units import wpet_unit
-
-# Register globally for all subsequent plots
-emout.Emout.name2unit["t"] = wpet_unit
-```
-
-## Combining Translators
-
-`UnitTranslator` objects support multiplication to compose conversions:
-
-```python
-# Time axis in output steps → SI seconds
-t_translator = data.unit.t * UnitTranslator(data.inp.ifdiag * data.inp.dt, 1)
-```

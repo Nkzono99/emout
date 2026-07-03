@@ -62,10 +62,14 @@ data = emout.Emout(
 
 ## What is saved
 
+### Core saved data
+
 In record mode, emout saves only the data materialized by `plot()` and
 `to_numpy()`. For example, `data.phisp[-1, :, ymid, :].plot()` stores only
 that 2D slice in `data.h5`. Reusing the same field and selector does not
 write duplicate data.
+
+### Keeping publication data small
 
 `Data3d.plot_surfaces()` consumes a 3D field, so storing it naively can make
 publication data large. In article record mode, when `bounds` is passed,
@@ -89,6 +93,8 @@ field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
 The field returned by `mean()` also exposes `field.inp`, `field.unit`, and
 `field.boundaries`. This lets helper functions that read `data.inp` or
 `data.boundaries` accept the averaged field with the same structure.
+
+### Files in the bundle
 
 | File | Contents | Purpose |
 | --- | --- | --- |
@@ -160,37 +166,6 @@ Using the same `article_source_name` in record and replay mode gives a stable
 directory such as `article-records/datasets/case_a/default/`, even when
 absolute paths change.
 
-## Archives and publication size
-
-Enable `article_archive` to write an archive for each bundle automatically.
-
-```python
-data = emout.Emout(
-    "output_dir",
-    article_mode="record",
-    article_records_path="article-records",
-    article_archive="zip",
-)
-```
-
-```bash
-EMOUT_ARTICLE_MODE=record \
-EMOUT_ARTICLE_RECORDS_PATH=article-records \
-EMOUT_ARTICLE_ARCHIVE=zip \
-python figure.py
-```
-
-| Setting | Archive created |
-| --- | --- |
-| `article_archive=True` / `EMOUT_ARTICLE_ARCHIVE=1` | `<article-name>.tar.gz` |
-| `article_archive="tar.gz"` / `EMOUT_ARTICLE_ARCHIVE=tar.gz` | `<article-name>.tar.gz` |
-| `article_archive="zip"` / `EMOUT_ARTICLE_ARCHIVE=zip` | `<article-name>.zip` |
-
-During replay, emout automatically extracts the matching `.tar.gz` or `.zip`
-when the extracted directory is not present. Zip is useful when an upload
-service rejects `.tar.gz` or when readers prefer a format that is easy to
-open on Windows.
-
 ## What replay can do
 
 In replay mode, `emout.Emout()` returns a proxy that reads the recorded bundle
@@ -227,6 +202,37 @@ pbody = data.pbody
 Accessing an unrecorded slice raises an exception. This is intentional: it
 checks that the public bundle contains the data required to reproduce the
 figure.
+
+## Archive formats
+
+Enable `article_archive` to write an archive for each bundle automatically.
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_archive="zip",
+)
+```
+
+```bash
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_ARCHIVE=zip \
+python figure.py
+```
+
+| Setting | Archive created |
+| --- | --- |
+| `article_archive=True` / `EMOUT_ARTICLE_ARCHIVE=1` | `<article-name>.tar.gz` |
+| `article_archive="tar.gz"` / `EMOUT_ARTICLE_ARCHIVE=tar.gz` | `<article-name>.tar.gz` |
+| `article_archive="zip"` / `EMOUT_ARTICLE_ARCHIVE=zip` | `<article-name>.zip` |
+
+During replay, emout automatically extracts the matching `.tar.gz` or `.zip`
+when the extracted directory is not present. Zip is useful when an upload
+service rejects `.tar.gz` or when readers prefer a format that is easy to
+open on Windows.
 
 ## Configuration reference
 

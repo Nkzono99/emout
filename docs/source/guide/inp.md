@@ -129,7 +129,7 @@ wp = 0.05
 qm = 0.001
 ```
 
-### Separating Input and Output
+## Separating Input and Output
 
 ```python
 data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")

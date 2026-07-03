@@ -71,6 +71,13 @@ plotter.screenshot("phisp_contour.png")
 plotter.close()
 ```
 
+Pass `filename=` when you want `plot3d()` to save the result directly. Image extensions such as `.png` are saved as screenshots. `.html` is saved as interactive HTML when the PyVista Jupyter/trame extras are installed. `savefilename=` is also accepted as a compatibility alias matching the 2-D plot API.
+
+```python
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
+data.j1xyz[-1].plot3d(mode="stream", filename="j1_stream.png")
+```
+
 ## Vector Fields
 
 A three-component `VectorData` can draw streamlines with `mode="stream"` / `"streamline"` or glyph arrows with `mode="quiver"` / `"vec"`.
@@ -93,7 +100,14 @@ data.j1xyz[-1].plot3d(
 )
 ```
 
-Streamline seeds are passed to PyVista's `mesh.streamlines()`. Tune `source_center`, `source_radius`, and `n_points` when needed. Quiver arrows are down-sampled with `skip` and scaled with `factor`.
+Choose streamline seeds with `seed_mode`. The default `sphere` mode starts near the centre. `plane` often gives a view similar to 2-D streamlines, `volume` seeds through the whole domain, and `surface` starts from boundary meshes. Pass `seed_points` when you want fixed custom start points. Quiver arrows are down-sampled with `skip` and scaled with `factor`.
+
+```python
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot3d(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot3d(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot3d(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+```
 
 ## Overlays
 

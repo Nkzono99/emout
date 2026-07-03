@@ -6,36 +6,6 @@ The older `data.backtrace` entry point remains available as a lower-level API fo
 
 > **Requirements:** backtrace relies on the external [`vdist-solver-fortran`](https://github.com/Nkzono99/vdist-solver-fortran) package (`vdsolverf`). Install it with `pip install vdist-solver-fortran`. Without it, calls to `data.trace.*` raise `ImportError`.
 
-## Input Unit Contract
-
-The `x` / `y` / `z` / `vx` / `vy` / `vz`, `dt`, and `probability_dt` values passed to `data.trace` are **all EMSES simulation units**. emout does not convert these inputs from SI.
-
-If you want to specify SI values, convert them to EMSES units with `data.unit` before calling:
-
-```python
-position = (
-    data.unit.length.trans(0.20),  # m -> EMSES length
-    data.unit.length.trans(0.32),
-    data.unit.length.trans(0.40),
-)
-vx_scan = (
-    data.unit.v.trans(-3.0e5),     # m/s -> EMSES velocity
-    data.unit.v.trans(3.0e5),
-    64,
-)
-vz_scan = (
-    data.unit.v.trans(-3.0e5),
-    data.unit.v.trans(3.0e5),
-    64,
-)
-```
-
-`data.unit` is available only when `plasma.inp` contains a `!!key dx=...,to_c=...` header, or `plasma.toml` contains `[meta.unit_conversion]`. If unit-conversion metadata is absent, pass values that are already in EMSES units.
-
-Arrays such as `TraceResult.phases`, `TraceResult.particles`, and `trace.traces.positions_list` also remain in EMSES units. Plot helpers such as `trace.plot()`, `trace.plot_traces()`, and `trace.traces.xz.plot()` convert displayed axes to SI by default when unit metadata is available (`use_si=False` keeps EMSES-unit display).
-
-`dt` and `probability_dt` are non-negative step widths in EMSES time units. When they are `None`, emout uses `abs(data.inp.dt)`. `data.trace.backward()` passes `+dt` to the solver, while `data.trace.forward()` flips the sign internally and passes `-dt`. `data.trace.both()` uses the same `dt` magnitude as `+dt` for backward traces and `-dt` for forward traces. Arrival-probability solves use `probability_dt` with the backward-sign convention. Negative values raise `ValueError`.
-
 ## When to Use `data.trace`
 
 - You want the **phase-space distribution** of particles that arrive at an observation point.
@@ -44,6 +14,8 @@ Arrays such as `TraceResult.phases`, `TraceResult.particles`, and `trace.traces.
 - You want probabilities and trajectories from the same particle set, with probability-derived alpha.
 
 Backtrace integrates ODEs through saved field output, so large `max_step` values or fine phase-space grids can become expensive. If you want to push the work to an HPC node, combine it with remote execution (see below).
+
+> **Unit note:** `data.trace` inputs are EMSES simulation units. Convert SI values with `data.unit` before passing them in.
 
 ## Quick Start
 
@@ -88,6 +60,36 @@ single = data.trace.backward(
 single.plot_traces("t", "x")
 single.traces.xvz.plot()
 ```
+
+## Input Unit Contract
+
+The `x` / `y` / `z` / `vx` / `vy` / `vz`, `dt`, and `probability_dt` values passed to `data.trace` are **all EMSES simulation units**. emout does not convert these inputs from SI.
+
+If you want to specify SI values, convert them to EMSES units with `data.unit` before calling:
+
+```python
+position = (
+    data.unit.length.trans(0.20),  # m -> EMSES length
+    data.unit.length.trans(0.32),
+    data.unit.length.trans(0.40),
+)
+vx_scan = (
+    data.unit.v.trans(-3.0e5),     # m/s -> EMSES velocity
+    data.unit.v.trans(3.0e5),
+    64,
+)
+vz_scan = (
+    data.unit.v.trans(-3.0e5),
+    data.unit.v.trans(3.0e5),
+    64,
+)
+```
+
+`data.unit` is available only when `plasma.inp` contains a `!!key dx=...,to_c=...` header, or `plasma.toml` contains `[meta.unit_conversion]`. If unit-conversion metadata is absent, pass values that are already in EMSES units.
+
+Arrays such as `TraceResult.phases`, `TraceResult.particles`, and `trace.traces.positions_list` also remain in EMSES units. Plot helpers such as `trace.plot()`, `trace.plot_traces()`, and `trace.traces.xz.plot()` convert displayed axes to SI by default when unit metadata is available (`use_si=False` keeps EMSES-unit display).
+
+`dt` and `probability_dt` are non-negative step widths in EMSES time units. When they are `None`, emout uses `abs(data.inp.dt)`. `data.trace.backward()` passes `+dt` to the solver, while `data.trace.forward()` flips the sign internally and passes `-dt`. `data.trace.both()` uses the same `dt` magnitude as `+dt` for backward traces and `-dt` for forward traces. Arrival-probability solves use `probability_dt` with the backward-sign convention. Negative values raise `ValueError`.
 
 ## Workflow API: `data.trace`
 
@@ -241,11 +243,11 @@ ax.axhline(y=0, color="red", linestyle="--")
 <details>
 <summary>For existing code: show the lower-level `data.backtrace` API</summary>
 
-## Low-Level API: `data.backtrace`
+**Low-Level API: `data.backtrace`**
 
 `data.backtrace` is the `BacktraceWrapper` used internally by `data.trace`. Use it when you need one trajectory from explicit `position` / `velocity` inputs, when you want to pass `vdsolverf.core.Particle` objects directly, or when you need direct control over the signed `dt` passed to the solver. Prefer `data.trace` for new phase-space workflows.
 
-### Single Particle: `get_backtrace`
+**Single Particle: `get_backtrace`**
 
 ```python
 position = (20.0, 32.0, 40.0)
@@ -264,7 +266,7 @@ bt.yz.plot(color="black")    # yz projection of the trajectory
 
 `bt.ts`, `bt.probability`, `bt.positions`, and `bt.velocities` are EMSES-unit arrays. `XYData.plot()` converts to SI units by default and auto-generates axis labels (`use_si=False` keeps EMSES units).
 
-### Many Particles: `get_backtraces`
+**Many Particles: `get_backtraces`**
 
 ```python
 import numpy as np
@@ -280,7 +282,7 @@ many.sample(50, random_state=0).tvx.plot()
 
 `positions` and `velocities` are paired `(N, 3)` arrays. Use `data.trace` when you want the Cartesian product of a phase-space grid.
 
-### Feeding Raw Particle Objects
+**Feeding Raw Particle Objects**
 
 ```python
 from vdsolverf.core import Particle
@@ -297,7 +299,7 @@ bt = data.backtrace.get_backtraces_from_particles(result.particles, ispec=0)
 bt.xz.plot(alpha=np.clip(result.probabilities, 0, 1))
 ```
 
-### Arrival Probability: `get_probabilities`
+**Arrival Probability: `get_probabilities`**
 
 `data.trace` internally calls `data.backtrace.get_probabilities(...)` and stores the `ProbabilityResult` as `trace.probabilities`. If you call the lower-level API directly, use this form:
 
@@ -316,7 +318,7 @@ result.vxvz.plot(cmap="viridis")
 result.plot_energy_spectrum(scale="log")
 ```
 
-### MPI Backend
+**MPI Backend**
 
 `parallel="mpi"` / `parallel="srun"` are lower-level `get_probabilities()` backend options. You can also pass them through `data.trace` as `**kwargs`.
 

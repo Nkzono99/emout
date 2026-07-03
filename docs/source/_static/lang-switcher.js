@@ -77,7 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Prefer the page's own language over localStorage so that the selector
   // reflects what the user is actually looking at. Non-localized pages
   // (e.g. API reference) fall back to the stored preference.
-  const lang = pageLang || localStorage.getItem(STORAGE_KEY) || "ja";
+  const browserLang = navigator.language && navigator.language.startsWith("ja") ? "ja" : "en";
+  const lang = pageLang || localStorage.getItem(STORAGE_KEY) || browserLang;
 
   // Keep localStorage in sync when landing on a localized page directly.
   if (pageLang) {

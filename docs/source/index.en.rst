@@ -15,28 +15,17 @@ emout
    :caption: User Guide
 
    guide/quickstart
-   guide/quickstart.ja
    guide/plotting
-   guide/plotting.ja
    guide/pyvista
-   guide/pyvista.ja
    guide/animation
-   guide/animation.ja
    guide/inp
-   guide/inp.ja
    guide/units
-   guide/units.ja
    guide/boundaries
-   guide/boundaries.ja
    guide/backtrace
-   guide/backtrace.ja
    guide/distributed
-   guide/distributed.ja
    guide/article
-   guide/article.ja
 
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
+API Reference
+-------------
 
-   api/modules
+See the shared :doc:`API Reference <api/index>`.

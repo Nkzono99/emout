@@ -60,9 +60,13 @@ data = emout.Emout(
 
 ## 保存されるもの
 
+### 基本的な保存対象
+
 record mode では、`plot()` と `to_numpy()` が materialize したデータだけを保存します。
 例えば `data.phisp[-1, :, ymid, :].plot()` は、その 2D スライスだけを `data.h5` に保存します。
 同じ field と selector が複数回使われても、重複して保存されません。
+
+### 公開データを小さくする
 
 `Data3d.plot_surfaces()` は 3D field を使うため、そのままでは公開データが大きくなりがちです。
 article record mode では `bounds` が渡された場合、`data.phisp[-1].plot_surfaces(..., bounds=bounds)`
@@ -82,6 +86,8 @@ field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
 
 `mean()` が返す field からも `field.inp`、`field.unit`、`field.boundaries` を参照できます。
 そのため、図作成関数が `data.inp` や `data.boundaries` を読む場合でも、平均 field を渡して同じ構造で使えます。
+
+### bundle に含まれるファイル
 
 | ファイル | 内容 | 用途 |
 | --- | --- | --- |
@@ -149,35 +155,6 @@ data = [
 record / replay の両方で同じ `article_source_name` を使うと、絶対パスが変わっても
 `article-records/datasets/case_a/default/` のような安定した保存先を使えます。
 
-## archive と公開データサイズ
-
-`article_archive` を有効にすると、各 bundle を archive として自動保存します。
-
-```python
-data = emout.Emout(
-    "output_dir",
-    article_mode="record",
-    article_records_path="article-records",
-    article_archive="zip",
-)
-```
-
-```bash
-EMOUT_ARTICLE_MODE=record \
-EMOUT_ARTICLE_RECORDS_PATH=article-records \
-EMOUT_ARTICLE_ARCHIVE=zip \
-python figure.py
-```
-
-| 指定 | 作成される archive |
-| --- | --- |
-| `article_archive=True` / `EMOUT_ARTICLE_ARCHIVE=1` | `<article-name>.tar.gz` |
-| `article_archive="tar.gz"` / `EMOUT_ARTICLE_ARCHIVE=tar.gz` | `<article-name>.tar.gz` |
-| `article_archive="zip"` / `EMOUT_ARTICLE_ARCHIVE=zip` | `<article-name>.zip` |
-
-replay 時は展開済み directory がなくても、対応する `.tar.gz` または `.zip` があれば自動展開します。
-zip はアップロード先が `.tar.gz` を受け付けない場合や、Windows で展開しやすい形式にしたい場合に便利です。
-
 ## replay でできること
 
 replay mode の `emout.Emout()` は、元の HDF5 出力ではなく記録済み bundle を読む proxy を返します。
@@ -212,6 +189,35 @@ pbody = data.pbody
 
 未記録のスライスにアクセスすると例外になります。これは公開 bundle に図の再現に必要なデータが
 含まれているかを確認するための挙動です。
+
+## archive 形式
+
+`article_archive` を有効にすると、各 bundle を archive として自動保存します。
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_archive="zip",
+)
+```
+
+```bash
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_ARCHIVE=zip \
+python figure.py
+```
+
+| 指定 | 作成される archive |
+| --- | --- |
+| `article_archive=True` / `EMOUT_ARTICLE_ARCHIVE=1` | `<article-name>.tar.gz` |
+| `article_archive="tar.gz"` / `EMOUT_ARTICLE_ARCHIVE=tar.gz` | `<article-name>.tar.gz` |
+| `article_archive="zip"` / `EMOUT_ARTICLE_ARCHIVE=zip` | `<article-name>.zip` |
+
+replay 時は展開済み directory がなくても、対応する `.tar.gz` または `.zip` があれば自動展開します。
+zip はアップロード先が `.tar.gz` を受け付けない場合や、Windows で展開しやすい形式にしたい場合に便利です。
 
 ## 設定一覧
 

@@ -26,6 +26,7 @@ The `action` parameter controls what happens after frames are generated:
 | `'save'` | Save to a file (requires `filename`) |
 | `'return'` | Return `(fig, animation)` for manual control |
 | `'frames'` | Return a `FrameUpdater` for multi-panel layouts |
+| `'bytes'` | Return GIF bytes in remote execution (not supported locally) |
 
 ```python
 # Save as GIF

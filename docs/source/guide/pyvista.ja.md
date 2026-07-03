@@ -71,6 +71,13 @@ plotter.screenshot("phisp_contour.png")
 plotter.close()
 ```
 
+`filename=` を渡すと、`plot3d()` 側で保存まで実行できます。`.png` などの画像拡張子は screenshot として保存します。`.html` は PyVista の Jupyter/trame 追加依存が入っている環境では interactive HTML として保存できます。既存の 2D plot と同じく `savefilename=` も互換エイリアスとして使えます。
+
+```python
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
+data.j1xyz[-1].plot3d(mode="stream", filename="j1_stream.png")
+```
+
 ## ベクトル場
 
 3 成分を持つ `VectorData` は、`mode="stream"` / `"streamline"` で streamlines、`mode="quiver"` / `"vec"` で glyph arrows を描けます。
@@ -93,7 +100,14 @@ data.j1xyz[-1].plot3d(
 )
 ```
 
-streamline の seed は PyVista の `mesh.streamlines()` に渡されます。必要なら `source_center`、`source_radius`、`n_points` を調整してください。quiver は `skip` で間引き、`factor` で矢印の長さを調整します。
+streamline の seed は `seed_mode` で選べます。既定の `sphere` は中心付近から開始します。`plane` は 2D streamline に近い見え方になりやすく、`volume` は領域全体、`surface` は境界メッシュ上から開始します。任意の開始点を固定したい場合は `seed_points` を渡します。quiver は `skip` で間引き、`factor` で矢印の長さを調整します。
+
+```python
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot3d(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot3d(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot3d(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+```
 
 ## 重ね描き
 
