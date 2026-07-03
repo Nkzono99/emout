@@ -60,7 +60,7 @@ def create_vector_mesh3d(
 
     axes = tuple(x_data3d.use_axes)
     if set(axes) != set(_SPATIAL_AXES):
-        raise ValueError(f"plot_pyvista for VectorData3d requires spatial axes x,y,z. got: {axes}")
+        raise ValueError(f"plot3d for VectorData3d requires spatial axes x,y,z. got: {axes}")
 
     coords, axis_labels = _axis_values(x_data3d, use_si=use_si, offsets=offsets)
     x = coords["x"]

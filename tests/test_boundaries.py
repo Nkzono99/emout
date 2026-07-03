@@ -12,6 +12,7 @@ generation in isolation.
 from __future__ import annotations
 
 from pathlib import Path
+import warnings
 
 import numpy as np
 import pytest
@@ -482,15 +483,18 @@ def test_collection_plot3d_adds_overlay(monkeypatch, boundaries: BoundaryCollect
 def test_collection_plot_pyvista_backend_dispatch(monkeypatch, boundaries: BoundaryCollection):
     calls = []
 
-    def _fake_plot_pyvista(self, **kwargs):
+    def _fake_plot3d(self, **kwargs):
         calls.append((self, kwargs))
         return "pyvista-plotter"
 
-    monkeypatch.setattr(BoundaryCollection, "plot_pyvista", _fake_plot_pyvista)
+    monkeypatch.setattr(BoundaryCollection, "plot3d", _fake_plot3d)
 
-    result = boundaries.plot(backend="pyvista", show=True, surface_color="red")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = boundaries.plot(backend="pyvista", show=True, surface_color="red")
 
     assert result == "pyvista-plotter"
+    assert [item for item in caught if issubclass(item.category, DeprecationWarning)] == []
     assert calls == [
         (
             boundaries,
@@ -589,8 +593,25 @@ def test_collection_plot_pyvista_aliases_plot3d(boundaries: BoundaryCollection, 
 
     monkeypatch.setattr(BoundaryCollection, "plot3d", fake_plot3d)
 
-    assert boundaries.plot_pyvista(color="blue") == "plotter"
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert boundaries.plot_pyvista(color="blue") == "plotter"
     assert captured["color"] == "blue"
+
+
+def test_boundary_plot_pyvista_warns_and_aliases_plot3d(boundaries: BoundaryCollection, monkeypatch):
+    captured = {}
+
+    def fake_plot3d(self, **kwargs):
+        captured["boundary"] = self
+        captured.update(kwargs)
+        return "plotter"
+
+    monkeypatch.setattr(SphereBoundary, "plot3d", fake_plot3d)
+
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert boundaries[0].plot_pyvista(color="green") == "plotter"
+    assert captured["boundary"] is boundaries[0]
+    assert captured["color"] == "green"
 
 
 # ---------------------------------------------------------------------------

@@ -44,14 +44,14 @@ def create_plane_mesh(data2d, use_si=True, offsets=None, scalar_name=None):
         Human-readable scalar label including units.
     """
     if len(data2d.use_axes) != 2:
-        raise ValueError("plot_pyvista for Data2d requires 2D data.")
+        raise ValueError("plot3d for Data2d requires 2D data.")
     if "t" in data2d.use_axes:
-        raise ValueError("Data2d with time axis is not supported by plot_pyvista.")
+        raise ValueError("Data2d with time axis is not supported by plot3d.")
 
     axes = tuple(data2d.use_axes)
     axis0, axis1 = axes
     if axis0 not in _SPATIAL_AXES or axis1 not in _SPATIAL_AXES:
-        raise ValueError(f"Unsupported axes for Data2d plot_pyvista: {axes}")
+        raise ValueError(f"Unsupported axes for Data2d plot3d: {axes}")
 
     coords, axis_labels = _axis_values(data2d, use_si=use_si, offsets=offsets)
     c0 = coords[axis0]
@@ -108,7 +108,7 @@ def create_volume_mesh(data3d, use_si=True, offsets=None, scalar_name=None):
     """
     axes = tuple(data3d.use_axes)
     if set(axes) != set(_SPATIAL_AXES):
-        raise ValueError(f"plot_pyvista for Data3d requires spatial axes x,y,z. got: {axes}")
+        raise ValueError(f"plot3d for Data3d requires spatial axes x,y,z. got: {axes}")
 
     coords, axis_labels = _axis_values(data3d, use_si=use_si, offsets=offsets)
     x = coords["x"]
@@ -387,7 +387,7 @@ def plot_scalar_volume(
         add_mesh_kwargs.update(kwargs)
         plotter.add_mesh(contour, **add_mesh_kwargs)
     else:
-        raise ValueError(f'Unsupported mode "{mode}" for Data3d plot_pyvista.')
+        raise ValueError(f'Unsupported mode "{mode}" for Data3d plot3d.')
 
     if add_outline:
         plotter.add_mesh(mesh.outline(), color=outline_color)

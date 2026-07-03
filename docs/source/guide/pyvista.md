@@ -1,4 +1,4 @@
-# PyVista Visualization (`plot3d` / `plot_pyvista`)
+# PyVista Visualization (`plot3d`)
 
 The PyVista backend is the 3-D visualization API for placing 2-D slices in 3-D space, rendering 3-D scalar fields as volume / slice / contour views, and drawing 3-D vector fields as streamlines or quiver arrows. Use the regular `plot()` / `cmap()` / `contour()` APIs from [Plotting](plotting.md) for ordinary 1-D/2-D analysis, and switch to PyVista when you need interactive 3-D camera control or overlays.
 
@@ -13,7 +13,7 @@ The PyVista backend is the 3-D visualization API for placing 2-D slices in 3-D s
 | Backtrace / trace paths | `trace.plot3d(plotter=...)` | `pyvista.Plotter` |
 | Mesh construction only | `emout.plot.pyvista_plot.create_*_mesh(...)` | PyVista mesh object |
 
-`Data2d.plot3d()` and `Data3d.plot3d()` are aliases for `plot_pyvista()`. `VectorData.plot3d()` uses the PyVista backend by default; pass `backend="mpl"` when you want the Matplotlib 3-D backend.
+`Data2d.plot3d()` and `Data3d.plot3d()` render with PyVista. `VectorData.plot3d()` also uses the PyVista backend by default; pass `backend="mpl"` when you want the Matplotlib 3-D backend.
 
 ## Installation
 
@@ -181,7 +181,7 @@ plotter.close()
 
 ## Low-Level Helpers
 
-Usually you should use `plot3d()` / `plot_pyvista()`. Use helpers from `emout.plot.pyvista_plot` only when you want to modify the PyVista mesh yourself.
+Usually you should use `plot3d()`. Use helpers from `emout.plot.pyvista_plot` only when you want to modify the PyVista mesh yourself.
 
 ```python
 from emout.plot.pyvista_plot import (
@@ -202,6 +202,6 @@ Low-level helpers return PyVista objects directly; they are not high-level emout
 | --- | --- | --- |
 | `ModuleNotFoundError: pyvista` | old environment or dependencies not refreshed | `pip install -U emout` |
 | `Data2d with time axis is not supported` | the 2-D slice still includes `t` | fix time to a single index and pass a spatial 2-D slice |
-| `plot_pyvista ... requires spatial axes x,y,z` | the 3-D spatial axes are not all present | select only time, e.g. `data.phisp[-1]` |
+| `requires spatial axes x,y,z` | the 3-D spatial axes are not all present | select only time, e.g. `data.phisp[-1]` |
 | no streamlines appear | too few seeds or too small a seed radius | increase `n_points` / `source_radius` |
 | layers are offset | different layers use different `use_si` or `offsets` | use the same values for every layer |

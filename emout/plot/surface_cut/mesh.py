@@ -12,6 +12,8 @@ from typing import Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
+from emout._deprecations import warn_plot_pyvista_deprecated
+
 
 AxisSpec = Union[str, Tuple[float, float, float], np.ndarray]
 
@@ -142,7 +144,8 @@ class MeshSurface3D(ABC):
         )
 
     def plot_pyvista(self, *args, **kwargs):
-        """Alias for :meth:`plot3d`."""
+        """Deprecated alias for :meth:`plot3d`."""
+        warn_plot_pyvista_deprecated()
         return self.plot3d(*args, **kwargs)
 
 

@@ -1,7 +1,6 @@
 """PyVista-based 3-D visualisation helpers for scalar and vector fields.
 
-These helpers are called by :meth:`Data3d.plot_pyvista` and
-:meth:`VectorData.plot_pyvista`.
+These helpers are called by PyVista-backed ``plot3d()`` methods.
 """
 
 import importlib

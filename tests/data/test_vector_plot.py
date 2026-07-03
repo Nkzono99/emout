@@ -471,6 +471,10 @@ class TestPlot3dMpl:
 class TestPlotPyvista:
     """Test plot_pyvista argument validation and dispatch."""
 
+    pytestmark = pytest.mark.filterwarnings(
+        r"ignore:plot_pyvista\(\) is deprecated; use plot3d\(\) instead\.:DeprecationWarning"
+    )
+
     def test_2d_data_raises(self):
         vec = _make_2d_vec()
         with pytest.raises(ValueError, match="3D"):
@@ -569,7 +573,7 @@ class TestPlot3d:
     def test_pyvista_backend(self, monkeypatch):
         vec = _make_3d_vec()
         mock = MagicMock(return_value="pv")
-        monkeypatch.setattr(VectorData, "plot_pyvista", mock)
+        monkeypatch.setattr(VectorData, "_plot_pyvista", mock)
         result = vec.plot3d(mode="vec", backend="pyvista")
         mock.assert_called_once()
         assert result == "pv"
@@ -578,7 +582,7 @@ class TestPlot3d:
     def test_default_backend_is_pyvista(self, monkeypatch):
         vec = _make_3d_vec()
         mock = MagicMock(return_value="pv")
-        monkeypatch.setattr(VectorData, "plot_pyvista", mock)
+        monkeypatch.setattr(VectorData, "_plot_pyvista", mock)
         result = vec.plot3d(mode="vec")
         mock.assert_called_once()
         assert result == "pv"
@@ -593,10 +597,10 @@ class TestPlot3d:
         assert call_kwargs["n_seeds"] == 5
 
     def test_kwargs_forwarded_to_pyvista(self, monkeypatch):
-        """Extra kwargs should be forwarded to plot_pyvista."""
+        """Extra kwargs should be forwarded to the PyVista backend."""
         vec = _make_3d_vec()
         mock = MagicMock(return_value="pv")
-        monkeypatch.setattr(VectorData, "plot_pyvista", mock)
+        monkeypatch.setattr(VectorData, "_plot_pyvista", mock)
         vec.plot3d(mode="vec", backend="pyvista", show=True)
         call_kwargs = mock.call_args[1]
         assert call_kwargs["show"] is True

@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+import pytest
 
 from emout.core.data.data import Data2d, Data3d
 from emout.core.data.vector_data import VectorData
@@ -30,6 +33,10 @@ class _FakePlotter:
         self.screenshot_path = filename
 
 
+def _deprecation_warnings(caught):
+    return [item for item in caught if issubclass(item.category, DeprecationWarning)]
+
+
 def test_data2d_plot_pyvista_delegates(monkeypatch):
     """Data2d.plot_pyvista が helper へ委譲されることを確認する。"""
     data2d = Data2d(np.zeros((4, 5)), name="phi", filename="dummy.h5")
@@ -42,9 +49,13 @@ def test_data2d_plot_pyvista_delegates(monkeypatch):
 
     monkeypatch.setattr(pvplot, "plot_scalar_plane", _fake_plot_scalar_plane)
 
-    assert data2d.plot_pyvista(show=False, surfaces=surfaces) == "plane-plotter"
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert data2d.plot_pyvista(show=False, surfaces=surfaces) == "plane-plotter"
     assert calls[-1]["surfaces"] is surfaces
-    assert data2d.plot3d(show=False) == "plane-plotter"
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert data2d.plot3d(show=False) == "plane-plotter"
+    assert _deprecation_warnings(caught) == []
 
 
 def test_plot_scalar_plane_saves_filename_without_mesh_kwarg(monkeypatch, tmp_path):
@@ -85,10 +96,14 @@ def test_data3d_plot_pyvista_delegates(monkeypatch):
 
     levels = [0.25, 0.5]
     surfaces = object()
-    assert data3d.plot_pyvista(mode="contour", levels=levels, surfaces=surfaces, show=False) == "volume-plotter"
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert data3d.plot_pyvista(mode="contour", levels=levels, surfaces=surfaces, show=False) == "volume-plotter"
     assert calls[-1]["contour_levels"] is levels
     assert calls[-1]["surfaces"] is surfaces
-    assert data3d.plot3d(show=False) == "volume-plotter"
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert data3d.plot3d(show=False) == "volume-plotter"
+    assert _deprecation_warnings(caught) == []
 
 
 def test_vector3d_plot_pyvista_modes(monkeypatch):
@@ -109,8 +124,14 @@ def test_vector3d_plot_pyvista_modes(monkeypatch):
         lambda *args, **kwargs: "quiver-plotter",
     )
 
-    assert vec.plot_pyvista(mode="stream", show=False) == "stream-plotter"
-    assert vec.plot_pyvista(mode="quiver", show=False) == "quiver-plotter"
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert vec.plot_pyvista(mode="stream", show=False) == "stream-plotter"
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert vec.plot_pyvista(mode="quiver", show=False) == "quiver-plotter"
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert vec.plot3d(mode="stream", show=False) == "stream-plotter"
+    assert _deprecation_warnings(caught) == []
 
 
 def test_vector_plot_dispatches_to_plot3d(monkeypatch):

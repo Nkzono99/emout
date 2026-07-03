@@ -168,6 +168,17 @@ nitpick_ignore = [
     ("py:mod", "f90nml"),
 ]
 
+
+def _skip_deprecated_members(app, what, name, obj, skip, options):
+    if name == "plot_pyvista":
+        return True
+    return skip
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", _skip_deprecated_members)
+
+
 # -- Copybutton settings ----------------------------------------------------
 
 copybutton_prompt_text = r">>> |\.\.\. |\$ "

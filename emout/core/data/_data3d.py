@@ -6,6 +6,7 @@ from typing import Literal, Tuple, Union
 
 import numpy as np
 
+from emout._deprecations import warn_plot_pyvista_deprecated
 from emout.utils.util import apply_offset
 
 from ._base import Data, _REMOTE_PLOT_HANDLED
@@ -148,6 +149,46 @@ class Data3d(Data):
         savefilename=None,
         **kwargs,
     ):
+        """Deprecated alias for :meth:`plot3d`."""
+        warn_plot_pyvista_deprecated()
+        return self._plot_pyvista(
+            mode=mode,
+            use_si=use_si,
+            offsets=offsets,
+            show=show,
+            plotter=plotter,
+            cmap=cmap,
+            clim=clim,
+            opacity=opacity,
+            contour_levels=contour_levels,
+            levels=levels,
+            add_outline=add_outline,
+            outline_color=outline_color,
+            add_scalar_bar=add_scalar_bar,
+            filename=filename,
+            savefilename=savefilename,
+            **kwargs,
+        )
+
+    def _plot_pyvista(
+        self,
+        mode: Literal["box", "volume", "slice", "contour"] = "box",
+        use_si: bool = True,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
+        show: bool = False,
+        plotter=None,
+        cmap: str = "viridis",
+        clim: Union[Tuple[float, float], None] = None,
+        opacity: Union[float, str] = "sigmoid",
+        contour_levels: Union[int, np.ndarray] = 8,
+        levels: Union[int, np.ndarray, None] = None,
+        add_outline: bool = True,
+        outline_color: str = "white",
+        add_scalar_bar: bool = True,
+        filename=None,
+        savefilename=None,
+        **kwargs,
+    ):
         """Render three-dimensional data with PyVista.
 
         ``levels`` is an alias for ``contour_levels`` in
@@ -181,8 +222,8 @@ class Data3d(Data):
         )
 
     def plot3d(self, *args, **kwargs):
-        """Alias for :meth:`plot_pyvista`."""
-        return self.plot_pyvista(*args, **kwargs)
+        """Render three-dimensional data with PyVista."""
+        return self._plot_pyvista(*args, **kwargs)
 
     def to_vtk(
         self,

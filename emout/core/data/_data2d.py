@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import emout.utils as utils
+from emout._deprecations import warn_plot_pyvista_deprecated
 from emout.utils.util import apply_offset
 
 from ._base import Data, _REMOTE_PLOT_HANDLED
@@ -281,6 +282,36 @@ class Data2d(Data):
         savefilename=None,
         **kwargs,
     ):
+        """Deprecated alias for :meth:`plot3d`."""
+        warn_plot_pyvista_deprecated()
+        return self._plot_pyvista(
+            use_si=use_si,
+            offsets=offsets,
+            show=show,
+            plotter=plotter,
+            cmap=cmap,
+            clim=clim,
+            show_edges=show_edges,
+            add_scalar_bar=add_scalar_bar,
+            filename=filename,
+            savefilename=savefilename,
+            **kwargs,
+        )
+
+    def _plot_pyvista(
+        self,
+        use_si: bool = True,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
+        show: bool = False,
+        plotter=None,
+        cmap: str = "viridis",
+        clim: Union[Tuple[float, float], None] = None,
+        show_edges: bool = False,
+        add_scalar_bar: bool = True,
+        filename=None,
+        savefilename=None,
+        **kwargs,
+    ):
         """Render two-dimensional data as a plane in 3-D space with PyVista."""
         self._require_local_data_access("render field data with PyVista locally", self._target_name())
         from emout.plot.pyvista_plot import plot_scalar_plane
@@ -304,5 +335,5 @@ class Data2d(Data):
         )
 
     def plot3d(self, *args, **kwargs):
-        """Alias for :meth:`plot_pyvista`."""
-        return self.plot_pyvista(*args, **kwargs)
+        """Render two-dimensional data as a plane in 3-D space with PyVista."""
+        return self._plot_pyvista(*args, **kwargs)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Optional, Type
 
+from emout._deprecations import warn_plot_pyvista_deprecated
 from emout.plot.surface_cut import MeshSurface3D
 
 
@@ -160,5 +161,6 @@ class Boundary:
         )
 
     def plot_pyvista(self, *args, **kwargs):
-        """Alias for :meth:`plot3d`."""
+        """Deprecated alias for :meth:`plot3d`."""
+        warn_plot_pyvista_deprecated()
         return self.plot3d(*args, **kwargs)

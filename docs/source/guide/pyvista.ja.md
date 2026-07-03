@@ -1,4 +1,4 @@
-# PyVista 可視化 (`plot3d` / `plot_pyvista`)
+# PyVista 可視化 (`plot3d`)
 
 PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場を volume / slice / contour として描く、3D ベクトル場を streamlines / quiver として描くための 3D 可視化 API です。通常の 1D/2D 解析は [プロット](plotting.ja.md) の `plot()` / `cmap()` / `contour()` を使い、3D の視点操作や重ね描きが必要なときに PyVista を使います。
 
@@ -13,7 +13,7 @@ PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場
 | Backtrace / trace paths | `trace.plot3d(plotter=...)` | `pyvista.Plotter` |
 | Mesh construction only | `emout.plot.pyvista_plot.create_*_mesh(...)` | PyVista mesh object |
 
-`Data2d.plot3d()` と `Data3d.plot3d()` は `plot_pyvista()` の alias です。`VectorData.plot3d()` は既定で PyVista backend を使います。Matplotlib 3D backend を使う場合は `backend="mpl"` を指定します。
+`Data2d.plot3d()` と `Data3d.plot3d()` は PyVista で描画します。`VectorData.plot3d()` も既定で PyVista backend を使います。Matplotlib 3D backend を使う場合は `backend="mpl"` を指定します。
 
 ## インストール
 
@@ -181,7 +181,7 @@ plotter.close()
 
 ## 低水準 helper
 
-通常は `plot3d()` / `plot_pyvista()` を使います。PyVista mesh を自分で加工したい場合だけ、`emout.plot.pyvista_plot` の helper を直接使います。
+通常は `plot3d()` を使います。PyVista mesh を自分で加工したい場合だけ、`emout.plot.pyvista_plot` の helper を直接使います。
 
 ```python
 from emout.plot.pyvista_plot import (
@@ -202,6 +202,6 @@ mesh, scalar_name, axis_labels, scalar_label = create_volume_mesh(data.phisp[-1]
 | --- | --- | --- |
 | `ModuleNotFoundError: pyvista` | 古い環境または依存関係が未更新 | `pip install -U emout` |
 | `Data2d with time axis is not supported` | `t` 軸を含む 2D slice を渡した | 時刻を 1 つに固定して空間 2D slice にする |
-| `plot_pyvista ... requires spatial axes x,y,z` | 3D 空間軸が揃っていない | `data.phisp[-1]` のように time だけ固定する |
+| `requires spatial axes x,y,z` | 3D 空間軸が揃っていない | `data.phisp[-1]` のように time だけ固定する |
 | streamlines が出ない | seed 数や seed 半径が小さい | `n_points` / `source_radius` を増やす |
 | layer がずれる | `use_si` や `offsets` が layer 間で違う | すべての layer で同じ指定にする |

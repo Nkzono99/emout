@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Mapping, Optional, Tuple
 
 
+from emout._deprecations import warn_plot_pyvista_deprecated
 from emout.plot.surface_cut import (
     CompositeMeshSurface,
     MeshSurface3D,
@@ -313,7 +314,7 @@ class BoundaryCollection:
         if backend == "pyvista":
             surface_color = kwargs.pop("surface_color", solid_color)
             surface_opacity = kwargs.pop("surface_opacity", alpha)
-            return self.plot_pyvista(
+            return self.plot3d(
                 use_si=use_si,
                 offsets=offsets,
                 per=per,
@@ -431,7 +432,8 @@ class BoundaryCollection:
         )
 
     def plot_pyvista(self, *args, **kwargs):
-        """Alias for :meth:`plot3d`."""
+        """Deprecated alias for :meth:`plot3d`."""
+        warn_plot_pyvista_deprecated()
         return self.plot3d(*args, **kwargs)
 
     # -- composite mesh ------------------------------------------------------

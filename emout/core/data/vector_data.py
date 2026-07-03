@@ -17,6 +17,7 @@ import numpy as np
 
 import emout.plot.basic_plot as emplt
 import emout.utils as utils
+from emout._deprecations import warn_plot_pyvista_deprecated
 from emout.plot.animation_plot import ANIMATER_PLOT_MODE, FrameUpdater
 from emout.utils import UnitTranslator
 from emout.utils.util import apply_offset
@@ -654,6 +655,30 @@ class VectorData(utils.Group):
         savefilename=None,
         **kwargs,
     ):
+        """Deprecated alias for ``plot3d(..., backend='pyvista')``."""
+        warn_plot_pyvista_deprecated()
+        return self._plot_pyvista(
+            mode=mode,
+            show=show,
+            use_si=use_si,
+            offsets=offsets,
+            plotter=plotter,
+            filename=filename,
+            savefilename=savefilename,
+            **kwargs,
+        )
+
+    def _plot_pyvista(
+        self,
+        mode: Literal["stream", "streamline", "vec", "quiver"] = "stream",
+        show: bool = False,
+        use_si: bool = True,
+        offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
+        plotter=None,
+        filename=None,
+        savefilename=None,
+        **kwargs,
+    ):
         """Render three-dimensional vector field with PyVista."""
         self._require_local_data_access("render vector field with PyVista locally")
         self._record_article_access(
@@ -661,9 +686,9 @@ class VectorData(utils.Group):
             {"vector": self.name, "mode": mode, "show": show, "use_si": use_si, "offsets": offsets, **kwargs},
         )
         if self.x_data.ndim != 3:
-            raise ValueError("plot_pyvista on VectorData requires 3D component data.")
+            raise ValueError("plot3d on VectorData requires 3D component data.")
         if len(self.objs) < 3 or not hasattr(self, "z_data"):
-            raise ValueError("plot_pyvista on VectorData requires 3 components (x, y, z).")
+            raise ValueError("plot3d on VectorData requires 3 components (x, y, z).")
         x_component = self._component_for_axis("x")
         y_component = self._component_for_axis("y")
         z_component = self._component_for_axis("z")
@@ -703,7 +728,7 @@ class VectorData(utils.Group):
                 **kwargs,
             )
 
-        raise ValueError(f'Unsupported mode "{mode}" for VectorData.plot_pyvista.')
+        raise ValueError(f'Unsupported mode "{mode}" for VectorData.plot3d.')
 
     def plot3d_mpl(
         self,
@@ -849,14 +874,14 @@ class VectorData(utils.Group):
             ``'mpl'`` uses matplotlib 3-D axes;
             ``'pyvista'`` uses the PyVista renderer.
         **kwargs
-            Forwarded to :meth:`plot3d_mpl` or :meth:`plot_pyvista`.
+            Forwarded to :meth:`plot3d_mpl` or the PyVista backend.
 
         Returns
         -------
         object
         """
         if backend == "pyvista":
-            return self.plot_pyvista(mode=mode, **kwargs)
+            return self._plot_pyvista(mode=mode, **kwargs)
         return self.plot3d_mpl(mode=mode, **kwargs)
 
 

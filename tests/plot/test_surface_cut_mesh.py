@@ -118,6 +118,32 @@ def test_mesh_surface_plot3d_adds_pyvista_mesh(monkeypatch):
     assert len(existing.meshes) == 1
 
 
+def test_mesh_surface_plot_pyvista_warns_and_aliases_plot3d(monkeypatch):
+    surface = BoxMeshSurface(
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        faces=("zmax",),
+        resolution=(2, 2),
+    )
+    captured = {}
+
+    def fake_plot3d(self, **kwargs):
+        captured["surface"] = self
+        captured.update(kwargs)
+        return "plotter"
+
+    monkeypatch.setattr(BoxMeshSurface, "plot3d", fake_plot3d)
+
+    with pytest.warns(DeprecationWarning, match=r"plot_pyvista\(\).*plot3d\(\)"):
+        assert surface.plot_pyvista(color="blue") == "plotter"
+    assert captured["surface"] is surface
+    assert captured["color"] == "blue"
+
+
 def test_cylinder_mesh_surface_side_has_constant_radius():
     surface = CylinderMeshSurface(
         center=(1.0, -2.0, 0.5),
