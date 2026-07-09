@@ -133,7 +133,7 @@ if __name__ == "__main__":
 ## Triage a Problem
 
 1. Prepare a minimal script and traceback.
-2. Check `python -m pip show emout`, installation method, and Python version.
+2. Check `python -c "import emout; print(emout.__version__)"`, `python -m pip show emout`, installation method, and Python version.
 3. Summarize the output directory file listing.
 4. Check grid size, unit conversion, and boundary settings in the input file.
 5. Verify axis order `(t, z, y, x)` and whether the script loads full arrays.

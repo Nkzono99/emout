@@ -26,6 +26,7 @@ data.phisp[:, 100, :, :].gifplot()
 | `'save'` | ファイルに保存（`filename` が必要） |
 | `'return'` | `(fig, animation)` を返す（手動制御用） |
 | `'frames'` | マルチパネルレイアウト用の `FrameUpdater` を返す |
+| `'bytes'` | remote 実行で GIF bytes を返す（ローカル実行では非対応） |
 
 ```python
 # GIF として保存

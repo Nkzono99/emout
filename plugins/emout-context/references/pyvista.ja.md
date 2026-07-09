@@ -1,4 +1,4 @@
-# PyVista 可視化 (`plot3d` / `plot_pyvista`)
+# PyVista 可視化 (`plot3d`)
 
 PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場を volume / slice / contour として描く、3D ベクトル場を streamlines / quiver として描くための 3D 可視化 API です。通常の 1D/2D 解析は [プロット](plotting.ja.md) の `plot()` / `cmap()` / `contour()` を使い、3D の視点操作や重ね描きが必要なときに PyVista を使います。
 
@@ -13,7 +13,7 @@ PyVista backend は、2D スライスを 3D 空間に置く、3D スカラー場
 | Backtrace / trace paths | `trace.plot3d(plotter=...)` | `pyvista.Plotter` |
 | Mesh construction only | `emout.plot.pyvista_plot.create_*_mesh(...)` | PyVista mesh object |
 
-`Data2d.plot3d()` と `Data3d.plot3d()` は `plot_pyvista()` の alias です。`VectorData.plot3d()` は既定で PyVista backend を使います。Matplotlib 3D backend を使う場合は `backend="mpl"` を指定します。
+`Data2d.plot3d()` と `Data3d.plot3d()` は PyVista で描画します。`VectorData.plot3d()` も既定で PyVista backend を使います。Matplotlib 3D backend を使う場合は `backend="mpl"` を指定します。
 
 ## インストール
 
@@ -71,6 +71,13 @@ plotter.screenshot("phisp_contour.png")
 plotter.close()
 ```
 
+`filename=` を渡すと、`plot3d()` 側で保存まで実行できます。`.png` などの画像拡張子は screenshot として保存します。`.html` は PyVista の Jupyter/trame 追加依存が入っている環境では interactive HTML として保存できます。既存の 2D plot と同じく `savefilename=` も互換エイリアスとして使えます。
+
+```python
+data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
+data.j1xyz[-1].plot3d(mode="stream", filename="j1_stream.png")
+```
+
 ## ベクトル場
 
 3 成分を持つ `VectorData` は、`mode="stream"` / `"streamline"` で streamlines、`mode="quiver"` / `"vec"` で glyph arrows を描けます。
@@ -93,7 +100,14 @@ data.j1xyz[-1].plot3d(
 )
 ```
 
-streamline の seed は PyVista の `mesh.streamlines()` に渡されます。必要なら `source_center`、`source_radius`、`n_points` を調整してください。quiver は `skip` で間引き、`factor` で矢印の長さを調整します。
+streamline の seed は `seed_mode` で選べます。既定の `sphere` は中心付近から開始します。`plane` は 2D streamline に近い見え方になりやすく、`volume` は領域全体、`surface` は境界メッシュ上から開始します。任意の開始点を固定したい場合は `seed_points` を渡します。quiver は `skip` で間引き、`factor` で矢印の長さを調整します。
+
+```python
+data.j1xyz[-1].plot3d(seed_mode="plane", seed_plane="xz", seed_position="center")
+data.j1xyz[-1].plot3d(seed_mode="volume", n_points=1000)
+data.j1xyz[-1].plot3d(seed_mode="surface", seed_surface=data.boundaries)
+data.j1xyz[-1].plot3d(seed_points=[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+```
 
 ## 重ね描き
 
@@ -181,7 +195,7 @@ plotter.close()
 
 ## 低水準 helper
 
-通常は `plot3d()` / `plot_pyvista()` を使います。PyVista mesh を自分で加工したい場合だけ、`emout.plot.pyvista_plot` の helper を直接使います。
+通常は `plot3d()` を使います。PyVista mesh を自分で加工したい場合だけ、`emout.plot.pyvista_plot` の helper を直接使います。
 
 ```python
 from emout.plot.pyvista_plot import (
@@ -202,6 +216,6 @@ mesh, scalar_name, axis_labels, scalar_label = create_volume_mesh(data.phisp[-1]
 | --- | --- | --- |
 | `ModuleNotFoundError: pyvista` | 古い環境または依存関係が未更新 | `pip install -U emout` |
 | `Data2d with time axis is not supported` | `t` 軸を含む 2D slice を渡した | 時刻を 1 つに固定して空間 2D slice にする |
-| `plot_pyvista ... requires spatial axes x,y,z` | 3D 空間軸が揃っていない | `data.phisp[-1]` のように time だけ固定する |
+| `requires spatial axes x,y,z` | 3D 空間軸が揃っていない | `data.phisp[-1]` のように time だけ固定する |
 | streamlines が出ない | seed 数や seed 半径が小さい | `n_points` / `source_radius` を増やす |
 | layer がずれる | `use_si` や `offsets` が layer 間で違う | すべての layer で同じ指定にする |

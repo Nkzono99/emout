@@ -6,7 +6,7 @@ Lang: [English](README.en.md) | [日本語](README.md)
 [![Python](https://img.shields.io/pypi/pyversions/emout.svg)](https://pypi.org/project/emout/)
 [![Docs](https://github.com/Nkzono99/emout/actions/workflows/docs.yaml/badge.svg)](https://nkzono99.github.io/emout/)
 [![CodeQL](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Nkzono99/emout/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Python library for analyzing and visualizing [EMSES](https://github.com/Nkzono99/MPIEMSES3D) simulation outputs**
 
@@ -21,7 +21,7 @@ emout is:
 
 - **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Agent plugins:** [emout Context](../README.en.md) — install through the standard Codex or Claude Code plugin marketplace flow, then ask an agent to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](../../README.en.md))
+- **Agent plugins:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.en.md) — install through the standard Codex or Claude Code plugin marketplace flow, then ask an agent to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md))
 
 ---
 
@@ -37,6 +37,30 @@ emout version --check-update
 ```
 
 > Dask-based remote execution is automatically available on Python 3.10+ (no extra install needed).
+
+---
+
+## Agent Plugins
+
+The emout `emout Context` plugin makes emout's axis order, unit conversion, plotting, `remote_figure`, and troubleshooting context available when Codex or Claude Code is started in simulation output directories or other repositories.
+
+```bash
+codex plugin marketplace add Nkzono99/emout \
+  --ref main \
+  --sparse .agents/plugins \
+  --sparse plugins/emout-context
+codex plugin add emout-context@emout
+```
+
+For Claude Code:
+
+```bash
+claude plugin marketplace add Nkzono99/emout \
+  --sparse .claude-plugin plugins/emout-context
+claude plugin install emout-context@emout
+```
+
+If emout is already installed, use `emout claude install-plugin` for Claude Code or `emout codex install-plugin` for Codex. See [plugin installation](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md) for the full install and update flow.
 
 ---
 
@@ -59,7 +83,7 @@ data.nd1p           # Species-1 number density
 data.j1x            # Species-1 current density (x)
 data.j1xy           # j1x + j1y auto-combined → 2D vector
 data.j1xyz          # 3D vector
-data.icur, data.pbody  # Text outputs (pandas DataFrame)
+data.icur, data.ocur, data.pbody  # Text diagnostics (SI conversion via .val_si)
 ```
 
 Axis order is `(t, z, y, x)`.
@@ -77,9 +101,10 @@ See the user guide for detailed usage of each feature.
 | **Parameters** | `data.inp.nx`, `data.toml.species[0].wp` | [→ Parameters](https://nkzono99.github.io/emout/guide/inp.html) |
 | **Unit conversion** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ Units](https://nkzono99.github.io/emout/guide/units.html) |
 | **Boundary meshes** | `data.boundaries.mesh()`, overlay on `plot_surfaces` | [→ Boundaries](https://nkzono99.github.io/emout/guide/boundaries.html) |
-| **Backtrace** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
+| **Backtrace** | `data.trace.forward(...)`, `data.backtrace.get_probabilities(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista Visualization](https://nkzono99.github.io/emout/guide/pyvista.html) |
 | **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
+| **Article data** | Record and replay the minimum slices consumed by `plot()` / `to_numpy()` | [→ Article Data](https://nkzono99.github.io/emout/guide/article.html) |
 
 ---
 
@@ -138,6 +163,83 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 
 </details>
 
+### Recording And Replaying Article Data
+
+Figure scripts can still start with the usual `emout.Emout()` call.
+Switch article mode with environment variables to save only the minimum
+slices consumed by `plot()` and `to_numpy()` under a records path, then
+replay the same script from those recorded slices.
+
+```python
+import emout
+
+data = emout.Emout("output_dir")
+ymid = data.inp.ny // 2
+
+data.phisp[-1, :, ymid, :].plot(cmap="viridis")
+arr = data.ex[-1, :, ymid, :].to_numpy()
+```
+
+```bash
+# Normal run
+python fig1.py
+
+# Record: saves to article-records/datasets/<output_dir>-<hash>/fig1/
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+
+# Replay: restore from recorded slices instead of the original large HDF5 files
+EMOUT_ARTICLE_MODE=replay \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+```
+
+`EMOUT_ARTICLE_NAME` is optional. When omitted, records are saved under
+`default`, so a notebook or one script can collect all figures into a
+single bundle. Recreating `Emout()` with the same `article_name` appends
+only slices that are not already recorded.
+
+When a script opens multiple simulation outputs, records are separated per
+source under `article-records/datasets/<source>/default/`. Replay on another
+machine first matches sources by directory basename. If multiple outputs have
+the same basename, pass a stable `article_source_name` in the normal script.
+
+```python
+data = [
+    emout.Emout("case_a/output", article_source_name="case_a"),
+    emout.Emout("case_b/output", article_source_name="case_b"),
+]
+```
+
+Recorded `data.h5` files use HDF5 gzip compression. To package a whole
+bundle as `.tar.gz` or `.zip` for publication, set `EMOUT_ARTICLE_ARCHIVE=1`
+(`.tar.gz`) / `EMOUT_ARTICLE_ARCHIVE=zip`, or pass `article_archive=True` /
+`article_archive="zip"`. Replay automatically extracts the matching archive
+when the extracted directory is not present.
+
+The same settings can be passed as arguments.
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_name="fig1",
+    article_archive="zip",
+)
+```
+
+Replay mode raises an exception when a script asks for an unrecorded slice.
+This makes it clear whether the public data bundle contains everything
+needed to reproduce a figure.
+`plasma.inp`, `plasma.toml`, and small diagnostic files (`icur`, `ocur`, `pbody`)
+are saved as well, so visualizations that depend on input parameters and
+boundary meshes also replay, including `data.inp`, `data.toml`,
+`data.boundaries.plot()`, and `data.phisp[-1].plot_surfaces(data.boundaries)`.
+
 ### Remote Execution (Dask) — Experimental
 
 Offload data processing to HPC compute nodes; only plot images are returned to your login node.
@@ -153,6 +255,11 @@ emout server start --partition gr20001a --memory 60G
 default, allows one active server per user. If you intentionally need an
 additional session, use
 `emout server start --allow-multiple --name <session>`.
+
+To prevent accidental local materialization of field arrays on a login
+node, use `emout.disable_local_data_access()` or set
+`EMOUT_LOCAL_DATA_POLICY=remote_required`. Pass `Emout(...,
+local_data_policy="allow")` when a small dataset may read fields locally.
 
 ```python
 import matplotlib.pyplot as plt
@@ -259,13 +366,13 @@ Bug reports, feature requests, and pull requests are welcome.
 - **Pull requests:** branch off `main`, keep `pytest -q` green, and submit
 - **Docs:** `README.md` (Japanese) and `README.en.md` (English) are kept in sync — please update both
 
-The development environment and repo layout are covered in [AGENTS.md](https://github.com/Nkzono99/emout/blob/main/AGENTS.md).
+The development environment and repo layout are covered in [AGENTS.md](AGENTS.md).
 
 ---
 
 ## License
 
-[MIT License](https://github.com/Nkzono99/emout/blob/main/LICENSE)
+[MIT License](LICENSE)
 
 ## Links
 

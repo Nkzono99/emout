@@ -119,7 +119,7 @@ emout repo の `.claude/skills/` は開発者向けの project-local skill で�
 
 - `emout-usage-guide`: `emout.Emout` の読み込み、変数アクセス、スライス、単位変換、パラメータ参照の案内
 - `emout-article-publication`: 論文・公開データ用の article record/replay、環境変数、archive、平均データ保存の案内
-- `emout-pyvista-3d-visualization`: PyVista の `plot3d()` / `plot_pyvista()`、scalar/vector 3D 表示、境界・trace 重ね描き、保存、HPC 実行の案内
+- `emout-pyvista-3d-visualization`: PyVista の `plot3d()`、非推奨 `plot_pyvista()` 互換 alias、scalar/vector 3D 表示、境界・trace 重ね描き、保存、HPC 実行の案内
 - `emout-visualization-workflow`: 1D/2D/3D プロット、アニメーション、境界オーバーレイ、リモート描画の設計
 - `emout-visualization-script`: 自然言語の可視化依頼や既存 script をもとに、`remote_scope` / `remote_figure` を含む emout 可視化 script を作成・改善
 - `emout-output-diagnose`: 読み込み失敗、HDF5 / 入力ファイル不整合、単位変換、optional 依存、リモート実行の診断

@@ -1,9 +1,9 @@
 ---
 name: emout-pyvista-3d-visualization
-description: Design and troubleshoot emout PyVista 3D visualization workflows, including plot3d/plot_pyvista for scalar and vector fields, boundary mesh overlays, trace/backtrace path overlays, streamline seed modes, screenshots/HTML export, unit/axis handling, and HPC-safe execution.
+description: Design and troubleshoot emout PyVista 3D visualization workflows, including plot3d for scalar and vector fields, deprecated plot_pyvista legacy calls, boundary mesh overlays, trace/backtrace path overlays, streamline seed modes, screenshots/HTML export, unit/axis handling, and HPC-safe execution.
 ---
 
-Use this skill when a user asks for 3D visualization with emout and PyVista, especially `plot3d()`, `plot_pyvista()`, scalar volume/slice/contour views, vector streamlines/quiver, `surfaces=data.boundaries`, boundary `plot3d()`, trace/backtrace trajectory overlays, PyVista screenshots/HTML export, or how to run PyVista rendering on HPC systems.
+Use this skill when a user asks for 3D visualization with emout and PyVista, especially `plot3d()`, scalar volume/slice/contour views, vector streamlines/quiver, `surfaces=data.boundaries`, boundary `plot3d()`, trace/backtrace trajectory overlays, PyVista screenshots/HTML export, deprecated `plot_pyvista()` legacy calls, or how to run PyVista rendering on HPC systems.
 
 ## Response Language
 
@@ -29,6 +29,7 @@ Use this skill when a user asks for 3D visualization with emout and PyVista, esp
   - Trace paths: `trace.plot3d(plotter=...)` from `data.trace.forward/backward/both(..., get_trace=True)`
 - State grid axis order whenever indexing appears: grid data is `(t, z, y, x)`, and a single 3D field is `(z, y, x)`. PyVista receives coordinates in `(x, y, z)`.
 - Treat PyVista as a regular emout dependency in emout 2.20.0+. For `ModuleNotFoundError: pyvista`, suggest updating/reinstalling emout or the editable environment.
+- Use `plot3d()` in new examples. `plot_pyvista()` remains as a deprecated compatibility alias; mention it only when reading or fixing legacy scripts or deprecation warnings.
 - Build overlays by reusing one `plotter`:
   - first layer with `show=False`
   - subsequent layers with `plotter=plotter`

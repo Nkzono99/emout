@@ -12,6 +12,8 @@ Quick start::
 """
 
 import logging as _logging
+from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
+from importlib.metadata import version as _metadata_version
 
 from . import article
 from .core import data
@@ -29,6 +31,11 @@ from .local_data_policy import (
 )
 from .utils.emsesinp import InpFile, UnitConversionKey
 from .utils.units import Units
+
+try:
+    __version__ = _metadata_version("emout")
+except _PackageNotFoundError:
+    __version__ = "0+unknown"
 
 
 def set_log_level(level: str = "WARNING") -> None:

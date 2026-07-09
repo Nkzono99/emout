@@ -46,6 +46,35 @@ data.phisp[-1].plot_surfaces(
 plt.show()
 ```
 
+## Overlay on PyVista
+
+When you use the PyVista backend, add boundary meshes to the plotter returned by `plot3d(show=False)` with `data.boundaries.plot3d(plotter=...)`. The same `plot3d()` entry point is also available on an individual boundary or `MeshSurface3D`.
+
+```python
+plotter = data.phisp[-1].plot3d(mode="slice", show=False)
+
+data.boundaries.plot3d(
+    plotter=plotter,
+    color="0.7",
+    opacity=0.35,
+    show_edges=True,
+    show=True,
+)
+```
+
+Use `mesh_kwargs` and `per` when you want to adjust boundary-mesh resolution or geometry. `mesh_kwargs` is broadcast to all boundaries and filtered to the arguments each boundary accepts. `per` overrides parameters for a specific boundary index.
+
+```python
+data.boundaries.plot3d(
+    plotter=plotter,
+    mesh_kwargs={"ntheta": 64},
+    per={2: {"naxial": 8}},
+    color="white",
+    opacity=0.4,
+    show=True,
+)
+```
+
 ## Composite mesh
 
 All boundaries can be fused into a single mesh for further processing:
@@ -64,12 +93,10 @@ combined = data.boundaries[0] + data.boundaries[1]
 # Different style per boundary
 data.phisp[-1].plot_surfaces(
     ax=ax,
-    surfaces=data.boundaries.render(
-        per={
-            0: dict(style="solid", solid_color="0.7"),
-            1: dict(alpha=0.5),
-        },
-    ),
+    surfaces=[
+        data.boundaries[0].render(style="solid", solid_color="0.7"),
+        data.boundaries[1].render(alpha=0.5),
+    ],
 )
 ```
 

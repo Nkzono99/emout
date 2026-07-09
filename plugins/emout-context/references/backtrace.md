@@ -1,26 +1,71 @@
-# Backtrace (`data.backtrace`) — Experimental
+# Backtrace (`data.trace`) — Experimental
 
-`data.backtrace` is the entry point for integrating particle trajectories
-**backwards in time** through EMSES fields. You can compute arrival
-probabilities (`get_probabilities`) or trajectories for individual
-particles (`get_backtrace` / `get_backtraces`). Results come back wrapped
-in dedicated containers that let you chain straight into visualization
-with shorthand like `.vxvz.plot()`.
+`data.trace` is the workflow API for building particles from a 6-D phase-space grid and combining arrival probabilities, backward traces, and forward traces. For new analysis code, prefer `data.trace.forward()` / `data.trace.backward()` / `data.trace.both()`.
 
-> **Requirements:** backtrace relies on the external
-> [`vdist-solver-fortran`](https://github.com/Nkzono99/vdist-solver-fortran)
-> package (`vdsolverf`). Install it with `pip install vdist-solver-fortran`.
-> Without it, calls to `data.backtrace.*` raise `ImportError`.
+The older `data.backtrace` entry point remains available as a lower-level API for existing code that needs explicit single-particle traces or raw `Particle` arrays. This page keeps `data.trace` as the main path and folds the `data.backtrace` route into a details section.
+
+> **Requirements:** backtrace relies on the external [`vdist-solver-fortran`](https://github.com/Nkzono99/vdist-solver-fortran) package (`vdsolverf`). Install it with `pip install vdist-solver-fortran`. Without it, calls to `data.trace.*` raise `ImportError`.
+
+## When to Use `data.trace`
+
+- You want the **phase-space distribution** of particles that arrive at an observation point.
+- You want to follow arriving particles as **backward / forward trajectories**.
+- You want to draw an **energy spectrum** of arriving particles.
+- You want probabilities and trajectories from the same particle set, with probability-derived alpha.
+
+Backtrace integrates ODEs through saved field output, so large `max_step` values or fine phase-space grids can become expensive. If you want to push the work to an HPC node, combine it with remote execution (see below).
+
+> **Unit note:** `data.trace` inputs are EMSES simulation units. Convert SI values with `data.unit` before passing them in.
+
+## Quick Start
+
+```python
+import emout
+
+data = emout.Emout("output_dir")
+
+vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
+
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    ispec=0,
+    get_trace=True,
+    get_probabilities=True,
+    max_step=10000,
+    n_threads=8,
+)
+
+trace.plot("vx", "vz", cmap="viridis")       # arrival-probability heatmap
+trace.plot_traces("x", "z")                  # probability-weighted trajectories
+trace.probabilities.plot_energy_spectrum(scale="log")
+```
+
+Scalar values are treated as size-1 phase-space axes. You can also write a single trajectory without a probability solve through `data.trace`:
+
+```python
+single = data.trace.backward(
+    x=20.0, y=32.0, z=40.0,
+    vx=data.unit.v.trans(1.0e5),
+    vy=0.0,
+    vz=data.unit.v.trans(-2.0e5),
+    ispec=0,
+    get_trace=True,
+    get_probabilities=False,
+)
+
+single.plot_traces("t", "x")
+single.traces.xvz.plot()
+```
 
 ## Input Unit Contract
 
-The `position`, `velocity`, and `dt` values passed to `data.backtrace`,
-and the `x` / `y` / `z` / `vx` / `vy` / `vz` axes passed to
-`get_probabilities()`, are **all EMSES simulation units**. emout does not
-convert these inputs from SI; it forwards them to `vdsolverf` unchanged.
+The `x` / `y` / `z` / `vx` / `vy` / `vz`, `dt`, and `probability_dt` values passed to `data.trace` are **all EMSES simulation units**. emout does not convert these inputs from SI.
 
-If you want to specify SI values, convert them to EMSES units with
-`data.unit` before calling the backtrace APIs:
+If you want to specify SI values, convert them to EMSES units with `data.unit` before calling:
 
 ```python
 position = (
@@ -28,171 +73,216 @@ position = (
     data.unit.length.trans(0.32),
     data.unit.length.trans(0.40),
 )
-velocity = (
-    data.unit.v.trans(1.0e5),      # m/s -> EMSES velocity
-    0.0,
-    data.unit.v.trans(-2.0e5),
-)
 vx_scan = (
+    data.unit.v.trans(-3.0e5),     # m/s -> EMSES velocity
+    data.unit.v.trans(3.0e5),
+    64,
+)
+vz_scan = (
     data.unit.v.trans(-3.0e5),
     data.unit.v.trans(3.0e5),
     64,
 )
 ```
 
-`data.unit` is available only when `plasma.inp` contains a
-`!!key dx=...,to_c=...` header, or `plasma.toml` contains
-`[meta.unit_conversion]`. If unit-conversion metadata is absent, pass
-values that are already in EMSES units.
+`data.unit` is available only when `plasma.inp` contains a `!!key dx=...,to_c=...` header, or `plasma.toml` contains `[meta.unit_conversion]`. If unit-conversion metadata is absent, pass values that are already in EMSES units.
 
-Arrays such as `bt.positions`, `bt.velocities`, and `result.phases` also
-remain in EMSES units. Plot helpers such as `bt.xz.plot()` and
-`result.vxvz.plot()` convert displayed axes to SI by default when unit
-metadata is available (`use_si=False` keeps EMSES-unit display).
+Arrays such as `TraceResult.phases`, `TraceResult.particles`, and `trace.traces.positions_list` also remain in EMSES units. Plot helpers such as `trace.plot()`, `trace.plot_traces()`, and `trace.traces.xz.plot()` convert displayed axes to SI by default when unit metadata is available (`use_si=False` keeps EMSES-unit display).
 
-The default `dt` is `data.inp.dt`. To integrate in the opposite direction
-from the usual backtrace, pass the opposite sign, for example
-`dt=-data.inp.dt`.
+`dt` and `probability_dt` are non-negative step widths in EMSES time units. When they are `None`, emout uses `abs(data.inp.dt)`. `data.trace.backward()` passes `+dt` to the solver, while `data.trace.forward()` flips the sign internally and passes `-dt`. `data.trace.both()` uses the same `dt` magnitude as `+dt` for backward traces and `-dt` for forward traces. Arrival-probability solves use `probability_dt` with the backward-sign convention. Negative values raise `ValueError`.
 
-## When to use it
+## Workflow API: `data.trace`
 
-- You want the **phase-space distribution** of particles that arrive at a
-  given observation point.
-- You want to **trace back the trajectory** of a particle of interest to
-  see where it came from.
-- You want to draw an **energy spectrum** of arriving particles.
+`data.trace.backward()` / `data.trace.forward()` / `data.trace.both()` always return a `TraceResult`. Payloads that were not requested are stored as `None`.
 
-Backtrace integrates an ODE backwards using `data.inp.dt` and the saved
-EMSES fields, so a large `max_step` can become expensive. If you want to
-push the work to an HPC node, combine it with the remote-execution
-backend (see below).
-
-## Quick start
+### Get Probabilities and Traces Together
 
 ```python
-import emout
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+    get_probabilities=True,
+)
 
-data = emout.Emout("output_dir")
+trace.probabilities        # ProbabilityResult
+trace.forward_traces       # MultiBacktraceResult
+trace.backward_traces      # None
+trace.alpha                # np.clip(trace.probabilities.probabilities, 0, 1)
 
-# Single particle
+trace.plot("vx", "vz")     # arrival-probability heatmap
+trace.plot_traces("x", "z")
+```
+
+`trace.plot()` dispatches to `trace.probabilities.pair(...).plot()` when probabilities are available, otherwise to `trace.plot_traces()`. Pass `kind="probability"` / `kind="trace"` when you want to be explicit.
+
+### Get Traces Only
+
+Set `get_probabilities=False` to skip the probability solve, create only particles from the phase-space grid, and return trajectories. In that case `trace.probabilities` and `trace.alpha` are `None`, and `plot_traces()` uses a uniform alpha unless you pass one explicitly.
+
+```python
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+    get_probabilities=False,
+)
+
+trace.forward_traces.xz.plot(alpha=0.3)
+trace.plot_traces("x", "z", alpha=0.3)
+```
+
+### Get Backward and Forward Together
+
+`both()` computes backward and forward trajectories from the same phase-space grid. If probabilities are requested, the probability solve runs only once.
+
+```python
+trace = data.trace.both(..., get_trace=True)
+trace.backward_traces.xz.plot(alpha=trace.alpha)
+trace.forward_traces.xz.plot(alpha=trace.alpha)
+trace.plot_traces("x", "z", direction="backward")
+trace.plot_traces("x", "z", direction="forward")
+```
+
+### Overlay in 3D
+
+`plot3d()` returns a PyVista plotter. Pass an existing plotter to overlay traces on a field or boundary view.
+
+```python
+plotter = data.phisp[-1].plot3d(mode="slice", show=False)
+trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
+```
+
+## Plotting Results
+
+### 2-D Heatmap Projections
+
+`trace.probabilities.pair(var1, var2)` integrates out the four unselected axes with the trapezoidal rule and returns `HeatmapData`. `trace.plot(var1, var2)` is the shorter entry point for the same operation.
+
+```python
+trace.plot("vx", "vz", cmap="viridis")
+trace.probabilities.xvx.plot()
+trace.probabilities.yz.plot(cmap="plasma")
+```
+
+`HeatmapData.plot()` draws a `pcolormesh` with a colour bar and SI-unit labels (`use_si=False` keeps grid units). Extra keyword arguments are forwarded straight to `pcolormesh`, so you can use `vmin` / `vmax` or `norm=LogNorm(...)` to control the colour scale.
+
+### Energy Spectrum
+
+Energy spectra are plotted from the probability payload's `ProbabilityResult`.
+
+```python
+trace.probabilities.plot_energy_spectrum(scale="log", energy_bins=80)
+hist, bin_edges = trace.probabilities.energy_spectrum(energy_bins=80)
+```
+
+Internally it reads `wp` (or the photoelectron settings `path` / `curf` when `nflag_emit == 2`) from `plasma.inp` to compute a reference number density `n0`, weights each phase-space point by its probability, and integrates.
+
+## Remote Execution Integration
+
+`data.trace` shares the `Emout` facade's `remote_open_kwargs`, so if an emout server is running the computation runs on the worker by default and you get back a `RemoteTraceResult` proxy. Because the result is cached on the worker, changing visualisation parameters does **not** trigger recomputation.
+
+```python
+from emout.distributed import remote_figure
+
+trace = data.trace.forward(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan,
+    vy=0.0,
+    vz=vz_scan,
+    get_trace=True,
+)
+
+with remote_figure():
+    trace.plot("vx", "vz", cmap="viridis")
+
+with remote_figure():
+    trace.plot_traces("x", "z")
+
+trace.drop()   # free worker memory when done
+```
+
+If you prefer the explicit remote style, switch to `data.remote().trace...`:
+
+```python
+from emout.distributed import remote_scope, remote_figure
+
+with remote_scope():
+    rdata = data.remote()
+    trace = rdata.trace.forward(
+        x=20.0, y=32.0, z=40.0,
+        vx=vx_scan,
+        vy=0.0,
+        vz=vz_scan,
+        get_trace=True,
+    )
+
+    with remote_figure():
+        trace.plot("vx", "vz")
+        trace.plot_traces("x", "z")
+```
+
+For the remote-execution mechanics, environment variables, and server management, see the [remote execution guide](distributed.md).
+
+### `fetch()` for Local Customisation
+
+When you want full matplotlib control (custom annotations, shared colour bars, dropping the heatmap into your own subplot grid), use `fetch()` to pull the small result arrays back to the client:
+
+```python
+local_trace = trace.fetch()
+heatmap = local_trace.probabilities.vxvz
+fig, ax = plt.subplots()
+heatmap.plot(ax=ax, cmap="plasma")
+ax.axhline(y=0, color="red", linestyle="--")
+```
+
+<details>
+<summary>For existing code: show the lower-level `data.backtrace` API</summary>
+
+**Low-Level API: `data.backtrace`**
+
+`data.backtrace` is the `BacktraceWrapper` used internally by `data.trace`. Use it when you need one trajectory from explicit `position` / `velocity` inputs, when you want to pass `vdsolverf.core.Particle` objects directly, or when you need direct control over the signed `dt` passed to the solver. Prefer `data.trace` for new phase-space workflows.
+
+**Single Particle: `get_backtrace`**
+
+```python
 position = (20.0, 32.0, 40.0)
 velocity = (
     data.unit.v.trans(1.0e5),
     0.0,
     data.unit.v.trans(-2.0e5),
 )
-bt = data.backtrace.get_backtrace(position, velocity, ispec=0)
 
-bt.tx.plot()      # t vs x trajectory
-bt.xvz.plot()     # x vs vz phase space
+bt = data.backtrace.get_backtrace(position, velocity, ispec=0, max_step=50000)
 
-# Many particles in one call
+bt.tx.plot()                 # = bt.pair("t", "x")
+bt.xvz.plot()                # = bt.pair("x", "vz")
+bt.yz.plot(color="black")    # yz projection of the trajectory
+```
+
+`bt.ts`, `bt.probability`, `bt.positions`, and `bt.velocities` are EMSES-unit arrays. `XYData.plot()` converts to SI units by default and auto-generates axis labels (`use_si=False` keeps EMSES units).
+
+**Many Particles: `get_backtraces`**
+
+```python
 import numpy as np
+
 positions = np.array([[20, 32, 40], [21, 32, 40], [22, 32, 40]], dtype=float)
 velocities = np.zeros_like(positions)
 velocities[:, 0] = data.unit.v.trans(1.0e5)
+
 many = data.backtrace.get_backtraces(positions, velocities, ispec=0)
-
-many.xz.plot(alpha=0.5)    # overlay all trajectories
-
-# Arrival probability over a 6-D phase-space grid
-vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
-vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
-result = data.backtrace.get_probabilities(
-    x=20.0, y=32.0, z=40.0,
-    vx=vx_scan,
-    vy=0.0,
-    vz=vz_scan,
-    ispec=0,
-)
-
-result.vxvz.plot(cmap="viridis")      # heatmap in the vx-vz plane
-result.plot_energy_spectrum(scale="log")
+many.xz.plot(alpha=0.5)
+many.sample(50, random_state=0).tvx.plot()
 ```
 
-## Single particle: `get_backtrace`
+`positions` and `velocities` are paired `(N, 3)` arrays. Use `data.trace` when you want the Cartesian product of a phase-space grid.
 
-`get_backtrace(position, velocity, ispec=0, ...)` integrates one
-trajectory and returns a :class:`BacktraceResult`. The result also
-supports tuple unpacking.
-
-```python
-bt = data.backtrace.get_backtrace(position, velocity, ispec=0, max_step=50000)
-
-ts, prob, positions, velocities = bt   # tuple unpacking
-print(bt)                                # <BacktraceResult: n_steps=...>
-```
-
-| Attribute | Shape | Meaning |
-| --- | --- | --- |
-| `bt.ts` | `(N,)` | time (EMSES units) |
-| `bt.probability` | `(N,)` | arrival probability per step |
-| `bt.positions` | `(N, 3)` | `[x, y, z]` |
-| `bt.velocities` | `(N, 3)` | `[vx, vy, vz]` |
-
-### Forward tracing instead of backtracing
-
-`dt` is forwarded to `vdsolverf` unchanged. To follow the same particle in
-the opposite direction from the usual backtrace, flip the sign of
-`data.inp.dt`.
-
-```python
-ft = data.backtrace.get_backtrace(
-    position,
-    velocity,
-    ispec=0,
-    dt=-data.inp.dt,
-)
-```
-
-### Shorthand plotting
-
-`bt.pair(var1, var2)` selects two variables and returns an
-:class:`XYData`. `var1` and `var2` can each be `t`, `x`, `y`, `z`, `vx`,
-`vy`, or `vz`. The concatenated form (`bt.tx`, `bt.xvz`, `bt.yz`, ...)
-is shorthand for the same call.
-
-```python
-bt.tx.plot()                 # = bt.pair("t", "x")
-bt.xvz.plot()                # = bt.pair("x", "vz")
-bt.yz.plot(color="black")    # xy projection of the trajectory
-```
-
-`XYData.plot()` converts to SI units by default and auto-generates axis
-labels (`use_si=False` keeps EMSES units). Passing `gap=...` inserts NaN
-breaks where consecutive points are too far apart, which is handy to
-avoid spurious lines across periodic-boundary jumps.
-
-## Many particles: `get_backtraces`
-
-`get_backtraces(positions, velocities, ispec=0, n_threads=4, ...)`
-returns a :class:`MultiBacktraceResult`. `positions` and `velocities`
-must be `(N, 3)` arrays.
-
-```python
-ts, probs, pos_list, vel_list, last = many
-many.xz.plot(alpha=np.clip(probs, 0, 1))    # alpha weighted by probability
-many.sample(50, random_state=0).tvx.plot()   # random 50 trajectories
-many.sample(slice(0, 10)).tx.plot()         # first 10 trajectories
-```
-
-| Attribute | Shape | Meaning |
-| --- | --- | --- |
-| `ts_list` | `(N_traj, N_steps)` | |
-| `probabilities` | `(N_traj,)` | final arrival probability |
-| `positions_list` | `(N_traj, N_steps, 3)` | |
-| `velocities_list` | `(N_traj, N_steps, 3)` | |
-| `last_indexes` | `(N_traj,)` | end of valid data for each trajectory (padding) |
-
-`many.pair("t", "x")` returns a :class:`MultiXYData`; `.plot()` overlays
-every trajectory. `alpha` accepts either a scalar or an array of length
-`N_traj`, which is convenient for probability weighting.
-
-### Feeding raw Particle objects
-
-If you already have `vdsolverf.core.Particle` instances (for example from
-`ProbabilityResult.particles`), use
-`get_backtraces_from_particles(particles, ...)`:
+**Feeding Raw Particle Objects**
 
 ```python
 from vdsolverf.core import Particle
@@ -201,8 +291,7 @@ particles = [Particle(p, v) for p, v in zip(positions, velocities)]
 many = data.backtrace.get_backtraces_from_particles(particles, ispec=0)
 ```
 
-A common pattern is to chain this with `get_probabilities` — compute the
-probability grid, then trace back only the particles you care about:
+A common pattern is to chain this with `ProbabilityResult` particles:
 
 ```python
 result = data.backtrace.get_probabilities(...)
@@ -210,61 +299,31 @@ bt = data.backtrace.get_backtraces_from_particles(result.particles, ispec=0)
 bt.xz.plot(alpha=np.clip(result.probabilities, 0, 1))
 ```
 
-## Arrival probability: `get_probabilities`
+**Arrival Probability: `get_probabilities`**
 
-`get_probabilities(x, y, z, vx, vy, vz, ispec=0, ...)` builds a 6-D
-phase-space grid, backtraces a particle from every grid point, and
-returns the arrival probabilities as a :class:`ProbabilityResult`.
-
-All input axes are EMSES units. To scan a velocity range given in SI,
-convert the endpoints with `data.unit.v.trans(...)` before building the
-`(start, stop, n)` tuple.
-
-Each axis accepts:
-
-- a tuple `(start, stop, n)` — equally-spaced grid
-- an explicit array or list — arbitrary values
-- a scalar — a size-1 axis (automatically squeezed when you call `pair()`)
+`data.trace` internally calls `data.backtrace.get_probabilities(...)` and stores the `ProbabilityResult` as `trace.probabilities`. If you call the lower-level API directly, use this form:
 
 ```python
-vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
-vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
-
-result = data.backtrace.get_probabilities(
-    x=20.0, y=32.0, z=40.0,     # fixed position
-    vx=vx_scan,                 # scan vx over 64 points
-    vy=0.0,
-    vz=vz_scan,                 # scan vz over 64 points
-    ispec=0,
-    max_step=10000,
-    n_threads=8,
-)
-```
-
-### MPI backend
-
-The default backend is unchanged and uses the threaded `vdsolverf.emses`
-functions.  When `vdist-solver-fortran[mpi]` is installed, you can opt in to
-particle-parallel MPI without changing the result object:
-
-```python
-# Use when the script itself is launched with MPI, e.g.
-# srun -n 8 python script.py
-vx_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
-vz_scan = (data.unit.v.trans(-3e5), data.unit.v.trans(3e5), 64)
-
 result = data.backtrace.get_probabilities(
     x=20.0, y=32.0, z=40.0,
     vx=vx_scan,
     vy=0.0,
     vz=vz_scan,
+    ispec=0,
     max_step=10000,
-    parallel="mpi",
-    n_threads=2,
+    n_threads=8,
 )
 
-# Or launch Slurm from the current Python process.
-result = data.backtrace.get_probabilities(
+result.vxvz.plot(cmap="viridis")
+result.plot_energy_spectrum(scale="log")
+```
+
+**MPI Backend**
+
+`parallel="mpi"` / `parallel="srun"` are lower-level `get_probabilities()` backend options. You can also pass them through `data.trace` as `**kwargs`.
+
+```python
+trace = data.trace.forward(
     x=20.0, y=32.0, z=40.0,
     vx=vx_scan,
     vy=0.0,
@@ -277,106 +336,15 @@ result = data.backtrace.get_probabilities(
 )
 ```
 
-### 2-D heatmap projections
+</details>
 
-`result.pair(var1, var2)` integrates out the four unselected axes
-(trapezoidal rule) and returns a :class:`HeatmapData`. The shorthand
-attribute form works the same way as for `BacktraceResult`.
+## Related Classes
 
-```python
-result.vxvz.plot(cmap="viridis")   # = result.pair("vx", "vz")
-result.xvx.plot()                  # x-vx plane
-result.yz.plot(cmap="plasma")      # y-z plane
-```
+See the API reference (the `emout.core.backtrace` package) for full signatures.
 
-`HeatmapData.plot()` draws a `pcolormesh` with a colour bar and SI-unit
-labels (`use_si=False` keeps grid units). Extra keyword arguments are
-forwarded straight to `pcolormesh`, so you can use `vmin` / `vmax` or
-`norm=LogNorm(...)` to control the colour scale. Pass
-`offsets=("center", 0)` to centre an axis or apply a numeric shift.
-
-### Energy spectrum
-
-`plot_energy_spectrum(energy_bins=None, scale="log")` renders an
-energy-flux histogram of the arriving particles. `energy_bins` accepts
-either an integer (number of bins) or an array of bin edges.
-
-```python
-result.plot_energy_spectrum(scale="log", energy_bins=80)
-```
-
-Internally it reads `wp` (or the photoelectron settings `path` / `curf`
-when `nflag_emit == 2`) from `plasma.inp` to compute a reference number
-density `n0`, weights each phase-space point by its probability, and
-integrates.
-
-### Raw histogram arrays
-
-`result.energy_spectrum(energy_bins=...)` returns the `(hist, bin_edges)`
-tuple directly so you can feed it to custom post-processing or another
-library (e.g. `ax.step`, seaborn).
-
-## Remote execution integration
-
-`data.backtrace` shares the `Emout` facade's `remote_open_kwargs`, so if
-an emout server is running the computation automatically runs on the
-worker and you get back a `RemoteProbabilityResult` /
-`RemoteBacktraceResult` proxy. Because the result is cached on the
-worker, changing visualisation parameters does **not** trigger
-recomputation.
-
-```python
-from emout.distributed import remote_figure
-
-result = data.backtrace.get_probabilities(...)   # computed once on the worker
-
-with remote_figure():
-    result.vxvz.plot(cmap="viridis")
-
-with remote_figure():
-    result.plot_energy_spectrum(scale="log")
-
-result.drop()   # free worker memory when done
-```
-
-If you prefer the explicit remote style, switch to `data.remote().backtrace...`
-— it returns the same dedicated proxies:
-
-```python
-from emout.distributed import remote_scope, remote_figure
-
-with remote_scope():
-    rdata = data.remote()
-    bt = rdata.backtrace.get_backtrace(position, velocity, ispec=0)
-    result = rdata.backtrace.get_probabilities(...)
-
-    with remote_figure():
-        bt.tx.plot()
-        result.vxvz.plot()
-```
-
-For the remote-execution mechanics, environment variables, and server
-management, see the [remote execution guide](distributed.md).
-
-### `fetch()` for local customisation
-
-When you want full matplotlib control (custom annotations, shared colour
-bars, dropping the heatmap into your own subplot grid), use `fetch()` to
-pull the small result arrays back to the client:
-
-```python
-heatmap = result.vxvz.fetch()      # local HeatmapData
-fig, ax = plt.subplots()
-heatmap.plot(ax=ax, cmap="plasma")
-ax.axhline(y=0, color="red", linestyle="--")
-```
-
-## Related classes
-
-See the API reference (the `emout.core.backtrace` package) for full
-signatures.
-
-- `BacktraceWrapper` — the `data.backtrace` object itself
+- `TraceWrapper` — the `data.trace` object itself
+- `TraceResult` — workflow result containing probability and trace payloads
+- `BacktraceWrapper` — the `data.backtrace` object itself (lower-level API)
 - `BacktraceResult` / `MultiBacktraceResult` — trajectory containers
 - `ProbabilityResult` — 6-D probability grid and heatmap projections
 - `XYData` / `MultiXYData` / `HeatmapData` — lightweight visualisation containers

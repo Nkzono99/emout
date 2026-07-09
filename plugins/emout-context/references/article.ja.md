@@ -60,9 +60,13 @@ data = emout.Emout(
 
 ## 保存されるもの
 
+### 基本的な保存対象
+
 record mode では、`plot()` と `to_numpy()` が materialize したデータだけを保存します。
 例えば `data.phisp[-1, :, ymid, :].plot()` は、その 2D スライスだけを `data.h5` に保存します。
 同じ field と selector が複数回使われても、重複して保存されません。
+
+### 公開データを小さくする
 
 `Data3d.plot_surfaces()` は 3D field を使うため、そのままでは公開データが大きくなりがちです。
 article record mode では `bounds` が渡された場合、`data.phisp[-1].plot_surfaces(..., bounds=bounds)`
@@ -83,6 +87,8 @@ field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
 `mean()` が返す field からも `field.inp`、`field.unit`、`field.boundaries` を参照できます。
 そのため、図作成関数が `data.inp` や `data.boundaries` を読む場合でも、平均 field を渡して同じ構造で使えます。
 
+### bundle に含まれるファイル
+
 | ファイル | 内容 | 用途 |
 | --- | --- | --- |
 | `manifest.json` | 記録した field、selector、shape、slice axes、単位情報 | replay 時に requested slice と保存済み slice を照合する |
@@ -90,7 +96,7 @@ field.plot_surfaces(data.boundaries, bounds=bounds, mode="cmap")
 | `source.json` | 元 simulation path、basename、recorded files の hash | 別環境で source を対応付け、改変を検出する |
 | `plasma.inp` | 入力ファイル | `data.inp`、単位変換、境界メッシュ再構築 |
 | `plasma.toml` | TOML 入力ファイル | `data.toml` の再現 |
-| `icur`, `pbody` | 小さな診断ファイル（存在する場合） | `data.icur` / `data.pbody` の再現 |
+| `icur`, `ocur`, `pbody` | 小さな診断ファイル（存在する場合） | `data.icur` / `data.ocur` / `data.pbody` の再現 |
 
 `data.h5` 内の dataset は HDF5 gzip 圧縮で保存されます。replay 側では HDF5 が透過的に展開するため、
 通常の `plot()` / `to_numpy()` の使い方は変わりません。
@@ -111,6 +117,7 @@ article-records/
             ├── plasma.inp
             ├── plasma.toml
             ├── icur
+            ├── ocur
             └── pbody
 ```
 
@@ -148,35 +155,6 @@ data = [
 record / replay の両方で同じ `article_source_name` を使うと、絶対パスが変わっても
 `article-records/datasets/case_a/default/` のような安定した保存先を使えます。
 
-## archive と公開データサイズ
-
-`article_archive` を有効にすると、各 bundle を archive として自動保存します。
-
-```python
-data = emout.Emout(
-    "output_dir",
-    article_mode="record",
-    article_records_path="article-records",
-    article_archive="zip",
-)
-```
-
-```bash
-EMOUT_ARTICLE_MODE=record \
-EMOUT_ARTICLE_RECORDS_PATH=article-records \
-EMOUT_ARTICLE_ARCHIVE=zip \
-python figure.py
-```
-
-| 指定 | 作成される archive |
-| --- | --- |
-| `article_archive=True` / `EMOUT_ARTICLE_ARCHIVE=1` | `<article-name>.tar.gz` |
-| `article_archive="tar.gz"` / `EMOUT_ARTICLE_ARCHIVE=tar.gz` | `<article-name>.tar.gz` |
-| `article_archive="zip"` / `EMOUT_ARTICLE_ARCHIVE=zip` | `<article-name>.zip` |
-
-replay 時は展開済み directory がなくても、対応する `.tar.gz` または `.zip` があれば自動展開します。
-zip はアップロード先が `.tar.gz` を受け付けない場合や、Windows で展開しやすい形式にしたい場合に便利です。
-
 ## replay でできること
 
 replay mode の `emout.Emout()` は、元の HDF5 出力ではなく記録済み bundle を読む proxy を返します。
@@ -205,11 +183,41 @@ data.exz[-1, :, ymid, :].plot()
 data.boundaries.plot()
 data.phisp[-1].plot_surfaces(data.boundaries, bounds=bounds)
 icur = data.icur
+ocur = data.ocur
 pbody = data.pbody
 ```
 
 未記録のスライスにアクセスすると例外になります。これは公開 bundle に図の再現に必要なデータが
 含まれているかを確認するための挙動です。
+
+## archive 形式
+
+`article_archive` を有効にすると、各 bundle を archive として自動保存します。
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_archive="zip",
+)
+```
+
+```bash
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_ARCHIVE=zip \
+python figure.py
+```
+
+| 指定 | 作成される archive |
+| --- | --- |
+| `article_archive=True` / `EMOUT_ARTICLE_ARCHIVE=1` | `<article-name>.tar.gz` |
+| `article_archive="tar.gz"` / `EMOUT_ARTICLE_ARCHIVE=tar.gz` | `<article-name>.tar.gz` |
+| `article_archive="zip"` / `EMOUT_ARTICLE_ARCHIVE=zip` | `<article-name>.zip` |
+
+replay 時は展開済み directory がなくても、対応する `.tar.gz` または `.zip` があれば自動展開します。
+zip はアップロード先が `.tar.gz` を受け付けない場合や、Windows で展開しやすい形式にしたい場合に便利です。
 
 ## 設定一覧
 

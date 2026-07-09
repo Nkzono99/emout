@@ -28,7 +28,7 @@ Use this skill when a user asks Codex to create a Python visualization script wi
 - When the script is for paper/publication data, support article record/replay via environment variables instead of hard-coding mode changes unless the user asks. For averaged 3D surfaces, prefer `data.phisp[-N:].mean().plot_surfaces(..., bounds=bounds)` so article mode can record the averaged ROI.
 - Use `val_si` or SI-labeled plots only when unit conversion metadata is available or when the user's data is known to include it.
 - For backtrace scripts, convert SI positions/velocities/ranges to EMSES units before calling `get_backtrace()` or `get_probabilities()`; plots can still display SI axes with the default `use_si=True`.
-- For PyVista 3D scripts, use `plot3d()` / `plot_pyvista()`, reuse `plotter=plotter` for overlays, use `surfaces=data.boundaries` or `data.boundaries.plot3d()`, and prefer `show=False` plus `filename=` or `plotter.screenshot(...)` for batch output.
+- For PyVista 3D scripts, use `plot3d()` in new code, reuse `plotter=plotter` for overlays, use `surfaces=data.boundaries` or `data.boundaries.plot3d()`, and prefer `show=False` plus `filename=` or `plotter.screenshot(...)` for batch output. Treat `plot_pyvista()` as a deprecated legacy alias when adapting existing scripts.
 - For large visualization, prefer this structure:
   - `emout server start ...` in the setup note, not inside the script unless explicitly requested.
   - `rdata = emout.Emout(args.output_dir).remote()`.

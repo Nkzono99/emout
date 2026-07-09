@@ -133,7 +133,7 @@ if __name__ == "__main__":
 ## 問題を切り分ける
 
 1. 最小 script と traceback を用意する。
-2. `python -m pip show emout`、インストール方法、Python バージョンを確認する。
+2. `python -c "import emout; print(emout.__version__)"`、`python -m pip show emout`、インストール方法、Python バージョンを確認する。
 3. 出力ディレクトリのファイル一覧を要約する。
 4. 入力ファイルの格子サイズ、単位変換、境界設定を確認する。
 5. 軸順序 `(t, z, y, x)` と full-array load の有無を確認する。

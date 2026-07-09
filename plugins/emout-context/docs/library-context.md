@@ -7,6 +7,7 @@ Lang: [日本語](library-context.md) | [English](library-context.en.md)
 ## 基本モデル
 
 - 公開入口は `emout.Emout`。
+- インストール済み emout のバージョンは `emout.__version__` で確認できる。
 - 典型的な初期化は `data = emout.Emout("output_dir")`。
 - 入力ファイルと出力ディレクトリが分かれている場合は `emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")`。
 - 継続出力を結合する場合は `emout.Emout("output_dir", ad="auto")`。
@@ -20,7 +21,7 @@ Lang: [日本語](library-context.md) | [English](library-context.en.md)
 | `data.nd1p` | 種1 数密度 |
 | `data.j1x`, `data.j1y`, `data.j1z` | 種1 電流密度成分 |
 | `data.j1xy`, `data.j1xyz` | 自動結合された 2D / 3D ベクトルデータ |
-| `data.icur`, `data.pbody` | テキスト診断出力を読んだ `pandas.DataFrame` |
+| `data.icur`, `data.ocur`, `data.pbody` | テキスト診断出力を読んだ `pandas.DataFrame`（`.val_si` で SI 変換） |
 | `data.inp` | `plasma.inp` / `plasma.toml` 由来の入力パラメータ |
 | `data.toml` | TOML 入力がある場合の structured parameter |
 | `data.unit` | EMSES と SI の単位変換 |
@@ -42,7 +43,7 @@ data.phisp[-1].val_si        # SI 値の ndarray
 
 - 1D/2D は `plot()`、`cmap()`、`contour()` を基本にする。
 - 時系列は `gifplot()` で GIF/HTML にできる。
-- 3D は `plot3d()` を使う。PyVista は emout 2.20.0 以降の通常依存なので、import error では古い環境や editable install の依存更新を疑う。
+- 3D は `plot3d()` を使う。`plot_pyvista()` は非推奨の互換 alias として扱う。PyVista は emout 2.20.0 以降の通常依存なので、import error では古い環境や editable install の依存更新を疑う。
 - 境界は `data.boundaries` から `mesh()` を作り、`plot_surfaces` などに渡す。
 - HPC では `emout server start` と `Emout.remote()` / `remote_figure()` で計算ノードに処理を寄せられる。
 - 大規模可視化 script では、`RemoteSession` を直接作るより `Emout.remote()`、`remote_scope()`、`remote_figure()`、`RemoteFigure` を使う。`RemoteSession` は共有 Dask Actor の内部名として説明する。

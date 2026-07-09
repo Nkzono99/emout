@@ -6,7 +6,7 @@ Lang: [日本語](README.md) | [English](README.en.md)
 [![Python](https://img.shields.io/pypi/pyversions/emout.svg)](https://pypi.org/project/emout/)
 [![Docs](https://github.com/Nkzono99/emout/actions/workflows/docs.yaml/badge.svg)](https://nkzono99.github.io/emout/)
 [![CodeQL](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Nkzono99/emout/actions/workflows/codeql-analysis.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Nkzono99/emout/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **[EMSES](https://github.com/Nkzono99/MPIEMSES3D) シミュレーション出力の解析・可視化 Python ライブラリ**
 
@@ -21,7 +21,7 @@ emout でできること:
 
 - **ドキュメント:** [ユーザーガイド (日本語/English)](https://nkzono99.github.io/emout/guide/quickstart.ja.html) | [API リファレンス](https://nkzono99.github.io/emout/api/emout.html)
 - **ノートブック例:** [月面帯電シミュレーション結果の可視化](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Agent plugins:** [emout Context](../README.md) — Codex / Claude Code 標準の plugin marketplace で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを agent に相談できます（[導入手順](../../README.md)）
+- **Agent plugins:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.md) — Codex / Claude Code 標準の plugin marketplace で導入し、repo 外でも可視化 script 作成・改善、単位変換、`remote_figure` を使う大規模可視化、トラブルシュートを agent に相談できます（[導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md)）
 
 ---
 
@@ -37,6 +37,30 @@ emout version --check-update
 ```
 
 > Dask によるリモート実行は Python 3.10 以上で自動的に有効になります（別途インストール不要）。
+
+---
+
+## Agent plugins
+
+emout の `emout Context` plugin は、シミュレーション出力ディレクトリや別 repo で Codex / Claude Code を起動したときにも、emout の軸順序・単位変換・可視化・`remote_figure`・トラブルシュートの文脈を使えるようにします。
+
+```bash
+codex plugin marketplace add Nkzono99/emout \
+  --ref main \
+  --sparse .agents/plugins \
+  --sparse plugins/emout-context
+codex plugin add emout-context@emout
+```
+
+Claude Code では次のように導入します。
+
+```bash
+claude plugin marketplace add Nkzono99/emout \
+  --sparse .claude-plugin plugins/emout-context
+claude plugin install emout-context@emout
+```
+
+emout CLI をインストール済みなら、Claude Code 用は `emout claude install-plugin`、Codex 用は `emout codex install-plugin` でも導入できます。詳しい導入・更新手順は [plugin 導入手順](https://github.com/Nkzono99/emout/blob/main/plugins/README.md) を参照してください。
 
 ---
 
@@ -59,7 +83,7 @@ data.nd1p           # 種1 数密度
 data.j1x            # 種1 電流密度 x成分
 data.j1xy           # j1x + j1y 自動結合 → 2D ベクトル
 data.j1xyz          # 3D ベクトル
-data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
+data.icur, data.ocur, data.pbody  # テキスト診断出力 (.val_si で SI 変換)
 ```
 
 スライスの軸順序は `(t, z, y, x)` です。
@@ -77,9 +101,10 @@ data.icur, data.pbody  # テキスト出力 (pandas DataFrame)
 | **パラメータ** | `data.inp.nx`, `data.toml.species[0].wp` | [→ パラメータ](https://nkzono99.github.io/emout/guide/inp.ja.html) |
 | **単位変換** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ 単位変換](https://nkzono99.github.io/emout/guide/units.ja.html) |
 | **境界メッシュ** | `data.boundaries.mesh()`, `plot_surfaces` へのオーバーレイ | [→ 境界メッシュ](https://nkzono99.github.io/emout/guide/boundaries.ja.html) |
-| **バックトレース** | `data.backtrace.get_probabilities(...)`, `get_backtrace(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
+| **バックトレース** | `data.trace.forward(...)`, `data.backtrace.get_probabilities(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista 可視化](https://nkzono99.github.io/emout/guide/pyvista.ja.html) |
 | **リモート実行** | Dask Actor で計算ノードに処理を委譲、ローカルは画像だけ | [→ リモート実行](https://nkzono99.github.io/emout/guide/distributed.ja.html) |
+| **論文用公開データ** | `plot()` / `to_numpy()` に使った最小スライスを記録・再生 | [→ 論文用データ](https://nkzono99.github.io/emout/guide/article.ja.html) |
 
 ---
 
@@ -138,6 +163,81 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 
 </details>
 
+### 論文用公開データの記録・再生
+
+図作成スクリプトは通常どおり `emout.Emout()` から始めます。
+環境変数で article mode を切り替えると、`plot()` と `to_numpy()` が消費した
+最小スライスだけを `records-path` 以下に保存し、同じスクリプトで再生できます。
+
+```python
+import emout
+
+data = emout.Emout("output_dir")
+ymid = data.inp.ny // 2
+
+data.phisp[-1, :, ymid, :].plot(cmap="viridis")
+arr = data.ex[-1, :, ymid, :].to_numpy()
+```
+
+```bash
+# 通常実行
+python fig1.py
+
+# 記録: article-records/datasets/<output_dir>-<hash>/fig1/ に保存
+EMOUT_ARTICLE_MODE=record \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+
+# 再生: 元の巨大 HDF5 ではなく記録済みスライスから復元
+EMOUT_ARTICLE_MODE=replay \
+EMOUT_ARTICLE_RECORDS_PATH=article-records \
+EMOUT_ARTICLE_NAME=fig1 \
+python fig1.py
+```
+
+`EMOUT_ARTICLE_NAME` は省略できます。その場合は `default` という名前で保存されるため、
+notebook や 1 本のスクリプトで作るすべての figure を 1 つの bundle にまとめられます。
+同じ `article_name` で `Emout()` を作り直した場合も、既存 bundle に未記録スライスだけを
+追記します。
+
+複数の simulation output を開く場合、record は source ごとに
+`article-records/datasets/<source>/default/` へ分かれます。別環境で replay するときは
+まず source directory の basename で対応付けます。同じ basename の output が複数ある場合は、
+通常実行時から安定した `article_source_name` を指定してください。
+
+```python
+data = [
+    emout.Emout("case_a/output", article_source_name="case_a"),
+    emout.Emout("case_b/output", article_source_name="case_b"),
+]
+```
+
+record された `data.h5` は HDF5 gzip 圧縮で保存されます。公開用に bundle 全体を
+`.tar.gz` または `.zip` にまとめたい場合は `EMOUT_ARTICLE_ARCHIVE=1`
+（`.tar.gz`）/ `EMOUT_ARTICLE_ARCHIVE=zip`、または `article_archive=True` /
+`article_archive="zip"` を指定します。replay 時は展開済み directory がなくても、
+対応する archive があれば自動で展開して読み込みます。
+
+引数でも指定できます。
+
+```python
+data = emout.Emout(
+    "output_dir",
+    article_mode="record",
+    article_records_path="article-records",
+    article_name="fig1",
+    article_archive="zip",
+)
+```
+
+replay mode では未記録のスライスにアクセスすると例外になります。これは公開データに
+図の再現に必要なデータが含まれているかを確認するためです。
+`plasma.inp` と `plasma.toml`、小さな診断ファイル（`icur`, `ocur`, `pbody`）も保存されるため、
+`data.inp` / `data.toml` / `data.boundaries.plot()` /
+`data.phisp[-1].plot_surfaces(data.boundaries)` のような入力パラメータや境界メッシュに
+依存する可視化も replay できます。
+
 ### リモート実行 (Dask) — 実験的
 
 HPC の計算ノードにデータ処理を委譲し、ログインノードにはプロット画像だけを返します。
@@ -152,6 +252,11 @@ emout server start --partition gr20001a --memory 60G
 `emout server` は TLS 認証を自動設定し、デフォルトでは 1 ユーザー 1 サーバーに
 制限されます。追加セッションが必要な場合は
 `emout server start --allow-multiple --name <session>` を使ってください。
+
+ログインノードで field 配列を誤ってローカル materialize したくない場合は、
+`emout.disable_local_data_access()` または
+`EMOUT_LOCAL_DATA_POLICY=remote_required` を使えます。`Emout(...,
+local_data_policy="allow")` で小さいデータだけ明示的にローカル読み込みを許可できます。
 
 ```python
 import matplotlib.pyplot as plt
@@ -254,13 +359,13 @@ result.vxvz.plot()
 - **PR:** `main` から作業ブランチを切り、`pytest -q` がグリーンの状態で送ってください
 - **ドキュメント:** `README.md`（日本語）と `README.en.md`（英語）は対応する形で維持されています。片方を更新したらもう片方にも反映してください
 
-開発環境のセットアップやディレクトリ構成は [AGENTS.md](https://github.com/Nkzono99/emout/blob/main/AGENTS.md) にまとまっています。
+開発環境のセットアップやディレクトリ構成は [AGENTS.md](AGENTS.md) にまとまっています。
 
 ---
 
 ## ライセンス
 
-[MIT License](https://github.com/Nkzono99/emout/blob/main/LICENSE)
+[MIT License](LICENSE)
 
 ## リンク
 

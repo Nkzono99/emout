@@ -8,6 +8,7 @@ The skills in this plugin use the bundled files in `references/` as their primar
 
 - Respond in the user's language. Keep code identifiers, filenames, commands, and EMSES variable names in English.
 - Treat `emout.Emout` as the public entry point, and always state that grid data slicing uses axis order `(t, z, y, x)`.
+- Use `emout.__version__` when checking the installed package version.
 - SI conversion is available when `plasma.inp` has a `!!key dx=...,to_c=...` header or `plasma.toml` has `[meta.unit_conversion]`. Do not claim SI conversion is available without that basis.
 - For large HDF5 data, prefer examples that slice by time, plane, and range before loading a full 4D array.
 - Input files, logs, and output paths may include personal paths, hostnames, job IDs, or secrets. Summarize or mask them before preparing external issues.
@@ -18,7 +19,7 @@ The skills in this plugin use the bundled files in `references/` as their primar
 | --- | --- | --- | --- | --- |
 | `emout-usage-guide` | Explain basic emout usage, variable access, unit conversion, and parameter inspection | Output directory, target quantity, input file format | Minimal code, axis order, unit conversion notes, next guide links | `README.en.md`, `quickstart.md`, `inp.md`, `units.md` |
 | `emout-article-publication` | Guide article record/replay, environment variables, archives, and averaged data for paper/publication bundles | Visualization script, publication-data requirements, records path, multiple simulations, averaging window | Record/replay commands, environment variables, saved-data granularity, gotchas | `article-publication.en.md`, `usage-workflows.en.md` |
-| `emout-pyvista-3d-visualization` | Guide PyVista 3D scenes, boundary/trace overlays, streamline seeds, saving, and HPC execution | Quantities, 3D layers, boundaries/traces, save format, execution environment | `plot3d()` steps, overlay examples, save method, caveats | `pyvista.md`, `plotting.md`, `boundaries.md`, `backtrace.md` |
+| `emout-pyvista-3d-visualization` | Guide PyVista 3D scenes, deprecated `plot_pyvista()` compatibility aliases, boundary/trace overlays, streamline seeds, saving, and HPC execution | Quantities, 3D layers, boundaries/traces, save format, execution environment | `plot3d()` steps, overlay examples, save method, caveats | `pyvista.md`, `plotting.md`, `boundaries.md`, `backtrace.md` |
 | `emout-visualization-workflow` | Design 1D/2D/3D plots, animations, and boundary overlays | Quantity, slice condition, view type, output path | Plotting steps, Python examples, dependencies, saving method | `plotting.md`, `animation.md`, `boundaries.md`, `distributed.md`, `backtrace.md` |
 | `emout-visualization-script` | Create or improve visualization scripts from natural-language requests or existing scripts | Goal, output directory, quantities, existing script, HPC constraints | Runnable script, remote execution variant, run steps, assumptions | `quickstart.md`, `plotting.md`, `animation.md`, `distributed.md`, `backtrace.md` |
 | `emout-output-diagnose` | Diagnose loading failures, plot errors, unit conversion, or remote execution issues | Traceback, output listing, input file, environment | Likely causes, check commands, minimal fixes, missing information | `quickstart.md`, `inp.md`, `units.md`, `backtrace.md`, `analysis-pitfalls.en.md` |

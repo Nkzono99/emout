@@ -7,6 +7,7 @@ This document summarizes the shared assumptions plugin skills should use when he
 ## Basic Model
 
 - The public entry point is `emout.Emout`.
+- Check the installed emout version with `emout.__version__`.
 - Typical initialization is `data = emout.Emout("output_dir")`.
 - When the input file and output directory are separate, use `emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_dir")`.
 - To combine appended outputs, use `emout.Emout("output_dir", ad="auto")`.
@@ -20,7 +21,7 @@ This document summarizes the shared assumptions plugin skills should use when he
 | `data.nd1p` | Species-1 number density |
 | `data.j1x`, `data.j1y`, `data.j1z` | Species-1 current density components |
 | `data.j1xy`, `data.j1xyz` | Auto-combined 2D / 3D vector data |
-| `data.icur`, `data.pbody` | Text diagnostics loaded as `pandas.DataFrame` |
+| `data.icur`, `data.ocur`, `data.pbody` | Text diagnostics loaded as `pandas.DataFrame` (`.val_si` converts to SI) |
 | `data.inp` | Input parameters from `plasma.inp` / `plasma.toml` |
 | `data.toml` | Structured parameters when TOML input is available |
 | `data.unit` | EMSES and SI unit conversion |
@@ -42,7 +43,7 @@ For outputs without unit conversion metadata, do not assume `val_si` is valid. F
 
 - Use `plot()`, `cmap()`, and `contour()` for 1D/2D views.
 - Use `gifplot()` for GIF/HTML time-series output.
-- Use `plot3d()` for 3D views. PyVista is a regular dependency in emout 2.20.0+, so import errors usually indicate an old environment or stale editable install.
+- Use `plot3d()` for 3D views. Treat `plot_pyvista()` as a deprecated compatibility alias. PyVista is a regular dependency in emout 2.20.0+, so import errors usually indicate an old environment or stale editable install.
 - Build boundary meshes from `data.boundaries` and pass them to APIs such as `plot_surfaces`.
 - On HPC systems, `emout server start` plus `Emout.remote()` / `remote_figure()` can offload work to compute nodes.
 - For large visualization scripts, use `Emout.remote()`, `remote_scope()`, `remote_figure()`, or `RemoteFigure` instead of constructing `RemoteSession` directly. Explain `RemoteSession` as the internal shared Dask Actor.

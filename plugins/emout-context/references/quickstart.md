@@ -31,10 +31,11 @@ Variable names are resolved from the EMSES filename convention:
 | `data.rex` | relocated from `ex` | Relocated electric field (x) |
 | `data.j1xy` | `j1x` + `j1y` | 2D vector (auto-combined) |
 | `data.j1xyz` | `j1x` + `j1y` + `j1z` | 3D vector (auto-combined) |
-| `data.icur` | `icur` (text) | Current data (pandas DataFrame) |
-| `data.pbody` | `pbody` (text) | Conductor data (pandas DataFrame) |
+| `data.icur` | `icur` (text) | Inward-current data (pandas DataFrame, SI conversion via `.val_si`) |
+| `data.ocur` | `ocur` (text) | Outward-current data (pandas DataFrame, SI conversion via `.val_si`) |
+| `data.pbody` | `pbody` (text) | Conductor-potential data (pandas DataFrame, SI conversion via `.val_si`) |
 
-Each attribute is a time-series object. Indexing by timestep returns a NumPy-compatible array:
+Each HDF5-backed attribute is a time-series object. Indexing by timestep returns a NumPy-compatible array:
 
 ```python
 len(data.phisp)       # Number of timesteps

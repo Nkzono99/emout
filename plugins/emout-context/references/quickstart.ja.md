@@ -31,10 +31,11 @@ EMSES のファイル名規則から変数名を自動で決めます:
 | `data.rex` | `ex` から再配置 | 再配置された電場 (x成分) |
 | `data.j1xy` | `j1x` + `j1y` | 2D ベクトル（自動結合） |
 | `data.j1xyz` | `j1x` + `j1y` + `j1z` | 3D ベクトル（自動結合） |
-| `data.icur` | `icur`（テキスト） | 電流データ（pandas DataFrame） |
-| `data.pbody` | `pbody`（テキスト） | 導体データ（pandas DataFrame） |
+| `data.icur` | `icur`（テキスト） | 流入電流データ（pandas DataFrame、`.val_si` で SI 変換） |
+| `data.ocur` | `ocur`（テキスト） | 流出電流データ（pandas DataFrame、`.val_si` で SI 変換） |
+| `data.pbody` | `pbody`（テキスト） | 導体電位データ（pandas DataFrame、`.val_si` で SI 変換） |
 
-各属性は時系列オブジェクトで、タイムステップを指定すると NumPy 互換の配列が返ります:
+HDF5 由来の各属性は時系列オブジェクトで、タイムステップを指定すると NumPy 互換の配列が返ります:
 
 ```python
 len(data.phisp)       # タイムステップ数

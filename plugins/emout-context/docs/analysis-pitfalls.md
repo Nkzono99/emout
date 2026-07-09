@@ -13,14 +13,14 @@ emout 利用者の質問では、同じ種類の誤りが繰り返し現れま�
 | `val_si` や単位表示が不自然 | `!!key` または `[meta.unit_conversion]` があるか | 入力ファイルの単位変換情報を確認し、ない場合は EMSES 単位として扱う |
 | 変数属性が見つからない | HDF5 ファイル名と EMSES 変数名が一致しているか | `ls *.h5` や `data.__dict__` ではなく guide の変数解決ルールを確認する |
 | ベクトルプロットが期待と違う | `j1xy` / `j1xyz` の成分とスライス面が合っているか | 表示したい平面に合うベクトル属性を選ぶ |
-| 3D plot が import error になる | emout / PyVista の依存関係が更新済みか | emout 2.20.0+ へ更新し、editable install なら再インストールする |
+| 3D plot が import error になる | `emout.__version__` と PyVista 依存関係が更新済みか | emout 2.20.0+ へ更新し、editable install なら再インストールする |
 | 境界が表示されない | `data.boundaries` が空でないか、finbound が対応形状か | 入力ファイルの境界設定と `boundaries` guide を確認する |
 | remote plot が動かない | Python 3.10+、Dask server、TLS 設定、session 名 | `emout server status` と `distributed` guide を確認する |
 | 継続出力がつながらない | appended output を明示しているか | `emout.Emout("output_dir", ad="auto")` を試す |
 
 ## 追加で集める情報
 
-- `python -m pip show emout` または `python -c "import importlib.metadata as m; print(m.version('emout'))"` の結果
+- `python -c "import emout; print(emout.__version__)"` と `python -m pip show emout` の結果
 - インストール方法
 - `ls` などで要約した出力ファイル一覧
 - `plasma.inp` / `plasma.toml` の単位変換と格子サイズに関係する部分
