@@ -367,6 +367,7 @@ class TraceWrapper:
                 max_step=max_step,
                 use_adaptive_dt=use_adaptive_dt,
                 n_threads=n_threads,
+                remote=False,
                 **kwargs,
             )
             return (

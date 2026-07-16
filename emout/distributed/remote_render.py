@@ -479,6 +479,7 @@ class RemoteSession:
     ) -> bytes:
         """Render a cached TraceResult plot on the worker."""
         result = self._cache[key]
+        plot_kwargs = self._decode_remote_value(plot_kwargs)
         return self._render_to_bytes(
             lambda fig, ax: result.plot(
                 var1=var1,
@@ -504,6 +505,7 @@ class RemoteSession:
     ) -> bytes:
         """Render cached TraceResult trajectories on the worker."""
         result = self._cache[key]
+        plot_kwargs = self._decode_remote_value(plot_kwargs)
         return self._render_to_bytes(
             lambda fig, ax: result.plot_traces(
                 var1=var1,
@@ -1229,18 +1231,24 @@ class RemoteTraceWrapper:
         key = _next_key("trace")
         kwargs = dict(kwargs)
         kwargs["remote"] = False
+        payload = _encode_remote_arg(
+            {
+                "method": method,
+                "x": x,
+                "y": y,
+                "z": z,
+                "vx": vx,
+                "vy": vy,
+                "vz": vz,
+                **kwargs,
+            },
+            self._session,
+        )
         _await_remote(
             self._session.compute_trace(
                 key,
                 emout_kwargs=self._emout_kwargs,
-                method=method,
-                x=x,
-                y=y,
-                z=z,
-                vx=vx,
-                vy=vy,
-                vz=vz,
-                **kwargs,
+                **payload,
             )
         )
         return RemoteTraceResult(self._session, key)
@@ -2006,15 +2014,19 @@ class RemoteTraceResult:
             bind_session(self._session)
             record_cached_plot(
                 self._key,
-                {
-                    "var1": var1,
-                    "var2": var2,
-                    "kind": kind,
-                    "direction": direction,
-                    **plot_kwargs,
-                },
+                _encode_remote_arg(
+                    {
+                        "var1": var1,
+                        "var2": var2,
+                        "kind": kind,
+                        "direction": direction,
+                        **plot_kwargs,
+                    },
+                    self._session,
+                ),
             )
             return None
+        plot_kwargs = _encode_remote_arg(plot_kwargs, self._session)
         img = self._session.render_trace_plot(
             self._key,
             var1=var1,
@@ -2054,15 +2066,19 @@ class RemoteTraceResult:
             bind_session(self._session)
             record_cached_plot(
                 self._key,
-                {
-                    "var1": var1,
-                    "var2": var2,
-                    "kind": "trace",
-                    "direction": direction,
-                    **plot_kwargs,
-                },
+                _encode_remote_arg(
+                    {
+                        "var1": var1,
+                        "var2": var2,
+                        "kind": "trace",
+                        "direction": direction,
+                        **plot_kwargs,
+                    },
+                    self._session,
+                ),
             )
             return None
+        plot_kwargs = _encode_remote_arg(plot_kwargs, self._session)
         img = self._session.render_trace_traces(
             self._key,
             var1=var1,

@@ -142,19 +142,20 @@ trace.plot_traces("x", "z", alpha=0.3)
 
 ```python
 trace = data.trace.both(..., get_trace=True)
-trace.backward_traces.xz.plot(alpha=trace.alpha)
-trace.forward_traces.xz.plot(alpha=trace.alpha)
+trace.plot_traces("x", "z")
 trace.plot_traces("x", "z", direction="backward")
 trace.plot_traces("x", "z", direction="forward")
 ```
 
+For a `both()` result, omitting `direction` from `plot_traces()` overlays the backward and forward payloads on the same axes. Pass `direction="backward"` or `direction="forward"` to draw only one direction. The `trace.traces` attribute still represents one unambiguous trajectory payload, so accessing it directly on a `both()` result continues to raise an ambiguity error.
+
 ### Overlay in 3D
 
-`plot3d()` returns a PyVista plotter. Pass an existing plotter to overlay traces on a field or boundary view.
+`plot3d()` returns a PyVista plotter. For a `both()` result, omitting `direction` draws both payloads. Pass an existing plotter to overlay traces on a field or boundary view.
 
 ```python
 plotter = data.phisp[-1].plot3d(mode="slice", show=False)
-trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
+trace.plot3d(plotter=plotter, tube_radius=0.05, show=True)
 ```
 
 ## Plotting Results

@@ -142,19 +142,20 @@ trace.plot_traces("x", "z", alpha=0.3)
 
 ```python
 trace = data.trace.both(..., get_trace=True)
-trace.backward_traces.xz.plot(alpha=trace.alpha)
-trace.forward_traces.xz.plot(alpha=trace.alpha)
+trace.plot_traces("x", "z")
 trace.plot_traces("x", "z", direction="backward")
 trace.plot_traces("x", "z", direction="forward")
 ```
 
+`both()` の結果では、`plot_traces()` の `direction` を省略すると backward / forward の両方を同じ axes に重ねます。片方向だけを描く場合は `direction="backward"` または `direction="forward"` を指定してください。`trace.traces` は単一の trajectory payload を返す属性なので、`both()` の結果から直接参照した場合は引き続き曖昧性エラーになります。
+
 ### 3D に重ねる
 
-`plot3d()` は PyVista plotter を返します。既存の 3D field / boundary 表示に重ねたい場合は、その plotter を渡します。
+`plot3d()` は PyVista plotter を返します。`both()` の結果では `direction` を省略すると両方向を描きます。既存の 3D field / boundary 表示に重ねたい場合は、その plotter を渡します。
 
 ```python
 plotter = data.phisp[-1].plot3d(mode="slice", show=False)
-trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
+trace.plot3d(plotter=plotter, tube_radius=0.05, show=True)
 ```
 
 ## 結果の描画

@@ -40,6 +40,7 @@ def test_backward_returns_integrated_probability_result(monkeypatch):
     assert result.forward_traces is None
     np.testing.assert_allclose(result.alpha, np.array([0.25, 1.0, 0.0]))
     assert calls[0][1]["dt"] == pytest.approx(0.2)
+    assert calls[0][1]["remote"] is False
 
 
 def test_forward_trace_only_builds_particles_without_probabilities(monkeypatch):
@@ -289,6 +290,41 @@ def test_trace_result_accepts_explicit_alpha_array():
     np.testing.assert_array_equal(captured["alpha"], alpha)
 
 
+def test_both_plot_traces_defaults_to_overlaying_both_directions():
+    from emout.core.backtrace.trace_result import TraceResult
+
+    calls = []
+    alpha = np.array([0.2, 0.8])
+
+    class DummyXY:
+        def __init__(self, direction):
+            self.direction = direction
+
+        def plot(self, **kwargs):
+            calls.append((self.direction, kwargs))
+            return kwargs.get("ax", "shared-axes")
+
+    class DummyTraces:
+        def __init__(self, direction):
+            self.direction = direction
+
+        def pair(self, var1, var2):
+            assert (var1, var2) == ("x", "z")
+            return DummyXY(self.direction)
+
+    result = TraceResult(
+        direction="both",
+        backward_traces=DummyTraces("backward"),
+        forward_traces=DummyTraces("forward"),
+    )
+
+    assert result.plot_traces("x", "z", alpha=alpha) == "shared-axes"
+    assert [direction for direction, _ in calls] == ["backward", "forward"]
+    np.testing.assert_array_equal(calls[0][1]["alpha"], alpha)
+    np.testing.assert_array_equal(calls[1][1]["alpha"], alpha)
+    assert calls[1][1]["ax"] == "shared-axes"
+
+
 def test_trace_result_plot3d_adds_trajectory_meshes(monkeypatch):
     from emout.core.backtrace import trace_result as trace_result_module
     from emout.core.backtrace.trace_result import TraceResult
@@ -328,3 +364,34 @@ def test_trace_result_plot3d_adds_trajectory_meshes(monkeypatch):
     assert len(plotter.meshes) == 2
     assert plotter.meshes[0][0].points.shape[1] == 3
     assert plotter.meshes[0][1]["opacity"] == pytest.approx(1.0)
+
+
+def test_both_plot3d_defaults_to_drawing_both_directions(monkeypatch):
+    from emout.core.backtrace import trace_result as trace_result_module
+    from emout.core.backtrace.trace_result import TraceResult
+
+    backward = _make_multi_backtrace_result(n_traj=2, n_steps=4)
+    forward = _make_multi_backtrace_result(n_traj=2, n_steps=4)
+    result = TraceResult(direction="both", backward_traces=backward, forward_traces=forward)
+
+    class FakePolyData:
+        def __init__(self, points):
+            self.points = points
+            self.lines = None
+
+    class FakePlotter:
+        def __init__(self):
+            self.meshes = []
+
+        def add_mesh(self, mesh, **kwargs):
+            self.meshes.append((mesh, kwargs))
+
+        def add_axes(self):
+            pass
+
+    fake_pv = SimpleNamespace(Plotter=FakePlotter, PolyData=FakePolyData)
+    monkeypatch.setattr(trace_result_module, "_require_pyvista", lambda: fake_pv)
+
+    plotter = result.plot3d()
+
+    assert len(plotter.meshes) == 4

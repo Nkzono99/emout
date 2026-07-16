@@ -109,16 +109,26 @@ class TraceResult:
         alpha: Any = "auto",
         **plot_kwargs,
     ):
-        """Plot trajectory pairs with optional probability-derived alpha."""
-        traces = self._select_traces(direction)
-        if traces is None:
+        """Plot trajectory pairs with optional probability-derived alpha.
+
+        When both backward and forward payloads are available, omitting
+        ``direction`` overlays both payloads on the same axes.
+        """
+        trace_payloads = self._select_trace_payloads(direction)
+        if not trace_payloads:
             raise ValueError("traces are not available")
 
         resolved_alpha = self._resolve_alpha(alpha)
         if resolved_alpha is not None:
             plot_kwargs = {**plot_kwargs, "alpha": resolved_alpha}
 
-        return traces.pair(var1, var2).plot(**plot_kwargs)
+        ax = plot_kwargs.get("ax")
+        for traces in trace_payloads:
+            current_kwargs = dict(plot_kwargs)
+            if ax is not None:
+                current_kwargs["ax"] = ax
+            ax = traces.pair(var1, var2).plot(**current_kwargs)
+        return ax
 
     def plot3d(
         self,
@@ -136,52 +146,54 @@ class TraceResult:
         """Draw trajectories on a PyVista plotter and return it.
 
         Passing an existing ``plotter`` overlays the trajectories on the
-        caller's current 3-D field or boundary view.
+        caller's current 3-D field or boundary view. When both backward and
+        forward payloads are available, omitting ``direction`` draws both.
         """
-        traces = self._select_traces(direction)
-        if traces is None:
+        trace_payloads = self._select_trace_payloads(direction)
+        if not trace_payloads:
             raise ValueError("traces are not available")
 
         pv = _require_pyvista()
         if plotter is None:
             plotter = pv.Plotter()
 
-        positions = np.asarray(traces.positions_list, dtype=float)
-        last_indexes = np.asarray(traces.last_indexes, dtype=int)
         alphas = self._resolve_alpha(alpha)
         if offsets is None:
             offsets = (None, None, None)
 
-        unit = getattr(traces, "unit", None) or self.unit
+        for traces in trace_payloads:
+            positions = np.asarray(traces.positions_list, dtype=float)
+            last_indexes = np.asarray(traces.last_indexes, dtype=int)
+            unit = getattr(traces, "unit", None) or self.unit
 
-        for index in range(positions.shape[0]):
-            end = int(last_indexes[index])
-            points = np.array(positions[index, :end, :], dtype=float, copy=True)
-            if len(points) < 2:
-                continue
-            if unit is not None and use_si:
-                points = unit.length.reverse(points)
-            for axis in range(3):
-                points[:, axis] = _offseted(points[:, axis], offsets[axis])
+            for index in range(positions.shape[0]):
+                end = int(last_indexes[index])
+                points = np.array(positions[index, :end, :], dtype=float, copy=True)
+                if len(points) < 2:
+                    continue
+                if unit is not None and use_si:
+                    points = unit.length.reverse(points)
+                for axis in range(3):
+                    points[:, axis] = _offseted(points[:, axis], offsets[axis])
 
-            line = pv.PolyData(points)
-            line.lines = np.concatenate(([len(points)], np.arange(len(points), dtype=int)))
-            mesh = line.tube(radius=tube_radius) if tube_radius is not None else line
+                line = pv.PolyData(points)
+                line.lines = np.concatenate(([len(points)], np.arange(len(points), dtype=int)))
+                mesh = line.tube(radius=tube_radius) if tube_radius is not None else line
 
-            opacity = 1.0
-            if alphas is not None:
-                if hasattr(alphas, "__len__"):
-                    opacity = float(alphas[index])
-                else:
-                    opacity = float(alphas)
+                opacity = 1.0
+                if alphas is not None:
+                    if hasattr(alphas, "__len__"):
+                        opacity = float(alphas[index])
+                    else:
+                        opacity = float(alphas)
 
-            add_mesh_kwargs = {
-                "color": color,
-                "line_width": line_width,
-                "opacity": opacity,
-            }
-            add_mesh_kwargs.update(mesh_kwargs)
-            plotter.add_mesh(mesh, **add_mesh_kwargs)
+                add_mesh_kwargs = {
+                    "color": color,
+                    "line_width": line_width,
+                    "opacity": opacity,
+                }
+                add_mesh_kwargs.update(mesh_kwargs)
+                plotter.add_mesh(mesh, **add_mesh_kwargs)
 
         plotter.add_axes()
         if show:
@@ -196,6 +208,12 @@ class TraceResult:
         if direction == "forward":
             return self.forward_traces
         raise ValueError("direction must be 'backward', 'forward', or None")
+
+    def _select_trace_payloads(self, direction: Optional[str]):
+        if direction is None:
+            return tuple(traces for traces in (self.backward_traces, self.forward_traces) if traces is not None)
+        traces = self._select_traces(direction)
+        return () if traces is None else (traces,)
 
     def _resolve_alpha(self, alpha: Any):
         if isinstance(alpha, str):

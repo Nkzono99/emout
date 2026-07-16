@@ -332,6 +332,93 @@ def test_remote_emout_trace_returns_specialized_trace_proxy():
     assert trace.calls[0][1]["remote"] is False
 
 
+def test_remote_trace_both_resolves_inputs_and_renders_probability_plot(monkeypatch):
+    from io import BytesIO
+
+    import matplotlib.pyplot as plt
+
+    from emout.core.backtrace.probability_result import HeatmapData
+    from emout.core.backtrace.trace_wrapper import TraceWrapper
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteEmout, RemoteProbabilityResult, RemoteRef
+
+    class DummyProbability:
+        def __init__(self):
+            self.probabilities = np.array([0.25, 0.75])
+            self.particles = ["particle-0", "particle-1"]
+            self.phases = np.zeros((2, 6))
+            self.dims = (1, 1, 1, 2, 1, 1)
+
+        def pair(self, var1, var2):
+            assert (var1, var2) == ("vx", "vz")
+            X, Y = np.meshgrid(np.array([-1.0, 1.0]), np.array([-2.0, 2.0]))
+            return HeatmapData(X, Y, np.array([[0.1, 0.5], [0.7, 1.0]]), xlabel=var1, ylabel=var2)
+
+    inp = SimpleNamespace(dt=0.25, nx=8, ny=6, zssurf=3, vdri=[0.0, 2.0])
+    wrapper = TraceWrapper(
+        directory="/tmp/output",
+        inp=inp,
+        unit=None,
+        remote_open_kwargs={"directory": "/tmp/output"},
+    )
+    fake_emout = SimpleNamespace(inp=inp, trace=wrapper)
+    session = FakeActorSession(emout=fake_emout)
+    probability = DummyProbability()
+    session._cache["nested_probability"] = probability
+
+    class RemoteAwareBacktrace:
+        def __init__(self):
+            self.probability_calls = []
+            self.trace_particles = []
+
+        def get_probabilities(self, *args, remote=True, **kwargs):
+            self.probability_calls.append((args, remote, kwargs))
+            if remote:
+                return RemoteProbabilityResult(session, "nested_probability")
+            return probability
+
+        def get_backtraces_from_particles(self, particles, **kwargs):
+            # This reproduces the original failure when ``particles`` is a
+            # RemoteRef instead of the concrete worker-side particle list.
+            assert len(particles) == 2
+            self.trace_particles.append(particles)
+            return SimpleNamespace()
+
+    backtrace = RemoteAwareBacktrace()
+    wrapper.backtrace = backtrace
+    remote_data = RemoteEmout(session, {"directory": "/tmp/output"})
+
+    trace = remote_data.trace.both(
+        remote_data.inp.nx // 2,
+        remote_data.inp.ny // 2,
+        remote_data.inp.zssurf,
+        (-remote_data.inp.vdri[1] * 1.5, remote_data.inp.vdri[1] * 1.5, 100),
+        0,
+        (-remote_data.inp.vdri[1] * 1.5, remote_data.inp.vdri[1] * 1.5, 100),
+        get_trace=True,
+        max_step=10,
+    )
+
+    probability_args, remote, _ = backtrace.probability_calls[0]
+    assert remote is False
+    assert probability_args[:3] == (4, 3, 3)
+    assert probability_args[3] == (-3.0, 3.0, 100)
+    assert probability_args[5] == (-3.0, 3.0, 100)
+    assert not any(isinstance(value, RemoteRef) for value in probability_args)
+    assert backtrace.trace_particles == [probability.particles, probability.particles]
+
+    displayed = []
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append(img_bytes))
+
+    with remote_figure(session=session):
+        trace.plot("vx", "vz")
+
+    assert len(displayed) == 1
+    image = plt.imread(BytesIO(displayed[0]), format="png")
+    assert np.std(image[..., :3]) > 0.01
+
+
 def test_remote_probability_particles_can_seed_remote_backtraces():
     from emout.distributed.remote_render import RemoteBacktraceResult, RemoteEmout, RemoteRef
 
@@ -483,6 +570,53 @@ def test_remote_trace_plot_replays_inside_remote_figure(monkeypatch):
 
     assert captured["pair"] == ("x", "z")
     assert captured["color"] == "black"
+    assert len(displayed) == 1
+    assert displayed[0][0]
+
+
+def test_remote_both_trace_defaults_to_both_directions_and_resolves_alpha(monkeypatch):
+    from emout.core.backtrace.trace_result import TraceResult
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteTraceResult
+
+    calls = []
+
+    class DummyXY:
+        def __init__(self, direction):
+            self.direction = direction
+
+        def plot(self, **kwargs):
+            calls.append((self.direction, kwargs))
+            return kwargs.get("ax")
+
+    class DummyTraces:
+        def __init__(self, direction):
+            self.direction = direction
+
+        def pair(self, var1, var2):
+            assert (var1, var2) == ("x", "z")
+            return DummyXY(self.direction)
+
+    probability = SimpleNamespace(probabilities=np.array([0.25, 0.75]))
+    session = FakeActorSession()
+    session._cache["trace_both"] = TraceResult(
+        direction="both",
+        probabilities=probability,
+        backward_traces=DummyTraces("backward"),
+        forward_traces=DummyTraces("forward"),
+    )
+    displayed = []
+
+    monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
+
+    trace = RemoteTraceResult(session, "trace_both")
+    with remote_figure(session=session):
+        trace.plot_traces("x", "z", alpha=trace.alpha)
+
+    assert [direction for direction, _ in calls] == ["backward", "forward"]
+    np.testing.assert_array_equal(calls[0][1]["alpha"], np.array([0.25, 0.75]))
+    np.testing.assert_array_equal(calls[1][1]["alpha"], np.array([0.25, 0.75]))
     assert len(displayed) == 1
     assert displayed[0][0]
 
