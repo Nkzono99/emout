@@ -4,6 +4,7 @@ Focuses on the uncovered plot methods: plot, plot2d, plot3d_mpl,
 plot_pyvista, plot3d, gifplot, and build_frame_updater.
 """
 
+import operator
 import warnings
 from unittest.mock import MagicMock, patch
 
@@ -103,6 +104,27 @@ class TestVectorDataConstruction:
         neg = vec.negate()
         np.testing.assert_array_almost_equal(np.array(neg.x_data), -np.array(vec.x_data))
 
+    @pytest.mark.parametrize("make_vec", [_make_2d_vec, _make_3d_vec])
+    @pytest.mark.parametrize("operation, sign", [(operator.pos, 1), (operator.neg, -1)])
+    def test_unary_sign_preserves_metadata(self, make_vec, operation, sign):
+        vec = make_vec(with_units=True)
+        originals = [np.array(component) for component in vec.objs]
+
+        result = operation(vec)
+
+        assert isinstance(result, VectorData)
+        assert result is not vec
+        assert result.name == vec.name
+        assert result.component_axes == vec.component_axes
+        for actual, source, original in zip(result.objs, vec.objs, originals):
+            np.testing.assert_array_equal(np.asarray(actual), sign * original)
+            np.testing.assert_array_equal(np.asarray(source), original)
+            np.testing.assert_array_equal(actual.slice_axes, source.slice_axes)
+            assert actual.slices == source.slices
+            assert actual.name == source.name
+            assert actual.valunit is source.valunit
+            assert actual.axisunits == source.axisunits
+
     def test_scale(self):
         vec = _make_2d_vec()
         scaled = vec.scale(3.0)
@@ -195,6 +217,28 @@ class TestPlotDispatch:
 
 class TestPlot2d:
     """Test plot2d argument parsing and dispatch."""
+
+    @pytest.mark.parametrize("mode", ["stream", "vec"])
+    @pytest.mark.parametrize("operation, sign", [(operator.pos, 1), (operator.neg, -1)])
+    def test_unary_sign_keeps_xz_plot_direction(self, mode, operation, sign):
+        arr_x = np.arange(-10, 10, dtype=np.float32).reshape(4, 1, 5)
+        arr_z = 2 * arr_x + 1
+        vec = VectorData([Data3d(arr_x, name="j1x"), Data3d(arr_z, name="j1z")], name="j1xz")
+        plane = vec[:, 0, :]
+        plotter = "plot_2d_streamline" if mode == "stream" else "plot_2d_vector"
+
+        with patch(f"emout.plot.basic_plot.{plotter}") as mock_plot:
+            if mode == "stream":
+                operation(plane).plot()
+            else:
+                operation(plane).plot(mode=mode)
+
+        mock_plot.assert_called_once()
+        x_data, z_data = mock_plot.call_args.args
+        np.testing.assert_array_equal(np.asarray(x_data), sign * arr_x[:, 0, :])
+        np.testing.assert_array_equal(np.asarray(z_data), sign * arr_z[:, 0, :])
+        assert mock_plot.call_args.kwargs["xlabel"] == "x"
+        assert mock_plot.call_args.kwargs["ylabel"] == "z"
 
     @patch("emout.plot.basic_plot.plot_2d_streamline", return_value="stream_img")
     def test_stream_mode(self, mock_stream):

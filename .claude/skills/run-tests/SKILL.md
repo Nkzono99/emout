@@ -18,7 +18,7 @@ python -m pytest tests/ -q
 
 ## How to use the result
 
-- The expected baseline (as of 2026-07-16) is `1526 passed, 2 skipped`.
+- The expected baseline (as of 2026-09-23) is `1534 passed, 2 skipped`.
   Optional dependencies and tools such as `toml2inp` can change the skipped
   count; both clean full-suite runs and additional skips from missing optional
   tools are acceptable. Any *failure* or unexpectedly lower passed-count means

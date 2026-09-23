@@ -183,7 +183,7 @@ class Group:
         object
             New Group containing the results.
         """
-        return self.map(lambda obj: -obj)
+        return self.map(lambda obj: +obj)
 
     def __neg__(self):
         """Apply the unary negation operator.

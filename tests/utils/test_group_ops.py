@@ -133,10 +133,11 @@ def test_neg():
 
 
 def test_pos():
-    g = Group([1, -2, 3])
+    g = Group([1, -2, 0, 3])
     result = +g
-    # NOTE: __pos__ is implemented with -obj (bug in source), so it negates
-    assert result.objs == [-1, 2, -3]
+    assert result.objs == [1, -2, 0, 3]
+    assert result is not g
+    assert g.objs == [1, -2, 0, 3]
 
 
 def test_abs():
