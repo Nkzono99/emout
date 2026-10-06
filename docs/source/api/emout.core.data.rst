@@ -28,6 +28,14 @@ emout.core.data.vector\_data module
    :show-inheritance:
    :undoc-members:
 
+emout.core.data.components module
+---------------------------------
+
+.. automodule:: emout.core.data.components
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

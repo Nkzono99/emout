@@ -1,4 +1,5 @@
 import math
+import operator
 
 import pytest
 
@@ -238,11 +239,13 @@ def test_ceil():
     assert result.objs == [2, 2, -3]
 
 
-def test_round_uses_math_round():
-    g = Group([1.5, 2.3, 3.7])
-    # __round__ references math.round which doesn't exist
-    with pytest.raises(AttributeError):
-        round(g)
+@pytest.mark.parametrize("ndigits", [None, 0, 2, -1])
+def test_round(ndigits):
+    values = [1.5, 2.345, -3.765, 12.5]
+    g = Group(values, attrs="rounding")
+    result = round(g) if ndigits is None else round(g, ndigits)
+    assert result.objs == [round(value, ndigits) for value in values]
+    assert result.attrs == "rounding"
 
 
 def test_str():
@@ -409,12 +412,48 @@ def test_setattr_group_values():
     assert o2.x == 20
 
 
-def test_binary_operator_size_mismatch_truncates():
-    g1 = Group([1, 2, 3])
-    g2 = Group([10, 20])
-    # __binary_operator uses zip directly, so mismatched sizes truncate
-    result = g1 + g2
-    assert result.objs == [11, 22]
+@pytest.mark.parametrize("op", [operator.add, operator.sub, operator.mul, operator.truediv, operator.eq])
+@pytest.mark.parametrize("left,right", [([1, 2, 3], [10, 20]), ([1], []), ([], [1])])
+def test_binary_operator_size_mismatch_raises(op, left, right):
+    with pytest.raises(ValueError, match="group size mismatch"):
+        op(Group(left), Group(right))
+
+
+@pytest.mark.parametrize(
+    "op",
+    [
+        operator.add,
+        operator.sub,
+        operator.mul,
+        operator.truediv,
+        operator.floordiv,
+        operator.mod,
+        operator.pow,
+        divmod,
+        operator.lshift,
+        operator.rshift,
+        operator.and_,
+        operator.or_,
+        operator.xor,
+    ],
+)
+@pytest.mark.parametrize("reflected", [False, True])
+def test_binary_expressions_match_element_operations(op, reflected):
+    values = [2, 3, 4]
+    group = Group(values, attrs="operators")
+    if reflected:
+        result = op(5, group)
+        expected = [op(5, value) for value in values]
+    else:
+        result = op(group, 5)
+        expected = [op(value, 5) for value in values]
+    assert result.objs == expected
+    assert result.attrs == "operators"
+
+
+def test_sum_groups():
+    result = sum([Group([1, 2]), Group([3, 4])])
+    assert result.objs == [4, 6]
 
 
 def test_check_and_return_iterable_size_mismatch():

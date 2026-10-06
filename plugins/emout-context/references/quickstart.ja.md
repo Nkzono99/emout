@@ -58,6 +58,58 @@ data.phisp[-1, :, data.inp.ny // 2, :].plot()
 > 結果として xz 平面が得られます。`emout` のインデックスは常にこの順なので、
 > 他のコードから持ち込んだスライスはまずこの順に並べ替えてください。
 
+## ベクトル場と成分ごとの値
+
+データの役割に応じて、次の型を使います。
+
+| 型 | 役割 |
+| --- | --- |
+| `Data1d`〜`Data4d` | 1成分のグリッドデータ。NumPy配列に座標・単位情報を付けたもの |
+| `VectorData` | 同じ形・座標を持つ2〜3成分の場。スライス・描画・成分ごとの演算に対応 |
+| `ComponentValues` | 1点の値、集計結果、グリッド情報のない配列など。物理的な成分名を保持 |
+| `Group` | 任意のオブジェクトへの要素別操作。物理的な成分名やグリッドは扱わない |
+
+`data.exz` や `data.exyz` は従来どおり `VectorData` を返します。
+スライスの軸順序は `(t, z, y, x)` です。スライス後は残った軸の順序を使い、
+下の2次元の `field` は `(z, x)` の順にインデックスを指定します。
+
+```python
+import numpy as np
+
+field = data.exz[-1, :, data.inp.ny // 2, :]
+field.components["x"]       # Physical x component
+field.components["z"]       # Physical z component
+field.component_axes        # ("x", "z")
+field.to_numpy()            # Shape: (component, z, x)
+
+(-field).plot()
+np.add(field, 1.0)          # Component-wise NumPy arithmetic
+
+sample = field[0, 0]        # ComponentValues: one point
+means = field.mean()       # ComponentValues: per-component means
+means.components["z"]
+means.objs                  # Existing element-wise access remains available
+```
+
+成分名を持つオペランド同士の演算では、保存順にかかわらず同じ物理成分を対応付けます。
+たとえば `data.exz` と `data.ezx` の加算では x同士、z同士を加算します。
+成分の集合、配列の形、グリッド座標が異なる場同士の演算は `ValueError` になります。
+通常のNumPy配列は各成分にブロードキャストされ、`Group` のオペランドは従来どおり位置で対応付けます。
+要素数の異なる `Group` 同士の演算も `ValueError` になり、末尾の要素を黙って捨てることはありません。
+演算は保持している値に対して行い、異なる単位系を自動で換算するものではありません。
+
+読み込んだ `Data` にブール配列・整数配列による添字や `None` による新しい軸を使うと、
+結果は座標情報を持たない通常のNumPy配列になります。ベクトル場なら、各成分の配列を
+`ComponentValues` にまとめて返します。グリッドを保ったままプロット領域をマスクするには、
+`.masked()` を使います（[プロットガイド](plotting.ja.md)）。
+
+`VectorData2d` と `VectorData3d` は引き続き `VectorData` の別名です。
+`.objs`、`.attrs`、`.x_data`、`.y_data`、`.z_data` も維持します。
+これらの `*_data` は**保存順の1番目・2番目・3番目**という従来の意味なので、
+`exz` の `.y_data` は z成分です。物理成分を指定するときは `.components["z"]` を使ってください。
+`.components` は読み取り専用の対応表ですが、含まれる配列自体は従来どおり扱えます。
+共有するグリッドの座標配列は `.axis(i)` で取得できます。`i` は現在の配列の軸番号です。
+
 ## 追加出力の結合
 
 出力が複数のディレクトリに分かれている場合（途中で再投入したジョブなど）:

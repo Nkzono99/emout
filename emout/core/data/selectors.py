@@ -7,6 +7,14 @@ from typing import Any
 import numpy as np
 
 
+def _slice_from_range(rng: range) -> slice:
+    """Keep normalized reverse and empty ranges stable under re-indexing."""
+    if not rng:
+        return slice(0, 0, rng.step)
+    stop = None if rng.step < 0 and rng.stop < 0 else rng.stop
+    return slice(rng.start, stop, rng.step)
+
+
 def normalize_index(index: int, size: int) -> int:
     """Normalize one integer index against an axis length."""
     index = int(index)
@@ -21,7 +29,7 @@ def normalize_selector(selector: Any, size: int) -> Any:
     """Normalize an integer, slice, or explicit selector for one axis."""
     if isinstance(selector, slice):
         rng = range(*selector.indices(size))
-        return slice(rng.start, rng.stop, rng.step)
+        return _slice_from_range(rng)
     if isinstance(selector, list):
         return tuple(normalize_index(index, size) for index in selector)
     if isinstance(selector, tuple):
@@ -56,8 +64,8 @@ def selector_to_compact(values: tuple[int, ...]) -> Any:
     if not values:
         return slice(0, 0, 1)
     step = values[1] - values[0]
-    if all((right - left) == step for left, right in zip(values, values[1:])):
-        return slice(values[0], values[-1] + step, step)
+    if step != 0 and all((right - left) == step for left, right in zip(values, values[1:])):
+        return _slice_from_range(range(values[0], values[-1] + step, step))
     return tuple(values)
 
 
@@ -73,7 +81,8 @@ def selector_to_metadata_slice(selector: Any, size: int) -> slice:
     positions = selector_positions(selector, size)
     compact = selector_to_compact(positions)
     if isinstance(compact, slice):
-        return compact
+        rng = range(*compact.indices(size))
+        return slice(rng.start, rng.stop, rng.step)
 
     # Data metadata is slice-based; fall back to relative coordinates for
     # irregular explicit selections.

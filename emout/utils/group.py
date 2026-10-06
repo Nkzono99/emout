@@ -14,7 +14,6 @@ class Group:
         objs : list
             List of objects to group.
         """
-        self.__dict__ = dict()
         self.objs = objs
         self.attrs = attrs
 
@@ -32,12 +31,20 @@ class Group:
         object
             New Group containing the results.
         """
+        return self._binary_operator(callable, other)
+
+    def _new_group(self, objs):
+        """Construct operation results; subclasses can preserve their metadata."""
+        return type(self)(objs, attrs=self.attrs)
+
+    def _binary_operator(self, callable, other):
+        """Apply an element-wise operation after validating grouped operands."""
         if isinstance(other, Group):
-            others = other
+            others = self.__check_and_return_iterable(other)
             new_objs = [callable(obj, other) for obj, other in zip(self.objs, others)]
         else:
             new_objs = [callable(obj, other) for obj in self.objs]
-        return type(self)(new_objs, attrs=self.attrs)
+        return self._new_group(new_objs)
 
     def __check_and_return_iterable(self, arg):
         """Expand the input to match the Group length.
@@ -74,7 +81,7 @@ class Group:
             New Group containing the results.
         """
         new_objs = list(map(callable, self.objs))
-        return type(self)(new_objs, attrs=self.attrs)
+        return self._new_group(new_objs)
 
     def filter(self, predicate):
         """Return a new Group containing only elements that satisfy the predicate.
@@ -89,7 +96,7 @@ class Group:
             New Group containing the filtered elements.
         """
         new_objs = list(filter(predicate, self.objs))
-        return type(self)(new_objs, attrs=self.attrs)
+        return self._new_group(new_objs)
 
     def foreach(self, callable):
         """Apply a function to each element for its side effects.
@@ -233,6 +240,10 @@ class Group:
         """
         return self.__binary_operator(lambda obj, other: other + obj, other)
 
+    def __radd__(self, other):
+        """Apply reflected addition through Python's operator protocol."""
+        return self.__radd_(other)
+
     def __sub__(self, other):
         """Apply the subtraction operator.
 
@@ -260,6 +271,10 @@ class Group:
             New Group containing the results.
         """
         return self.__binary_operator(lambda obj, other: other - obj, other)
+
+    def __rsub__(self, other):
+        """Apply reflected subtraction through Python's operator protocol."""
+        return self.__rsub(other)
 
     def __mul__(self, other):
         """Apply the multiplication operator.
@@ -795,7 +810,7 @@ class Group:
 
         new_objs = [obj[key] for obj, key in zip(self.objs, keys)]
 
-        return type(self)(new_objs, attrs=self.attrs)
+        return self._new_group(new_objs)
 
     def __setitem__(self, key, value):
         """Set items by key.
@@ -847,9 +862,11 @@ class Group:
         object
             New Group containing the attribute values.
         """
+        if "objs" not in self.__dict__ or (isinstance(key, str) and key.startswith("__") and key.endswith("__")):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'")
         keys = self.__check_and_return_iterable(key)
         new_objs = [getattr(obj, key) for obj, key in zip(self.objs, keys)]
-        return type(self)(new_objs, attrs=self.attrs)
+        return self._new_group(new_objs)
 
     def __setattr__(self, key, value):
         """Set an attribute on all elements.
@@ -908,17 +925,24 @@ class Group:
             obj(*new_args, **new_kwargs) for obj, new_args, new_kwargs in zip(self.objs, new_argss, new_kwargss)
         ]
 
-        return type(self)(new_objs, attrs=self.attrs)
+        return self._new_group(new_objs)
 
-    def __round__(self):
+    def __round__(self, ndigits=None):
         """Apply the rounding operation.
+
+        Parameters
+        ----------
+        ndigits : int or None, optional
+            Number of decimal places, following Python's ``round`` semantics.
 
         Returns
         -------
         object
             New Group containing the results.
         """
-        return self.map(math.round)
+        if ndigits is None:
+            return self.map(round)
+        return self.map(lambda obj: round(obj, ndigits))
 
     def __trunc__(self):
         """Apply the truncation operation.

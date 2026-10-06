@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import warnings
+from inspect import getattr_static
 from os import PathLike
 from typing import Any, List, Literal, Tuple, Union
 
@@ -23,28 +24,43 @@ from emout.utils import UnitTranslator
 from emout.utils.util import apply_offset
 
 from ._base import _REMOTE_PLOT_HANDLED
+from .components import ComponentValues, _ComponentMethods
 
 
-def _infer_component_axes(objs: List[Any], name=None) -> tuple[str, ...]:
-    axes = []
-    for component in objs:
-        comp_name = getattr(component, "name", None)
-        if not comp_name or str(comp_name)[-1] not in "xyz":
-            axes = []
-            break
-        axes.append(str(comp_name)[-1])
-    if len(axes) == len(objs) and len(set(axes)) == len(axes):
-        return tuple(axes)
-
-    if name:
-        suffix = str(name)[-len(objs) :]
-        if len(suffix) == len(objs) and set(suffix) <= set("xyz") and len(set(suffix)) == len(suffix):
-            return tuple(suffix)
-
-    return tuple("xyz"[: len(objs)])
+def _validate_component_grids(objs: List[Any]) -> None:
+    """Reject components that would mix different shapes or grid coordinates."""
+    shapes = [getattr(component, "shape", None) for component in objs]
+    if all(shape is not None for shape in shapes) and any(tuple(shape) != tuple(shapes[0]) for shape in shapes[1:]):
+        raise ValueError("VectorData components must have the same shape.")
+    grids = [
+        (tuple(component.slice_axes), tuple(component.slices))
+        for component in objs
+        if hasattr(component, "slice_axes") and hasattr(component, "slices")
+    ]
+    if grids and any(grid != grids[0] for grid in grids[1:]):
+        raise ValueError("VectorData components must use the same grid coordinates.")
 
 
-class VectorData(utils.Group):
+def _is_grid_field(obj) -> bool:
+    """Recognize fields whose coordinate metadata still describes their array."""
+    if getattr_static(obj, "ndim", None) is None or obj.ndim < 1:
+        return False
+    # Attribute delegation on lazy selections may materialize data. Inspect
+    # the declared metadata protocol without invoking their __getattr__.
+    if getattr_static(obj, "grid_shape", None) is not None:
+        return True
+    if getattr_static(obj, "slice_axes", None) is None or getattr_static(obj, "slices", None) is None:
+        return False
+    axes, slices = obj.slice_axes, obj.slices
+    return (
+        axes is not None
+        and slices is not None
+        and len(axes) == obj.ndim
+        and all(len(range(*utils.slice2tuple(slices[axis]))) == size for axis, size in zip(axes, obj.shape))
+    )
+
+
+class VectorData(ComponentValues):
     """Multi-component vector field container.
 
     Wraps 2 or 3 :class:`~emout.core.data.data.Data` arrays (x, y[, z])
@@ -78,44 +94,30 @@ class VectorData(utils.Group):
         """
         if len(objs) not in (2, 3):
             raise ValueError("VectorData requires 2 or 3 components.")
-        x_data = objs[0]
-        y_data = objs[1]
-        z_data = objs[2] if len(objs) == 3 else None
+        _validate_component_grids(objs)
+        super().__init__(objs, name=name, attrs=attrs, component_axes=component_axes)
 
-        if attrs is None:
-            attrs = dict()
+    def _new_group(self, objs):
+        """Keep grid fields and component values distinct after delegation."""
+        if objs and all(callable(obj) for obj in objs):
+            return _ComponentMethods(objs, self)
+        return self._result_with_axes(objs, self.component_axes)
 
-        if name:
-            attrs["name"] = name
-        elif "name" in attrs:
-            pass
-        elif hasattr(x_data, "name"):
-            attrs["name"] = x_data.name
-        else:
-            attrs["name"] = ""
-        if component_axes is None:
-            component_axes = attrs.get("component_axes") or _infer_component_axes(objs, attrs.get("name"))
-        attrs["component_axes"] = tuple(component_axes)
+    def _result_with_axes(self, objs, axes):
+        if len(objs) in (2, 3) and all(_is_grid_field(obj) for obj in objs):
+            return type(self)(objs, attrs=self.attrs, component_axes=axes)
+        return ComponentValues(objs, attrs=self.attrs, component_axes=axes)
 
-        super().__init__(list(objs), attrs=attrs)
-        self.x_data = x_data
-        self.y_data = y_data
-        if z_data is not None:
-            self.z_data = z_data
+    def _validate_operand(self, operand):
+        super()._validate_operand(operand)
+        if isinstance(operand, VectorData):
+            _validate_component_grids([*self.objs, *operand.objs])
+        elif _is_grid_field(operand):
+            _validate_component_grids([*self.objs, operand])
 
     def __repr__(self) -> str:
         n = len(self.objs)
         return f"<VectorData: name={self.name!r}, components={n}, shape={self.shape}>"
-
-    @property
-    def component_axes(self) -> tuple[str, ...]:
-        """Return the vector component axis attached to each component."""
-        return tuple(self.attrs["component_axes"])
-
-    def _component_for_axis(self, axis: str):
-        if axis not in self.component_axes:
-            raise ValueError(f'axes "{axis}" cannot be used because this vector has no {axis!r} component')
-        return self.objs[self.component_axes.index(axis)]
 
     def _require_local_data_access(self, operation: str) -> None:
         for component in self.objs:
@@ -203,8 +205,7 @@ class VectorData(utils.Group):
         --------
         >>> data.bxyz[-1].negate().plot()
         """
-        negated = [comp.negate() for comp in self.objs]
-        return VectorData(negated, name=self.name, attrs=dict(self.attrs), component_axes=self.component_axes)
+        return -self
 
     def scale(self, factor: float) -> "VectorData":
         """Return a new VectorData with all components scaled.
@@ -219,8 +220,7 @@ class VectorData(utils.Group):
         VectorData
             Scaled copy.
         """
-        scaled = [comp.scale(factor) for comp in self.objs]
-        return VectorData(scaled, name=self.name, attrs=dict(self.attrs), component_axes=self.component_axes)
+        return self * factor
 
     def __setattr__(self, key, value):
         """Set an attribute, routing component data to the internal dict.
@@ -233,20 +233,13 @@ class VectorData(utils.Group):
             Value to set
         """
         if key in ("x_data", "y_data", "z_data"):
-            super().__dict__[key] = value
+            index = ("x_data", "y_data", "z_data").index(key)
+            components = list(self.objs)
+            components[index] = value
+            _validate_component_grids(components)
+            self.objs[index] = value
             return
         super().__setattr__(key, value)
-
-    @property
-    def name(self) -> str:
-        """Return the human-readable name of this vector field.
-
-        Returns
-        -------
-        str
-            Human-readable name of this vector field.
-        """
-        return self.attrs["name"]
 
     @property
     def valunit(self) -> UnitTranslator:
@@ -307,6 +300,10 @@ class VectorData(utils.Group):
     def ndim(self) -> int:
         """Return the number of spatial dimensions (excluding vector components)."""
         return self.objs[0].ndim
+
+    def axis(self, ax: int) -> np.ndarray:
+        """Return shared grid coordinates for one current array axis."""
+        return self.objs[0].axis(ax)
 
     def materialize(self) -> "VectorData":
         """Materialize lazy vector components and return a vector wrapper."""

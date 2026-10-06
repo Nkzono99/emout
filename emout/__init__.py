@@ -17,7 +17,7 @@ from importlib.metadata import version as _metadata_version
 
 from . import article
 from .core import data
-from .core.data import VectorData, VectorData2d, VectorData3d
+from .core.data import ComponentValues, VectorData, VectorData2d, VectorData3d
 from .core.facade import Emout
 from .local_data_policy import (
     LocalDataAccessDisabledError,

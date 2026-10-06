@@ -100,6 +100,7 @@ data.icur, data.ocur, data.pbody  # テキスト診断出力 (.val_si で SI 変
 | **アニメーション** | `gifplot()` で GIF/HTML 生成、複数パネルレイアウト | [→ アニメーション](https://nkzono99.github.io/emout/guide/animation.ja.html) |
 | **パラメータ** | `data.inp.nx`, `data.toml.species[0].wp` | [→ パラメータ](https://nkzono99.github.io/emout/guide/inp.ja.html) |
 | **単位変換** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ 単位変換](https://nkzono99.github.io/emout/guide/units.ja.html) |
+| **ベクトルデータ** | `.components["z"]` で成分を指定、`VectorData` / `ComponentValues` で場と集計値を扱う | [→ クイックスタート](https://nkzono99.github.io/emout/guide/quickstart.ja.html) |
 | **境界メッシュ** | `data.boundaries.mesh()`, `plot_surfaces` へのオーバーレイ | [→ 境界メッシュ](https://nkzono99.github.io/emout/guide/boundaries.ja.html) |
 | **バックトレース** | `data.trace.forward(...)`, `data.backtrace.get_probabilities(...)` | [→ バックトレース](https://nkzono99.github.io/emout/guide/backtrace.ja.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista 可視化](https://nkzono99.github.io/emout/guide/pyvista.ja.html) |
@@ -346,6 +347,8 @@ phi = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
 result = data.backtrace.get_probabilities(x, y, z, vx, vy, vz, ispec=0)
 result.vxvz.plot()
 ```
+
+`data.trace` と `data.backtrace` は `use_electric_field=False` / `use_magnetic_field=False` で電場・磁場を個別に無効化できます（要 `vdist-solver-fortran >= 1.7.0`、既定は両方 `True`）。
 
 </details>
 

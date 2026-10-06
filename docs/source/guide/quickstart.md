@@ -58,6 +58,62 @@ After slicing out a 2D or 1D array, call `.plot()` to visualize it with SI unit 
 > which produces an xz-plane. Every slice expression in `emout` uses this
 > order, so rewrite slices copied in from other code before using them.
 
+## Vector Fields and Component Values
+
+Choose a type according to the role of the data.
+
+| Type | Role |
+| --- | --- |
+| `Data1d`–`Data4d` | One component of grid data: a NumPy array with coordinate and unit metadata |
+| `VectorData` | Two or three field components sharing a shape and grid coordinates; supports slicing, plotting, and component-wise arithmetic |
+| `ComponentValues` | Point samples, reductions, or arrays without grid metadata; retains physical component names |
+| `Group` | Element-wise operations on arbitrary objects, without physical component names or grid assumptions |
+
+`data.exz` and `data.exyz` continue to return `VectorData`.
+Slice axis order is `(t, z, y, x)`. After slicing, index in the order of the
+remaining axes; the two-dimensional `field` below uses `(z, x)`.
+
+```python
+import numpy as np
+
+field = data.exz[-1, :, data.inp.ny // 2, :]
+field.components["x"]       # Physical x component
+field.components["z"]       # Physical z component
+field.component_axes        # ("x", "z")
+field.to_numpy()            # Shape: (component, z, x)
+
+(-field).plot()
+np.add(field, 1.0)          # Component-wise NumPy arithmetic
+
+sample = field[0, 0]        # ComponentValues: one point
+means = field.mean()       # ComponentValues: per-component means
+means.components["z"]
+means.objs                  # Existing element-wise access remains available
+```
+
+Arithmetic between named operands matches physical components regardless of
+storage order. For example, adding `data.exz` and `data.ezx` adds x to x and z to z.
+Operations between fields with different component sets, array shapes, or grid
+coordinates raise `ValueError`. Ordinary NumPy arrays broadcast to each component,
+while `Group` operands retain positional matching. Operations between `Group`
+objects of different lengths also raise `ValueError`, rather than silently dropping
+trailing elements. Arithmetic operates on the stored values and does not
+automatically convert between different unit systems.
+
+Boolean or integer array indexing, or a new axis inserted with `None`, on a loaded
+`Data` array returns an ordinary NumPy array without coordinate metadata. For a
+vector field, the component arrays are returned together as `ComponentValues`.
+To mask a plot region while keeping its grid, use `.masked()` as described in the
+[plotting guide](plotting.md).
+
+`VectorData2d` and `VectorData3d` remain aliases for `VectorData`.
+`.objs`, `.attrs`, `.x_data`, `.y_data`, and `.z_data` remain available.
+The `*_data` aliases retain their **first, second, and third storage positions**:
+for `exz`, `.y_data` is the z component. Use `.components["z"]` to select a physical
+component explicitly. `.components` is a read-only mapping, but its arrays remain
+accessible as before. Use `.axis(i)` to obtain the shared grid coordinates for one
+current array axis.
+
 ## Appended Simulation Outputs
 
 If the simulation continued into additional directories:

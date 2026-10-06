@@ -91,6 +91,31 @@ Arrays such as `TraceResult.phases`, `TraceResult.particles`, and `trace.traces.
 
 `dt` and `probability_dt` are non-negative step widths in EMSES time units. When they are `None`, emout uses `abs(data.inp.dt)`. `data.trace.backward()` passes `+dt` to the solver, while `data.trace.forward()` flips the sign internally and passes `-dt`. `data.trace.both()` uses the same `dt` magnitude as `+dt` for backward traces and `-dt` for forward traces. Arrival-probability solves use `probability_dt` with the backward-sign convention. Negative values raise `ValueError`.
 
+## Disable Electric or Magnetic Fields
+
+`use_electric_field` and `use_magnetic_field` are keyword-only arguments, both defaulting to `True`. Setting either to `False` disables loading that field and its effect on particles. These opt-outs require `vdist-solver-fortran >= 1.7.0`.
+
+| Argument | Fields disabled by `False` |
+|----------|---------------------------|
+| `use_electric_field` | Space-charge and accumulated-charge electric fields |
+| `use_magnetic_field` | Output magnetic fields and the background magnetic field derived from `wc` |
+
+For example, compute probabilities and trajectories in both directions using only the electric field:
+
+```python
+trace = data.trace.both(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan, vy=0.0, vz=vz_scan,
+    get_trace=True,
+    get_probabilities=True,
+    use_magnetic_field=False,
+)
+```
+
+You can also set both to `False`. The same settings apply to probabilities and every trajectory calculation; boundary and collision handling continue as usual.
+
+These options work with `data.trace.forward()` / `backward()` / `both()` and all lower-level `data.backtrace.get_*` methods. They are also forwarded through Dask remote execution and `parallel="mpi"` / `parallel="srun"`. Omitting them retains the existing behavior with both fields enabled, including support for older solvers.
+
 ## Workflow API: `data.trace`
 
 `data.trace.backward()` / `data.trace.forward()` / `data.trace.both()` always return a `TraceResult`. Payloads that were not requested are stored as `None`.

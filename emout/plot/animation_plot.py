@@ -14,8 +14,6 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 
-import emout.utils as utils
-
 
 def flatten_list(l):
     """Flatten a nested iterable into a 1-D sequence.
@@ -288,10 +286,7 @@ class FrameUpdater:
             _title = title if len(title) > 0 else None
         else:
             ax = data.slice_axes[axis]
-            slc = data.slices[ax]
-            maxlen = data.shape[axis]
-
-            line = np.array(utils.range_with_slice(slc, maxlen=maxlen), dtype=float)
+            line = np.asarray(data.axis(axis), dtype=float)
 
             if offsets is not None:
                 line = self._offseted(line, offsets[0])

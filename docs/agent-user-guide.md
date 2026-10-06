@@ -78,6 +78,14 @@ data.phisp[0].shape    # (nz, ny, nx)
 data.phisp[-1]         # last timestep → Data3d
 ```
 
+`VectorData` keeps physical axes in `.component_axes` and exposes a read-only
+`.components` mapping. Named operands align by physical axis, including reordered
+vectors such as `exz` and `ezx`; mismatched grids or component sets raise
+`ValueError`. NumPy ufuncs act component-wise. Point samples and per-component
+reductions return `ComponentValues`, which keeps `.objs`, `.attrs`, and component
+names without claiming grid metadata. Legacy `x_data`/`y_data`/`z_data` aliases
+refer to storage positions, so `exz.y_data` is the z component.
+
 ### Slicing
 
 ```python
@@ -792,6 +800,13 @@ Result arrays remain in EMSES units; plot helpers convert displayed axes
 to SI by default when unit metadata is available. Passing
 `dt=-data.inp.dt` runs the solver in the opposite direction from the
 usual backtrace.
+
+All `data.trace` workflows and `data.backtrace.get_*` methods accept
+keyword-only `use_electric_field` and `use_magnetic_field` options, both
+defaulting to `True`. With `vdist-solver-fortran >= 1.7.0`, set either to
+`False` to disable that field. Electric-field opt-out includes accumulated-charge
+E; magnetic-field opt-out includes background B. The same settings apply to
+probabilities and trajectories, including Dask and MPI/srun execution.
 
 ```python
 result = data.backtrace.get_probabilities(

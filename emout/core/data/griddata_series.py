@@ -89,6 +89,7 @@ class GridDataSeries:
         self._index2key = {int(key): key for key in self.group.keys()}
         first_key = self._index2key[min(self._index2key.keys())]
         self._grid_shape = tuple(self.group[first_key].shape)
+        self._grid_dtype = self.group[first_key].dtype
         self.tunit = tunit
         self.axisunit = axisunit
         self.valunit = valunit
@@ -206,7 +207,44 @@ class GridDataSeries:
             raise IndexError(f"Time index {index} does not exist. Available indices: {sorted(self._index2key.keys())}")
 
         key = self._index2key[index]
-        return np.array(self.group[key][spatial_item])
+        dataset = self.group[key]
+        if all(
+            isinstance(selector, (int, np.integer))
+            or (isinstance(selector, slice) and (selector.step is None or selector.step > 0))
+            for selector in spatial_item
+        ):
+            return np.array(dataset[spatial_item])
+
+        # HDF5 requires positive slice steps and increasing unique fancy
+        # indexes. Read a bounded region, then restore NumPy ordering in memory.
+        read_item = []
+        transforms = []
+        result_axis = 0
+        for selector, size in zip(spatial_item, dataset.shape):
+            if isinstance(selector, (int, np.integer)):
+                read_item.append(selector)
+                continue
+            if isinstance(selector, slice):
+                positions = range(*selector.indices(size))
+                if not positions:
+                    read_item.append(slice(0, 0, 1))
+                elif positions.step < 0:
+                    read_item.append(slice(positions[-1], positions[0] + 1, -positions.step))
+                    transforms.append((result_axis, None))
+                else:
+                    read_item.append(selector)
+            else:
+                positions = np.asarray(selector, dtype=int)
+                start = int(positions.min()) if positions.size else 0
+                stop = int(positions.max()) + 1 if positions.size else 0
+                read_item.append(slice(start, stop, 1))
+                transforms.append((result_axis, positions - start))
+            result_axis += 1
+
+        array = np.array(dataset[tuple(read_item)])
+        for axis, indexes in transforms:
+            array = np.flip(array, axis=axis) if indexes is None else np.take(array, indexes, axis=axis)
+        return array
 
     def _require_local_data_access(self, operation: str, target: Union[str, None] = None) -> None:
         require_local_data_access(self._local_data_policy, operation, target)
@@ -403,6 +441,7 @@ class MultiGridDataSeries(GridDataSeries):
         self.valunit = self.series[0].valunit
         self.name = self.series[0].name
         self._grid_shape = self.series[0].grid_shape
+        self._grid_dtype = np.result_type(*(data._grid_dtype for data in self.series))
         self._emout_dir = getattr(self.series[0], "_emout_dir", None)
         self._emout_open_kwargs = getattr(self.series[0], "_emout_open_kwargs", None)
         self._emout_inp = getattr(self.series[0], "_emout_inp", None)
@@ -863,7 +902,10 @@ class GridDataSelection(NDArrayOperatorsMixin):
             array = self.series._read_selection(tsel, spatial_item)
         else:
             t_indices = tuple(_selector_positions(tsel, len(self.series)))
-            array = np.array([self.series._read_selection(index, spatial_item) for index in t_indices])
+            if t_indices:
+                array = np.array([self.series._read_selection(index, spatial_item) for index in t_indices])
+            else:
+                array = np.empty(self.shape, dtype=self.series._grid_dtype)
 
         if np.isscalar(array) or np.ndim(array) == 0:
             return np.asarray(array).item()

@@ -17,6 +17,14 @@ from .probability_result import ProbabilityResult
 from emout.distributed.utils import run_backend
 
 
+def _apply_field_options(kwargs: dict, *, use_electric_field: bool, use_magnetic_field: bool) -> None:
+    """Forward opt-outs while keeping defaults compatible with older solvers."""
+    if not use_electric_field:
+        kwargs["use_electric_field"] = False
+    if not use_magnetic_field:
+        kwargs["use_magnetic_field"] = False
+
+
 def _select_vdsolverf_backend(name: str, kwargs: dict):
     if "parallel" in kwargs:
         parallel = kwargs.pop("parallel")
@@ -81,6 +89,9 @@ class BacktraceWrapper:
         max_step: int = 30000,
         output_interval: int = 1,
         use_adaptive_dt: bool = False,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> Tuple[Any, Any, Any, Any]:
         """Run a single-particle backtrace and return the trajectory.
@@ -105,6 +116,12 @@ class BacktraceWrapper:
             Output interval in steps
         use_adaptive_dt : bool, optional
             If True, use adaptive time stepping during backtrace
+        use_electric_field : bool, optional
+            Include space-charge and accumulated-charge electric fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
+        use_magnetic_field : bool, optional
+            Include output and background magnetic fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
         **kwargs : dict
             Additional keyword arguments forwarded to the underlying function.
 
@@ -113,6 +130,7 @@ class BacktraceWrapper:
         BacktraceResult
             Trajectory data containing times, probability, positions, and velocities.
         """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         from vdsolverf.core import Particle
 
         _backend = _select_vdsolverf_backend("get_backtrace", kwargs)
@@ -125,7 +143,7 @@ class BacktraceWrapper:
             ispec=ispec,
             istep=istep,
             particle=particle,
-            dt=dt or self.inp.dt,
+            dt=self.inp.dt if dt is None else dt,
             max_step=max_step,
             output_interval=output_interval,
             use_adaptive_dt=use_adaptive_dt,
@@ -144,6 +162,9 @@ class BacktraceWrapper:
         output_interval: int = 1,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> Any:
         """Run backtraces for multiple particles and return aggregated results.
@@ -170,6 +191,12 @@ class BacktraceWrapper:
             If True, use adaptive time stepping during backtrace
         n_threads : int, optional
             Number of parallel threads
+        use_electric_field : bool, optional
+            Include space-charge and accumulated-charge electric fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
+        use_magnetic_field : bool, optional
+            Include output and background magnetic fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
         **kwargs : dict
             Additional keyword arguments forwarded to the underlying function.
 
@@ -178,6 +205,7 @@ class BacktraceWrapper:
         MultiBacktraceResult
             Aggregated trajectory data for all particles.
         """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         from vdsolverf.core import Particle
 
         _backend = _select_vdsolverf_backend("get_backtraces", kwargs)
@@ -193,7 +221,7 @@ class BacktraceWrapper:
             ispec=ispec,
             istep=istep,
             particles=particles,
-            dt=dt or self.inp.dt,
+            dt=self.inp.dt if dt is None else dt,
             max_step=max_step,
             output_interval=output_interval,
             use_adaptive_dt=use_adaptive_dt,
@@ -220,6 +248,9 @@ class BacktraceWrapper:
         output_interval: int = 1,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> Any:
         """Run backtraces from pre-built Particle objects.
@@ -245,6 +276,12 @@ class BacktraceWrapper:
             If True, use adaptive time stepping during backtrace
         n_threads : int, optional
             Number of parallel threads
+        use_electric_field : bool, optional
+            Include space-charge and accumulated-charge electric fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
+        use_magnetic_field : bool, optional
+            Include output and background magnetic fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
         **kwargs : dict
             Additional keyword arguments forwarded to the underlying function.
 
@@ -253,6 +290,7 @@ class BacktraceWrapper:
         MultiBacktraceResult
             Aggregated trajectory data for all particles.
         """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         _backend = _select_vdsolverf_backend("get_backtraces", kwargs)
 
         ts_list, probabilities, positions_list, velocities_list, last_indexes = run_backend(
@@ -261,7 +299,7 @@ class BacktraceWrapper:
             ispec=ispec,
             istep=istep,
             particles=particles,
-            dt=dt or self.inp.dt,
+            dt=self.inp.dt if dt is None else dt,
             max_step=max_step,
             output_interval=output_interval,
             use_adaptive_dt=use_adaptive_dt,
@@ -293,6 +331,9 @@ class BacktraceWrapper:
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
         remote: bool = True,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> "ProbabilityResult":
         """Compute arrival probabilities over a 6-D phase-space grid.
@@ -329,6 +370,12 @@ class BacktraceWrapper:
             If True, use adaptive time stepping during backtrace
         n_threads : int, optional
             Number of parallel threads
+        use_electric_field : bool, optional
+            Include space-charge and accumulated-charge electric fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
+        use_magnetic_field : bool, optional
+            Include output and background magnetic fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
         **kwargs : dict
             Additional keyword arguments forwarded to the underlying function.
 
@@ -337,6 +384,7 @@ class BacktraceWrapper:
         ProbabilityResult
             Phase-space probability distribution.
         """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         # If a Dask Actor is running, compute + cache on the worker and
         # return a proxy (avoids transferring large numpy arrays locally)
         if remote:
@@ -386,7 +434,7 @@ class BacktraceWrapper:
             ispec=ispec,
             istep=istep,
             particles=particles,
-            dt=dt or self.inp.dt,
+            dt=self.inp.dt if dt is None else dt,
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,
@@ -432,6 +480,9 @@ class BacktraceWrapper:
         max_step: int = 10000,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> Any:
         """Compute arrival probabilities from position/velocity arrays.
@@ -456,6 +507,12 @@ class BacktraceWrapper:
             If True, use adaptive time stepping during backtrace
         n_threads : int, optional
             Number of parallel threads
+        use_electric_field : bool, optional
+            Include space-charge and accumulated-charge electric fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
+        use_magnetic_field : bool, optional
+            Include output and background magnetic fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
         **kwargs : dict
             Additional keyword arguments forwarded to the underlying function.
 
@@ -464,6 +521,7 @@ class BacktraceWrapper:
         Any
             Raw probability array returned by the backend.
         """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         from vdsolverf.core import Particle
 
         _backend = _select_vdsolverf_backend("get_probabilities", kwargs)
@@ -479,7 +537,7 @@ class BacktraceWrapper:
             ispec=ispec,
             istep=istep,
             particles=particles,
-            dt=dt or self.inp.dt,
+            dt=self.inp.dt if dt is None else dt,
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,
@@ -495,6 +553,9 @@ class BacktraceWrapper:
         max_step: int = 10000,
         use_adaptive_dt: bool = False,
         n_threads: int = 4,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> Any:
         """Compute arrival probabilities from pre-built Particle objects.
@@ -518,6 +579,12 @@ class BacktraceWrapper:
             If True, use adaptive time stepping during backtrace
         n_threads : int, optional
             Number of parallel threads
+        use_electric_field : bool, optional
+            Include space-charge and accumulated-charge electric fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
+        use_magnetic_field : bool, optional
+            Include output and background magnetic fields (default True).
+            Disabling requires vdist-solver-fortran >= 1.7.0.
         **kwargs : dict
             Additional keyword arguments forwarded to the underlying function.
 
@@ -526,6 +593,7 @@ class BacktraceWrapper:
         Any
             Raw probability array returned by the backend.
         """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         _backend = _select_vdsolverf_backend("get_probabilities", kwargs)
 
         return run_backend(
@@ -534,7 +602,7 @@ class BacktraceWrapper:
             ispec=ispec,
             istep=istep,
             particles=particles,
-            dt=dt or self.inp.dt,
+            dt=self.inp.dt if dt is None else dt,
             max_step=max_step,
             use_adaptive_dt=use_adaptive_dt,
             n_threads=n_threads,

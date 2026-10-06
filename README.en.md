@@ -100,6 +100,7 @@ See the user guide for detailed usage of each feature.
 | **Animations** | `gifplot()` for GIF/HTML, multi-panel layouts | [→ Animations](https://nkzono99.github.io/emout/guide/animation.html) |
 | **Parameters** | `data.inp.nx`, `data.toml.species[0].wp` | [→ Parameters](https://nkzono99.github.io/emout/guide/inp.html) |
 | **Unit conversion** | `data.unit.v.reverse(1.0)`, `data.phisp[-1].val_si` | [→ Units](https://nkzono99.github.io/emout/guide/units.html) |
+| **Vector data** | Select `.components["z"]`; use `VectorData` / `ComponentValues` for fields and summaries | [→ Quickstart](https://nkzono99.github.io/emout/guide/quickstart.html) |
 | **Boundary meshes** | `data.boundaries.mesh()`, overlay on `plot_surfaces` | [→ Boundaries](https://nkzono99.github.io/emout/guide/boundaries.html) |
 | **Backtrace** | `data.trace.forward(...)`, `data.backtrace.get_probabilities(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista Visualization](https://nkzono99.github.io/emout/guide/pyvista.html) |
@@ -353,6 +354,8 @@ phi = poisson(rho, dx=dx, btypes=btypes, epsilon_0=cn.epsilon_0)
 result = data.backtrace.get_probabilities(x, y, z, vx, vy, vz, ispec=0)
 result.vxvz.plot()
 ```
+
+`data.trace` and `data.backtrace` accept `use_electric_field=False` / `use_magnetic_field=False` to disable either field independently (requires `vdist-solver-fortran >= 1.7.0`; both default to `True`).
 
 </details>
 

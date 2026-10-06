@@ -84,16 +84,7 @@ def range_with_slice(slice_obj, maxlen):
     generator
         Range generator.
     """
-    start = slice_obj.start or 0
-    if start < 0:
-        start = maxlen + start
-
-    stop = slice_obj.stop or maxlen
-    if stop < 0:
-        stop = maxlen + stop
-
-    step = slice_obj.step or 1
-    return range(start, stop, step)
+    return range(maxlen)[slice_obj]
 
 
 def apply_offset(

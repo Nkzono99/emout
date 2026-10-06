@@ -91,6 +91,31 @@ vz_scan = (
 
 `dt` と `probability_dt` は EMSES 時間単位の非負の刻み幅です。`None` の場合は `abs(data.inp.dt)` を使います。`data.trace.backward()` は solver に `+dt`、`data.trace.forward()` は内部で符号を反転して `-dt` を渡します。`data.trace.both()` は同じ `dt` から backward に `+dt`、forward に `-dt` を使います。到達確率計算は `probability_dt` を backward 側の符号で使います。負の値を渡すと `ValueError` になります。
 
+## 電場・磁場を無効化する
+
+`use_electric_field` と `use_magnetic_field` はキーワード専用引数で、どちらも既定値は `True` です。`False` を指定すると、対応する場の読み込みと粒子への作用を無効化します。`False` を指定するには `vdist-solver-fortran >= 1.7.0` が必要です。
+
+| 引数 | `False` で無効になる場 |
+|------|-----------------------|
+| `use_electric_field` | 空間電荷と蓄積電荷による電場 |
+| `use_magnetic_field` | 出力された磁場と `wc` から作る背景磁場 |
+
+例えば、電場だけを使って確率と両方向の軌跡を計算するには:
+
+```python
+trace = data.trace.both(
+    x=20.0, y=32.0, z=40.0,
+    vx=vx_scan, vy=0.0, vz=vz_scan,
+    get_trace=True,
+    get_probabilities=True,
+    use_magnetic_field=False,
+)
+```
+
+両方を `False` にすることもできます。設定は確率計算とすべての軌跡計算に共通で、境界・衝突の扱いは通常どおりです。
+
+`data.trace.forward()` / `backward()` / `both()` と、低水準 `data.backtrace` のすべての `get_*` メソッドで使えます。Dask リモート実行や `parallel="mpi"` / `parallel="srun"` でも同じ指定が渡されます。省略時は従来どおり両方の場を使い、旧版 solver にも対応します。
+
 ## Workflow API: `data.trace`
 
 `data.trace.backward()` / `data.trace.forward()` / `data.trace.both()` は常に `TraceResult` を返します。要求しなかった payload は `None` です。

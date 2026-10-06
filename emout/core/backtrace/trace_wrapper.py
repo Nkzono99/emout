@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Sequence, Tuple, Union
 
-from .solver_wrapper import BacktraceWrapper
+from .solver_wrapper import BacktraceWrapper, _apply_field_options
 from .trace_result import TraceResult
 
 
@@ -43,9 +43,19 @@ class TraceWrapper:
         get_trace: bool = False,
         get_probabilities: bool = True,
         remote: bool = True,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> TraceResult:
-        """Compute a backward trace workflow over a phase-space grid."""
+        """Compute a backward trace workflow over a phase-space grid.
+
+        ``use_electric_field`` and ``use_magnetic_field`` default to True
+        and apply to both probabilities and trajectories. Electric-field
+        opt-out includes accumulated-charge E; magnetic-field opt-out includes
+        background B. Disabling either requires vdist-solver-fortran >= 1.7.0.
+        """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         remote_result = self._maybe_remote(
             "backward",
             dict(
@@ -115,9 +125,19 @@ class TraceWrapper:
         get_trace: bool = False,
         get_probabilities: bool = True,
         remote: bool = True,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> TraceResult:
-        """Compute a forward trace workflow over a phase-space grid."""
+        """Compute a forward trace workflow over a phase-space grid.
+
+        ``use_electric_field`` and ``use_magnetic_field`` default to True
+        and apply to both probabilities and trajectories. Electric-field
+        opt-out includes accumulated-charge E; magnetic-field opt-out includes
+        background B. Disabling either requires vdist-solver-fortran >= 1.7.0.
+        """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         remote_result = self._maybe_remote(
             "forward",
             dict(
@@ -187,9 +207,19 @@ class TraceWrapper:
         get_trace: bool = False,
         get_probabilities: bool = True,
         remote: bool = True,
+        *,
+        use_electric_field: bool = True,
+        use_magnetic_field: bool = True,
         **kwargs,
     ) -> TraceResult:
-        """Compute backward and forward trajectories from one phase-space grid."""
+        """Compute backward and forward trajectories from one phase-space grid.
+
+        ``use_electric_field`` and ``use_magnetic_field`` default to True
+        and apply to probabilities and both trajectory directions. Electric-field
+        opt-out includes accumulated-charge E; magnetic-field opt-out includes
+        background B. Disabling either requires vdist-solver-fortran >= 1.7.0.
+        """
+        _apply_field_options(kwargs, use_electric_field=use_electric_field, use_magnetic_field=use_magnetic_field)
         remote_result = self._maybe_remote(
             "both",
             dict(

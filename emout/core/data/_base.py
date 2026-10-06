@@ -136,11 +136,30 @@ class Data(np.ndarray):
 
         Returns
         -------
-        Data or scalar
-            Sliced data or scalar value.
+        Data, ndarray, or scalar
+            Basic grid slices retain metadata. Advanced indexing and newaxis
+            return ordinary NumPy arrays; a single value returns a scalar.
         """
         if not isinstance(item, tuple):
             item = (item,)
+
+        if any(
+            isinstance(index, (bool, np.bool_))
+            or (index is not Ellipsis and not isinstance(index, (int, np.integer, slice)))
+            for index in item
+        ):
+            # Advanced indexing and newaxis do not describe a slice of the
+            # original physical grid. Let NumPy interpret their axes itself.
+            result = super().__getitem__(item)
+            return result.view(np.ndarray) if isinstance(result, Data) else result
+
+        ellipsis_indexes = [i for i, index in enumerate(item) if index is Ellipsis]
+        if len(ellipsis_indexes) > 1:
+            raise IndexError("an index can only have a single ellipsis ('...')")
+        if ellipsis_indexes:
+            position = ellipsis_indexes[0]
+            fill = (slice(None),) * (self.ndim - (len(item) - 1))
+            item = item[:position] + fill + item[position + 1 :]
 
         new_obj = super().__getitem__(item)
 
@@ -190,40 +209,21 @@ class Data(np.ndarray):
         """
         slices = [*self.slices]
         axes = [*self.slice_axes]
-        for i, axis in enumerate(axes):
+        for i, axis in enumerate(self.slice_axes):
             if i < len(item):
                 slice_obj = item[i]
             else:
                 continue
 
-            if not isinstance(slice_obj, slice):
-                slice_obj = slice(slice_obj, slice_obj + 1, 1)
-                axes[i] = -1
+            coordinates = range(*utils.slice2tuple(self.slices[axis]))
+            if isinstance(slice_obj, slice):
+                selected = coordinates[slice_obj]
+                slices[axis] = slice(selected.start, selected.stop, selected.step)
+            else:
+                coordinate = coordinates[slice_obj]
+                slices[axis] = slice(coordinate, coordinate + 1, 1)
+                axes.remove(axis)
 
-            obj_start = slice_obj.start
-            obj_stop = slice_obj.stop
-            obj_step = slice_obj.step
-
-            new_start = self.slices[axis].start
-            new_stop = self.slices[axis].stop
-            new_step = self.slices[axis].step
-
-            if obj_start is not None:
-                if obj_start < 0:
-                    obj_start = self.shape[i] + obj_start
-                new_start += self.slices[axis].step * obj_start
-
-            if slice_obj.stop is not None:
-                if obj_stop < 0:
-                    obj_stop = self.shape[i] + obj_stop
-                new_stop = self.slices[axis].start + self.slices[axis].step * obj_stop
-
-            if obj_step is not None:
-                new_step *= obj_step
-
-            slices[axis] = slice(new_start, new_stop, new_step)
-
-        axes = [axis for axis in axes if axis != -1]
         setattr(new_obj, "slices", slices)
         setattr(new_obj, "slice_axes", axes)
 
@@ -250,6 +250,19 @@ class Data(np.ndarray):
         self._local_data_policy = getattr(obj, "_local_data_policy", None)
         self._article_recorder = getattr(obj, "_article_recorder", None)
         self._article_source_shape = getattr(obj, "_article_source_shape", None)
+
+    def __reduce__(self):
+        """Preserve field metadata alongside NumPy's serialized array state."""
+        self._require_local_data_access("pickle field data", self._target_name())
+        constructor, args, state = super().__reduce__()
+        return constructor, args, (*state, self.__dict__)
+
+    def __setstate__(self, state):
+        """Restore metadata while accepting older NumPy-only field pickles."""
+        if len(state) == 6 and isinstance(state[-1], dict):
+            self.__dict__.update(state[-1])
+            state = state[:-1]
+        super().__setstate__(state)
 
     @property
     def filename(self) -> Path:
@@ -408,9 +421,7 @@ class Data(np.ndarray):
         np.ndarray
             Time-axis coordinates.
         """
-        slc = self.tslice
-        maxlen = (slc.stop - slc.start) // slc.step
-        return np.array(utils.range_with_slice(self.tslice, maxlen=maxlen))
+        return np.arange(*utils.slice2tuple(self.tslice))
 
     @property
     def x_si(self) -> np.ndarray:
@@ -710,9 +721,13 @@ class Data(np.ndarray):
     def _to_recipe_index(self):
         """Reconstruct a GridDataSeries[index]-style tuple from slices."""
         result = []
-        for s in self.slices:
-            if s.stop - s.start == s.step:  # single element
+        for axis, s in enumerate(self.slices):
+            if axis not in self.slice_axes and len(range(*utils.slice2tuple(s))) == 1:
                 result.append(s.start)
+            elif not range(*utils.slice2tuple(s)):
+                result.append(slice(0, 0, 1))
+            elif s.step < 0 and s.stop < 0:
+                result.append(slice(s.start, None, s.step))
             else:
                 result.append(s)
         return tuple(result)
