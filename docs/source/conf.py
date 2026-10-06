@@ -27,7 +27,7 @@ if RemovedInSphinx10Warning is not None:
 project = "emout"
 copyright = "2025, Jin Nakazono"
 author = "Jin Nakazono"
-release = "2.21.2"
+release = "2.22.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
