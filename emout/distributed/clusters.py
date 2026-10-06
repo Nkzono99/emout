@@ -289,8 +289,8 @@ class SimpleDaskCluster:
         script_lines.append(f"PORT={self.scheduler_port}")
         script_lines.append("")
 
-        # dask-worker command
-        script_lines.append(f"dask worker {self.protocol}://${{HOST}}:${{PORT}} \\")
+        # Launch the Dask worker within the Slurm allocation.
+        script_lines.append(f"srun dask worker {self.protocol}://${{HOST}}:${{PORT}} \\")
         if self.protocol == "tls":
             script_lines.append(f"    --tls-ca-file {self.security_files['ca_file']} \\")
             script_lines.append(f"    --tls-cert {self.security_files['worker_cert']} \\")

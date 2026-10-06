@@ -487,7 +487,7 @@ class TestGenerateWorkerScript:
         cluster = _make_cluster(tmp_path)
         script_path = cluster._generate_worker_script()
         content = script_path.read_text()
-        assert "dask worker tcp://${HOST}:${PORT}" in content
+        assert "srun dask worker tcp://${HOST}:${PORT}" in content
         assert "--nthreads 4" in content
         assert "--memory-limit 8G" in content
 
