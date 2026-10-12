@@ -25,6 +25,8 @@ Use this skill when a user asks how to use emout, how to load an output director
 - Identify whether the user has an output directory, an input file only, or both separately.
 - Start from `import emout` and `data = emout.Emout("output_dir")` unless the user needs appended output or separated input/output paths.
 - State that grid data slicing axis order is `(t, z, y, x)` whenever indexing appears.
+- For appended-series statistics, use `time_series(..., skip_overlap=True)` to match indexing and len(); the default retains duplicate join frames.
+- For spatial means of time selections that will be sliced or plotted, use `mean(axis=..., keep_metadata=True)` and consult the plotting reference for retained axes and memory use.
 - Map requested physical quantities to common attributes such as `phisp`, `nd1p`, `j1x`, `j1xy`, `j1xyz`, `icur`, `ocur`, and `pbody`.
 - Check whether SI conversion is supported by input metadata before recommending `val_si`.
 - For backtrace usage, state that input positions, velocities, `dt`, and probability-grid axes are EMSES units; convert SI values before calling the APIs.

@@ -104,6 +104,39 @@ nd1p_m3 = data.nd1p[-1].val_si        # 数密度 [/m^3]
 data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 ```
 
+## 空間平均後の断面
+
+時間範囲の空間平均を描画するときは `keep_metadata=True` を指定します。
+縮約した軸を除き、残る軸の座標・単位と次元に合う `Data` クラスを保持します。
+既定の `False` は従来の NumPy 縮約の挙動を維持するため、平均後の描画には使わないでください。
+`mean()` の時間平均の既定動作は変わりません。
+
+```python
+yz = data.phisp[:].mean(axis="x", keep_metadata=True)
+yz[-1].plot()  # Horizontal: y; vertical: z
+profile = data.phisp[:].mean(axis=("x", "y"), keep_metadata=True)
+profile[-1].plot()  # z profile
+```
+
+空間平均は選択範囲をメモリに読み込みます。論文用の記録・再生でも同じ呼び出しを使えますが、
+記録されるのは縮約前の選択範囲です。
+
+## 3D 等値面（Matplotlib）
+
+`Data3d.plot(mode="cont")` で切り出し・間引き後の等値面を元のグリッド座標に配置するには、
+`coordinates="grid"` を指定します。各軸の開始座標と間隔を使い、`use_si=True` では
+各軸を SI 単位に変換します。単位情報がない場合はグリッド単位を使います。
+既定の `coordinates="local"` は、原点ゼロ・間隔1（SI 時は x 軸の単位長）の従来表示です。
+
+```python
+roi = data.phisp[-1, 2:8:2, 3:9:2, 4:16:2]
+roi.plot(mode="cont", coordinates="grid", use_si=False, levels=[8.0], show=False)
+```
+
+`offsets=(x, y, z)` は表示単位で座標に加算します。文字列の `"left"`、`"center"`、
+`"right"` は、それぞれ選択範囲の最初・中央のサンプル・最後をゼロに移します。
+`bounds_xyz` もオフセット適用後の表示座標で指定します。
+
 ## 3D プロット（PyVista）
 
 PyVista backend を使うと、2D スライスを 3D 空間に配置したり、3D scalar / vector field を描画できます。このページでは入口だけ示します。mode、重ね描き、保存、HPC での使い方は [PyVista 可視化](pyvista.ja.md) を参照してください。

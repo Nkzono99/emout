@@ -126,6 +126,16 @@ data = emout.Emout("output_dir", ad="auto")
 data = emout.Emout("output_dir", append_directories=["output_dir_2", "output_dir_3"])
 ```
 
+Indexing, iteration, and `len()` count each join once by skipping the first
+frame of every appended grid series. For compatibility, `time_series(x, y, z)`
+defaults to `skip_overlap=False` and concatenates all frames. Pass `skip_overlap=True` when extracting
+values for statistics or FFTs. The same keyword also works on a single series.
+
+```python
+values = data.phisp.time_series(32, 32, 10, skip_overlap=True)
+# Equivalent values: data.phisp[:, 10, 32, 32].to_numpy()
+```
+
 ## Particle Data
 
 EMSES particle outputs are automatically grouped by species:

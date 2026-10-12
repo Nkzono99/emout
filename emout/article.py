@@ -866,7 +866,7 @@ class ArticleSelection:
         """Plot the recorded data using the normal Data plotting path."""
         return self.materialize().plot(**kwargs)
 
-    def mean(self, axis=None, dtype=None, out=None, keepdims=False):
+    def mean(self, axis=None, dtype=None, out=None, keepdims=False, *, keep_metadata: bool = False):
         """Return a recorded time-mean selection."""
         if out is not None:
             raise NotImplementedError("ArticleSelection.mean does not support out")
@@ -880,6 +880,10 @@ class ArticleSelection:
             return ArticleMeanSelection(self._replay, self.name, self._selectors, self._source_shape)
 
         materialized_axis = self._reduction_axes_to_materialized_axis(axes)
+        if keep_metadata:
+            from emout.core.data.factory import _mean_with_metadata
+
+            return _mean_with_metadata(self.materialize(), materialized_axis, dtype=dtype)
         return self.materialize().mean(axis=materialized_axis, dtype=dtype, out=out, keepdims=keepdims)
 
     def _normalize_reduction_axes(self, axis) -> tuple[int, ...]:

@@ -104,6 +104,41 @@ Mask specific regions before plotting:
 data.phisp[1].masked(lambda phi: phi < phi.mean()).plot()
 ```
 
+## Sections After Spatial Averaging
+
+Pass `keep_metadata=True` when plotting a spatial mean over a time selection.
+It removes the reduced axes and preserves the remaining coordinates, units,
+and the `Data` class appropriate to the result's dimensions. The default `False`
+preserves legacy NumPy reduction behavior and should not be used for plotting
+reduced fields. The default time-average behavior of `mean()` is unchanged.
+
+```python
+yz = data.phisp[:].mean(axis="x", keep_metadata=True)
+yz[-1].plot()  # Horizontal: y; vertical: z
+profile = data.phisp[:].mean(axis=("x", "y"), keep_metadata=True)
+profile[-1].plot()  # z profile
+```
+
+Spatial averaging loads the selected range into memory. The same calls work
+with article recording and replay; recording stores the selection before reduction.
+
+## 3D Iso-surfaces with Matplotlib
+
+Use `coordinates="grid"` with `Data3d.plot(mode="cont")` to place iso-surfaces
+from cropped or strided data in their original grid coordinates. Each axis uses
+its own start coordinate and spacing, converted to SI when `use_si=True`.
+Data without unit metadata uses grid units. The default `coordinates="local"`
+keeps the legacy zero origin and unit spacing (the x-axis unit length in SI).
+
+```python
+roi = data.phisp[-1, 2:8:2, 3:9:2, 4:16:2]
+roi.plot(mode="cont", coordinates="grid", use_si=False, levels=[8.0], show=False)
+```
+
+`offsets=(x, y, z)` adds shifts in display units. The strings `"left"`, `"center"`,
+and `"right"` move the first, middle, or last sample of each selected axis to zero.
+Specify `bounds_xyz` in display coordinates after applying offsets.
+
 ## 3D Plotting with PyVista
 
 The PyVista backend can place 2-D slices in 3-D space and render 3-D scalar / vector fields. This page only shows the entry points. For modes, overlays, saving, and HPC usage, see [PyVista Visualization](pyvista.md).

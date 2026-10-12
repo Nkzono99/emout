@@ -22,6 +22,7 @@ Use this skill when a user asks Codex to create a Python visualization script wi
 
 - Convert the user's physical request into concrete emout attributes, slice indices, plot type, and output files.
 - State and apply grid axis order `(t, z, y, x)` when generating indexing code.
+- Use `mean(axis=..., keep_metadata=True)` for spatial means of time selections before plotting, and `coordinates="grid"` for Matplotlib iso-surfaces of cropped or strided Data3d. Legacy defaults retain the original behavior.
 - For scripts without an existing base, generate a runnable script with `argparse`, clear input/output paths, and conservative defaults.
 - For existing scripts, preserve the user's structure where practical and patch only the needed parts.
 - Prefer slicing before `.val` / `.val_si` to avoid loading full 4D HDF5 data.

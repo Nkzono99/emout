@@ -9,6 +9,9 @@ The same classes of mistakes often appear in emout user questions. During diagno
 | Symptom | Check | Fix |
 | --- | --- | --- |
 | The plotted plane is not the expected one | Whether slicing follows axis order `(t, z, y, x)` | For an xz-plane, use a form such as `data.phisp[-1, :, y_index, :]` |
+| Restart frames appear twice in a time series | Whether an appended series uses the default `time_series()` arguments | Use `skip_overlap=True` to match indexing, iteration, and `len()` |
+| Spatial means have wrong axis labels or ranges | Whether reduced axes remain in the metadata | Use `mean(axis="x", keep_metadata=True)` on a time selection to retain the surviving axes and dimensioned class |
+| Strided Matplotlib iso-surfaces have wrong positions or sizes | Whether `Data3d.plot()` uses legacy local coordinates | Use `coordinates="grid"` to apply each axis's original start and spacing |
 | Out-of-memory errors or slow processing | Whether the full 4D array is loaded with `.val` / `.val_si` | Slice by time, plane, and range before reading values |
 | `val_si` or displayed units look wrong | Whether `!!key` or `[meta.unit_conversion]` is present | Check unit conversion metadata; without it, treat values as EMSES units |
 | A variable attribute is missing | Whether HDF5 filenames map to the expected EMSES variable names | Check `ls *.h5` and the variable resolution rules in the guides |

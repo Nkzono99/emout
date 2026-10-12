@@ -88,6 +88,17 @@ data.icur, data.ocur, data.pbody  # Text diagnostics (SI conversion via .val_si)
 
 Axis order is `(t, z, y, x)`.
 
+Use these options to preserve the original series and coordinates during analysis and plotting:
+
+```python
+data.phisp.time_series(32, 32, 10, skip_overlap=True)  # Exclude duplicated restart frames
+data.phisp[:].mean(axis="x", keep_metadata=True)[-1].plot()  # yz mean section
+data.phisp[-1, ::2, ::2, ::2].plot(coordinates="grid", levels=[0.0])
+```
+
+Legacy defaults remain available. See [Quickstart](docs/source/guide/quickstart.md) and
+[Plotting](docs/source/guide/plotting.md) for details.
+
 ---
 
 ## Feature Guide

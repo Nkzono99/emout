@@ -96,6 +96,26 @@ def test_record_and_replay_to_numpy(article_sim, tmp_path):
     assert record["slice_axes"] == [1, 3]
 
 
+def test_record_and_replay_spatial_mean_preserves_axes(article_sim, tmp_path):
+    records = tmp_path / "spatial_records"
+    kwargs = {"article_records_path": records, "article_name": "spatial_mean"}
+    data = emout.Emout(article_sim, article_mode="record", **kwargs)
+    recorded = data.phisp[:].mean(axis="x", keep_metadata=True)
+    assert recorded.slice_axes == [0, 1, 2]
+    image = recorded[-1].plot(use_si=False)
+    assert image.axes.get_xlabel() == "y"
+    assert image.axes.get_ylabel() == "z"
+    plt.close(image.figure)
+
+    replay = emout.Emout(article_sim, article_mode="replay", **kwargs)
+    replayed = replay.phisp[:].mean(axis="x", keep_metadata=True)
+    assert replayed.slice_axes == recorded.slice_axes
+    assert type(replayed) is type(recorded)
+    np.testing.assert_array_equal(replayed, recorded)
+    np.testing.assert_array_equal(replayed[-1].y, recorded[-1].y)
+    np.testing.assert_array_equal(replayed[-1].z, recorded[-1].z)
+
+
 def test_record_deduplicates_same_field_selection(article_sim, tmp_path):
     records = tmp_path / "records"
 

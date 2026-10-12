@@ -235,7 +235,7 @@ zip はアップロード先が `.tar.gz` を受け付けない場合や、Windo
 - 複数 source が同じ basename（例: `case_a/output`, `case_b/output`）を持つ場合は、`article_source_name` を指定してください。
 - `np.asarray(data.phisp[...])` よりも `data.phisp[...].to_numpy()` を使うと、記録対象であることが明示されます。
 - `plot_surfaces()` で公開データを小さくしたい場合は `bounds` を渡してください。`data.phisp[-1, :, ymid, :]` のような 2D slice はそのまま 2D として保存されますが、`data.phisp[-1]` のような 3D selection は `bounds` なしでは 3D 全体になり得ます。
-- `data.phisp[-20:].mean()` の既定は time axis 平均です。空間方向を平均したい場合は、意図が分かるように `mean(axis="x")` などを明示してください。
+- `data.phisp[-20:].mean()` の既定は time axis 平均です。空間平均後に描画する場合は `mean(axis="x", keep_metadata=True)` などを指定し、残る軸の座標と単位を保持してください。空間平均は縮約前の選択範囲を記録し、再生時に平均を計算します。
 - record mode の remote rendering では worker 側で使った slice が記録されます。replay では particle、backtrace、remote execution は提供されません。必要なら元データで実行してから、可視化に使うグリッドスライスを record してください。
 - 元 script がランダムな描画設定や外部ファイルに依存する場合、article bundle だけでは完全再現できません。図作成 script も一緒に公開してください。
 

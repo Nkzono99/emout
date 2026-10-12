@@ -88,6 +88,17 @@ data.icur, data.ocur, data.pbody  # テキスト診断出力 (.val_si で SI 変
 
 スライスの軸順序は `(t, z, y, x)` です。
 
+解析・描画で元の系列と座標を保持するためのオプション:
+
+```python
+data.phisp.time_series(32, 32, 10, skip_overlap=True)  # 再開点の重複を除外
+data.phisp[:].mean(axis="x", keep_metadata=True)[-1].plot()  # yz 平均断面
+data.phisp[-1, ::2, ::2, ::2].plot(coordinates="grid", levels=[0.0])
+```
+
+従来の既定動作も維持します。詳しくは [クイックスタート](docs/source/guide/quickstart.ja.md) と
+[プロットガイド](docs/source/guide/plotting.ja.md) を参照してください。
+
 ---
 
 ## 機能ガイド

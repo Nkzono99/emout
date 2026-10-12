@@ -22,6 +22,7 @@ Use this skill when a user asks whether an emout analysis script is correct, why
 
 - Review for correctness before style: axis order, target plane, variable names, unit conversion, and time index.
 - State that grid data axis order is `(t, z, y, x)` when commenting on indexing.
+- For appended time-series statistics, check `skip_overlap=True`; for spatial means of time selections, check `keep_metadata=True`; for cropped or strided Matplotlib Data3d contours, check `coordinates="grid"`. Consult the quickstart and plotting references before recommending these opt-in modes.
 - Check whether `.val` or `.val_si` is applied before slicing large data.
 - Check whether SI conversion metadata exists or is assumed without evidence.
 - Check vector attributes and slice planes for component mismatch.

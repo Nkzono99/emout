@@ -10,6 +10,36 @@ import numpy as np
 _UNSET = object()
 
 
+def _mean_with_metadata(data, axis, *, dtype=None):
+    """Reduce selected dimensions while retaining the surviving grid axes.
+
+    Derived arrays render locally: their source selectors describe the
+    unreduced field and cannot be used to fetch or record the mean itself.
+    Materializing the source already records the range required for replay.
+    """
+    mean = np.asarray(data).mean(axis=axis, dtype=dtype)
+    dims = (axis,) if isinstance(axis, int) else axis
+    return data_from_array(
+        mean,
+        filename=data.filename,
+        name=data.name,
+        tslice=data.tslice,
+        zslice=data.zslice,
+        yslice=data.yslice,
+        xslice=data.xslice,
+        slice_axes=[source_axis for dim, source_axis in enumerate(data.slice_axes) if dim not in dims],
+        axisunits=data.axisunits,
+        valunit=data.valunit,
+        local_data_policy=getattr(data, "_local_data_policy", None),
+        emout_dir=None,
+        emout_open_kwargs=None,
+        emout_inp=getattr(data, "_emout_inp", None),
+        emout_unit=getattr(data, "_emout_unit", None),
+        article_recorder=None,
+        article_source_shape=getattr(data, "_article_source_shape", None),
+    )
+
+
 def data_from_array(
     array,
     *,

@@ -55,6 +55,7 @@ class Data3d(Data):
         use_si: bool = True,
         offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         *args,
+        coordinates: Literal["local", "grid"] = "local",
         **kwargs,
     ):
         """Plot three-dimensional data.
@@ -75,6 +76,11 @@ class Data3d(Data):
             Positional arguments forwarded to ``contour3d``.
             Typically the first element is ``levels`` (a sequence of
             iso-surface values).
+        coordinates : str, optional
+            'local' preserves the legacy zero origin and unit spacing.
+            'grid' uses each spatial axis's saved coordinates and stride,
+            converted to SI when unit metadata is available. Offsets are
+            applied to these coordinates in display units.
         **kwargs : dict
             Keyword arguments forwarded to ``contour3d``, including
             ``ax``, ``bounds_xyz``, ``roi_zyx``, ``opacity``, ``step``,
@@ -87,7 +93,12 @@ class Data3d(Data):
             ``(fig, ax)`` for ``mode='cont'``; ``None`` for unsupported
             modes.
         """
-        remote_kwargs = dict(kwargs)
+        if coordinates not in ("local", "grid"):
+            raise ValueError("coordinates must be 'local' or 'grid'")
+        plot_kwargs = dict(kwargs)
+        if coordinates == "grid":
+            plot_kwargs["coordinates"] = coordinates
+        remote_kwargs = dict(plot_kwargs)
         if args:
             remote_kwargs["_emout_plot_args"] = tuple(args)
         remote = self._try_remote_plot(mode=mode, use_si=use_si, offsets=offsets, **remote_kwargs)
@@ -101,7 +112,7 @@ class Data3d(Data):
         record_data_access(
             self,
             kind="plot",
-            kwargs={"mode": mode, "use_si": use_si, "offsets": offsets, **kwargs},
+            kwargs={"mode": mode, "use_si": use_si, "offsets": offsets, **plot_kwargs},
         )
 
         if mode == "auto":
@@ -110,21 +121,39 @@ class Data3d(Data):
         if mode == "cont":
             from emout.plot.contour3d import contour3d
 
-            if use_si:
-                data3d = self.val_si
-                dx = self.axisunits[-1].reverse(1.0)
+            if coordinates == "grid":
+                if self.slice_axes != [1, 2, 3]:
+                    raise ValueError("coordinates='grid' requires the spatial (z, y, x) axes")
+                if self.valunit is None:
+                    use_si = False
+                data3d = np.asarray(self.val_si if use_si else self)
+                spacing = []
+                origin = []
+                for index, axis in enumerate((3, 2, 1)):
+                    line = self.axis(self.slice_axes.index(axis)).astype(float)
+                    if len(line) < 2:
+                        raise ValueError("3-D iso-surfaces require at least two samples along each spatial axis")
+                    if use_si:
+                        line = self.axisunits[axis].reverse(line)
+                    if offsets is not None:
+                        line = apply_offset(line, offsets[index])
+                    if line[1] < line[0]:
+                        line = line[::-1]
+                        data3d = np.flip(data3d, axis=2 - index)
+                    origin.append(float(line[0]))
+                    spacing.append(float(line[1] - line[0]))
+                dx = tuple(spacing)
+                origin_xyz = tuple(origin)
             else:
-                data3d = self
-                dx = 1.0
-
-            if offsets is not None:
-                origin_xyz = (
-                    apply_offset(0.0, offsets[0]),
-                    apply_offset(0.0, offsets[1]),
-                    apply_offset(0.0, offsets[2]),
-                )
-            else:
+                if use_si:
+                    data3d = self.val_si
+                    dx = self.axisunits[-1].reverse(1.0)
+                else:
+                    data3d = self
+                    dx = 1.0
                 origin_xyz = (0.0, 0.0, 0.0)
+                if offsets is not None:
+                    origin_xyz = tuple(float(apply_offset(np.zeros(1), offset)[0]) for offset in offsets)
 
             fig, ax = contour3d(data3d, dx, origin_xyz=origin_xyz, *args, **kwargs)
 

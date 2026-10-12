@@ -17,12 +17,14 @@ Use this skill when a user provides an emout traceback, says an output directory
 - Bundled docs: `../../docs/analysis-pitfalls.md`, `../../docs/analysis-pitfalls.en.md`, `../../docs/library-context.md`, `../../docs/library-context.en.md`.
 - Repo root docs only when the full checkout is available and may be newer.
 - User-provided traceback, output listing, `plasma.inp` / `plasma.toml` excerpts, and analysis script.
+- For coordinate or reduction errors: `../../references/plotting.ja.md`, `../../references/plotting.md`, `../../references/article.ja.md`, `../../references/article.md`.
 
 ## Workflow
 
 - Classify the failure as import/install, path/layout, HDF5 variable discovery, input parameter parsing, unit conversion, plotting, optional dependency, boundary parsing, or remote execution.
 - Ask for missing critical information only after extracting what can be inferred from the provided traceback or script.
 - Check axis order `(t, z, y, x)` for wrong-slice or wrong-plane results.
+- For duplicate restart frames, spatial-mean axis mismatches, or misplaced Matplotlib iso-surfaces, consult the opt-in `skip_overlap`, `keep_metadata`, and `coordinates="grid"` modes in the quickstart and plotting references.
 - Check whether full arrays are loaded before slicing for memory or performance failures.
 - Check `!!key` or `[meta.unit_conversion]` before diagnosing SI conversion.
 - For backtrace problems, verify whether SI values were accidentally passed to APIs that require EMSES-unit inputs.

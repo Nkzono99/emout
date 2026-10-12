@@ -1129,7 +1129,8 @@ def test_data3d_plot_surfaces_remote_required_renders_without_local_access(monke
     ]
 
 
-def test_data3d_plot_positional_args_are_sent_to_remote(monkeypatch):
+@pytest.mark.parametrize("coordinate_kwargs", [{}, {"coordinates": "grid"}])
+def test_data3d_plot_positional_args_are_sent_to_remote(monkeypatch, coordinate_kwargs):
     import emout
     from emout.core.data.data import Data3d
     from emout.distributed import remote_render
@@ -1149,7 +1150,7 @@ def test_data3d_plot_positional_args_are_sent_to_remote(monkeypatch):
     monkeypatch.setattr(remote_render, "display_image", lambda img_bytes, ax=None: displayed.append((img_bytes, ax)))
 
     with emout.local_data_policy("remote_required"):
-        assert data3d.plot("auto", False, None, [1.0]) is None
+        assert data3d.plot("auto", False, None, [1.0], **coordinate_kwargs) is None
 
     assert displayed == [(b"field-png", None)]
     assert seen == [
@@ -1157,7 +1158,7 @@ def test_data3d_plot_positional_args_are_sent_to_remote(monkeypatch):
             "phisp",
             (0, slice(0, 2, 1), slice(0, 3, 1), slice(0, 4, 1)),
             open_kwargs,
-            {"mode": "auto", "use_si": False, "offsets": None, "_emout_plot_args": ([1.0],)},
+            {"mode": "auto", "use_si": False, "offsets": None, "_emout_plot_args": ([1.0],), **coordinate_kwargs},
         )
     ]
 

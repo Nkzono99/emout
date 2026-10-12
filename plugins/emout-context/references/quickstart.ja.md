@@ -122,6 +122,16 @@ data = emout.Emout("output_dir", ad="auto")
 data = emout.Emout("output_dir", append_directories=["output_dir_2", "output_dir_3"])
 ```
 
+結合したグリッド系列の添字・iteration・`len()` は、後続系列の先頭を接続点の重複として
+一度だけ数えます。`time_series(x, y, z)` の既定の `skip_overlap=False` は全フレームを連結するので、
+統計量や FFT に使う時系列には `skip_overlap=True` を指定してください。
+単一系列でも同じ引数を使えます。
+
+```python
+values = data.phisp.time_series(32, 32, 10, skip_overlap=True)
+# Equivalent values: data.phisp[:, 10, 32, 32].to_numpy()
+```
+
 ## 粒子データ
 
 粒子の出力は種ごとに 1 つのオブジェクトにまとまっています:

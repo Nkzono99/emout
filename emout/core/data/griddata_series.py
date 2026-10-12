@@ -25,7 +25,7 @@ from emout.utils import DataFileInfo, UnitTranslator
 
 from ._base import _REMOTE_PLOT_HANDLED
 from .data import Data3d, Data4d
-from .factory import data_from_array, data_from_payload
+from .factory import _mean_with_metadata, data_from_array, data_from_payload
 from .selectors import (
     compose_selector as _compose_selector,
     normalize_selector as _normalize_selector,
@@ -127,7 +127,7 @@ class GridDataSeries:
         """Exit the context manager and close the HDF5 file."""
         self.close()
 
-    def time_series(self, x, y, z) -> np.ndarray:
+    def time_series(self, x, y, z, *, skip_overlap: bool = False) -> np.ndarray:
         """Return the time series for the specified spatial range.
 
         Parameters
@@ -138,6 +138,9 @@ class GridDataSeries:
             Y coordinate or range.
         z : int or slice
             Z coordinate or range.
+        skip_overlap : bool, optional
+            Accepted for consistency with MultiGridDataSeries; a single
+            series has no join frames to skip.
 
         Returns
         -------
@@ -487,7 +490,9 @@ class MultiGridDataSeries(GridDataSeries):
         for data in self.series:
             data.h5.close()
 
-    def time_series(self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice]):
+    def time_series(
+        self, x: Union[int, slice], y: Union[int, slice], z: Union[int, slice], *, skip_overlap: bool = False
+    ):
         """Return the time series for the specified spatial range.
 
         Parameters
@@ -498,6 +503,10 @@ class MultiGridDataSeries(GridDataSeries):
             Y coordinate or range.
         z : int or slice
             Z coordinate or range.
+        skip_overlap : bool, optional
+            If True, skip the first frame of each subsequent series to
+            match indexing, iteration, and len(). False preserves legacy
+            concatenation including every join frame.
 
         Returns
         -------
@@ -505,8 +514,11 @@ class MultiGridDataSeries(GridDataSeries):
             Time-series data for the specified range.
         """
         self._require_local_data_access("read time series", f"{self.name}.time_series")
-        series = np.concatenate([data.time_series(x, y, z) for data in self.series])
-        return series
+        arrays = []
+        for index, data in enumerate(self.series):
+            array = data.time_series(x, y, z)
+            arrays.append(array[1:] if skip_overlap and index > 0 else array)
+        return np.concatenate(arrays)
 
     @property
     def filename(self) -> Path:
@@ -974,8 +986,14 @@ class GridDataSelection(NDArrayOperatorsMixin):
             maximum = value if maximum is None else max(maximum, value)
         return maximum
 
-    def mean(self, axis=None, dtype=None, out=None, keepdims=False):
-        """Return a lazy time average when reducing the time axis."""
+    def mean(self, axis=None, dtype=None, out=None, keepdims=False, *, keep_metadata: bool = False):
+        """Return a lazy time average when reducing the time axis.
+
+        For spatial or mixed reductions, keep_metadata=True removes the
+        reduced axes and rebuilds the dimensioned Data class. False keeps
+        legacy NumPy subclass reduction behavior. Spatial means materialize
+        the selected source range, including during article recording.
+        """
         if out is not None:
             raise NotImplementedError("GridDataSelection.mean does not support out")
         if keepdims:
@@ -987,6 +1005,8 @@ class GridDataSelection(NDArrayOperatorsMixin):
 
         self._require_local_data_access("compute a local field mean", self._target_name())
         materialized_axis = self._reduction_axes_to_materialized_axis(reduction_axes)
+        if keep_metadata:
+            return _mean_with_metadata(self.materialize(), materialized_axis, dtype=dtype)
         return self.materialize().mean(axis=materialized_axis, dtype=dtype, out=out, keepdims=keepdims)
 
     def _normalize_reduction_axes(self, axis) -> Tuple[int, ...]:

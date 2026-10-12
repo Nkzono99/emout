@@ -250,7 +250,7 @@ open on Windows.
 - If multiple sources share a basename, such as `case_a/output` and `case_b/output`, pass `article_source_name`.
 - Prefer `data.phisp[...].to_numpy()` over `np.asarray(data.phisp[...])` so the recording intent is explicit.
 - Pass `bounds` to `plot_surfaces()` when you want small publication data. A 2D slice such as `data.phisp[-1, :, ymid, :]` is stored as 2D, but a 3D selection such as `data.phisp[-1]` can become the full 3D field without `bounds`.
-- `data.phisp[-20:].mean()` defaults to a time-axis mean. If you intend to average in space, pass an explicit axis such as `mean(axis="x")`.
+- `data.phisp[-20:].mean()` defaults to a time-axis mean. To plot a spatial mean, use an explicit axis and preserve the remaining coordinates and units, for example `mean(axis="x", keep_metadata=True)`. Spatial averaging records the selection before reduction and recomputes the mean during replay.
 - In record mode, remote rendering records the slices used on the worker. Replay does not provide particles, backtrace, or remote execution. Run those from the original data, then record the grid slices used for visualization.
 - If the original script depends on random styling or external files, the article bundle alone cannot fully reproduce the figure. Publish the figure script as well.
 
