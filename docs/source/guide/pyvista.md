@@ -173,6 +173,51 @@ trace.plot3d(
 
 If you build traces with `get_probabilities=False`, probability-derived alpha is unavailable. Pass an explicit value such as `alpha=0.3` when needed.
 
+## Ticks, Cameras, and Trajectory Display
+
+Scalar, vector, boundary, and trace `plot3d()` calls accept `show_bounds`,
+`bounds_kwargs`, `camera`, and `camera_position`. `bounds_kwargs` forwards
+font sizes, tick counts, and other settings to PyVista's `show_bounds()`;
+emout supplies unit-aware labels. Select `camera="isometric"`, `"low"`, or
+`"side-low"`, or set `camera_position=(position, focal_point, view_up)`.
+Do not supply both `camera` and `camera_position`.
+For scalar and vector colour bars, use settings such as
+`scalar_bar_args={"vertical": True, "position_x": 0.82}` to adjust placement and fonts.
+
+For trajectories, `min_alpha` sets an opacity floor. `alpha_scale="normalize"`
+divides by the maximum, while `alpha_scale="log"` maps the logarithms of
+positive values to 0–1. These affect display only; probability arrays are unchanged.
+The defaults are `min_alpha=0` and `alpha_scale="linear"`.
+`direction="both"` explicitly selects both directions, with optional colours
+for each direction. `clip_bounds=(xmin, xmax, ymin, ymax, zmin, zmax)` uses
+display coordinates after SI conversion and offsets. Crossing segments are
+trimmed at box faces, and paths separated by excluded regions remain disconnected.
+
+The following example assumes boundary index 0 is `flat-surface` and `trace`
+has already been computed. It samples potential on the boundaries and overlays
+everything in grid coordinates. Adjust the `per` index and height limit for
+other boundary configurations.
+
+```python
+import pyvista as pv
+from emout.plot.pyvista_plot import create_volume_mesh
+
+volume, name, _, label = create_volume_mesh(data.phisp[-1], use_si=False)
+surface = data.boundaries.mesh(use_si=False, per={0: {"resolution": "grid"}})
+coloured = surface.to_pyvista().sample(volume)
+plotter = pv.Plotter(off_screen=True)
+plotter.add_mesh(coloured, scalars=name, cmap="coolwarm", scalar_bar_args={"title": label})
+trace.plot3d(
+    plotter=plotter, direction="both", use_si=False,
+    backward_color="blue", forward_color="red",
+    alpha_scale="normalize", min_alpha=0.08,
+    clip_bounds=(0, data.inp.nx, 0, data.inp.ny, 0, min(data.inp.nz, data.inp.zssurf + 20)),
+    show_bounds=True, bounds_kwargs={"font_size": 12, "n_xlabels": 4}, camera="low",
+)
+plotter.screenshot("boundary_trace.png")
+plotter.close()
+```
+
 ## Units and Axis Order
 
 Grid-data axis order is `(t, z, y, x)`, and a 3-D volume is `(z, y, x)`. The PyVista helpers read that order and rearrange coordinates into PyVista's `(x, y, z)` convention.

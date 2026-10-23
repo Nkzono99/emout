@@ -12,7 +12,7 @@ from ._pyvista_helpers import (
     _axis_values,
     _require_pyvista,
     _save_or_show_plotter,
-    _show_bounds,
+    _configure_plotter,
     _spacing,
 )
 
@@ -294,6 +294,11 @@ def plot_vector_quiver3d(
     surface_kwargs=None,
     filename=None,
     savefilename=None,
+    show_bounds=True,
+    bounds_kwargs=None,
+    camera=None,
+    camera_position=None,
+    scalar_bar_args=None,
     **kwargs,
 ):
     """Plot a 3-D vector field as quiver arrows.
@@ -406,7 +411,7 @@ def plot_vector_quiver3d(
 
     plotter.add_mesh(glyph, **add_mesh_kwargs)
     if add_scalar_bar and cmap is not None and magnitude_name in glyph.array_names:
-        plotter.add_scalar_bar(title="|v|")
+        plotter.add_scalar_bar(**{"title": "|v|", **(scalar_bar_args or {})})
     _add_surface_overlays(
         plotter,
         surfaces,
@@ -417,7 +422,14 @@ def plot_vector_quiver3d(
         surface_opacity=surface_opacity,
         **(surface_kwargs or {}),
     )
-    _show_bounds(plotter, axis_labels)
+    _configure_plotter(
+        plotter,
+        axis_labels,
+        show_bounds=show_bounds,
+        bounds_kwargs=bounds_kwargs,
+        camera=camera,
+        camera_position=camera_position,
+    )
     plotter.add_axes()
 
     return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)
@@ -452,6 +464,11 @@ def plot_vector_streamlines3d(
     surface_kwargs=None,
     filename=None,
     savefilename=None,
+    show_bounds=True,
+    bounds_kwargs=None,
+    camera=None,
+    camera_position=None,
+    scalar_bar_args=None,
     **kwargs,
 ):
     """Plot a 3-D vector field as streamlines.
@@ -613,7 +630,7 @@ def plot_vector_streamlines3d(
 
     plotter.add_mesh(stream_mesh, **add_mesh_kwargs)
     if add_scalar_bar and cmap is not None and magnitude_name in stream_mesh.array_names:
-        plotter.add_scalar_bar(title="|v|")
+        plotter.add_scalar_bar(**{"title": "|v|", **(scalar_bar_args or {})})
     plotter.add_mesh(mesh.outline(), color="white")
     _add_surface_overlays(
         plotter,
@@ -625,7 +642,14 @@ def plot_vector_streamlines3d(
         surface_opacity=surface_opacity,
         **(surface_kwargs or {}),
     )
-    _show_bounds(plotter, axis_labels)
+    _configure_plotter(
+        plotter,
+        axis_labels,
+        show_bounds=show_bounds,
+        bounds_kwargs=bounds_kwargs,
+        camera=camera,
+        camera_position=camera_position,
+    )
     plotter.add_axes()
 
     return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)

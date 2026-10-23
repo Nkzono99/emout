@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ._pyvista_helpers import _offseted, _require_pyvista
+from ._pyvista_helpers import _configure_plotter, _offseted, _require_pyvista
 
 
 def create_surface_mesh(surface, offsets=None):
@@ -39,6 +39,11 @@ def plot_surface_mesh(
     opacity: float = 0.6,
     show_edges: bool = False,
     add_axes: bool = True,
+    show_bounds=None,
+    bounds_kwargs=None,
+    camera=None,
+    camera_position=None,
+    axis_labels=None,
     **kwargs,
 ):
     """Draw a ``MeshSurface3D`` on a PyVista plotter and return it."""
@@ -54,6 +59,14 @@ def plot_surface_mesh(
     }
     add_mesh_kwargs.update(kwargs)
     plotter.add_mesh(mesh, **add_mesh_kwargs)
+    _configure_plotter(
+        plotter,
+        axis_labels,
+        show_bounds=show_bounds,
+        bounds_kwargs=bounds_kwargs,
+        camera=camera,
+        camera_position=camera_position,
+    )
 
     if add_axes:
         plotter.add_axes()

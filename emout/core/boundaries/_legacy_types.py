@@ -51,6 +51,12 @@ class FlatSurfaceBoundary(Boundary):
         }
 
     def _build_mesh(self, params: Mapping[str, Any]) -> MeshSurface3D:
+        params = dict(params)
+        if isinstance(params.get("resolution"), str):
+            if params["resolution"] != "grid":
+                raise ValueError("flat-surface resolution must be 'grid', an integer, or a pair")
+            nx, ny, _ = _domain_extent(self.inp)
+            params["resolution"] = (max(2, int(nx) + 1), max(2, int(ny) + 1))
         return RectangleMeshSurface(**params)
 
 

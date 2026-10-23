@@ -43,6 +43,23 @@ data.phisp[0].shape   # (nz, ny, nx)
 data.phisp[-1]        # 最終ステップ
 ```
 
+## 周期電場の再配置
+
+末尾が先頭の周期重複点 `e[N] = e[0]` である電場では、次のオプションで
+境界を挟む隣接点同士を補間します。一様でない周期場でも平均を保ち、
+`rex` / `rey` / `rez` の境界だけ補間式が変わる問題を避けられます。
+
+```python
+data = emout.Emout("output_dir", electric_relocation="periodic")
+ex_at_centres = data.rex[-1]
+```
+
+修正モードは元の電場 HDF5 から `.emout/relocated/periodic/rex00_0000.h5` などへ
+独立したキャッシュを作ります。既存の `rex00_0000.h5` を削除・上書きせず、
+リモートで再オープンするときもモードを引き継ぎます。従来の式とキャッシュを使う既定値は
+`electric_relocation="legacy"` です。この設定は emout の再配置場に適用され、
+外部の trace solver が独自に読み込む場の設定を変更するものではありません。
+
 ## 最初のプロット
 
 ```python

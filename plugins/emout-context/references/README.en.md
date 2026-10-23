@@ -21,7 +21,7 @@ emout is:
 
 - **Documentation:** [User Guide (English/日本語)](https://nkzono99.github.io/emout/guide/quickstart.html) | [API Reference](https://nkzono99.github.io/emout/api/emout.html)
 - **Notebook example:** [Visualization of lunar surface charging simulation](https://nbviewer.org/github/Nkzono99/examples/blob/main/examples/emout/example.ipynb)
-- **Agent plugins:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.en.md) — install through the standard Codex or Claude Code plugin marketplace flow, then ask an agent to create or improve visualization scripts, use unit conversion, apply `remote_figure` for large outputs, and troubleshoot emout outside this repository ([installation guide](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md))
+- **Agent plugins:** [emout Context](https://github.com/Nkzono99/emout/blob/main/plugins/emout-context/README.en.md) — install through the standard Codex or Claude Code plugin marketplace flow, then ask an agent to create or improve visualization scripts, use unit conversion, and troubleshoot emout outside this repository ([installation guide](https://github.com/Nkzono99/emout/blob/main/plugins/README.en.md))
 
 ---
 
@@ -36,13 +36,11 @@ pip install emout
 emout version --check-update
 ```
 
-> Dask-based remote execution is automatically available on Python 3.10+ (no extra install needed).
-
 ---
 
 ## Agent Plugins
 
-The emout `emout Context` plugin makes emout's axis order, unit conversion, plotting, `remote_figure`, and troubleshooting context available when Codex or Claude Code is started in simulation output directories or other repositories.
+The emout `emout Context` plugin makes emout's axis order, unit conversion, plotting, and troubleshooting context available when Codex or Claude Code is started in simulation output directories or other repositories.
 
 ```bash
 codex plugin marketplace add Nkzono99/emout \
@@ -99,6 +97,19 @@ data.phisp[-1, ::2, ::2, ::2].plot(coordinates="grid", levels=[0.0])
 Legacy defaults remain available. See [Quickstart](docs/source/guide/quickstart.md) and
 [Plotting](docs/source/guide/plotting.md) for details.
 
+Options are also available for periodic electric-field interpolation and
+correct VTK value and coordinate placement:
+
+```python
+data = emout.Emout("output_dir", electric_relocation="periodic")
+data.phisp[-1].to_vtk("phisp.vti", ordering="vtk", coordinates="grid")
+```
+
+Use `consistent=True` for hole-surface plotting and `resolution="grid"` when
+sampling fields on flat boundaries. See the [PyVista guide](docs/source/guide/pyvista.md)
+for trajectory opacity, clipping, ticks, and camera controls, and the
+[Backtrace guide](docs/source/guide/backtrace.md) for shared-library diagnostics.
+
 ---
 
 ## Feature Guide
@@ -115,8 +126,6 @@ See the user guide for detailed usage of each feature.
 | **Boundary meshes** | `data.boundaries.mesh()`, overlay on `plot_surfaces` | [→ Boundaries](https://nkzono99.github.io/emout/guide/boundaries.html) |
 | **Backtrace** | `data.trace.forward(...)`, `data.backtrace.get_probabilities(...)` | [→ Backtrace](https://nkzono99.github.io/emout/guide/backtrace.html) |
 | **3D (PyVista)** | `plot3d(mode="box"/"stream"/"quiver")` | [→ PyVista Visualization](https://nkzono99.github.io/emout/guide/pyvista.html) |
-| **Remote exec** | Dask Actor offloads processing to compute nodes | [→ Remote Execution](https://nkzono99.github.io/emout/guide/distributed.html) |
-| **Article data** | Record and replay the minimum slices consumed by `plot()` / `to_numpy()` | [→ Article Data](https://nkzono99.github.io/emout/guide/article.html) |
 
 ---
 
@@ -174,184 +183,6 @@ data = emout.Emout(input_path="/path/to/plasma.toml", output_directory="output_d
 ```
 
 </details>
-
-### Recording And Replaying Article Data
-
-Figure scripts can still start with the usual `emout.Emout()` call.
-Switch article mode with environment variables to save only the minimum
-slices consumed by `plot()` and `to_numpy()` under a records path, then
-replay the same script from those recorded slices.
-
-```python
-import emout
-
-data = emout.Emout("output_dir")
-ymid = data.inp.ny // 2
-
-data.phisp[-1, :, ymid, :].plot(cmap="viridis")
-arr = data.ex[-1, :, ymid, :].to_numpy()
-```
-
-```bash
-# Normal run
-python fig1.py
-
-# Record: saves to article-records/datasets/<output_dir>-<hash>/fig1/
-EMOUT_ARTICLE_MODE=record \
-EMOUT_ARTICLE_RECORDS_PATH=article-records \
-EMOUT_ARTICLE_NAME=fig1 \
-python fig1.py
-
-# Replay: restore from recorded slices instead of the original large HDF5 files
-EMOUT_ARTICLE_MODE=replay \
-EMOUT_ARTICLE_RECORDS_PATH=article-records \
-EMOUT_ARTICLE_NAME=fig1 \
-python fig1.py
-```
-
-`EMOUT_ARTICLE_NAME` is optional. When omitted, records are saved under
-`default`, so a notebook or one script can collect all figures into a
-single bundle. Recreating `Emout()` with the same `article_name` appends
-only slices that are not already recorded.
-
-When a script opens multiple simulation outputs, records are separated per
-source under `article-records/datasets/<source>/default/`. Replay on another
-machine first matches sources by directory basename. If multiple outputs have
-the same basename, pass a stable `article_source_name` in the normal script.
-
-```python
-data = [
-    emout.Emout("case_a/output", article_source_name="case_a"),
-    emout.Emout("case_b/output", article_source_name="case_b"),
-]
-```
-
-Recorded `data.h5` files use HDF5 gzip compression. To package a whole
-bundle as `.tar.gz` or `.zip` for publication, set `EMOUT_ARTICLE_ARCHIVE=1`
-(`.tar.gz`) / `EMOUT_ARTICLE_ARCHIVE=zip`, or pass `article_archive=True` /
-`article_archive="zip"`. Replay automatically extracts the matching archive
-when the extracted directory is not present.
-
-The same settings can be passed as arguments.
-
-```python
-data = emout.Emout(
-    "output_dir",
-    article_mode="record",
-    article_records_path="article-records",
-    article_name="fig1",
-    article_archive="zip",
-)
-```
-
-Replay mode raises an exception when a script asks for an unrecorded slice.
-This makes it clear whether the public data bundle contains everything
-needed to reproduce a figure.
-`plasma.inp`, `plasma.toml`, and small diagnostic files (`icur`, `ocur`, `pbody`)
-are saved as well, so visualizations that depend on input parameters and
-boundary meshes also replay, including `data.inp`, `data.toml`,
-`data.boundaries.plot()`, and `data.phisp[-1].plot_surfaces(data.boundaries)`.
-
-### Remote Execution (Dask) — Experimental
-
-Offload data processing to HPC compute nodes; only plot images are returned to your login node.
-For new code, prefer the explicit `Emout.remote()` workflow.
-The older “auto-remote when a server is running” behavior is still kept as a backward-compatible compatibility mode.
-
-```bash
-# Start the server once in a terminal
-emout server start --partition gr20001a --memory 60G
-```
-
-`emout server` configures TLS authentication automatically and, by
-default, allows one active server per user. If you intentionally need an
-additional session, use
-`emout server start --allow-multiple --name <session>`.
-
-To prevent accidental local materialization of field arrays on a login
-node, use `emout.disable_local_data_access()` or set
-`EMOUT_LOCAL_DATA_POLICY=remote_required`. Pass `Emout(...,
-local_data_policy="allow")` when a small dataset may read fields locally.
-
-```python
-import matplotlib.pyplot as plt
-import emout
-from emout.distributed import remote_figure, remote_scope
-
-data = emout.Emout("output_dir").remote()
-
-# Recommended: keep remote objects explicitly
-with remote_scope():
-    ymid = int(data.inp.ny // 2)
-
-    with remote_figure():
-        plt.figure(figsize=(18, 16))
-        data.phisp[-1, 180:400, ymid, :].plot()
-        (-data.exz[-1, 180:400, ymid, :]).plot()
-        plt.title("remote expression example")
-
-# Compatibility mode: existing plot() code still works unchanged
-local_data = emout.Emout("output_dir")
-local_data.phisp[-1, :, 100, :].plot()    # only 2D slice transferred
-plt.xlabel("x [m]")                       # local matplotlib annotation
-
-# Run everything on the server (only PNG comes back)
-with remote_figure():
-    local_data.phisp[-1, :, 100, :].plot()
-    plt.axhline(y=50, color="red")
-    plt.title("Custom title")
-
-# Save directly to a file in CLI / batch jobs
-with remote_figure(savefilepath="figures/phisp.png"):
-    local_data.phisp[-1, :, 100, :].plot()
-    plt.title("saved remotely")
-
-# The output format is inferred from the extension
-with remote_figure(savefilepath="figures/phisp.svg"):
-    local_data.phisp[-1, :, 100, :].plot()
-
-# open/close style — easy to retrofit existing code
-from emout.distributed import RemoteFigure
-
-rf = RemoteFigure()
-rf.open()
-local_data.phisp[-1, :, 100, :].plot()
-rf.close()
-
-# Jupyter cell magic — just add to the top of a cell
-# %load_ext emout.distributed.remote_figure
-# %%remote_figure
-# local_data.phisp[-1, :, 100, :].plot()
-```
-
-When `savefilepath` is provided, the rendered bytes are written to disk.
-PNG/JPEG output is still shown inline in IPython, while CLI / batch
-usage skips local display.
-
-Heavy backtrace computations run on the server and stay in worker memory;
-re-render with different parameters without recomputation.
-Both `data.backtrace.get_probabilities(...)` and
-`data.remote().backtrace.get_probabilities(...)` return dedicated
-backtrace proxies — see the
-[backtrace guide](https://nkzono99.github.io/emout/guide/backtrace.html)
-for the API itself.
-
-**Cross-simulation comparison** is also supported:
-
-```python
-data_a = emout.Emout("/sim_a")
-data_b = emout.Emout("/sim_b")
-result_a = data_a.backtrace.get_probabilities(...)
-result_b = data_b.backtrace.get_probabilities(...)
-
-with remote_figure(figsize=(12, 5)):
-    plt.subplot(1, 2, 1)
-    result_a.vxvz.plot()
-    plt.subplot(1, 2, 2)
-    result_b.vxvz.plot()
-```
-
-→ [Remote Execution Guide](https://nkzono99.github.io/emout/guide/distributed.html)
 
 <details>
 <summary>Experimental features (Poisson solver / backtrace)</summary>

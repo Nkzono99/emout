@@ -141,6 +141,16 @@ class TraceResult:
         color: str = "white",
         line_width: float = 2.0,
         tube_radius: Optional[float] = None,
+        *,
+        min_alpha: float = 0.0,
+        alpha_scale: str = "linear",
+        clip_bounds=None,
+        backward_color=None,
+        forward_color=None,
+        show_bounds=None,
+        bounds_kwargs=None,
+        camera=None,
+        camera_position=None,
         **mesh_kwargs,
     ):
         """Draw trajectories on a PyVista plotter and return it.
@@ -148,6 +158,12 @@ class TraceResult:
         Passing an existing ``plotter`` overlays the trajectories on the
         caller's current 3-D field or boundary view. When both backward and
         forward payloads are available, omitting ``direction`` draws both.
+        ``direction='both'`` is an explicit alias. ``clip_bounds`` is an
+        (xmin, xmax, ymin, ymax, zmin, zmax) box in displayed coordinates
+        after SI conversion and offsets. Segments are clipped at the box
+        faces without connecting disjoint pieces. ``alpha_scale`` accepts
+        'linear', 'normalize' (divide by the maximum), or 'log' (normalize
+        the logarithms of positive values). ``min_alpha`` sets a floor.
         """
         trace_payloads = self._select_trace_payloads(direction)
         if not trace_payloads:
@@ -157,7 +173,13 @@ class TraceResult:
         if plotter is None:
             plotter = pv.Plotter()
 
-        alphas = self._resolve_alpha(alpha)
+        alphas = self._scaled_alpha(alpha, min_alpha=min_alpha, alpha_scale=alpha_scale)
+        if clip_bounds is not None:
+            clip_bounds = np.asarray(clip_bounds, dtype=float)
+            if clip_bounds.shape != (6,) or np.isnan(clip_bounds).any():
+                raise ValueError("clip_bounds must contain six non-NaN bounds in (x, y, z) order")
+            if np.any(clip_bounds[::2] > clip_bounds[1::2]):
+                raise ValueError("each clip_bounds minimum must be <= its maximum")
         if offsets is None:
             offsets = (None, None, None)
 
@@ -176,10 +198,6 @@ class TraceResult:
                 for axis in range(3):
                     points[:, axis] = _offseted(points[:, axis], offsets[axis])
 
-                line = pv.PolyData(points)
-                line.lines = np.concatenate(([len(points)], np.arange(len(points), dtype=int)))
-                mesh = line.tube(radius=tube_radius) if tube_radius is not None else line
-
                 opacity = 1.0
                 if alphas is not None:
                     if hasattr(alphas, "__len__"):
@@ -188,13 +206,38 @@ class TraceResult:
                         opacity = float(alphas)
 
                 add_mesh_kwargs = {
-                    "color": color,
+                    "color": (
+                        backward_color
+                        if traces is self.backward_traces and backward_color is not None
+                        else forward_color
+                        if traces is self.forward_traces and forward_color is not None
+                        else color
+                    ),
                     "line_width": line_width,
                     "opacity": opacity,
                 }
                 add_mesh_kwargs.update(mesh_kwargs)
-                plotter.add_mesh(mesh, **add_mesh_kwargs)
+                pieces = [points] if clip_bounds is None else _clip_polyline(points, clip_bounds)
+                for piece in pieces:
+                    line = pv.PolyData(piece)
+                    line.lines = np.concatenate(([len(piece)], np.arange(len(piece), dtype=int)))
+                    mesh = line.tube(radius=tube_radius) if tube_radius is not None else line
+                    plotter.add_mesh(mesh, **add_mesh_kwargs)
 
+        from emout.plot._pyvista_helpers import _configure_plotter
+
+        unit = self.unit
+        if unit is None and trace_payloads:
+            unit = getattr(trace_payloads[0], "unit", None)
+        suffix = f" [{unit.length.unit}]" if use_si and unit is not None else ""
+        _configure_plotter(
+            plotter,
+            {axis: f"{axis}{suffix}" for axis in ("x", "y", "z")},
+            show_bounds=show_bounds,
+            bounds_kwargs=bounds_kwargs,
+            camera=camera,
+            camera_position=camera_position,
+        )
         plotter.add_axes()
         if show:
             plotter.show()
@@ -210,7 +253,7 @@ class TraceResult:
         raise ValueError("direction must be 'backward', 'forward', or None")
 
     def _select_trace_payloads(self, direction: Optional[str]):
-        if direction is None:
+        if direction in (None, "both"):
             return tuple(traces for traces in (self.backward_traces, self.forward_traces) if traces is not None)
         traces = self._select_traces(direction)
         return () if traces is None else (traces,)
@@ -225,3 +268,56 @@ class TraceResult:
                     raise ValueError("probabilities are not available for probability alpha")
                 return values
         return alpha
+
+    def _scaled_alpha(self, alpha, *, min_alpha, alpha_scale):
+        if not np.isfinite(min_alpha) or not 0 <= min_alpha <= 1:
+            raise ValueError("min_alpha must be between 0 and 1")
+        if alpha_scale not in ("linear", "normalize", "log"):
+            raise ValueError("alpha_scale must be 'linear', 'normalize', or 'log'")
+        values = self._resolve_alpha(alpha)
+        if values is None or (min_alpha == 0 and alpha_scale == "linear"):
+            return values
+        values = np.nan_to_num(np.asarray(values, dtype=float), nan=0.0, posinf=1.0, neginf=0.0)
+        values = np.maximum(values, 0.0)
+        positive = values > 0
+        if alpha_scale == "normalize" and values.size and np.max(values) > 0:
+            values = values / np.max(values)
+        elif alpha_scale == "log" and np.any(positive):
+            logs = np.log(values[positive])
+            scaled = np.ones_like(logs) if np.ptp(logs) == 0 else (logs - logs.min()) / np.ptp(logs)
+            values = np.zeros_like(values)
+            values[positive] = scaled
+        values = np.clip(values, min_alpha, 1.0)
+        return float(values) if values.ndim == 0 else values
+
+
+def _clip_polyline(points, bounds):
+    """Clip line segments to a box, preserving disconnected path pieces."""
+    pieces, current = [], []
+    for start, end in zip(points[:-1], points[1:]):
+        delta = end - start
+        lower, upper = 0.0, 1.0
+        for axis in range(3):
+            lo, hi = bounds[2 * axis : 2 * axis + 2]
+            if delta[axis] == 0:
+                if start[axis] < lo or start[axis] > hi:
+                    upper = -1.0
+                    break
+            else:
+                crossings = sorted(((lo - start[axis]) / delta[axis], (hi - start[axis]) / delta[axis]))
+                lower, upper = max(lower, crossings[0]), min(upper, crossings[1])
+        if lower >= upper:
+            if current:
+                pieces.append(np.asarray(current))
+                current = []
+            continue
+        first, last = start + lower * delta, start + upper * delta
+        if current and not np.array_equal(current[-1], first):
+            pieces.append(np.asarray(current))
+            current = []
+        if not current:
+            current.append(first)
+        current.append(last)
+    if current:
+        pieces.append(np.asarray(current))
+    return pieces

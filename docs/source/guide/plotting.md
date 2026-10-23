@@ -162,3 +162,40 @@ When you want to overlay boundaries on a 3-D field, start with `data.boundaries.
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
 data.j1xyz[-1].plot3d(surfaces=data.boundaries, filename="j1_stream.png")
 ```
+
+## Exporting VTK
+
+Use `ordering="vtk"` to write `(z, y, x)` values in VTK's x-fastest order,
+and `coordinates="grid"` to retain a crop's starting coordinates and strides.
+Both options use the same convention in the PyVista and XML fallback paths.
+
+```python
+roi = data.phisp[-1, 2:10:2, 3:12:3, 4:16:2]
+roi.to_vtk("phisp_roi.vti", ordering="vtk", coordinates="grid", use_si=True)
+```
+
+`use_si=True` converts values and each axis's lengths to SI when metadata is available.
+The output remains cell data. Saved coordinates denote the lower cell corners;
+cell centres sit half an exported spacing higher. Strides also increase the coarse
+cell widths. Reversed slices reverse both coordinates and values to produce positive
+spacing. This API does not change EMSES samples to point data.
+The defaults, `ordering="legacy"` and `coordinates="local"`, preserve the historical
+z-fastest output, zero origin, and spacing without strides. Specify both options above
+for quantitative spatial comparisons.
+
+## Hole-Surface Helpers
+
+`consistent=True` on `plot_surface_with_hole()` and `plot_surface_with_hole_half()`
+uses matching units for plotted values and colour limits, and assembles surfaces on
+one 3-D Axes. When `use_si` is omitted, it uses SI if unit metadata exists, otherwise
+raw values. An explicit `ax3d` is respected, as are `vmin=0` / `vmax=0`.
+
+```python
+from emout.plot.extra_plot import plot_surface_with_hole
+
+plot_surface_with_hole(data.phisp[-1], data.inp, consistent=True)
+```
+
+The default `consistent=False` preserves historical rendering. For legacy calls,
+specify `use_si` to avoid inconsistent colour limits, and also supply a shared
+`ax3d` to the full-surface helper.

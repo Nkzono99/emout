@@ -60,6 +60,7 @@ class GridDataLoader:
         dir_inspector: DirectoryInspector,
         name2unit_map: dict[str, Any],
         local_data_policy: str | None = None,
+        electric_relocation: str = "legacy",
     ):
         """Initialize the loader.
 
@@ -73,6 +74,9 @@ class GridDataLoader:
         self.dir_inspector = dir_inspector
         self.name2unit_map = name2unit_map
         self.local_data_policy = normalize_local_data_policy(local_data_policy)
+        if electric_relocation not in ("legacy", "periodic"):
+            raise ValueError("electric_relocation must be 'legacy' or 'periodic'")
+        self.electric_relocation = electric_relocation
 
     def load(self, name: str) -> Any:
         """Load grid data by name, handling relocated and vector fields.
@@ -129,6 +133,8 @@ class GridDataLoader:
         Path
             Path to the matching HDF5 file.
         """
+        if self.electric_relocation == "periodic" and re.fullmatch(r"re[xyz]", name):
+            directory = directory / ".emout" / "relocated" / "periodic"
         pattern = f"{name}00_0000.h5"
         matches = list(directory.glob(pattern))
         if not matches:
@@ -174,6 +180,8 @@ class GridDataLoader:
         )
         series._emout_dir = str(self.dir_inspector.main_directory)
         series._emout_open_kwargs = self.dir_inspector.to_emout_open_kwargs()
+        if self.electric_relocation != "legacy":
+            series._emout_open_kwargs["electric_relocation"] = self.electric_relocation
         return series
 
     def _create_relocated_field_hdf5(self, field_name: str) -> None:
@@ -206,12 +214,15 @@ class GridDataLoader:
         """
         input_fp = directory / f"{name}00_0000.h5"
         output_fp = directory / f"r{name}00_0000.h5"
+        if name.startswith("e") and self.electric_relocation == "periodic":
+            output_fp = directory / ".emout" / "relocated" / "periodic" / output_fp.name
 
         if output_fp.exists():
             logger.debug(f"Already exists: {output_fp.resolve()}")
             return
 
         logger.info(f"Creating relocated field: {output_fp.resolve()}")
+        output_fp.parent.mkdir(parents=True, exist_ok=True)
         with h5py.File(input_fp, "r") as h5f_in:
             field = h5f_in[name]
 
@@ -232,7 +243,12 @@ class GridDataLoader:
 
                         rgrp[key] = relocated_magnetic_field(arr, axis=axis, btypes=btypes)
                     else:
-                        rgrp[key] = relocated_electric_field(arr, axis=axis, btype=self._get_btype(name))
+                        rgrp[key] = relocated_electric_field(
+                            arr,
+                            axis=axis,
+                            btype=self._get_btype(name),
+                            periodic_endpoint="duplicate" if self.electric_relocation == "periodic" else "legacy",
+                        )
 
     def _get_btype(self, name: str) -> str:
         """Return the boundary condition code for the given field.

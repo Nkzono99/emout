@@ -75,6 +75,23 @@ data.boundaries.plot3d(
 )
 ```
 
+## Resolution for Field-Coloured Planes
+
+The default `flat-surface` mesh contains only its four corner vertices.
+Sampling a field at those vertices can miss interior variation, making a
+nonuniform potential look uniform. Explicitly pass `resolution="grid"` for
+`(nx + 1, ny + 1)` vertices when colouring the plane. In mixed collections,
+select the relevant boundary index with `per`.
+
+```python
+mesh = data.boundaries.mesh(use_si=False, per={0: {"resolution": "grid"}})
+data.phisp[-1].plot_surfaces(surfaces=mesh, use_si=False)
+```
+
+Numeric `resolution=(nu, nv)` and `resolution_scale` remain available.
+`resolution="grid"` is specific to `flat-surface`; do not broadcast it to
+other boundary types. The default mesh resolution remains unchanged.
+
 ## Composite mesh
 
 All boundaries can be fused into a single mesh for further processing:

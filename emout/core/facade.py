@@ -76,6 +76,7 @@ class Emout:
         article_name: Union[str, None] = None,
         article_source_name: Union[str, None] = None,
         article_archive: Union[bool, str, None] = None,
+        electric_relocation: str = "legacy",
     ):
         """Initialize the Emout facade.
 
@@ -116,6 +117,10 @@ class Emout:
             Whether record mode should also write an archive for each article
             bundle. ``True`` writes ``.tar.gz``; ``"zip"`` writes ``.zip``.
             ``None`` reads ``EMOUT_ARTICLE_ARCHIVE``.
+        electric_relocation : str, optional
+            'periodic' uses adjacent samples at periodic electric-field
+            seams and separate caches under ``.emout/relocated/periodic``.
+            'legacy' preserves existing ``re*00_0000.h5`` files and values.
         """
         from emout.article import ArticleRecorder, resolve_config
 
@@ -146,6 +151,7 @@ class Emout:
             dir_inspector=self._dir_inspector,
             name2unit_map=Emout.name2unit,
             local_data_policy=self._local_data_policy,
+            electric_relocation=electric_relocation,
         )
         self._article_recorder = None
         if article_config.mode == "record":
@@ -449,6 +455,9 @@ class Emout:
             if self._dir_inspector.input_path is not None:
                 kwargs["input_path"] = str(self._dir_inspector.input_path)
         article_config = self.__dict__.get("_article_config")
+        grid_loader = self.__dict__.get("_grid_loader")
+        if grid_loader is not None and grid_loader.electric_relocation != "legacy":
+            kwargs["electric_relocation"] = grid_loader.electric_relocation
         if article_config is not None and article_config.mode == "record":
             kwargs["article_mode"] = "record"
             kwargs["article_records_path"] = str(article_config.records_path)

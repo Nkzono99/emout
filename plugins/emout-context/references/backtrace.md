@@ -167,20 +167,27 @@ trace.plot_traces("x", "z", alpha=0.3)
 
 ```python
 trace = data.trace.both(..., get_trace=True)
-trace.backward_traces.xz.plot(alpha=trace.alpha)
-trace.forward_traces.xz.plot(alpha=trace.alpha)
+trace.plot_traces("x", "z")
 trace.plot_traces("x", "z", direction="backward")
 trace.plot_traces("x", "z", direction="forward")
 ```
 
+For a `both()` result, omitting `direction` from `plot_traces()` overlays the backward and forward payloads on the same axes. Pass `direction="backward"` or `direction="forward"` to draw only one direction. The `trace.traces` attribute still represents one unambiguous trajectory payload, so accessing it directly on a `both()` result continues to raise an ambiguity error.
+
 ### Overlay in 3D
 
-`plot3d()` returns a PyVista plotter. Pass an existing plotter to overlay traces on a field or boundary view.
+`plot3d()` returns a PyVista plotter. For a `both()` result, omitting `direction` draws both payloads. Pass an existing plotter to overlay traces on a field or boundary view.
 
 ```python
 plotter = data.phisp[-1].plot3d(mode="slice", show=False)
-trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
+trace.plot3d(plotter=plotter, tube_radius=0.05, show=True)
 ```
+
+Use `min_alpha=0.08` to keep low-probability paths visible, and
+`alpha_scale="normalize"` / `"log"` to display relative variation.
+`direction="both"`, direction-specific colours, display-unit `clip_bounds`,
+ticks, and camera settings are also available. See [PyVista Visualization](pyvista.md)
+for a saved boundary-potential overlay example.
 
 ## Plotting Results
 
@@ -291,6 +298,11 @@ bt.yz.plot(color="black")    # yz projection of the trajectory
 
 `bt.ts`, `bt.probability`, `bt.positions`, and `bt.velocities` are EMSES-unit arrays. `XYData.plot()` converts to SI units by default and auto-generates axis labels (`use_si=False` keeps EMSES units).
 
+For a forward trace through the low-level API, pass `dt=-abs(data.inp.dt)`.
+`position`, `velocity`, and `dt` all use EMSES units, independently of SI
+conversion during plotting. The high-level `data.trace.forward()` accepts
+a nonnegative step width and changes its sign internally.
+
 **Many Particles: `get_backtraces`**
 
 ```python
@@ -362,6 +374,39 @@ trace = data.trace.forward(
 ```
 
 </details>
+
+## Backend Diagnostics on HPC
+
+Call `data.trace.backend_info()` or `data.backtrace.backend_info()` on the
+node or worker that will run the solve to inspect the resolved library path,
+file existence, backend version, CPU features, and `OMP_NUM_THREADS`.
+It does not load the library by default.
+
+```python
+info = data.trace.backend_info()
+print(info["library_path"], info["exists"])
+probe = data.trace.backend_info(library_path="/path/to/backend.so", check_load=True, timeout=10)
+print(probe["loadable"], probe["load_error"])
+```
+
+`check_load=True` probes loading in a separate Python process and reports
+errors, termination signals, and timeouts. It does not execute the solver.
+A successful load does not establish CPU-instruction or OpenMP compatibility
+of computation paths. `SIGILL` suggests checking ISA and build targets;
+missing libraries such as `libifport.so` suggest checking compiler runtimes.
+Rebuild libraries compiled with options such as `-xHost` for an instruction
+set shared by the target nodes. Isolate OpenMP failures with a serial build
+and a minimal case. Diagnostics run on the caller, so inspect the actual
+worker environment when using remote execution.
+
+Explicitly pass the same tested library path to the trace call.
+
+```python
+trace = data.trace.both(
+    x=20.0, y=32.0, z=40.0, vx=0.0, vy=0.0, vz=-1.0,
+    get_trace=True, library_path="/path/to/backend.so",
+)
+```
 
 ## Related Classes
 

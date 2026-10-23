@@ -43,6 +43,25 @@ data.phisp[0].shape   # (nz, ny, nx)
 data.phisp[-1]        # Last timestep
 ```
 
+## Periodic Electric-Field Relocation
+
+For electric fields whose last sample duplicates the first, `e[N] = e[0]`,
+the following option interpolates adjacent samples across the periodic seam.
+It preserves the mean of nonuniform periodic fields and avoids using a
+different interpolation stencil at the boundaries of `rex` / `rey` / `rez`.
+
+```python
+data = emout.Emout("output_dir", electric_relocation="periodic")
+ex_at_centres = data.rex[-1]
+```
+
+This mode builds independent caches such as `.emout/relocated/periodic/rex00_0000.h5`
+from the original electric-field HDF5 files. It neither deletes nor overwrites
+existing `rex00_0000.h5` files, and the mode is retained when reopening remotely.
+The default, `electric_relocation="legacy"`, keeps the historical formula and caches.
+This setting applies to emout's relocated fields; it does not configure fields
+that an external trace solver loads independently.
+
 ## Your First Plot
 
 ```python

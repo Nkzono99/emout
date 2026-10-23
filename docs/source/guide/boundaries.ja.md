@@ -72,6 +72,22 @@ data.boundaries.plot3d(
 )
 ```
 
+## 平面を着色するときの分解能
+
+`flat-surface` の既定メッシュは四隅の4頂点だけです。頂点で場をサンプリングすると
+平面内部の変化を捉えられず、非一様な電位も単色に見える場合があります。
+着色用には `resolution="grid"` を明示すると `(nx + 1, ny + 1)` 頂点になります。
+複数境界が混在する場合は対象 index を `per` で指定してください。
+
+```python
+mesh = data.boundaries.mesh(use_si=False, per={0: {"resolution": "grid"}})
+data.phisp[-1].plot_surfaces(surfaces=mesh, use_si=False)
+```
+
+数値の `resolution=(nu, nv)` と `resolution_scale` も引き続き利用できます。
+`resolution="grid"` は `flat-surface` 用で、他の境界へ一括適用する指定ではありません。
+メッシュだけを作る場合の既定分解能は変更しません。
+
 ## 複合メッシュ
 
 全境界をひとつのメッシュに結合して取り出すこともできます:

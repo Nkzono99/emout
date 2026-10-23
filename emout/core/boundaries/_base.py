@@ -149,6 +149,9 @@ class Boundary:
         arguments are forwarded to PyVista ``plotter.add_mesh``.
         """
         mesh_kwargs = {} if mesh_kwargs is None else dict(mesh_kwargs)
+        if kwargs.get("show_bounds"):
+            suffix = " [m]" if use_si and self.unit is not None else ""
+            kwargs.setdefault("axis_labels", {axis: f"{axis}{suffix}" for axis in ("x", "y", "z")})
         return self.mesh(use_si=use_si, **mesh_kwargs).plot3d(
             plotter=plotter,
             offsets=offsets,

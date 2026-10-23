@@ -79,6 +79,16 @@ class BacktraceWrapper:
         self.unit = unit
         self.remote_open_kwargs = remote_open_kwargs
 
+    def backend_info(self, *, library_path=None, system="auto", check_load=False, timeout=10.0):
+        """Inspect the local solver library; optionally probe loading in a subprocess.
+
+        Run on the same compute node or worker as the trace. The probe
+        checks loading only, not CPU or OpenMP compatibility of a solve.
+        """
+        from .diagnostics import backend_info
+
+        return backend_info(library_path=library_path, system=system, check_load=check_load, timeout=timeout)
+
     def get_backtrace(
         self,
         position: np.ndarray,

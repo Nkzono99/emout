@@ -167,20 +167,26 @@ trace.plot_traces("x", "z", alpha=0.3)
 
 ```python
 trace = data.trace.both(..., get_trace=True)
-trace.backward_traces.xz.plot(alpha=trace.alpha)
-trace.forward_traces.xz.plot(alpha=trace.alpha)
+trace.plot_traces("x", "z")
 trace.plot_traces("x", "z", direction="backward")
 trace.plot_traces("x", "z", direction="forward")
 ```
 
+`both()` の結果では、`plot_traces()` の `direction` を省略すると backward / forward の両方を同じ axes に重ねます。片方向だけを描く場合は `direction="backward"` または `direction="forward"` を指定してください。`trace.traces` は単一の trajectory payload を返す属性なので、`both()` の結果から直接参照した場合は引き続き曖昧性エラーになります。
+
 ### 3D に重ねる
 
-`plot3d()` は PyVista plotter を返します。既存の 3D field / boundary 表示に重ねたい場合は、その plotter を渡します。
+`plot3d()` は PyVista plotter を返します。`both()` の結果では `direction` を省略すると両方向を描きます。既存の 3D field / boundary 表示に重ねたい場合は、その plotter を渡します。
 
 ```python
 plotter = data.phisp[-1].plot3d(mode="slice", show=False)
-trace.plot3d(plotter=plotter, direction="forward", tube_radius=0.05, show=True)
+trace.plot3d(plotter=plotter, tube_radius=0.05, show=True)
 ```
+
+小さい確率の軌跡を見えるようにするには `min_alpha=0.08`、相対的な分布を表示するには
+`alpha_scale="normalize"` / `"log"` を指定します。`direction="both"`、方向別の色、
+表示単位での `clip_bounds`、目盛とカメラの指定も利用できます。
+境界の電位着色と組み合わせた保存例は [PyVista 可視化](pyvista.ja.md) を参照してください。
 
 ## 結果の描画
 
@@ -291,6 +297,10 @@ bt.yz.plot(color="black")    # 軌道の yz 投影
 
 `bt.ts`、`bt.probability`、`bt.positions`、`bt.velocities` は EMSES 単位の配列です。`XYData.plot()` はデフォルトで SI 単位に変換し、軸ラベルも自動生成します（`use_si=False` で EMSES 単位のまま表示できます）。
 
+低水準 API で forward trace を行う場合は `dt=-abs(data.inp.dt)` を渡します。
+`position` / `velocity` / `dt` はいずれも EMSES 単位で、描画時の SI 変換とは独立です。
+高水準の `data.trace.forward()` は非負の刻み幅を受け取り、内部で符号を変えます。
+
 **複数粒子: `get_backtraces`**
 
 ```python
@@ -362,6 +372,35 @@ trace = data.trace.forward(
 ```
 
 </details>
+
+## HPC の backend 診断
+
+計算を実行するノード・worker 上で `data.trace.backend_info()` または
+`data.backtrace.backend_info()` を呼ぶと、解決されたライブラリパス、存在、backend バージョン、
+CPU feature、`OMP_NUM_THREADS` を確認できます。既定ではライブラリをロードしません。
+
+```python
+info = data.trace.backend_info()
+print(info["library_path"], info["exists"])
+probe = data.trace.backend_info(library_path="/path/to/backend.so", check_load=True, timeout=10)
+print(probe["loadable"], probe["load_error"])
+```
+
+`check_load=True` は別の Python プロセスでロードだけを試し、失敗理由・終了シグナル・
+タイムアウトを返します。solver は実行しません。ロード成功は、計算中の CPU 命令や
+OpenMP の互換性を保証しません。`SIGILL` は ISA / ビルド対象、`libifport.so` 等の不足は
+対応するコンパイラ runtime を確認する手掛かりです。`-xHost` 等で別 CPU 向けに作った
+ライブラリは対象ノード向けの共通命令セットで再ビルドし、OpenMP の異常は serial ビルドと
+最小ケースで切り分けてください。診断は呼出し元で動くため、リモート実行時は実際の worker 環境で確認します。
+
+検証したライブラリを trace に使うときも、同じパスを明示します。
+
+```python
+trace = data.trace.both(
+    x=20.0, y=32.0, z=40.0, vx=0.0, vy=0.0, vz=-1.0,
+    get_trace=True, library_path="/path/to/backend.so",
+)
+```
 
 ## 関連クラス
 

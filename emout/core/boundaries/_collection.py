@@ -381,6 +381,10 @@ class BoundaryCollection:
         surface_kwargs: Optional[Mapping[str, Any]] = None,
         filename=None,
         savefilename=None,
+        show_bounds=None,
+        bounds_kwargs=None,
+        camera=None,
+        camera_position=None,
         **kwargs,
     ):
         """Plot boundary meshes in 3-D with PyVista."""
@@ -418,10 +422,17 @@ class BoundaryCollection:
             **overlay_kwargs,
         )
 
+        unit_suffix = " [m]" if use_si and self.unit is not None else ""
+        axis_labels = {axis: f"{axis}{unit_suffix}" for axis in ("x", "y", "z")}
+        pv_helpers._configure_plotter(
+            plotter,
+            axis_labels,
+            show_bounds=(True if add_axes else None) if show_bounds is None else show_bounds,
+            bounds_kwargs=bounds_kwargs,
+            camera=camera,
+            camera_position=camera_position,
+        )
         if add_axes:
-            unit_suffix = " [m]" if use_si and self.unit is not None else ""
-            axis_labels = {axis: f"{axis}{unit_suffix}" for axis in ("x", "y", "z")}
-            pv_helpers._show_bounds(plotter, axis_labels)
             if hasattr(plotter, "add_axes"):
                 plotter.add_axes()
         return pv_helpers._save_or_show_plotter(

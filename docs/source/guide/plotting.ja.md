@@ -160,3 +160,38 @@ data.j1xyz[-1].plot3d(mode="stream", show=True)
 data.phisp[-1].plot3d(mode="contour", levels=[0.0], filename="phisp_iso.png")
 data.j1xyz[-1].plot3d(surfaces=data.boundaries, filename="j1_stream.png")
 ```
+
+## VTK への出力
+
+ParaView 等へ `(z, y, x)` の値を正しい x 最速順で出力するには `ordering="vtk"`、
+切り出しの開始座標と stride を保持するには `coordinates="grid"` を指定します。
+両オプションは PyVista 経路と PyVista 未導入時の XML 経路で同じ規約を使います。
+
+```python
+roi = data.phisp[-1, 2:10:2, 3:12:3, 4:16:2]
+roi.to_vtk("phisp_roi.vti", ordering="vtk", coordinates="grid", use_si=True)
+```
+
+`use_si=True` は単位情報があれば値と各軸の長さを SI へ変換します。
+出力は従来どおり cell data です。保存座標をセルの下側の端点とし、セル中心はそこから
+出力間隔の半分だけ正方向に置きます。stride 付きでは粗いセル幅も stride に比例し、
+逆順スライスは座標と値を同時に反転して正の間隔で出力します。
+EMSES のサンプルを point data に変更する API ではありません。
+既定の `ordering="legacy"` と `coordinates="local"` は、z 最速・原点ゼロ・
+stride を反映しない従来出力を維持します。定量的な空間比較には上記の両指定を使ってください。
+
+## 穴表面ヘルパー
+
+`plot_surface_with_hole()` と `plot_surface_with_hole_half()` の `consistent=True` は、
+描画値と色範囲の単位を統一し、1つの 3D Axes に面を組み立てます。
+`use_si` 省略時は単位情報があれば SI、なければ raw を使い、明示した `ax3d` を尊重します。
+`vmin=0` / `vmax=0` もそのまま使います。
+
+```python
+from emout.plot.extra_plot import plot_surface_with_hole
+
+plot_surface_with_hole(data.phisp[-1], data.inp, consistent=True)
+```
+
+既定の `consistent=False` は従来の描画を維持します。従来呼出しでは `use_si` を明示して
+色範囲との不一致を避け、全面ヘルパーには共有 `ax3d` も渡してください。

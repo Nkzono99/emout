@@ -173,6 +173,49 @@ trace.plot3d(
 
 `get_probabilities=False` で trace だけ作った場合、確率由来の alpha はありません。必要なら `alpha=0.3` のように明示してください。
 
+## 目盛・カメラ・軌跡の表示調整
+
+scalar / vector / boundary / trace の `plot3d()` で `show_bounds`、`bounds_kwargs`、
+`camera`、`camera_position` を指定できます。`bounds_kwargs` は PyVista の `show_bounds()` へ
+渡すフォントサイズ・目盛数などの指定です。単位付きラベルは emout が設定します。
+`camera="isometric"` / `"low"` / `"side-low"` で視点を選び、
+詳細な位置は `camera_position=(position, focal_point, view_up)` で指定します。
+`camera` と `camera_position` は同時に指定しません。
+scalar / vector のカラーバーは `scalar_bar_args={"vertical": True, "position_x": 0.82}`
+などで位置やフォントを調整できます。
+
+軌跡では `min_alpha` が透明度の下限、`alpha_scale="normalize"` が最大値による正規化、
+`alpha_scale="log"` が正の値の対数を0〜1へ正規化する表示です。
+これらは表示だけを変え、確率配列そのものは変更しません。
+既定は `min_alpha=0` と `alpha_scale="linear"` です。
+`direction="both"` は両方向を選ぶ明示指定で、方向ごとの色も指定できます。
+`clip_bounds=(xmin, xmax, ymin, ymax, zmin, zmax)` は SI 変換・offset 適用後の表示座標です。
+交差した線分は箱の面で切り、領域外へ出た経路を後の経路へつなぎません。
+
+次は index 0 が `flat-surface` で、`trace` が計算済みの例です。
+境界に電位をサンプリングし、すべてをグリッド座標で重ねます。
+他の境界構成では `per` の index と上限高さを調整してください。
+
+```python
+import pyvista as pv
+from emout.plot.pyvista_plot import create_volume_mesh
+
+volume, name, _, label = create_volume_mesh(data.phisp[-1], use_si=False)
+surface = data.boundaries.mesh(use_si=False, per={0: {"resolution": "grid"}})
+coloured = surface.to_pyvista().sample(volume)
+plotter = pv.Plotter(off_screen=True)
+plotter.add_mesh(coloured, scalars=name, cmap="coolwarm", scalar_bar_args={"title": label})
+trace.plot3d(
+    plotter=plotter, direction="both", use_si=False,
+    backward_color="blue", forward_color="red",
+    alpha_scale="normalize", min_alpha=0.08,
+    clip_bounds=(0, data.inp.nx, 0, data.inp.ny, 0, min(data.inp.nz, data.inp.zssurf + 20)),
+    show_bounds=True, bounds_kwargs={"font_size": 12, "n_xlabels": 4}, camera="low",
+)
+plotter.screenshot("boundary_trace.png")
+plotter.close()
+```
+
 ## 単位と軸順序
 
 グリッドデータの軸順序は `(t, z, y, x)`、3D volume は `(z, y, x)` です。PyVista helper はこの順序を読み取り、PyVista 側の `(x, y, z)` 座標へ並べ替えます。

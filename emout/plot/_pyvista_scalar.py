@@ -12,7 +12,7 @@ from ._pyvista_helpers import (
     _require_pyvista,
     _save_or_show_plotter,
     _scalar_label,
-    _show_bounds,
+    _configure_plotter,
     _spacing,
 )
 
@@ -155,6 +155,11 @@ def plot_scalar_plane(
     surface_kwargs=None,
     filename=None,
     savefilename=None,
+    show_bounds=True,
+    bounds_kwargs=None,
+    camera=None,
+    camera_position=None,
+    scalar_bar_args=None,
     **kwargs,
 ):
     """Plot a 2-D scalar field on a PyVista plane.
@@ -226,7 +231,7 @@ def plot_scalar_plane(
 
     plotter.add_mesh(mesh, **add_mesh_kwargs)
     if add_scalar_bar:
-        plotter.add_scalar_bar(title=scalar_label)
+        plotter.add_scalar_bar(**{"title": scalar_label, **(scalar_bar_args or {})})
     _add_surface_overlays(
         plotter,
         surfaces,
@@ -237,7 +242,14 @@ def plot_scalar_plane(
         surface_opacity=surface_opacity,
         **(surface_kwargs or {}),
     )
-    _show_bounds(plotter, axis_labels)
+    _configure_plotter(
+        plotter,
+        axis_labels,
+        show_bounds=show_bounds,
+        bounds_kwargs=bounds_kwargs,
+        camera=camera,
+        camera_position=camera_position,
+    )
     plotter.add_axes()
 
     return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)
@@ -266,6 +278,11 @@ def plot_scalar_volume(
     surface_kwargs=None,
     filename=None,
     savefilename=None,
+    show_bounds=True,
+    bounds_kwargs=None,
+    camera=None,
+    camera_position=None,
+    scalar_bar_args=None,
     **kwargs,
 ):
     """Plot a 3-D scalar field as a volume rendering.
@@ -392,7 +409,7 @@ def plot_scalar_volume(
     if add_outline:
         plotter.add_mesh(mesh.outline(), color=outline_color)
     if add_scalar_bar:
-        plotter.add_scalar_bar(title=scalar_label)
+        plotter.add_scalar_bar(**{"title": scalar_label, **(scalar_bar_args or {})})
     _add_surface_overlays(
         plotter,
         surfaces,
@@ -403,7 +420,14 @@ def plot_scalar_volume(
         surface_opacity=surface_opacity,
         **(surface_kwargs or {}),
     )
-    _show_bounds(plotter, axis_labels)
+    _configure_plotter(
+        plotter,
+        axis_labels,
+        show_bounds=show_bounds,
+        bounds_kwargs=bounds_kwargs,
+        camera=camera,
+        camera_position=camera_position,
+    )
     plotter.add_axes()
 
     return _save_or_show_plotter(plotter, show=show, filename=filename, savefilename=savefilename)

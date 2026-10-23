@@ -12,7 +12,9 @@ from emout.utils.emsesinp import InpFile
 from emout.utils.units import Units
 
 
-def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", **kwargs):
+def plot_surface_with_hole(
+    data_xyz, inp, add_colorbar=True, show=False, vrange="minmax", *, consistent=False, **kwargs
+):
     """Render a 3-D surface with a rectangular hole.
 
     Internally calls `data_xyz[...].plot(mode="surf", **kwargs)` multiple
@@ -31,6 +33,10 @@ def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange=
     vrange : {'minmax', 'center'}, optional
         Method for determining the color-scale range.
         `'center'` uses a symmetric range centered at 0.
+    consistent : bool, optional
+        Opt into a shared 3-D Axes and one effective unit convention for
+        values and colour limits. Existing explicit ``ax3d`` is respected.
+        False preserves the historical rendering defaults.
     **kwargs : dict
         Arguments forwarded to `Data2d.plot(mode="surf")`.
         Primarily `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`,
@@ -48,6 +54,11 @@ def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange=
     zl = int(inp.zlrechole[1])
     zu = int(inp.zurechole[0])
 
+    if consistent:
+        kwargs["use_si"] = kwargs.get("use_si", True) and data_xyz.valunit is not None
+        if kwargs.get("ax3d") is None:
+            kwargs["ax3d"] = plt.gcf().add_subplot(projection="3d")
+
     if kwargs.get("use_si", False):
         vmax = data_xyz.val_si.max()
         vmin = data_xyz.val_si.min()
@@ -61,8 +72,14 @@ def plot_surface_with_hole(data_xyz, inp, add_colorbar=True, show=False, vrange=
         vmax = max(abs(vmax), abs(vmin))
         vmin = -vmax
 
-    kwargs["vmax"] = kwargs.get("vmax", None) or vmax
-    kwargs["vmin"] = kwargs.get("vmin", None) or vmin
+    if consistent:
+        if kwargs.get("vmax") is None:
+            kwargs["vmax"] = vmax
+        if kwargs.get("vmin") is None:
+            kwargs["vmin"] = vmin
+    else:
+        kwargs["vmax"] = kwargs.get("vmax", None) or vmax
+        kwargs["vmin"] = kwargs.get("vmin", None) or vmin
 
     # plot top surface
     data_xyz[zu, : yl + 1, :].plot(mode="surf", **kwargs)
@@ -254,7 +271,9 @@ def plot_line_of_hole_half(inp, off, unit):
         ax.plot(*parse(line, offsets), color="black")
 
 
-def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", **kwargs):
+def plot_surface_with_hole_half(
+    data_xyz, inp, off=10, add_colorbar=True, show=False, vrange="minmax", *, consistent=False, **kwargs
+):
     """Render a half cross-section surface of a rectangular hole.
 
     Parameters
@@ -271,6 +290,9 @@ def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=F
         If `True`, call `plt.show()` at the end.
     vrange : {'minmax', 'center'}, optional
         Method for determining the color-scale range.
+    consistent : bool, optional
+        Use one effective unit convention for values and colour limits,
+        and respect an existing ``ax3d``. False preserves legacy behaviour.
     **kwargs : dict
         Arguments forwarded to `Data2d.plot(mode="surf")`.
         Primarily `use_si`, `offsets`, `cmap`, `vmin`, `vmax`, `xlabel`,
@@ -284,7 +306,7 @@ def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=F
     Notes
     -----
     An `ax3d` is created internally and set to `kwargs["ax3d"]`.
-    Any `ax3d` passed by the caller will be overwritten.
+    Any `ax3d` passed by the caller is overwritten unless ``consistent=True``.
     """
     xl = int(inp.xlrechole[1])
     xu = int(inp.xurechole[1])
@@ -300,11 +322,16 @@ def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=F
     lenmax = max(max(xlen, ylen), zlen)
     box_aspect = (xlen / lenmax, ylen / lenmax, zlen / lenmax)
 
-    ax = plt.gcf().add_subplot(projection="3d")
+    ax = kwargs.get("ax3d") if consistent else None
+    if ax is None:
+        ax = plt.gcf().add_subplot(projection="3d")
     plt.sca(ax)
     ax.set_box_aspect(box_aspect)
 
     xc = (xl + xu) // 2
+
+    if consistent:
+        kwargs["use_si"] = kwargs.get("use_si", True) and data_xyz.valunit is not None
 
     if kwargs.get("use_si", False):
         vmax = data_xyz.val_si.max()
@@ -319,8 +346,14 @@ def plot_surface_with_hole_half(data_xyz, inp, off=10, add_colorbar=True, show=F
         vmax = max(abs(vmax), abs(vmin))
         vmin = -vmax
 
-    kwargs["vmax"] = kwargs.get("vmax", None) or vmax
-    kwargs["vmin"] = kwargs.get("vmin", None) or vmin
+    if consistent:
+        if kwargs.get("vmax") is None:
+            kwargs["vmax"] = vmax
+        if kwargs.get("vmin") is None:
+            kwargs["vmin"] = vmin
+    else:
+        kwargs["vmax"] = kwargs.get("vmax", None) or vmax
+        kwargs["vmin"] = kwargs.get("vmin", None) or vmin
 
     kwargs["ax3d"] = ax
 

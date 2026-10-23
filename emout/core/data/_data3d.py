@@ -259,6 +259,9 @@ class Data3d(Data):
         filename: PathLike,
         use_si: bool = True,
         array_name: str = None,
+        *,
+        ordering: Literal["legacy", "vtk"] = "legacy",
+        coordinates: Literal["local", "grid"] = "local",
     ) -> Path:
         """Export to VTK ImageData format (``.vti``).
 
@@ -272,12 +275,24 @@ class Data3d(Data):
         array_name : str, optional
             Name of the scalar array in the VTK file.
             Defaults to :attr:`name`.
+        ordering : str, optional
+            'vtk' writes x-fastest values from the (z, y, x) array.
+            'legacy' preserves the historical z-fastest export.
+        coordinates : str, optional
+            'grid' preserves saved spatial starts and strides. Each saved
+            coordinate is the lower corner of an exported cell; its centre
+            is half the exported spacing higher. 'local' preserves the
+            historical zero origin and one-grid-cell spacing.
 
         Returns
         -------
         Path
             Path to the written file.
         """
+        if ordering not in ("legacy", "vtk"):
+            raise ValueError("ordering must be 'legacy' or 'vtk'")
+        if coordinates not in ("local", "grid"):
+            raise ValueError("coordinates must be 'local' or 'grid'")
         self._require_local_data_access("export field data to VTK locally", self._target_name())
         filepath = Path(filename)
         if filepath.suffix != ".vti":
@@ -294,15 +309,38 @@ class Data3d(Data):
             data = np.asarray(self, dtype=np.float64)
             dx = dy = dz = 1.0
 
+        origin = (0.0, 0.0, 0.0)
+        if coordinates == "grid":
+            if self.slice_axes != [1, 2, 3]:
+                raise ValueError("coordinates='grid' requires the spatial (z, y, x) axes")
+            starts, spacing = [], []
+            for index, axis in enumerate((3, 2, 1)):
+                line = self.axis(self.slice_axes.index(axis)).astype(float)
+                if len(line) == 0:
+                    raise ValueError("cannot export an empty spatial axis")
+                step = float(self.slices[axis].step or 1)
+                axisunit = self.axisunits[axis] if self.axisunits is not None else None
+                if use_si and axisunit is not None:
+                    step = float(axisunit.reverse(step) - axisunit.reverse(0.0))
+                    line = axisunit.reverse(line)
+                if step < 0:
+                    line = line[::-1]
+                    data = np.flip(data, axis=2 - index)
+                starts.append(float(line[0]))
+                spacing.append(abs(step))
+            origin = tuple(starts)
+            dx, dy, dz = spacing
+
+        order = "C" if ordering == "vtk" else "F"
         try:
             import pyvista as pv
 
             nz, ny, nx = data.shape
-            grid = pv.ImageData(dimensions=(nx + 1, ny + 1, nz + 1), spacing=(dx, dy, dz))
-            grid.cell_data[array_name] = data.ravel(order="F")
+            grid = pv.ImageData(dimensions=(nx + 1, ny + 1, nz + 1), spacing=(dx, dy, dz), origin=origin)
+            grid.cell_data[array_name] = data.ravel(order=order)
             grid.save(str(filepath))
         except ImportError:
-            _write_vti_xml(filepath, data, dx, dy, dz, array_name)
+            _write_vti_xml(filepath, data, dx, dy, dz, array_name, origin=origin, order=order)
 
         return filepath
 
@@ -608,7 +646,7 @@ class Data3d(Data):
         )
 
 
-def _write_vti_xml(filepath, data, dx, dy, dz, array_name):
+def _write_vti_xml(filepath, data, dx, dy, dz, array_name, *, origin=(0.0, 0.0, 0.0), order="F"):
     """Write a VTK ImageData (.vti) XML file without PyVista.
 
     Parameters
@@ -626,7 +664,7 @@ def _write_vti_xml(filepath, data, dx, dy, dz, array_name):
     import struct
 
     nz, ny, nx = data.shape
-    flat = data.astype(np.float64).ravel(order="F")
+    flat = data.astype(np.float64).ravel(order=order)
     raw = flat.tobytes()
     nbytes = len(raw)
     header = struct.pack("<I", nbytes)
@@ -636,7 +674,7 @@ def _write_vti_xml(filepath, data, dx, dy, dz, array_name):
         '<?xml version="1.0"?>\n'
         '<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian">\n'
         f'  <ImageData WholeExtent="0 {nx} 0 {ny} 0 {nz}" '
-        f'Origin="0 0 0" Spacing="{dx} {dy} {dz}">\n'
+        f'Origin="{origin[0]} {origin[1]} {origin[2]}" Spacing="{dx} {dy} {dz}">\n'
         f'    <Piece Extent="0 {nx} 0 {ny} 0 {nz}">\n'
         "      <CellData>\n"
         f'        <DataArray type="Float64" Name="{array_name}" '

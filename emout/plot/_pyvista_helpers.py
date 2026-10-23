@@ -166,7 +166,7 @@ def _spacing(values: np.ndarray) -> float:
     return float(values[1] - values[0])
 
 
-def _show_bounds(plotter, axis_labels):
+def _show_bounds(plotter, axis_labels, **kwargs):
     """Annotate a PyVista plotter with axis labels and tick marks.
 
     Parameters
@@ -181,6 +181,7 @@ def _show_bounds(plotter, axis_labels):
             xtitle=axis_labels["x"],
             ytitle=axis_labels["y"],
             ztitle=axis_labels["z"],
+            **kwargs,
         )
     except AttributeError:
         return
@@ -190,9 +191,36 @@ def _show_bounds(plotter, axis_labels):
                 xlabel=axis_labels["x"],
                 ylabel=axis_labels["y"],
                 zlabel=axis_labels["z"],
+                **kwargs,
             )
         except TypeError:
             plotter.show_bounds()
+
+
+def _configure_plotter(
+    plotter, axis_labels=None, *, show_bounds=None, bounds_kwargs=None, camera=None, camera_position=None
+):
+    """Configure coordinate ticks and camera separately from mesh options."""
+    if camera is not None and camera_position is not None:
+        raise ValueError("camera and camera_position cannot both be supplied")
+    if show_bounds:
+        _show_bounds(plotter, axis_labels or {axis: axis for axis in _SPATIAL_AXES}, **(bounds_kwargs or {}))
+    elif show_bounds is False and hasattr(plotter, "remove_bounds_axes"):
+        plotter.remove_bounds_axes()
+    if camera is not None:
+        if camera in ("iso", "isometric"):
+            plotter.view_isometric()
+        elif camera in ("low", "side-low"):
+            bounds = np.asarray(plotter.bounds, dtype=float).reshape(3, 2)
+            center = bounds.mean(axis=1)
+            span = max(float(np.max(np.diff(bounds, axis=1))), 1e-12)
+            offset = np.array([1.8, -1.8, 0.6] if camera == "low" else [1.8, 0.0, 0.35]) * span
+            plotter.camera_position = [tuple(center + offset), tuple(center), (0, 0, 1)]
+        else:
+            raise ValueError("camera must be 'isometric', 'low', or 'side-low'")
+    if camera_position is not None:
+        plotter.camera_position = camera_position
+    return plotter
 
 
 def _resolve_filename(filename=None, savefilename=None):

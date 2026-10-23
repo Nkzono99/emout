@@ -24,6 +24,12 @@ class TraceWrapper:
         self.remote_open_kwargs = remote_open_kwargs
         self.backtrace = BacktraceWrapper(directory, inp, unit, remote_open_kwargs=remote_open_kwargs)
 
+    def backend_info(self, *, library_path=None, system="auto", check_load=False, timeout=10.0):
+        """Inspect the local trace backend without executing a trace."""
+        return self.backtrace.backend_info(
+            library_path=library_path, system=system, check_load=check_load, timeout=timeout
+        )
+
     def backward(
         self,
         x: Union[Tuple[float, float, int], Sequence[float], float],
