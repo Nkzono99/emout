@@ -1421,6 +1421,8 @@ class GridDataMean(NDArrayOperatorsMixin):
             article_recorder=self._article_recorder,
             article_source_shape=self._article_source_shape or self._axis_lengths,
         )
+        # The selectors name the averaged range, not these values.
+        data._mark_values_derived()
         from emout.article import record_data_access
 
         record_data_access(

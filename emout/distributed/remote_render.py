@@ -90,6 +90,22 @@ def _plot_surfaces_target(target, surfaces, **kwargs):
     return target.plot_surfaces(surfaces, **kwargs)
 
 
+def _local_plot_target(payload: dict):
+    """Rebuild a field or vector from values recorded by ``record_local_*``."""
+    from emout.core.data.factory import data_from_payload
+
+    if "components" not in payload:
+        return data_from_payload(payload)
+
+    from emout.core.data.vector_data import VectorData
+
+    return VectorData(
+        [data_from_payload(component) for component in payload["components"]],
+        name=payload["name"],
+        component_axes=payload["component_axes"],
+    )
+
+
 # ---------------------------------------------------------------------------
 # Worker-side Actor
 # ---------------------------------------------------------------------------
@@ -711,16 +727,10 @@ class RemoteSession:
         instead of the full 3-D volume, enabling local overlay operations
         such as ``plt.axhline()``.
         """
+        from emout.core.data.factory import data_payload
+
         data = self._resolve(emout_kwargs)
-        arr = getattr(data, attr_name)[index]
-        return {
-            "array": np.asarray(arr),
-            "name": arr.name,
-            "slices": arr.slices,
-            "slice_axes": arr.slice_axes,
-            "axisunits": arr.axisunits,
-            "valunit": arr.valunit,
-        }
+        return data_payload(getattr(data, attr_name)[index])
 
     def render_plot_surfaces(
         self,
@@ -777,6 +787,8 @@ class RemoteSession:
 
             ("field_plot", attr_name, recipe_index, plot_kwargs, emout_kwargs)
             ("plot_surfaces", attr_name, recipe_index, surfaces, plot_kwargs, emout_kwargs)
+            ("local_field_plot", payload, plot_kwargs)
+            ("local_plot_surfaces", payload, surfaces, plot_kwargs)
             ("cached_plot", key, plot_kwargs)
             ("cached_plot_surfaces", key, surfaces, plot_kwargs)
             ("figure_call", figure_id, method_name, args, kwargs, target)
@@ -888,6 +900,18 @@ class RemoteSession:
                 data = self._resolve(emout_kwargs)
                 arr = getattr(data, attr_name)[recipe_index]
                 _plot_surfaces_target(arr, surfaces, **plot_kwargs)
+
+            elif kind == "local_field_plot":
+                _, payload, plot_kwargs = cmd
+                plot_kwargs = _decode(plot_kwargs)
+                plot_args = tuple(plot_kwargs.pop("_emout_plot_args", ()))
+                _local_plot_target(payload).plot(*plot_args, **plot_kwargs)
+
+            elif kind == "local_plot_surfaces":
+                _, payload, surfaces, plot_kwargs = cmd
+                surfaces = _decode(surfaces)
+                plot_kwargs = _decode(plot_kwargs)
+                _plot_surfaces_target(_local_plot_target(payload), surfaces, **plot_kwargs)
 
             elif kind == "cached_plot":
                 _, key, plot_kwargs = cmd

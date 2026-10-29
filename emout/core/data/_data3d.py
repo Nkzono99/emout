@@ -416,7 +416,8 @@ class Data3d(Data):
                 **kwargs,
             )
 
-        if remote_kwargs is not None:
+        # Locally derived values are already in memory and cannot be refetched.
+        if remote_kwargs is not None and self._replays_source():
             from emout.distributed.remote_render import _await_remote, get_or_create_session
 
             session = get_or_create_session(emout_kwargs=remote_kwargs)
@@ -456,13 +457,31 @@ class Data3d(Data):
         **kwargs,
     ):
         """Record ``plot_surfaces`` inside ``remote_figure`` without local field reads."""
-        from emout.distributed.remote_figure import record_plot_surfaces, request_session
+        from emout.distributed.remote_figure import record_local_plot_surfaces, record_plot_surfaces, request_session
 
         session = request_session(remote_kwargs)
         if session is None and self._local_data_access_disabled():
             self._require_local_data_access(
                 "record a remote field surfaces plot without a remote session",
                 self._target_name(),
+            )
+        if not self._replays_source():
+            # Replaying the source selection would drop local changes; send the values.
+            self._require_local_data_access("record a surfaces plot of locally derived field data", self._target_name())
+            from .factory import data_payload
+
+            record_local_plot_surfaces(
+                data_payload(self),
+                surfaces,
+                {"ax": ax, "use_si": use_si, "vmin": vmin, "vmax": vmax, **kwargs},
+            )
+            return self._plot_surfaces_cmap_norm(
+                None,
+                remote_kwargs=remote_kwargs,
+                use_si=use_si,
+                vmin=vmin,
+                vmax=vmax,
+                cmap_name=kwargs.get("cmap_name", "jet"),
             )
 
         recipe_index = self._to_recipe_index()
@@ -500,7 +519,7 @@ class Data3d(Data):
         **kwargs,
     ):
         """Render ``plot_surfaces`` remotely when local field access is disabled."""
-        if remote_kwargs is None:
+        if remote_kwargs is None or not self._replays_source():
             self._require_local_data_access("plot field surfaces locally", self._target_name())
 
         from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session

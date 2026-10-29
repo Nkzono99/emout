@@ -118,6 +118,23 @@ def record_field_plot(
     )
 
 
+def record_local_field_plot(payload: dict[str, Any], plot_kwargs: dict) -> None:
+    """Record a ``plot()`` of locally derived values shipped as *payload*."""
+    _commands.append(("local_field_plot", payload, _encode_command_value(plot_kwargs)))
+
+
+def record_local_plot_surfaces(payload: dict[str, Any], surfaces, plot_kwargs: dict) -> None:
+    """Record ``plot_surfaces()`` of locally derived 3-D values shipped as *payload*."""
+    _commands.append(
+        (
+            "local_plot_surfaces",
+            payload,
+            _encode_command_value(surfaces),
+            _encode_command_value(plot_kwargs),
+        )
+    )
+
+
 def record_plot_surfaces(
     attr_name: str,
     recipe_index: tuple,
