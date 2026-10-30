@@ -24,6 +24,20 @@ from emout.utils import DataFileInfo
 _REMOTE_PLOT_HANDLED = object()
 
 
+class _SourceValues:
+    """Track whether arrays sharing one buffer still hold their source values.
+
+    Remote plotting replays ``name`` and ``slices`` against the original
+    files. That is only valid while the values are unchanged; computed or
+    modified arrays must be plotted from memory instead.
+    """
+
+    __slots__ = ("intact",)
+
+    def __init__(self, intact: bool = True):
+        self.intact = intact
+
+
 class Data(np.ndarray):
     """Dimensioned ndarray subclass for EMSES grid data.
 
@@ -189,6 +203,7 @@ class Data(np.ndarray):
         result = data_from_array(new_obj, **params)
 
         # Propagate remote-rendering metadata from the source object
+        result._emout_source_values = self._source_values()
         result._emout_dir = getattr(self, "_emout_dir", None)
         result._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
         result._emout_inp = getattr(self, "_emout_inp", None)
@@ -250,6 +265,43 @@ class Data(np.ndarray):
         self._local_data_policy = getattr(obj, "_local_data_policy", None)
         self._article_recorder = getattr(obj, "_article_recorder", None)
         self._article_source_shape = getattr(obj, "_article_source_shape", None)
+        source = obj if isinstance(obj, Data) else None
+        if source is not None and np.may_share_memory(self, source):
+            # Views share one state so a write through any of them is seen by all.
+            self._emout_source_values = source._source_values()
+        elif source is not None and not source._replays_source():
+            self._emout_source_values = _SourceValues(intact=False)
+        else:
+            self._emout_source_values = None
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._mark_values_derived()
+
+    def __array_wrap__(self, array, context=None, *args):
+        # ``args`` carries NumPy 2's ``return_scalar`` without breaking NumPy 1.
+        if isinstance(array, Data):
+            # In-place ufuncs (``data *= 2``, ``out=data``) write into ``array``.
+            array._mark_values_derived()
+        result = super().__array_wrap__(array, context, *args)
+        if isinstance(result, Data):
+            result._mark_values_derived()
+        return result
+
+    def _source_values(self) -> _SourceValues:
+        state = getattr(self, "_emout_source_values", None)
+        if state is None:
+            state = _SourceValues()
+            self._emout_source_values = state
+        return state
+
+    def _replays_source(self) -> bool:
+        """Return whether ``name`` and ``slices`` reproduce these values from the source files."""
+        state = getattr(self, "_emout_source_values", None)
+        return state is None or state.intact
+
+    def _mark_values_derived(self) -> None:
+        self._source_values().intact = False
 
     def __reduce__(self):
         """Preserve field metadata alongside NumPy's serialized array state."""
@@ -716,6 +768,7 @@ class Data(np.ndarray):
         obj._emout_open_kwargs = getattr(self, "_emout_open_kwargs", None)
         obj._emout_inp = getattr(self, "_emout_inp", None)
         obj._emout_unit = getattr(self, "_emout_unit", None)
+        obj._mark_values_derived()
         return obj
 
     def _to_recipe_index(self):
@@ -750,6 +803,7 @@ class Data(np.ndarray):
         from emout.distributed.remote_figure import (
             is_recording,
             record_field_plot,
+            record_local_field_plot,
             request_session,
         )
 
@@ -760,13 +814,20 @@ class Data(np.ndarray):
                     "record a remote field plot without a remote session",
                     self._target_name(),
                 )
+            if not self._replays_source():
+                # Replaying the source selection would drop local changes; send the values.
+                self._require_local_data_access("record a plot of locally derived field data", self._target_name())
+                from .factory import data_payload
+
+                record_local_field_plot(data_payload(self), plot_kwargs)
+                return _REMOTE_PLOT_HANDLED
             recipe_index = self._to_recipe_index()
             record_field_plot(self.name, recipe_index, plot_kwargs, emout_kwargs=remote_kwargs)
             return _REMOTE_PLOT_HANDLED
 
         # --- Strict mode: render remotely and return image bytes only. ---
         if self._local_data_access_disabled():
-            if remote_kwargs is None:
+            if remote_kwargs is None or not self._replays_source():
                 self._require_local_data_access("plot field data locally", self._target_name())
 
             from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session
@@ -791,7 +852,8 @@ class Data(np.ndarray):
             return _REMOTE_PLOT_HANDLED
 
         # --- Outside remote_figure + Dask session available: data transfer mode ---
-        if remote_kwargs is None:
+        # Locally derived values are already in memory and cannot be refetched.
+        if remote_kwargs is None or not self._replays_source():
             return None
         from emout.distributed.remote_render import _await_remote, get_or_create_session
 

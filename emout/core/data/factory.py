@@ -106,6 +106,18 @@ def data_from_array(
     return data
 
 
+def data_payload(data) -> dict[str, Any]:
+    """Describe a Data object's values and grid metadata for transfer."""
+    return {
+        "array": np.asarray(data),
+        "name": data.name,
+        "slices": data.slices,
+        "slice_axes": data.slice_axes,
+        "axisunits": data.axisunits,
+        "valunit": data.valunit,
+    }
+
+
 def data_from_payload(payload: dict[str, Any], *, local_data_policy: str | None = "allow"):
     """Rebuild a Data object from a remote ``fetch_field`` payload."""
     return data_from_array(

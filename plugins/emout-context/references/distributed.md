@@ -111,6 +111,15 @@ plt.savefig("output.png")
 
 Only sliced arrays are transferred. For new code, prefer `Emout.remote()` / `remote_scope()` because worker-side object lifetime is explicit.
 
+The worker only re-reads fields that still hold the values read from the files. Fields whose values have changed — through `.scale()` / `.negate()` / `.flip()` / `.mirror()` / `.tile()` / `.masked()`, arithmetic or NumPy ufuncs such as `-data` and `data * 10`, writes such as `data *= 2` or `data[...] = value`, or a time mean — are plotted from their in-memory values. Inside `remote_figure()`, those values are sent to the worker for rendering.
+
+```python
+phi = data.phisp[-1, :, 100, :]
+phi.scale(1e3).plot()  # plots the scaled values in compatibility mode and in remote_figure()
+```
+
+Writes made through a plain NumPy array, such as `np.asarray(phi)[...] = value`, cannot be tracked. Use `Data` methods and operators when you modify values.
+
 ## Feature Integrations
 
 ### Backtrace / `data.trace`

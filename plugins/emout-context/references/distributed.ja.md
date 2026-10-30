@@ -111,6 +111,15 @@ plt.savefig("output.png")
 
 転送されるのはスライス済みの小さな配列だけです。ただし新規コードでは、worker 側 object の寿命が明示できる `Emout.remote()` / `remote_scope()` を推奨します。
 
+worker が読み直すのは、ファイルから読んだ値のままの field だけです。`.scale()` / `.negate()` / `.flip()` / `.mirror()` / `.tile()` / `.masked()`、`-data` や `data * 10` などの演算・NumPy ufunc、`data *= 2` や `data[...] = value` の書き換え、時間平均で値が変わった field は、メモリ上の値をそのまま描画します。`remote_figure()` の中では、その値を worker へ送って描画します。
+
+```python
+phi = data.phisp[-1, :, 100, :]
+phi.scale(1e3).plot()  # 互換モードでも remote_figure() でも、1000 倍した値を描画
+```
+
+`np.asarray(phi)[...] = value` のように NumPy 配列を経由した書き換えは追跡できません。値を加工するときは `Data` のメソッドや演算子を使ってください。
+
 ## 機能別の連携
 
 ### backtrace / `data.trace`

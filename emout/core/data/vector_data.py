@@ -152,6 +152,19 @@ class VectorData(ComponentValues):
     def _local_data_access_disabled(self) -> bool:
         return any(getattr(component, "_local_data_access_disabled", lambda: False)() for component in self.objs)
 
+    def _replays_source(self) -> bool:
+        """Return whether every component still holds its source file values."""
+        return all(getattr(component, "_replays_source", lambda: True)() for component in self.objs)
+
+    def _local_payload(self) -> dict:
+        from .factory import data_payload
+
+        return {
+            "components": [data_payload(component) for component in self.objs],
+            "name": self.name,
+            "component_axes": self.component_axes,
+        }
+
     def _try_remote_plot(self, **plot_kwargs):
         """Record or dispatch vector plots when remote rendering is available."""
         remote_kwargs = self._get_remote_open_kwargs()
@@ -159,6 +172,7 @@ class VectorData(ComponentValues):
         from emout.distributed.remote_figure import (
             is_recording,
             record_field_plot,
+            record_local_field_plot,
             request_session,
         )
 
@@ -166,13 +180,18 @@ class VectorData(ComponentValues):
             session = request_session(remote_kwargs)
             if session is None and self._local_data_access_disabled():
                 self._require_local_data_access("record a remote vector plot without a remote session")
+            if not self._replays_source():
+                # Replaying the source selection would drop local changes; send the values.
+                self._require_local_data_access("record a plot of locally derived vector data")
+                record_local_field_plot(self._local_payload(), plot_kwargs)
+                return _REMOTE_PLOT_HANDLED
             record_field_plot(self.name, self._to_recipe_index(), plot_kwargs, emout_kwargs=remote_kwargs)
             return _REMOTE_PLOT_HANDLED
 
         if not self._local_data_access_disabled():
             return None
 
-        if remote_kwargs is None:
+        if remote_kwargs is None or not self._replays_source():
             self._require_local_data_access("plot vector field locally")
 
         from emout.distributed.remote_render import _await_remote, display_image, get_or_create_session
