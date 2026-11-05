@@ -290,3 +290,149 @@ def test_remote_figure_ships_derived_vector_values(monkeypatch):
     _replay(commands)
     np.testing.assert_array_equal(np.asarray(plotted[0].x_data), np.asarray(derived.x_data))
     assert plotted[0].component_axes == derived.component_axes
+
+
+# ---------------------------------------------------------------------------
+# remote_figure records the values at plot time (#105)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "double",
+    [
+        pytest.param(lambda d: d.__imul__(2), id="in-place"),
+        pytest.param(lambda d: d * 2, id="new-array"),
+    ],
+)
+def test_remote_figure_keeps_values_plotted_before_a_later_update(monkeypatch, double):
+    derived = _source_field().scale(10)
+    expected = np.asarray(derived).copy()
+    plotted = []
+
+    def draw():
+        derived.plot(use_si=False)
+        double(derived).plot(use_si=False)
+
+    commands = _record_commands(monkeypatch, draw)
+
+    assert [command[0] for command in commands] == ["local_field_plot", "local_field_plot"]
+    np.testing.assert_array_equal(commands[0][1]["array"], expected)
+    np.testing.assert_array_equal(commands[1][1]["array"], expected * 2)
+
+    monkeypatch.setattr(Data2d, "plot", lambda self, *args, **kwargs: plotted.append(np.asarray(self)))
+    _replay(commands)
+    np.testing.assert_array_equal(plotted[0], expected)
+    np.testing.assert_array_equal(plotted[1], expected * 2)
+
+
+def test_remote_figure_keeps_grid_metadata_recorded_at_plot_time(monkeypatch):
+    derived = _source_field().scale(10)
+    slices = list(derived.slices)
+    slice_axes = list(derived.slice_axes)
+
+    def draw():
+        derived.plot(use_si=False)
+        derived.slices[0] = slice(5, 6, 1)
+        derived.slice_axes[0] = 0
+
+    commands = _record_commands(monkeypatch, draw)
+
+    assert commands[0][1]["slices"] == slices
+    assert list(commands[0][1]["slice_axes"]) == slice_axes
+
+
+def test_remote_figure_keeps_surface_values_plotted_before_in_place_update(monkeypatch):
+    data = Data3d(np.arange(24, dtype=float).reshape(2, 3, 4), filename="dummy.h5", name="phisp")
+    data._emout_open_kwargs = OPEN_KWARGS
+    derived = data.scale(2)
+    expected = np.asarray(derived).copy()
+
+    def draw():
+        derived.plot_surfaces([], use_si=False, vmin=0, vmax=1)
+        derived.__imul__(3)
+        derived.plot_surfaces([], use_si=False, vmin=0, vmax=1)
+
+    commands = _record_commands(monkeypatch, draw)
+
+    assert [command[0] for command in commands] == ["local_plot_surfaces", "local_plot_surfaces"]
+    np.testing.assert_array_equal(commands[0][1]["array"], expected)
+    np.testing.assert_array_equal(commands[1][1]["array"], expected * 3)
+
+
+def test_remote_figure_keeps_vector_values_plotted_before_in_place_update(monkeypatch):
+    from emout.core.data.vector_data import VectorData
+
+    ex = _source_field()
+    ex.name = "ex"
+    ez = _source_field()
+    ez.name = "ez"
+    derived = VectorData([ex, ez], name="exz").negate()
+    expected_x = np.asarray(derived.x_data).copy()
+    expected_y = np.asarray(derived.y_data).copy()
+
+    def draw():
+        derived.plot(use_si=False)
+        derived.x_data.__imul__(2)
+        derived.plot(use_si=False)
+
+    commands = _record_commands(monkeypatch, draw)
+
+    assert [command[0] for command in commands] == ["local_field_plot", "local_field_plot"]
+    first, second = (command[1]["components"] for command in commands)
+    np.testing.assert_array_equal(first[0]["array"], expected_x)
+    np.testing.assert_array_equal(first[1]["array"], expected_y)
+    np.testing.assert_array_equal(second[0]["array"], expected_x * 2)
+    np.testing.assert_array_equal(second[1]["array"], expected_y)
+
+
+def test_real_dask_remote_figure_keeps_values_plotted_before_in_place_update(emout_dir, monkeypatch):
+    """Both panels reach the worker with the values they had when plotted, as local matplotlib does."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from distributed import Client, LocalCluster
+    from matplotlib.figure import Figure
+
+    from emout import Emout
+    from emout.distributed import remote_figure
+    from emout.distributed.remote_render import clear_sessions
+
+    data = Emout(emout_dir)
+    source = data.phisp[0, 0, :, :]
+    expected = np.asarray(source) * 10
+    rendered = []
+    savefig = Figure.savefig
+
+    def observe(self, *args, **kwargs):
+        rendered.append([np.array(ax.images[0].get_array()) for ax in self.axes if ax.images])
+        return savefig(self, *args, **kwargs)
+
+    monkeypatch.setattr(Figure, "savefig", observe)
+    output = emout_dir / "remote.png"
+
+    try:
+        with LocalCluster(
+            n_workers=1,
+            threads_per_worker=1,
+            processes=False,
+            protocol="inproc",
+            dashboard_address=None,
+            memory_limit=0,
+        ) as cluster:
+            with Client(cluster):
+                value = source.scale(10)
+                with remote_figure(savefilepath=output):
+                    plt.subplot(1, 2, 1)
+                    value.plot(use_si=False)
+                    value *= 2
+                    plt.subplot(1, 2, 2)
+                    value.plot(use_si=False)
+    finally:
+        clear_sessions()
+        data.phisp.close()
+
+    first, second = rendered[-1]
+    np.testing.assert_array_equal(first, expected)
+    np.testing.assert_array_equal(second, expected * 2)
+    assert output.stat().st_size > 0

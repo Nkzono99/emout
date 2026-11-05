@@ -98,6 +98,20 @@ with remote_figure(savefilepath="figure.png"):
     rdata.phisp[-1, :, 100, :].plot()
 ```
 
+Panels created with `plt.subplots()` work too. The return value has the same shape as in plain matplotlib: a single Axes, a 1-D array, or a 2-D array.
+
+```python
+with remote_figure():
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    plt.sca(axes[0])
+    rdata.phisp[-1, :, 100, :].plot()
+    plt.sca(axes[1])
+    rdata.phisp[0, :, 100, :].plot()
+    axes[1].set_title("initial")
+```
+
+Calls made inside the block are replayed together on the worker when the block exits. Arrays are recorded with the values they hold at the time of the call, so updating an array in place afterwards (`value *= 2`) leaves the figures you have already drawn unchanged.
+
 ### Data-Transfer Mode (Compatibility Mode)
 
 When an active/default session is saved, existing `plot()` code can still run in compatibility mode. The worker extracts a small slice and sends it back, while matplotlib runs locally.
