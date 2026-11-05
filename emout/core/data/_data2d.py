@@ -53,6 +53,7 @@ class Data2d(Data):
         use_si: bool = True,
         offsets: Union[Tuple[Union[float, str], Union[float, str], Union[float, str]], None] = None,
         mode: Literal["cm", "cm+cont", "cont"] = "cm",
+        ax=None,
         **kwargs,
     ):
         """Plot two-dimensional data.
@@ -72,6 +73,10 @@ class Data2d(Data):
             by default None
         mode : str
             Plot type ('cm': colour map, 'cont': contour, 'surf': surface)
+        ax : matplotlib.axes.Axes, optional
+            Axes to draw into, by default the current Axes.  The current
+            Axes is left as it is when *ax* is given.  ``mode='surf'``
+            needs a 3-D Axes.
         **kwargs : dict
             Additional arguments forwarded to the low-level plot function
             (``plot_2dmap`` for 'cm'/'cm+cont', ``plot_2d_contour`` for
@@ -113,12 +118,15 @@ class Data2d(Data):
         ValueError
             If the data is not two-dimensional.
         """
+        # Passed on only when given, so recorded commands stay as they were without it.
+        target = {} if ax is None else {"ax": ax}
         remote = self._try_remote_plot(
             axes=axes,
             show=show,
             use_si=use_si,
             offsets=offsets,
             mode=mode,
+            **target,
             **kwargs,
         )
         if remote is _REMOTE_PLOT_HANDLED:
@@ -207,6 +215,8 @@ class Data2d(Data):
                 z = apply_offset(z, offsets[2])
                 val = apply_offset(val, offsets[3])
 
+            if ax is not None:
+                kwargs.setdefault("ax3d", ax)
             imgs = [emplt.plot_surface(x, y, z, val, **kwargs)]
         else:
             if offsets is not None:
@@ -219,15 +229,15 @@ class Data2d(Data):
             if "cm" in mode and "cont" in mode:
                 savefilename = kwargs.get("savefilename", None)
                 kwargs["savefilename"] = None
-                img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+                img = emplt.plot_2dmap(z, mesh=mesh, ax=ax, **kwargs)
                 kwargs["savefilename"] = savefilename
-                img2 = emplt.plot_2d_contour(z, mesh=mesh, **kwargs)
+                img2 = emplt.plot_2d_contour(z, mesh=mesh, ax=ax, **kwargs)
                 imgs = [img, img2]
             elif "cm" in mode:
-                img = emplt.plot_2dmap(z, mesh=mesh, **kwargs)
+                img = emplt.plot_2dmap(z, mesh=mesh, ax=ax, **kwargs)
                 imgs.append(img)
             elif "cont" in mode:
-                img = emplt.plot_2d_contour(z, mesh=mesh, **kwargs)
+                img = emplt.plot_2d_contour(z, mesh=mesh, ax=ax, **kwargs)
                 imgs.append(img)
 
         if show:

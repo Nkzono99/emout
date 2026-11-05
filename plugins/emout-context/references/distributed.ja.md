@@ -98,6 +98,18 @@ with remote_figure(savefilepath="figure.png"):
     rdata.phisp[-1, :, 100, :].plot()
 ```
 
+`plt.subplots()` で作ったパネルにも描画できます。戻り値は通常の matplotlib と同じ形（単一の Axes、1 次元配列、2 次元配列）です。
+
+```python
+with remote_figure():
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    rdata.phisp[-1, :, 100, :].plot(ax=axes[0])
+    rdata.phisp[0, :, 100, :].plot(ax=axes[1])
+    axes[1].set_title("initial")
+```
+
+ブロック内の呼び出しは、ブロックを抜けるときにまとめて worker で再生されます。配列は呼び出した時点の値で記録されるので、描画したあとに同じ配列を `value *= 2` のように書き換えても、先に描いた図は変わりません。
+
 ### データ転送モード（互換モード）
 
 active/default セッションが保存されている場合、既存の `plot()` コードも互換モードで動作します。Worker が 2D slice などを切り出してローカルへ転送し、matplotlib はローカルで実行されます。

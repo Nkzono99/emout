@@ -26,6 +26,8 @@ import warnings
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
+import numpy as np
+
 # ---------------------------------------------------------------------------
 # Global recording state
 # ---------------------------------------------------------------------------
@@ -51,7 +53,28 @@ def _set_current(figure_id: Optional[str] = None, axes_id: Optional[str] = None)
     _current_axes_id = axes_id
 
 
+def _snapshot_value(value):
+    """Copy the arrays in *value* so the record keeps what was passed at call time.
+
+    Commands are replayed when the block closes.  A record that only referenced
+    the caller's array would follow a later in-place update (``value *= 2``)
+    and redraw earlier figures with the new values, unlike matplotlib, which
+    copies its inputs when the plot call is made.
+    """
+    if isinstance(value, np.ndarray):
+        return value.copy()
+    if isinstance(value, dict):
+        return {k: _snapshot_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_snapshot_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_snapshot_value(v) for v in value)
+    return value
+
+
 def _encode_command_value(value):
+    if isinstance(value, np.ndarray):
+        return value.copy()
     proxy_kind = getattr(value, "_remote_plot_kind", None)
     proxy_id = getattr(value, "_remote_plot_id", None)
     if proxy_kind is not None and proxy_id is not None:
@@ -120,7 +143,7 @@ def record_field_plot(
 
 def record_local_field_plot(payload: dict[str, Any], plot_kwargs: dict) -> None:
     """Record a ``plot()`` of locally derived values shipped as *payload*."""
-    _commands.append(("local_field_plot", payload, _encode_command_value(plot_kwargs)))
+    _commands.append(("local_field_plot", _snapshot_value(payload), _encode_command_value(plot_kwargs)))
 
 
 def record_local_plot_surfaces(payload: dict[str, Any], surfaces, plot_kwargs: dict) -> None:
@@ -128,7 +151,7 @@ def record_local_plot_surfaces(payload: dict[str, Any], surfaces, plot_kwargs: d
     _commands.append(
         (
             "local_plot_surfaces",
-            payload,
+            _snapshot_value(payload),
             _encode_command_value(surfaces),
             _encode_command_value(plot_kwargs),
         )
@@ -332,6 +355,18 @@ class _RemotePlotProxyBase:
             return
         record_proxy_attr_set(self._remote_plot_kind, self._remote_plot_id, name, value)
 
+    def _require_recordable(self, name: str) -> None:
+        """Raise ``AttributeError`` for names that are not public matplotlib API.
+
+        Libraries probe objects for protocols (NumPy reads ``__array_struct__``
+        / ``__array_interface__`` / ``__array__``, IPython reads ``_repr_html_``,
+        ``copy`` and ``pickle`` read their own hooks), and this module reads
+        optional private fields such as ``_axis_name``.  Answering those with a
+        recorder claims they exist, so only public names are recorded.
+        """
+        if name.startswith("_"):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
     def __repr__(self):
         return f"<{type(self).__name__} id={self._remote_plot_id!r}>"
 
@@ -369,6 +404,8 @@ class FigureProxy(_RemotePlotProxyBase):
         return cbar
 
     def __getattr__(self, name: str):
+        self._require_recordable(name)
+
         def _recorder(*args, **kwargs):
             record_figure_call(name, args, kwargs, figure_id=self._remote_plot_id)
             return None
@@ -416,6 +453,8 @@ class AxesProxy(_RemotePlotProxyBase):
         return SpinesProxy(self._remote_plot_id, self._figure_id)
 
     def __getattr__(self, name: str):
+        self._require_recordable(name)
+
         def _recorder(*args, **kwargs):
             _set_current(self._figure_id, self._remote_plot_id)
             if name == "view_init":
@@ -441,6 +480,8 @@ class AxisProxy(_RemotePlotProxyBase):
         object.__setattr__(self, "_figure_id", figure_id)
 
     def __getattr__(self, name: str):
+        self._require_recordable(name)
+
         def _recorder(*args, **kwargs):
             _set_current(self._figure_id, self._remote_plot_id)
             record_axis_call(self._remote_plot_id, self._axis_name, name, args, kwargs)
@@ -459,6 +500,8 @@ class SpineProxy(_RemotePlotProxyBase):
         object.__setattr__(self, "_figure_id", figure_id)
 
     def __getattr__(self, name: str):
+        self._require_recordable(name)
+
         def _recorder(*args, **kwargs):
             _set_current(self._figure_id, self._remote_plot_id)
             record_spine_call(self._remote_plot_id, self._spine_name, name, args, kwargs)
@@ -497,6 +540,8 @@ class ColorbarProxy(_RemotePlotProxyBase):
         return self._ax_proxy
 
     def __getattr__(self, name: str):
+        self._require_recordable(name)
+
         def _recorder(*args, **kwargs):
             record_colorbar_call(self._remote_plot_id, name, args, kwargs)
             return None
@@ -515,20 +560,23 @@ def _infer_subplots_shape(args: tuple, kwargs: dict) -> tuple[int, int, bool]:
 
 
 def _build_subplots_proxies(figure_id: str, nrows: int, ncols: int, squeeze: bool):
-    import numpy as np
-
+    """Return ``(axes, grid)`` shaped like the second value of ``plt.subplots``."""
     grid: list[list[AxesProxy]] = []
-    for _row in range(nrows):
+    # Filling cell by cell stores each proxy as-is; ``np.array(grid)`` would
+    # inspect the proxies to decide whether they are nested sequences.
+    arr = np.empty((nrows, ncols), dtype=object)
+    for row_index in range(nrows):
         row = []
-        for _col in range(ncols):
-            row.append(AxesProxy(_next_proxy_id("ax"), figure_id))
+        for col_index in range(ncols):
+            ax = AxesProxy(_next_proxy_id("ax"), figure_id)
+            arr[row_index, col_index] = ax
+            row.append(ax)
         grid.append(row)
 
-    arr = np.array(grid, dtype=object)
     if squeeze:
-        arr = np.squeeze(arr)
         if nrows == 1 and ncols == 1:
             return grid[0][0], grid
+        return arr.squeeze(), grid
     return arr, grid
 
 
@@ -717,8 +765,9 @@ class RemoteFigure:
                             kwargs,
                             target={"figure": FigureProxy(figure_id), "axes_grid": axes_grid},
                         )
-                        first_ax = axes_grid[0][0]
-                        _set_current(figure_id, first_ax._remote_plot_id)
+                        # matplotlib leaves the last panel current after subplots()
+                        last_ax = axes_grid[-1][-1]
+                        _set_current(figure_id, last_ax._remote_plot_id)
                         return FigureProxy(figure_id), axes_return
 
                     setattr(plt, name, _record_subplots)

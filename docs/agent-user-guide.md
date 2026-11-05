@@ -138,6 +138,7 @@ data.phisp[-1, :, ny//2, :].plot()
     use_si=True,           # SI unit labels/values
     offsets=None,          # (x_off, y_off, z_off): "left"|"center"|"right"|float
     mode="cm",             # "cm" (colormap), "cont" (contour), "cm+cont", "surf" (3D surface)
+    ax=None,               # target Axes (default: current Axes)
     # kwargs passed to underlying plot function:
     savefilename=None,     # save to file
     cmap=None,             # matplotlib colormap
@@ -165,6 +166,7 @@ data.phisp[-1, :, 32, 32].plot()
     show=False,
     use_si=True,
     offsets=None,          # (x_off, y_off)
+    ax=None,               # target Axes (default: current Axes)
     savefilename=None,
     vmin=None, vmax=None,
     figsize=None,
@@ -213,13 +215,11 @@ ax.set_xlabel("x [m]")
 ax.axhline(y=50, color="red", linestyle="--")
 plt.savefig("custom.png", dpi=150, bbox_inches="tight")
 
-# Or set up your own figure/axes first
+# Or set up your own figure/axes first; scalar fields take the target as ax=
 fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-plt.sca(axes[0])
-data.phisp[-1, 100, :, :].plot()
-plt.sca(axes[1])
-data.nd1p[-1, 100, :, :].plot(norm="log", vmin=1e-3, vmax=20)
-plt.sca(axes[2])
+data.phisp[-1, 100, :, :].plot(ax=axes[0])
+data.nd1p[-1, 100, :, :].plot(ax=axes[1], norm="log", vmin=1e-3, vmax=20)
+plt.sca(axes[2])                   # vector plots draw into the current Axes
 data.j1xy[-1, 100, :, :].plot()
 fig.suptitle("Overview")
 fig.tight_layout()

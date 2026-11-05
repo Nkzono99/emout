@@ -34,6 +34,7 @@ data.phisp[-1, :, 32, 32].plot()
 | `use_si` | `bool` | SI 単位で軸ラベル・値を表示 | `True` |
 | `show` | `bool` | `plt.show()` を呼ぶ | `False` |
 | `savefilename` | `str` | ファイルに保存 | `None` |
+| `ax` | `Axes` | 描画先の Axes（1D・2D） | 現在の Axes |
 | `vmin` | `float` | カラーバーの最小値 | 自動 |
 | `vmax` | `float` | カラーバーの最大値 | 自動 |
 | `cmap` | colormap | Matplotlib カラーマップ | 独自 gray-jet |
@@ -49,6 +50,16 @@ data.phisp[-1, :, 32, 32].plot()
 
 ```python
 data.phisp[-1, 100, :, :].plot(savefilename="phisp.png")
+```
+
+### 複数パネルに描く
+
+`ax` に描画先の Axes を渡します。カラーバーとラベルもそのパネルに付き、現在の Axes は変わりません。
+
+```python
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+data.phisp[-1, 100, :, :].plot(ax=axes[0])
+data.phisp[-1, :, 32, 32].plot(ax=axes[1])
 ```
 
 ### 対数スケール
