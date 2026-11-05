@@ -34,6 +34,7 @@ data.phisp[-1, :, 32, 32].plot()
 | `use_si` | `bool` | Display axis labels and values in SI units | `True` |
 | `show` | `bool` | Call `plt.show()` after plotting | `False` |
 | `savefilename` | `str` | Save plot to file instead of displaying | `None` |
+| `ax` | `Axes` | Axes to draw into (1D and 2D) | current Axes |
 | `vmin` | `float` | Minimum value for colorbar | auto |
 | `vmax` | `float` | Maximum value for colorbar | auto |
 | `cmap` | colormap | Matplotlib colormap | custom gray-jet |
@@ -49,6 +50,16 @@ data.phisp[-1, :, 32, 32].plot()
 
 ```python
 data.phisp[-1, 100, :, :].plot(savefilename="phisp.png")
+```
+
+### Multiple Panels
+
+Pass the target Axes as `ax`. The colorbar and labels are attached to that panel, and the current Axes stays as it is.
+
+```python
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+data.phisp[-1, 100, :, :].plot(ax=axes[0])
+data.phisp[-1, :, 32, 32].plot(ax=axes[1])
 ```
 
 ### Logarithmic Scale

@@ -49,6 +49,7 @@ class Data1d(Data):
         show: bool = False,
         use_si: bool = True,
         offsets: Union[Tuple[Union[float, str], Union[float, str]], None] = None,
+        ax=None,
         **kwargs,
     ):
         """Plot one-dimensional data as a line.
@@ -64,6 +65,9 @@ class Data1d(Data):
             Offsets for the x and y axes ('left': start at 0, 'center':
             centre at 0, 'right': end at 0, float: shift by value),
             by default None
+        ax : matplotlib.axes.Axes, optional
+            Axes to draw into, by default the current Axes.  The current
+            Axes is left as it is when *ax* is given.
         savefilename : str, optional
             Output file name, by default None
         vmin : float, optional
@@ -91,7 +95,9 @@ class Data1d(Data):
         ValueError
             If the data is not one-dimensional.
         """
-        remote = self._try_remote_plot(show=show, use_si=use_si, offsets=offsets, **kwargs)
+        # Passed on only when given, so recorded commands stay as they were without it.
+        target = {} if ax is None else {"ax": ax}
+        remote = self._try_remote_plot(show=show, use_si=use_si, offsets=offsets, **target, **kwargs)
         if remote is _REMOTE_PLOT_HANDLED:
             return None
         if remote is not None:
@@ -132,7 +138,7 @@ class Data1d(Data):
         kwargs["xlabel"] = kwargs.get("xlabel", None) or _xlabel
         kwargs["ylabel"] = kwargs.get("ylabel", None) or _ylabel
 
-        line = emplt.plot_line(y, x=x, **kwargs)
+        line = emplt.plot_line(y, x=x, ax=ax, **kwargs)
 
         if show:
             plt.show()

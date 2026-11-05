@@ -195,7 +195,17 @@ def test_subplots_axes_record_calls_against_their_own_panel(plt, recording_sessi
 @pytest.mark.parametrize("kind", PROXY_KINDS)
 @pytest.mark.parametrize(
     "protocol",
-    ["__array_struct__", "__array_interface__", "__array__", "__len__", "__iter__", "__deepcopy__", "__fspath__"],
+    [
+        "__array_struct__",
+        "__array_interface__",
+        "__array__",
+        "__len__",
+        "__iter__",
+        "__deepcopy__",
+        "__fspath__",
+        "_repr_html_",
+        "_ipython_display_",
+    ],
 )
 def test_proxies_do_not_claim_protocol_methods(kind, protocol):
     assert not hasattr(_proxy(kind), protocol)
@@ -272,3 +282,102 @@ def test_real_session_draws_array_values_passed_before_in_place_update(plt, dask
         ax.plot([0.0, 1.0], y)
 
     assert rendered_lines[-1] == [[[2.0, 3.0], [4.0, 6.0]]]
+
+
+# ---------------------------------------------------------------------------
+# plot(ax=...) targets a subplots panel
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def emout_dir(tmp_path):
+    import h5py
+
+    (tmp_path / "plasma.inp").write_text("&tmgrid nx=3,ny=2,nz=1,dt=0.002,ifdiag=1 /\n")
+    with h5py.File(tmp_path / "phisp00_0000.h5", "w") as f:
+        f.create_dataset("phisp/0000", data=np.arange(1.0, 25.0).reshape(2, 3, 4))
+    return tmp_path
+
+
+@pytest.fixture
+def rendered_images(monkeypatch):
+    """Collect the image array of every axes each time a figure is saved."""
+    from matplotlib.figure import Figure
+
+    rendered = []
+    savefig = Figure.savefig
+
+    def observe(self, *args, **kwargs):
+        rendered.append([[np.array(image.get_array()) for image in ax.images] for ax in self.axes])
+        return savefig(self, *args, **kwargs)
+
+    monkeypatch.setattr(Figure, "savefig", observe)
+    return rendered
+
+
+def _axes_marker(ax):
+    return {"__remote_plot_proxy__": {"kind": "axes", "id": ax._remote_plot_id, "figure_id": ax._figure_id}}
+
+
+def test_field_plot_records_the_target_axes(plt, recording_session, monkeypatch):
+    from emout.core.data.data import Data2d
+    from emout.distributed import remote_render
+    from emout.distributed.remote_figure import remote_figure
+
+    monkeypatch.setattr(remote_render, "get_or_create_session", lambda *args, **kwargs: recording_session)
+    field = Data2d(np.arange(6, dtype=float).reshape(2, 3), filename="dummy.h5", name="phisp")
+    field._emout_open_kwargs = {"directory": "/tmp/input"}
+
+    with remote_figure():
+        _, axes = plt.subplots(1, 2)
+        field.plot(ax=axes[0], use_si=False)
+        field.plot(use_si=False)
+
+    targeted, untargeted = (command[3] for command in recording_session.commands if command[0] == "field_plot")
+    assert targeted["ax"] == _axes_marker(axes[0])
+    assert "ax" not in untargeted
+
+
+def test_remote_ref_plot_records_the_target_axes(plt, recording_session):
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import RemoteRef
+
+    ref = RemoteRef(recording_session, "field_0")
+
+    with remote_figure():
+        _, axes = plt.subplots(1, 2)
+        ref.plot(ax=axes[0], use_si=False)
+        ref.plot(use_si=False)
+
+    targeted, untargeted = (command[2] for command in recording_session.commands if command[0] == "cached_plot")
+    assert targeted == {"ax": _axes_marker(axes[0]), "use_si": False}
+    assert untargeted == {"use_si": False}
+
+
+@pytest.mark.parametrize("kind", ["source", "derived", "remote-ref"])
+def test_real_session_draws_fields_into_the_target_panel(plt, dask_session, rendered_images, emout_dir, kind):
+    from emout import Emout
+    from emout.distributed.remote_figure import remote_figure
+    from emout.distributed.remote_render import remote_scope
+
+    data = Emout(emout_dir)
+    values = np.asarray(data.phisp[0, 0, :, :])
+    try:
+        with remote_scope():
+            if kind == "source":
+                field, expected = data.phisp[0, 0, :, :], values
+            elif kind == "derived":
+                field, expected = data.phisp[0, 0, :, :].scale(10), values * 10
+            else:
+                field, expected = data.remote().phisp[0, 0, :, :], values
+
+            with remote_figure(savefilepath=emout_dir / "panel.png"):
+                _, axes = plt.subplots(1, 2)
+                field.plot(ax=axes[0], use_si=False)
+    finally:
+        data.phisp.close()
+
+    left, right, *others = rendered_images[-1]
+    np.testing.assert_array_equal(left[0], expected)
+    assert right == []
+    assert all(images == [] for images in others)

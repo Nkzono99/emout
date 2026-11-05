@@ -103,10 +103,8 @@ with remote_figure(savefilepath="figure.png"):
 ```python
 with remote_figure():
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-    plt.sca(axes[0])
-    rdata.phisp[-1, :, 100, :].plot()
-    plt.sca(axes[1])
-    rdata.phisp[0, :, 100, :].plot()
+    rdata.phisp[-1, :, 100, :].plot(ax=axes[0])
+    rdata.phisp[0, :, 100, :].plot(ax=axes[1])
     axes[1].set_title("initial")
 ```
 

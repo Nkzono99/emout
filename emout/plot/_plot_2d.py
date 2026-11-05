@@ -50,6 +50,26 @@ mycmap = mcolors.LinearSegmentedColormap(
 )
 
 
+def _label_axes(ax, title=None, xlabel=None, ylabel=None):
+    """Set the given labels on *ax*, or through pyplot when *ax* is None."""
+    set_title, set_xlabel, set_ylabel = (
+        (plt.title, plt.xlabel, plt.ylabel) if ax is None else (ax.set_title, ax.set_xlabel, ax.set_ylabel)
+    )
+    if title is not None:
+        set_title(title)
+    if xlabel is not None:
+        set_xlabel(xlabel)
+    if ylabel is not None:
+        set_ylabel(ylabel)
+
+
+def _save_and_close(ax, savefilename):
+    """Save the figure that holds *ax* (the current figure when None) and close it."""
+    fig = plt.gcf() if ax is None else ax.figure
+    fig.savefig(savefilename)
+    plt.close(fig)
+
+
 def figsize_with_2d(data2d, dpi=10):
     """Compute figure size from 2-D data shape.
 
@@ -87,6 +107,7 @@ def plot_2dmap(
     colorbar_label="",
     cbargs=None,
     add_colorbar=True,
+    ax=None,
     **kwargs,
 ):
     """Plot a 2-D colormap.
@@ -121,6 +142,9 @@ def plot_2dmap(
         Resolution (ignored when figsize is specified), by default 10.
     add_colorbar: bool, optional
         If True, add a colorbar, by default True.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw into, by default the current Axes.  The current
+        Axes is left as it is when *ax* is given.
 
     Returns
     -------
@@ -143,7 +167,8 @@ def plot_2dmap(
         cmap.set_bad(color=mask_color)
 
     extent = [mesh[0][0, 0], mesh[0][-1, -1], mesh[1][0, 0], mesh[1][-1, -1]]
-    img = plt.imshow(
+    imshow = plt.imshow if ax is None else ax.imshow
+    img = imshow(
         data2d,
         interpolation=interpolation,
         cmap=cmap,
@@ -155,24 +180,19 @@ def plot_2dmap(
         **kwargs,
     )
     if add_colorbar:
-        if "cb" in cbargs:
-            cb = plt.colorbar(label=colorbar_label, **cbargs["cb"])
+        cb_kwargs = cbargs.get("cb", {})
+        if ax is None:
+            cb = plt.colorbar(label=colorbar_label, **cb_kwargs)
         else:
-            cb = plt.colorbar(label=colorbar_label)
+            cb = ax.figure.colorbar(img, ax=ax, label=colorbar_label, **cb_kwargs)
 
     if add_colorbar and "others" in cbargs and "yticklabels" in cbargs["others"]:
         cb.ax.set_yticklabels(cbargs["others"]["yticklabels"])
 
-    if title is not None:
-        plt.title(title)
-    if xlabel is not None:
-        plt.xlabel(xlabel)
-    if ylabel is not None:
-        plt.ylabel(ylabel)
+    _label_axes(ax, title, xlabel, ylabel)
 
     if savefilename is not None:
-        plt.gcf().savefig(savefilename)
-        plt.close(plt.gcf())
+        _save_and_close(ax, savefilename)
         return None
     else:
         return img
@@ -195,6 +215,7 @@ def plot_2d_contour(
     dpi=10,
     fmt="%1.1f",
     fontsize=12,
+    ax=None,
     **kwargs,
 ):
     """Plot 2-D contour lines.
@@ -235,6 +256,9 @@ def plot_2d_contour(
         Contour label format, by default '%1.1f'.
     fontsize : str
         Contour label font size, by default 12.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw into, by default the current Axes.  The current
+        Axes is left as it is when *ax* is given.
 
     Returns
     -------
@@ -257,19 +281,14 @@ def plot_2d_contour(
         kwargs["cmap"] = cmap
     if levels is not None:
         kwargs["levels"] = levels
-    cont = plt.contour(*mesh, data2d, **kwargs)
+    contour = plt.contour if ax is None else ax.contour
+    cont = contour(*mesh, data2d, **kwargs)
     cont.clabel(fmt=fmt, fontsize=fontsize)
 
-    if title is not None:
-        plt.title(title)
-    if xlabel is not None:
-        plt.xlabel(xlabel)
-    if ylabel is not None:
-        plt.ylabel(ylabel)
+    _label_axes(ax, title, xlabel, ylabel)
 
     if savefilename is not None:
-        plt.gcf().savefig(savefilename)
-        plt.close(plt.gcf())
+        _save_and_close(ax, savefilename)
         return None
     else:
         return cont
@@ -415,6 +434,7 @@ def plot_line(
     ylabel=None,
     label=None,
     title=None,
+    ax=None,
     **kwargs,
 ):
     """Plot 1-D data.
@@ -441,30 +461,32 @@ def plot_line(
         Legend label, by default None.
     title : str, optional
         Title, by default None.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw into, by default the current Axes (a new figure
+        when *savefilename* is given).  The current Axes is left as it
+        is when *ax* is given.
 
     Returns
     -------
     Line2D or None
         Line object representing the plotted data (None when saved to file).
     """
-    if savefilename is not None:
+    if ax is not None:
+        fig = ax.figure
+    elif savefilename is not None:
         if figsize is None:
             fig = plt.figure()
         else:
             fig = plt.figure(figsize=figsize)
 
+    plot, set_ylim = (plt.plot, plt.ylim) if ax is None else (ax.plot, ax.set_ylim)
     if x is None:
-        line = plt.plot(data1d, label=label, **kwargs)
+        line = plot(data1d, label=label, **kwargs)
     else:
-        line = plt.plot(x, data1d, label=label, **kwargs)
-    plt.ylim([vmin, vmax])
+        line = plot(x, data1d, label=label, **kwargs)
+    set_ylim([vmin, vmax])
 
-    if title is not None:
-        plt.title(title)
-    if xlabel is not None:
-        plt.xlabel(xlabel)
-    if ylabel is not None:
-        plt.ylabel(ylabel)
+    _label_axes(ax, title, xlabel, ylabel)
 
     if savefilename is not None:
         fig.savefig(savefilename)

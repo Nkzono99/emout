@@ -1372,6 +1372,9 @@ class RemoteRef:
 
         if is_recording():
             bind_session(self._session)
+            if ax is not None:
+                # Inside remote_figure() the Axes lives on the worker, so it is the plot target.
+                plot_kwargs = {**plot_kwargs, "ax": ax}
             record_cached_plot(self._key, plot_kwargs)
             return None
         img = _await_remote(self._session.render_cached_plot(self._key, fmt=fmt, dpi=dpi, **plot_kwargs))

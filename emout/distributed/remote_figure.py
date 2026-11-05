@@ -356,14 +356,15 @@ class _RemotePlotProxyBase:
         record_proxy_attr_set(self._remote_plot_kind, self._remote_plot_id, name, value)
 
     def _require_recordable(self, name: str) -> None:
-        """Raise ``AttributeError`` for protocol lookups instead of recording them.
+        """Raise ``AttributeError`` for names that are not public matplotlib API.
 
-        Libraries probe objects for dunder protocols (NumPy reads
-        ``__array_struct__`` / ``__array_interface__`` / ``__array__``, ``copy``
-        and ``pickle`` read their own hooks).  Answering a probe with a recorder
-        claims the protocol is implemented, so only ordinary names are recorded.
+        Libraries probe objects for protocols (NumPy reads ``__array_struct__``
+        / ``__array_interface__`` / ``__array__``, IPython reads ``_repr_html_``,
+        ``copy`` and ``pickle`` read their own hooks), and this module reads
+        optional private fields such as ``_axis_name``.  Answering those with a
+        recorder claims they exist, so only public names are recorded.
         """
-        if name.startswith("__") and name.endswith("__"):
+        if name.startswith("_"):
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def __repr__(self):
